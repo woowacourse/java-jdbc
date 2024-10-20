@@ -2,29 +2,38 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
-public class TransactionManager {
+public final class TransactionManager {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
-    public static <T> T transactionBegin(DataSource dataSource, Function<Connection, T> function) {
-        try (Connection connection = dataSource.getConnection()) {
+    private final DataSource dataSource;
+
+    public TransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public <T> T transactionBegin(LogicExecutor<T> businessLogic) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             connection.setAutoCommit(false);
-            return execute(connection, function);
+            return execute(connection, businessLogic);
         } catch (SQLException e) {
-            log.error("DataSource로부터 Connection을 얻지 못했습니다. 예외 메세지: {}", e.getMessage(), e);
-            throw new DataAccessException("데이터베이스 연결을 할 수 없습니다. 원인: " + e.getMessage(), e);
+            log.error("트랜잭션 작업을 시작하기 전 예외가 발생하였습니다: {}", e.getMessage(), e);
+            throw new DataAccessException("트랜잭션 작업 전 예외 발생", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
-    private static <T> T execute(Connection connection, Function<Connection, T> function) throws SQLException {
+    private <T> T execute(Connection connection, LogicExecutor<T> businessLogic) throws SQLException {
         try {
-            T result = function.apply(connection);
+            T result = businessLogic.apply(connection);
             connection.commit();
             return result;
         } catch (SQLException e) {

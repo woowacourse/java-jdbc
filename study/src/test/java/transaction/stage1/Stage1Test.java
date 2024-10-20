@@ -184,7 +184,9 @@ class Stage1Test {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
-                .withLogConsumer(new Slf4jLogConsumer(log));
+                .withLogConsumer(new Slf4jLogConsumer(log))
+                .withUrlParam("allowMultiQueries", "true")
+                .withInitScript("schema.sql");
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 

@@ -10,6 +10,8 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import static com.interface21.jdbc.core.ResultMapper.multipleResultMapping;
 import static com.interface21.jdbc.core.ResultMapper.singleResultMapping;
@@ -24,15 +26,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T queryExecute(final Connection usedConnection, final String sql, final SqlExecutor<T> sqlExecutor) {
+    private <T> T queryExecute(final String sql, final SqlExecutor<T> sqlExecutor) {
+        Connection usedConnection = TransactionSynchronizationManager.getResource(dataSource);
         if (Objects.nonNull(usedConnection)) {
             return queryExecuteOnConnection(usedConnection, sql, sqlExecutor);
         }
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             return queryExecuteOnConnection(connection, sql, sqlExecutor);
         } catch (SQLException e) {
             log.error("DataSource로부터 Connection을 얻지 못했습니다. 예외 메세지: {}", e.getMessage(), e);
             throw new DataAccessException("데이터베이스 연결을 할 수 없습니다. 원인: " + e.getMessage(), e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -60,27 +65,27 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(Connection connection, String sql, Object[] args) {
-        return queryExecute(connection, sql, (preparedStatement, query) -> {
+    public int update(String sql, Object[] args) {
+        return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
             return preparedStatement.executeUpdate();
         });
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper) {
-        return queryExecute(connection, sql, (preparedStatement, query) ->
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        return queryExecute(sql, (preparedStatement, query) ->
                 queryResult(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet)));
     }
 
-    public <T> List<T> query(Connection connection, String sql, Object[] args, RowMapper<T> rowMapper) {
-        return queryExecute(connection, sql, (preparedStatement, query) -> {
+    public <T> List<T> query(String sql, Object[] args, RowMapper<T> rowMapper) {
+        return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
             return queryResult(preparedStatement, resultSet -> multipleResultMapping(rowMapper, resultSet));
         });
     }
 
-    public <T> T queryForObject(Connection connection, String sql, Object[] args, RowMapper<T> rowMapper) {
-        return queryExecute(connection, sql, (preparedStatement, query) -> {
+    public <T> T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
+        return queryExecute(sql, (preparedStatement, query) -> {
             SqlParameterBinder.bind(preparedStatement, args);
             return queryResult(preparedStatement, resultSet -> singleResultMapping(rowMapper, resultSet));
         });
