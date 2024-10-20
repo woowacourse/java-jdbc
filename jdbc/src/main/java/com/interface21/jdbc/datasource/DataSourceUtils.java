@@ -27,13 +27,6 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseActiveConnection(DataSource dataSource) {
-        Connection activeConn = TransactionSynchronizationManager.getResource(dataSource);
-        if (activeConn != null) {
-            releaseConnection(activeConn, dataSource);
-        }
-    }
-
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
             connection.close();

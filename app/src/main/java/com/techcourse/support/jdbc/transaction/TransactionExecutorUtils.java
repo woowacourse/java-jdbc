@@ -29,10 +29,7 @@ public class TransactionExecutorUtils {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
-            conn.setAutoCommit(false);
-            T result = callback.get();
-            conn.commit();
-            return result;
+            return commit(conn, callback);
         } catch (SQLException | DataAccessException e) {
             rollback(conn);
             throw new DataAccessException(e);
@@ -42,8 +39,11 @@ public class TransactionExecutorUtils {
         }
     }
 
-    public static void releaseActiveConn() {
-        DataSourceUtils.releaseActiveConnection(DataSourceConfig.getInstance());
+    private static <T> T commit(Connection conn, Supplier<T> callback) throws SQLException {
+        conn.setAutoCommit(false);
+        T result = callback.get();
+        conn.commit();
+        return result;
     }
 
     private static void rollback(Connection conn) {
