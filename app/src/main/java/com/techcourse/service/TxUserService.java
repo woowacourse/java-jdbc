@@ -40,6 +40,7 @@ public class TxUserService implements UserService {
             rollback(connection);
             throw new TechCourseApplicationException("비밀번호를 변경하는 것에 실패했습니다", e);
         } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
         }
     }
