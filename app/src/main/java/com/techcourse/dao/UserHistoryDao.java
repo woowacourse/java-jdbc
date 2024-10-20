@@ -29,6 +29,7 @@ public class UserHistoryDao {
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         if (conn != null) {
             updateUserHistory(userHistory, conn, sql);
+            return;
         }
 
         updateUserHistory(userHistory, sql);
