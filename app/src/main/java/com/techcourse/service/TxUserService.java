@@ -7,6 +7,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
@@ -19,53 +20,26 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
-
-            User user = userService.findById(id);
-
-            conn.commit();
-            return user;
-        } catch (Exception e) {
-            rollback(conn);
-
-            throw new DataAccessException("id를 찾던 중 예외가 발생했습니다: " + e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
+        return executeOnTransaction(() -> userService.findById(id));
     }
 
     @Override
     public void save(final User user) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            conn.setAutoCommit(false);
-
-            userService.save(user);
-
-            conn.commit();
-        } catch (Exception e) {
-            rollback(conn);
-
-            throw new DataAccessException("유저를 저장하던 중 예외가 발생했습니다: " + e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
+        executeOnTransaction(() -> userService.save(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
+        executeOnTransaction(() -> userService.changePassword(id, newPassword, createdBy));
+    }
+
+    private void executeOnTransaction(Runnable runnable) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
 
-            userService.changePassword(id, newPassword, createdBy);
+            runnable.run();
 
             conn.commit();
         } catch (Exception e) {
@@ -83,6 +57,26 @@ public class TxUserService implements UserService {
             conn.rollback();
         } catch (SQLException e) {
             throw new DataAccessException("롤백을 진행하던 중 예외가 발생했습니다: " + e);
+        }
+    }
+
+    private <T> T executeOnTransaction(Supplier<T> supplier) {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            conn.setAutoCommit(false);
+
+            T t = supplier.get();
+
+            conn.commit();
+            return t;
+        } catch (Exception e) {
+            rollback(conn);
+
+            throw new DataAccessException("비밀번호를 수정하던 중 예외가 발생했습니다: " + e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
