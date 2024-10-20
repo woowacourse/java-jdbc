@@ -23,7 +23,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void insert(final String sql, final SqlParameterSource parameters) {
+    public void update(final String sql, final SqlParameterSource parameters) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         Statement stmt = null;
         try {

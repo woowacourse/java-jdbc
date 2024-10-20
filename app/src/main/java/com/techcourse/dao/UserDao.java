@@ -27,7 +27,7 @@ public class UserDao {
     public void insert(final User user) {
         final String baseQuery = "INSERT INTO users (account, password, email) VALUES (:account, :password, :email)";
         final SqlParameterSource sqlParameterSource = new SqlParameterSource(user);
-        jdbcTemplate.insert(baseQuery, sqlParameterSource);
+        jdbcTemplate.update(baseQuery, sqlParameterSource);
     }
 
     private RowMapper<User> rowMapper() {

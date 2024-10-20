@@ -27,6 +27,6 @@ public class UserHistoryDao {
         final String baseQuery = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) "
                 + "VALUES (:userId, :account, :password, :email, :createdAt, :createdBy)";
         final SqlParameterSource sqlParameterSource = new SqlParameterSource(userHistory);
-        jdbcTemplate.insert(baseQuery, sqlParameterSource);
+        jdbcTemplate.update(baseQuery, sqlParameterSource);
     }
 }
