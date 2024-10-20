@@ -22,19 +22,20 @@ public class TransactionHandler implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
         if (targetMethod.isAnnotationPresent(aop.Transactional.class)) {
-            return invokeWithTransaction(method, args);
+            TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+            Object result = invokeWithTransaction(method, args, status);
+            transactionManager.commit(status);
+            return result;
         }
 
         return method.invoke(target, args);
     }
 
-    private Object invokeWithTransaction(Method method, Object[] args) {
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+    private Object invokeWithTransaction(Method method, Object[] args, TransactionStatus status) {
         try {
-            Object result = method.invoke(target, args);
-            transactionManager.commit(status);
-            return result;
-        } catch (IllegalAccessException | InvocationTargetException e) {
+            return method.invoke(target, args);
+        } catch (Exception e) {
+            transactionManager.rollback(status);
             throw new DataAccessException(e);
         }
     }

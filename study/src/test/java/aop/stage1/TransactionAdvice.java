@@ -21,11 +21,16 @@ public class TransactionAdvice  implements MethodInterceptor {
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        Object result = proceedWithTransaction(invocation, status);
+        transactionManager.commit(status);
+        return result;
+    }
+
+    private Object proceedWithTransaction(MethodInvocation invocation, TransactionStatus status) {
         try {
-            Object result = invocation.proceed();
-            transactionManager.commit(status);
-            return result;
-        } catch (Exception e) {
+            return invocation.proceed();
+        } catch (Throwable e) {
+            transactionManager.rollback(status);
             throw new DataAccessException(e);
         }
     }
