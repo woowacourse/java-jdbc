@@ -6,6 +6,7 @@ import aop.domain.UserHistory;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 
+@Transactional
 public class UserService {
 
     private final UserDao userDao;
@@ -16,17 +17,17 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    @Transactional
+//    @Transactional
     public User findById(final long id) {
         return userDao.findById(id);
     }
 
-    @Transactional
+//    @Transactional
     public void insert(final User user) {
         userDao.insert(user);
     }
 
-    @Transactional
+//    @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);

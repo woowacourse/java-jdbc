@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,10 +28,6 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public final void update(Connection conn, String sql, Object... params) {
-        executeWithConn(conn, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -47,6 +45,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object... params) {
+        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == null) {
+            return executeWithNewConn(sql, executor, params);
+        }
+        Connection aliveConn = DataSourceUtils.getConnection(dataSource);
+        return executeWithConn(aliveConn, sql, executor, params);
+    }
+
+    private <T> T executeWithNewConn(String sql, PreparedStatementExecutor<T> executor, Object... params) {
         try (Connection conn = dataSource.getConnection()) {
             return executeWithConn(conn, sql, executor, params);
         } catch (SQLException e) {
@@ -59,7 +66,6 @@ public class JdbcTemplate {
                                   Object... params) {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             setParams(pstmt, params);
             return executor.apply(pstmt);
         } catch (SQLException e) {
@@ -88,9 +94,5 @@ public class JdbcTemplate {
             values.add(rowMapper.mapRow(rs));
         }
         return values;
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }

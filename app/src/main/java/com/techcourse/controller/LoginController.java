@@ -10,6 +10,8 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDaoImpl;
 import com.techcourse.dao.UserHistoryDaoImpl;
 import com.techcourse.domain.User;
+import com.techcourse.service.AppUserServiceImpl;
+import com.techcourse.service.TxUserService;
 import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,9 +26,11 @@ public class LoginController {
     private final UserService userService;
 
     public LoginController() {
-        userService = new UserService(
-                new UserDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance())),
-                new UserHistoryDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance()))
+        userService = new TxUserService(
+                new AppUserServiceImpl(
+                        new UserDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance())),
+                        new UserHistoryDaoImpl(new JdbcTemplate(DataSourceConfig.getInstance()))
+                )
         );
     }
 
