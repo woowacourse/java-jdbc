@@ -8,7 +8,6 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 
 class UserHistoryDaoTest {
 
-    private Connection connection;
     private UserHistoryDao userHistoryDao;
 
     @BeforeEach
@@ -25,7 +23,7 @@ class UserHistoryDaoTest {
         DataSource datasource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(datasource);
 
-        connection = datasource.getConnection();
+        datasource.getConnection();
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(datasource);
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
@@ -36,7 +34,7 @@ class UserHistoryDaoTest {
     private void setDefaultData() {
         User user = new User(1L, "jazz", "1130", "jazz@woowahan.com");
         UserHistory userHistory = new UserHistory(user, "2024-10-03T01:56:00");
-        userHistoryDao.log(connection, userHistory);
+        userHistoryDao.log(userHistory);
     }
 
     @DisplayName("UserHistory를 저장한다.")
@@ -50,9 +48,9 @@ class UserHistoryDaoTest {
                 "hkkang@woowahan.com",
                 "2024-10-03T01:56:00"
         );
-        userHistoryDao.log(connection, userHistory);
+        userHistoryDao.log(userHistory);
 
-        UserHistory actual = userHistoryDao.findById(connection, 2L);
+        UserHistory actual = userHistoryDao.findById(2L);
 
         assertAll(
                 () -> assertThat(actual.getUserId()).isEqualTo(userHistory.getUserId()),
@@ -66,7 +64,7 @@ class UserHistoryDaoTest {
     @DisplayName("UserHistory를 조회한다.")
     @Test
     void findById() {
-        UserHistory userHistory = userHistoryDao.findById(connection, 1L);
+        UserHistory userHistory = userHistoryDao.findById(1L);
 
         assertAll(
                 () -> assertThat(userHistory.getUserId()).isEqualTo(1L),
