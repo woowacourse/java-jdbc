@@ -7,49 +7,53 @@ import com.interface21.transaction.support.TransactionSynchronizationManager;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Supplier;
 
 public class TransactionManager {
 
     private static final String TRANSACTION_FAIL_EXCEPTION = "Transaction을 실행하던 도중 실패했습니다.";
+    private static final String CONNECTION_FAIL_EXCEPTION = "Connection을 연결하던 도중 실패했습니다.";
 
-    private TransactionManager() {
+    private final DataSource dataSource;
+
+    public TransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static <T> T start(Connection connection, Supplier<T> supplier, DataSource dataSource) {
+    public void doBegin(DataSource dataSource) {
         try {
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            T result = supplier.get();
-            connection.commit();
-            return result;
-        } catch (SQLException | DataAccessException e) {
-            rollback(connection);
-            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION, e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+        } catch (SQLException e) {
+            throw new DataAccessException(CONNECTION_FAIL_EXCEPTION);
         }
     }
 
-    public static void start(Connection connection, Runnable runnable, DataSource dataSource) {
+    public void doCommit(DataSource dataSource) {
         try {
-            connection.setAutoCommit(false);
-            runnable.run();
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.commit();
-        } catch (SQLException | DataAccessException e) {
-            rollback(connection);
-            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION, e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+        } catch (SQLException e) {
+            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION);
         }
     }
 
-    private static void rollback(Connection connection) {
+    public void doRollback(DataSource dataSource) {
         try {
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.rollback();
         } catch (SQLException e) {
-            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION, e);
+            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION);
         }
+    }
+
+    public void doClose(DataSource dataSource) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        DataSourceUtils.releaseConnection(connection, dataSource);
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
+    public DataSource getDatasource() {
+        return dataSource;
     }
 }
