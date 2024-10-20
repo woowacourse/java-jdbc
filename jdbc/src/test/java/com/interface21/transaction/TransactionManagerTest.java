@@ -11,8 +11,6 @@ import static org.mockito.Mockito.when;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,9 +44,7 @@ class TransactionManagerTest {
         @DisplayName("반환 타입이 있는 트랜잭션 실행 메서드가 성공적으로 종료되면 커밋된다.")
         @Test
         void executeSuccessWithReturnType() {
-            Function<Connection, String> functionResult = connection -> "kaki";
-
-            String result = transactionManager.runInTransaction(functionResult);
+            String result = transactionManager.runInTransaction(() -> "kaki");
 
             assertAll(
                     () -> assertThat(result).isEqualTo("kaki"),
@@ -63,9 +59,8 @@ class TransactionManagerTest {
         @Test
         void executeSuccessWithVoid() {
             boolean[] consumerResults = {false, false};
-            Consumer<Connection> consumer = connection -> consumerResults[0] = true;
 
-            transactionManager.runInTransaction(consumer);
+            transactionManager.runInTransaction(() -> consumerResults[0] = true);
 
             assertAll(
                     () -> assertThat(consumerResults).containsExactly(true, false),
@@ -84,12 +79,9 @@ class TransactionManagerTest {
         @DisplayName("반환 타입이 있는 트랜잭션 실행 메서드에서 예외가 발생하면 롤백된다.")
         @Test
         void executeFailWithReturnType() {
-            Function<Connection, String> functionResult = connection -> {
-                throw new IllegalArgumentException();
-            };
-
-            assertThatThrownBy(() -> transactionManager.runInTransaction(functionResult))
-                    .isInstanceOf(DataAccessException.class);
+            assertThatThrownBy(() -> transactionManager.runInTransaction(() -> {
+                throw  new IllegalArgumentException();
+            })).isInstanceOf(DataAccessException.class);
 
             assertAll(
                     () -> verify(connection).setAutoCommit(false),
@@ -102,12 +94,9 @@ class TransactionManagerTest {
         @DisplayName("반환 타입이 없는 트랜잭션 실행 메서드에서 예외가 발생하면 롤백된다.")
         @Test
         void executeFailWithVoid() {
-            Consumer<Connection> consumer = connection -> {
-                throw new IllegalArgumentException();
-            };
-
-            assertThatThrownBy(() -> transactionManager.runInTransaction(consumer))
-                    .isInstanceOf(DataAccessException.class);
+            assertThatThrownBy(() -> transactionManager.runInTransaction(() -> {
+                throw  new IllegalArgumentException();
+            })).isInstanceOf(DataAccessException.class);
 
             assertAll(
                     () -> verify(connection).setAutoCommit(false),
