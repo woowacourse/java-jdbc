@@ -32,14 +32,14 @@ class TransactionManagerTest {
 
 
     @Test
-    void testTransactionRollbackWithConsumer() throws SQLException {
+    void testTransactionRollbackWithRunnable() throws SQLException {
         assertThatThrownBy(() -> transactionManager.performTransaction(this::throwExceptionForRunnable));
 
         verify(connection).rollback();
     }
 
     @Test
-    void testTransactionRollbackWithFunction() throws SQLException {
+    void testTransactionRollbackWithSupplier() throws SQLException {
         assertThatThrownBy(() -> transactionManager.performTransaction(() -> throwExceptionForSupplier()));
 
         verify(connection).rollback();
