@@ -7,8 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.support.h2.H2SQLExceptionTranslator;
-import com.interface21.transaction.support.JdbcTransaction;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,21 +28,13 @@ public class JdbcTemplate {
     public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return executeQueryOne(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
-        }
-    }
-
-    public <T> T queryOne(String sql, ResultSetCallBack<T> callBack, JdbcTransaction transaction, Object... args) {
-        debugQuery(sql);
-
-        Connection conn = transaction.getConnection();
-        try (var pstmt = conn.prepareStatement(sql)) {
-            return executeQueryOne(pstmt, callBack, args);
-        } catch (SQLException e) {
-            throw exceptionTranslator.translate(e);
+        } finally {
+            tryRelease(conn);
         }
     }
 
@@ -65,10 +58,13 @@ public class JdbcTemplate {
     public <T> List<T> query(String sql, ResultSetCallBack<T> callBack, Object... args) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return executeQuery(pstmt, callBack, args);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
+        } finally {
+            tryRelease(conn);
         }
     }
 
@@ -99,21 +95,13 @@ public class JdbcTemplate {
     public void update(String sql, PreparedStatementCallBack callBack) {
         debugQuery(sql);
 
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             executeUpdate(callBack, pstmt);
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
-        }
-    }
-
-    public void update(String sql, PreparedStatementCallBack callBack, JdbcTransaction transaction) {
-        debugQuery(sql);
-
-        Connection conn = transaction.getConnection();
-        try (var pstmt = conn.prepareStatement(sql)) {
-            executeUpdate(callBack, pstmt);
-        } catch (SQLException e) {
-            throw exceptionTranslator.translate(e);
+        } finally {
+            tryRelease(conn);
         }
     }
 
@@ -124,5 +112,13 @@ public class JdbcTemplate {
 
     private void debugQuery(String sql) {
         log.debug("query : {}", sql);
+    }
+
+    private void tryRelease(Connection conn) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            return;
+        }
+
+        DataSourceUtils.releaseConnection(conn, dataSource);
     }
 }

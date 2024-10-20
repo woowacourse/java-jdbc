@@ -9,9 +9,9 @@ public class JdbcTransaction {
     private final Connection connection;
     private final H2SQLExceptionTranslator exceptionTranslator;
 
-    public JdbcTransaction(Connection connection) {
+    public JdbcTransaction(Connection connection, H2SQLExceptionTranslator exceptionTranslator) {
         this.connection = connection;
-        this.exceptionTranslator = new H2SQLExceptionTranslator();
+        this.exceptionTranslator = exceptionTranslator;
     }
 
     public void begin() {
@@ -26,25 +26,13 @@ public class JdbcTransaction {
         try {
             connection.commit();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            release();
+            throw exceptionTranslator.translate(e);
         }
     }
 
     public void rollback() {
         try {
             connection.rollback();
-        } catch (SQLException e) {
-            throw exceptionTranslator.translate(e);
-        } finally {
-            release();
-        }
-    }
-
-    private void release() {
-        try {
-            connection.close();
         } catch (SQLException e) {
             throw exceptionTranslator.translate(e);
         }

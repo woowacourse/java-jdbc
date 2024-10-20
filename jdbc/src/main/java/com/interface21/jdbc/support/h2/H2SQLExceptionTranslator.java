@@ -24,6 +24,6 @@ public class H2SQLExceptionTranslator {
                 .filter(it -> it.contains(sqlException.getErrorCode()))
                 .findFirst()
                 .map(it -> it.translate(sqlException))
-                .orElse(new DataAccessException(sqlException));
+                .orElseGet(() -> new DataAccessException(sqlException));
     }
 }

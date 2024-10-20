@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import javax.sql.DataSource;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementCallBack;
-import com.interface21.transaction.support.JdbcTransaction;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -18,7 +17,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(UserHistory userHistory, JdbcTransaction transaction) {
+    public void log(UserHistory userHistory) {
         String sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         PreparedStatementCallBack callBack = pstmt -> {
@@ -30,6 +29,6 @@ public class UserHistoryDao {
             pstmt.setString(6, userHistory.getCreateBy());
         };
 
-        jdbcTemplate.update(sql, callBack, transaction);
+        jdbcTemplate.update(sql, callBack);
     }
 }

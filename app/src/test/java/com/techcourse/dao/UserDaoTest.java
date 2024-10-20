@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.interface21.transaction.support.JdbcTransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -12,14 +11,12 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private UserDao userDao;
-    private JdbcTransactionManager transactionManager;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
-        transactionManager = new JdbcTransactionManager(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -63,7 +60,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user, transactionManager.getTransaction());
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
