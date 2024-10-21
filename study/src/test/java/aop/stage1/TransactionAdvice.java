@@ -3,13 +3,14 @@ package aop.stage1;
 import aop.DataAccessException;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-/**
- * 어드바이스(advice). 부가기능을 담고 있는 클래스
- */
+@Primary
+@Component
 public class TransactionAdvice implements MethodInterceptor {
 
     private final PlatformTransactionManager transactionManager;
