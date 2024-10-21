@@ -51,6 +51,19 @@ public class JdbcTemplate {
     public void updateWithConnection(final String sql, final Object... parameters) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         executeWithConnection(conn, sql, createPreparedStatementSetter(parameters));
+
+        if (isAutoCommit(conn)) {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private boolean isAutoCommit(Connection conn) {
+        try {
+            return conn.getAutoCommit();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private void executeWithConnection(final Connection conn, final String sql, final PreparedStatementSetter pss) {
