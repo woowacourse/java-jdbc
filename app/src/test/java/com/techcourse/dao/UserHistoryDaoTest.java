@@ -14,7 +14,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class UserHistoryDaoTest {
 
-    private final UserHistoryDao userHistoryDao = new UserHistoryDao(new JdbcTemplate());
+    private final UserHistoryDao userHistoryDao = new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance()));
     private final TransactionManager transactionManager = new TransactionManager(DataSourceConfig.getInstance());
 
     @BeforeEach
@@ -25,9 +25,9 @@ class UserHistoryDaoTest {
     @Test
     void insert() {
         UserHistory userHistory = new UserHistory(1L, 1L, "eden", "povverGuy", "eden@wtc.com", "2024-10-12");
-        transactionManager.executeInTransaction(conn -> userHistoryDao.log(conn, userHistory));
+        transactionManager.executeInTransaction(() -> userHistoryDao.log(userHistory));
 
-        var actual = transactionManager.getResultInTransaction(conn -> userHistoryDao.findById(conn, 1L));
+        var actual = transactionManager.getResultInTransaction(() -> userHistoryDao.findById(1L));
 
         assertAll(
                 () -> assertThat(actual.getAccount()).isEqualTo(userHistory.getAccount()),
