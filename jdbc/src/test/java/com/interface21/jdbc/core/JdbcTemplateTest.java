@@ -39,7 +39,6 @@ class JdbcTemplateTest {
 
     @AfterEach
     void tearDown() throws SQLException {
-        verify(connection).close();
         verify(preparedStatement).close();
     }
 

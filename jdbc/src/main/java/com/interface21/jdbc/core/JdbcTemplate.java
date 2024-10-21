@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,24 +28,10 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection()) {
-            return update(connection, sql, preparedStatementSetter);
-        } catch (SQLException e) {
-            throw new DataAccessException("Error insert sql: " + sql, e);
-        }
-    }
-
-    public int update(Connection connection, String sql, Object... params) {
-        return update(connection, sql, new ArgumentPreparedStatementSetter(params));
-    }
-
-    public int update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        return execute(sql, statement -> {
             preparedStatementSetter.setValues(statement);
             return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Error insert sql: " + sql, e);
-        }
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -64,12 +51,20 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        return execute(sql, statement -> {
             preparedStatementSetter.setValues(statement);
             return queryForAll(statement, rowMapper);
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            return callback.doInStatement(statement);
         } catch (SQLException e) {
-            throw new DataAccessException("Error insert sql: " + sql, e);
+            throw new DataAccessException("Error executing SQL: " + sql, e);
+        } finally {
+            closeNotTransactionConnection(connection);
         }
     }
 
@@ -80,5 +75,11 @@ public class JdbcTemplate {
             result.add(rowMapper.mapRow(resultSet));
         }
         return result;
+    }
+
+    private void closeNotTransactionConnection(Connection connection) {
+        if (DataSourceUtils.isTransactionNotActive(connection, dataSource)) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 }

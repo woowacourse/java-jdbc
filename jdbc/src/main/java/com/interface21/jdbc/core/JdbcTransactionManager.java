@@ -3,8 +3,9 @@ package com.interface21.jdbc.core;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTransactionManager {
 
@@ -14,22 +15,26 @@ public class JdbcTransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void execute(Consumer<Connection> consumer) {
-        try (Connection connection = dataSource.getConnection()) {
-            executeInTransaction(consumer, connection);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to acquire or manage database connection", e);
-        }
+    public void execute(Runnable runnable) {
+        execute(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
-    private void executeInTransaction(Consumer<Connection> consumer, Connection connection) {
+    public  <T> T execute(Supplier<T> supplier) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            consumer.accept(connection);
+            T result = supplier.get();
             connection.commit();
-        } catch (SQLException e) {
+            return result;
+        } catch (Exception e) {
             rollbackInTransaction(connection);
             throw new DataAccessException("Transaction failed and was rolled back", e);
+        } finally {
+            setAutoCommit(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -38,6 +43,14 @@ public class JdbcTransactionManager {
             connection.rollback();
         } catch (SQLException e) {
             throw new DataAccessException("Roll back failed", e);
+        }
+    }
+
+    private void setAutoCommit(Connection connection) {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DataAccessException("Fail to set auto commit to true", e);
         }
     }
 }
