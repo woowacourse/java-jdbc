@@ -1,10 +1,10 @@
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,50 +19,49 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public void performTransaction(Consumer<Connection> consumer) {
-        try (Connection connection = dataSource.getConnection()) {
-            performTransaction(connection, consumer);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-
-            throw new DataAccessException(exception);
-        }
+    public void performTransaction(Runnable runnable) {
+        performTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
-    public <R> R performTransaction(Function<Connection, R> function) {
-        try (Connection connection = dataSource.getConnection()) {
-            return performTransaction(connection, function);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
+    public <T> T performTransaction(Supplier<T> supplier) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-            throw new DataAccessException(exception);
-        }
-    }
-
-    private void performTransaction(Connection connection, Consumer<Connection> consumer) throws SQLException {
         try {
             connection.setAutoCommit(false);
-            consumer.accept(connection);
-            connection.commit();
-        } catch (Exception exception) {
-            log.error(exception.getMessage(), exception);
-
-            connection.rollback();
-            throw new DataAccessException(exception);
-        }
-    }
-
-    private <R> R performTransaction(Connection connection, Function<Connection, R> function) throws SQLException {
-        try {
-            connection.setAutoCommit(false);
-            R result = function.apply(connection);
+            T result = supplier.get();
             connection.commit();
             return result;
         } catch (Exception exception) {
             log.error(exception.getMessage(), exception);
 
+            rollback(connection);
+            throw new DataAccessException("Failed to perform transaction", exception);
+        } finally {
+            setAutoCommit(connection, true);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
             connection.rollback();
-            throw new DataAccessException(exception);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+
+            throw new DataAccessException("Failed to rollback", exception);
+        }
+    }
+
+    private void setAutoCommit(Connection connection, boolean autoCommit) {
+        try {
+            connection.setAutoCommit(autoCommit);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+
+            throw new DataAccessException("Failed to set auto commit", exception);
         }
     }
 }
