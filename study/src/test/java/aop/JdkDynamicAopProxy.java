@@ -8,11 +8,11 @@ public class JdkDynamicAopProxy {
     private Class<?> interfaces;
     private InvocationHandler invocationHandler;
 
-    public void addAdvice(final InvocationHandler invocationHandler) {
+    public void addAdvice(InvocationHandler invocationHandler) {
         this.invocationHandler = invocationHandler;
     }
 
-    public void setInterfaces(final Class<?> interfaces) {
+    public void setInterfaces(Class<?> interfaces) {
         this.interfaces = interfaces;
     }
 

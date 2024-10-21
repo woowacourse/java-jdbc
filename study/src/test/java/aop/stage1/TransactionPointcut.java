@@ -12,7 +12,7 @@ import org.springframework.aop.support.StaticMethodMatcherPointcut;
 public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
-    public boolean matches(final Method method, final Class<?> targetClass) {
+    public boolean matches(Method method, Class<?> targetClass) {
         return method.isAnnotationPresent(Transactional.class);
     }
 }

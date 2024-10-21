@@ -41,7 +41,7 @@ class Stage1Test {
 
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
         proxyFactoryBean = new ProxyFactoryBean();
@@ -56,13 +56,13 @@ class Stage1Test {
     void testChangePassword() {
         UserService userService = new UserService(userDao, userHistoryDao);
         proxyFactoryBean.setTarget(userService);
-        final UserService proxyService = (UserService) proxyFactoryBean.getObject();
+        UserService proxyService = (UserService) proxyFactoryBean.getObject();
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        String newPassword = "qqqqq";
+        String createBy = "gugu";
         proxyService.changePassword(1L, newPassword, createBy);
 
-        final var actual = proxyService.findById(1L);
+        User actual = proxyService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -71,14 +71,14 @@ class Stage1Test {
     void testTransactionRollback() {
         UserService userService = new UserService(userDao, stubUserHistoryDao);
         proxyFactoryBean.setTarget(userService);
-        final UserService proxyService = (UserService) proxyFactoryBean.getObject();
+        UserService proxyService = (UserService) proxyFactoryBean.getObject();
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        String newPassword = "newPassword";
+        String createBy = "gugu";
         assertThrows(DataAccessException.class,
                 () -> proxyService.changePassword(1L, newPassword, createBy));
 
-        final var actual = proxyService.findById(1L);
+        User actual = proxyService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

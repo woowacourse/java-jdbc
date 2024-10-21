@@ -8,12 +8,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class StubUserHistoryDao extends UserHistoryDao {
 
-    public StubUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public StubUserHistoryDao(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public void log(final UserHistory userHistory) {
+    public void log(UserHistory userHistory) {
         throw new DataAccessException();
     }
 }

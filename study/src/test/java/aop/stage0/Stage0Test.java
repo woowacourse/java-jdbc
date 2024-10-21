@@ -38,7 +38,7 @@ class Stage0Test {
 
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
@@ -52,11 +52,11 @@ class Stage0Test {
 
         UserService proxyService = (UserService) jdkDynamicAopProxy.getProxy();
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        String newPassword = "qqqqq";
+        String createBy = "gugu";
         proxyService.changePassword(1L, newPassword, createBy);
 
-        final var actual = proxyService.findById(1L);
+        User actual = proxyService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -71,12 +71,12 @@ class Stage0Test {
 
         UserService proxy = (UserService) jdkDynamicAopProxy.getProxy();
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        String newPassword = "newPassword";
+        String createBy = "gugu";
         assertThrows(Exception.class,
                 () -> proxy.changePassword(1L, newPassword, createBy));
 
-        final var actual = proxy.findById(1L);
+        User actual = proxy.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
