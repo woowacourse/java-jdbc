@@ -26,11 +26,14 @@ public class TransactionHandler implements InvocationHandler {
             return method.invoke(target, args);
         }
         TransactionStatus transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        Object object = invokeHandler(method, args, transactionStatus);
+        transactionManager.commit(transactionStatus);
+        return object;
+    }
 
+    private Object invokeHandler(Method method, Object[] args, TransactionStatus transactionStatus) {
         try {
-            Object result = method.invoke(target, args);
-            transactionManager.commit(transactionStatus);
-            return result;
+            return method.invoke(target, args);
         } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
