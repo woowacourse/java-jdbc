@@ -37,15 +37,14 @@ class JdbcTemplateTest {
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(any(), anyInt())).willReturn(preparedStatement);
+        given(connection.getAutoCommit()).willReturn(true);
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @AfterEach
-    void tearDown() {
-        assertAll(
-                () -> verify(connection).close(),
-                () -> verify(preparedStatement).close()
-        );
+    void tearDown() throws SQLException {
+        verify(connection).close();
+        verify(preparedStatement).close();
     }
 
     @DisplayName("update시 전달받은 인자를 statement에 연결해준다.")

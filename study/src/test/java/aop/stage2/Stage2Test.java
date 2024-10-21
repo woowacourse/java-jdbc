@@ -1,22 +1,20 @@
 package aop.stage2;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import aop.DataAccessException;
 import aop.StubUserHistoryDao;
 import aop.domain.User;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import transaction.stage1.jdbc.JdbcTemplate;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage2Test {
-
-    private static final Logger log = LoggerFactory.getLogger(Stage2Test.class);
 
     @Autowired
     private UserService userService;
@@ -24,19 +22,25 @@ class Stage2Test {
     @Autowired
     private StubUserHistoryDao stubUserHistoryDao;
 
+    @Autowired
+    private DataSource dataSource;
+
     @BeforeEach
     void setUp() {
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update("DELETE FROM users;");
+        jdbcTemplate.update("ALTER TABLE users AUTO_INCREMENT=1;");
+        User user = new User("gugu", "password", "hkkang@woowahan.com");
         userService.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        String newPassword = "newPassword";
+        String createdBy = "gugu";
+        userService.changePassword(1L, newPassword, createdBy);
 
-        final var actual = userService.findById(1L);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -45,12 +49,11 @@ class Stage2Test {
     void testTransactionRollback() {
         userService.setUserHistoryDao(stubUserHistoryDao);
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
-
-        final var actual = userService.findById(1L);
+        String newPassword = "newPassword";
+        String createdBy = "gugu";
+        assertThatThrownBy(() -> userService.changePassword(1L, newPassword, createdBy))
+                .isInstanceOf(DataAccessException.class);
+        User actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

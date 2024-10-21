@@ -14,12 +14,11 @@ import org.junit.jupiter.api.Test;
 class UserHistoryDaoTest {
 
     private UserHistoryDao userHistoryDao;
-    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
     }
 
