@@ -49,8 +49,12 @@ public class TransactionManager {
     public void doClose(DataSource dataSource) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        DataSourceUtils.releaseConnection(connection, dataSource);
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        try {
+            connection.close();
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        } catch (SQLException e) {
+            throw new DataAccessException(TRANSACTION_FAIL_EXCEPTION);
+        }
     }
 
     public DataSource getDatasource() {

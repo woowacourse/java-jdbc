@@ -65,8 +65,7 @@ class JdbcTemplateTest {
         int rowCount = jdbcTemplate.update(sql, argumentPreparedStatementSetter);
 
         assertAll(
-                () -> assertThat(rowCount).isEqualTo(1),
-                () -> verify(connection, atLeastOnce()).commit()
+                () -> assertThat(rowCount).isEqualTo(1)
         );
     }
 
