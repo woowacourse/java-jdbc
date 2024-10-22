@@ -30,10 +30,13 @@ public class TransactionManager {
             return result;
 
         } catch (SQLException e) {
-            rollback(connection);
             throw new DataAccessException(e);
 
-        } finally {
+        } catch(RuntimeException e) {
+            rollback(connection);
+            throw e;
+
+        }finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
