@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.support.DataAccessUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -69,29 +70,16 @@ public class JdbcTemplate {
         return update(sql, new ArgumentsPreparedStatementSetter(args));
     }
 
-    public int update(Connection connection, String sql, Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, new ArgumentsPreparedStatementSetter(args));
-    }
-
     private <T> T execute(String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             parameterSetter.setParameters(pstmt);
             return callback.doInStatement(pstmt);
         } catch (SQLException exception) {
             log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
             throw new DataAccessException("쿼리 실행 에러 발생", exception);
-        }
-    }
-
-    private <T> T execute(Connection connection, String sql, StatementCallback<T> callback, ParameterSetter parameterSetter) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            parameterSetter.setParameters(pstmt);
-            return callback.doInStatement(pstmt);
-        } catch (SQLException exception) {
-            log.error("쿼리 실행 중 에러가 발생했습니다.", exception);
-            throw new DataAccessException("쿼리 실행 에러 발생", exception);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }

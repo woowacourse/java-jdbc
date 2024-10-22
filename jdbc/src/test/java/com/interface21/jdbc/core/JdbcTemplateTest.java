@@ -4,20 +4,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 
 class JdbcTemplateTest {
 
@@ -32,6 +36,8 @@ class JdbcTemplateTest {
     @Mock
     private RowMapper<TestUser> rowMapper;
 
+    MockedStatic<DataSourceUtils> dataSourceUtils;
+
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -41,12 +47,18 @@ class JdbcTemplateTest {
         pstmt = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
         rowMapper = mock(RowMapper.class);
+        dataSourceUtils = mockStatic(DataSourceUtils.class);
 
-        when(dataSource.getConnection()).thenReturn(connection);
+        dataSourceUtils.when(() -> DataSourceUtils.getConnection(dataSource)).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(pstmt);
         when(pstmt.executeQuery()).thenReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void cleanup() {
+        dataSourceUtils.close();
     }
 
     @DisplayName("query() : 1개 이상의 결과를 조회한다.")
@@ -65,7 +77,7 @@ class JdbcTemplateTest {
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(3)).next(),
                 () -> verify(rowMapper, times(2)).mapRow(resultSet),
-                () -> verify(connection).close(),
+                () -> dataSourceUtils.verify(() -> DataSourceUtils.releaseConnection(connection, dataSource)),
                 () -> verify(pstmt).close(),
                 () -> verify(resultSet).close()
         );
@@ -79,14 +91,14 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, false);
         when(rowMapper.mapRow(resultSet)).thenReturn(kaki);
 
-        TestUser testUser = jdbcTemplate.queryForObject(sql, rowMapper);
+        jdbcTemplate.queryForObject(sql, rowMapper);
 
         assertAll(
                 () -> verify(connection).prepareStatement(sql),
                 () -> verify(pstmt).executeQuery(),
                 () -> verify(resultSet, times(2)).next(),
                 () -> verify(rowMapper).mapRow(resultSet),
-                () -> verify(connection).close(),
+                () -> dataSourceUtils.verify(() -> DataSourceUtils.releaseConnection(connection, dataSource)),
                 () -> verify(pstmt).close(),
                 () -> verify(resultSet).close()
         );
@@ -131,7 +143,7 @@ class JdbcTemplateTest {
                 () -> verify(pstmt).setObject(1, "aru"),
                 () -> verify(pstmt).setObject(2, 1),
                 () -> verify(pstmt).executeUpdate(),
-                () -> verify(connection).close(),
+                () -> dataSourceUtils.verify(() -> DataSourceUtils.releaseConnection(connection, dataSource)),
                 () -> verify(pstmt).close()
         );
     }
