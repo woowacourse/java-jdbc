@@ -4,7 +4,6 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import org.springframework.transaction.annotation.Transactional;
 
 public class AppUserService implements UserService {
     private UserDao userDao;
@@ -26,7 +25,6 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
         User user = findById(id);
         user.changePassword(newPassword);
