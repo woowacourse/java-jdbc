@@ -30,12 +30,16 @@ public abstract class DataSourceUtils {
         try {
             connection.close();
             Connection releasedConnection = TransactionSynchronizationManager.unbindResource(dataSource);
-            if (releasedConnection != null && !releasedConnection.isClosed()) {
+            if (releasedConnection != null && isOpenConnection(releasedConnection)) {
                 releasedConnection.close();
             }
 
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
+    }
+
+    private static boolean isOpenConnection(Connection connection) throws SQLException {
+        return !connection.isClosed();
     }
 }
