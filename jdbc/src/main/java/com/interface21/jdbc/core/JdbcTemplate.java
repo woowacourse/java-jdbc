@@ -1,12 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,54 +16,48 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private final DataSource dataSource;
 
-    public JdbcTemplate() {
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public void execute(Connection connection, String sql, Object... args) {
-        executeStatement(connection, sql, PreparedStatement::execute, new ArgumentPreparedStatementSetter(args));
+    public void execute(String sql, Object... args) {
+        executeStatement(sql, PreparedStatement::execute, new ArgumentPreparedStatementSetter(args));
     }
 
-    public int update(Connection connection, String sql, Object... args) {
-        return update(connection, sql, new ArgumentPreparedStatementSetter(args));
+    public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
-    public int update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
-        return executeStatement(connection, sql, PreparedStatement::executeUpdate, preparedStatementSetter);
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        return executeStatement(sql, PreparedStatement::executeUpdate, preparedStatementSetter);
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
-        return queryForObject(connection, sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
-    public <T> T queryForObject(
-            Connection connection,
-            String sql,
-            RowMapper<T> rowMapper,
-            PreparedStatementSetter preparedStatementSetter) {
-        List<T> results = query(connection, sql, rowMapper, preparedStatementSetter);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        List<T> results = query(sql, rowMapper, preparedStatementSetter);
         validateSingleResult(results);
         return results.getFirst();
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(connection, sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
-    public <T> List<T> query(
-            Connection connection,
-            String sql,
-            RowMapper<T> rowMapper,
-            PreparedStatementSetter preparedStatementSetter) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         StatementExecutor<List<T>> statementExecutor = preparedStatement -> mapRows(preparedStatement, rowMapper);
-        return executeStatement(connection, sql, statementExecutor, preparedStatementSetter);
+        return executeStatement(sql, statementExecutor, preparedStatementSetter);
     }
 
     private <T> T executeStatement(
-            Connection connection,
             String sql,
             StatementExecutor<T> statementExecutor,
             PreparedStatementSetter preparedStatementSetter) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = prepareStatement(connection, sql, preparedStatementSetter)) {
             log.debug("query : {}", sql);
 
@@ -70,6 +66,8 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
 
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

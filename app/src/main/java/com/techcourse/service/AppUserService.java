@@ -1,32 +1,31 @@
-package aop.stage1;
+package com.techcourse.service;
 
-import aop.Transactional;
-import aop.domain.User;
-import aop.domain.UserHistory;
-import aop.repository.UserDao;
-import aop.repository.UserHistoryDao;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 
-public class UserService {
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao) {
+    public AppUserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
 
-    @Transactional
+    @Override
     public User findById(long id) {
         return userDao.findById(id);
     }
 
-    @Transactional
-    public void insert(User user) {
+    @Override
+    public void save(User user) {
         userDao.insert(user);
     }
 
-    @Transactional
+    @Override
     public void changePassword(long id, String newPassword, String createBy) {
         User user = findById(id);
         user.changePassword(newPassword);

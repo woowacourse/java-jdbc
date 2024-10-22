@@ -2,19 +2,19 @@ package com.interface21.jdbc.datasource;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
+    private DataSourceUtils() {
+    }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-        if (connection != null) {
+
+        if (isConnectionOpen(connection)) {
             return connection;
         }
 
@@ -27,11 +27,28 @@ public abstract class DataSourceUtils {
         }
     }
 
+    private static boolean isConnectionOpen(Connection connection) {
+        try {
+            return connection != null && !connection.isClosed();
+        } catch (SQLException ex) {
+            throw new CannotGetJdbcConnectionException("Failed to check if the JDBC Connection is closed", ex);
+        }
+    }
+
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            connection.close();
+            doReleaseConnection(connection, dataSource);
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
+    }
+
+    public static void doReleaseConnection(Connection connection, DataSource dataSource) throws SQLException {
+        if (!connection.getAutoCommit()) {
+            return;
+        }
+
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        connection.close();
     }
 }
