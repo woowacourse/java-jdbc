@@ -102,7 +102,7 @@ class Stage2Test {
         log.info("transactions : {}", actual);
         assertThat(actual)
                 .hasSize(1)
-                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /*
@@ -128,9 +128,15 @@ class Stage2Test {
     /*
     아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
     다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
-
     스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
 
+    주석 유지: X -> NOT_SUPPORTED
+    null is Actual Transaction Active : ❌ false
+    transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported is Actual Transaction Active : ❌ false
+
+    주석 해제: REQUIRED -> NOT_SUPPORTED
+    transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported is Actual Transaction Active : ✅ true
+    transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported is Actual Transaction Active : ❌ false
     */
     @Test
     void testNotSupported() {
@@ -138,12 +144,24 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly(
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported"
+                );
     }
 
     /*
     아래 테스트는 왜 실패할까? FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+
+    주석 유지: X -> NESTED
+    null is Actual Transaction Active : ❌ false
+    transaction.stage2.SecondUserService.saveSecondTransactionWithNested is Actual Transaction Active : ✅ true
+
+
+    주석 해제: REQUIRED -> NESTED
+    transaction.stage2.FirstUserService.saveFirstTransactionWithNested is Actual Transaction Active : ✅ true
+    org.springframework.transaction.NestedTransactionNotSupportedException: JpaDialect does not support savepoints - check your JPA provider's capabilities
     */
     @Test
     void testNested() {
@@ -151,13 +169,20 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /*
     마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
 
+    주석 유지: X -> NEVER
+    null is Actual Transaction Active : ❌ false
+    transaction.stage2.SecondUserService.saveSecondTransactionWithNever is Actual Transaction Active : ❌ false
+
+    주석 해제: REQUIRED -> NEVER
+    transaction.stage2.FirstUserService.saveFirstTransactionWithNever is Actual Transaction Active : ✅ true
+    org.springframework.transaction.IllegalTransactionStateException: Existing transaction found for transaction marked with propagation 'never'
     */
     @Test
     void testNever() {
@@ -165,7 +190,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
