@@ -30,7 +30,7 @@ public abstract class DataSourceUtils {
     public static void releaseConnection(DataSource dataSource) {
         try {
             Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-            if (connection.getAutoCommit()) {
+            if (connection != null && connection.getAutoCommit()) {
                 releaseDataSource(dataSource);
             }
         } catch (SQLException ex) {
