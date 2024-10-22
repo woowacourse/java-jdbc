@@ -1,5 +1,8 @@
 package aop.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import aop.DataAccessException;
 import aop.StubUserHistoryDao;
 import aop.domain.User;
@@ -9,12 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
@@ -41,7 +42,7 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        final UserService userService = getProxyUserService(new UserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -52,9 +53,21 @@ class Stage1Test {
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
+    private UserService getProxyUserService(UserService userService) {
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(userService);
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        TransactionPointcut pointcut = new TransactionPointcut();
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
+
+        return (UserService) proxyFactoryBean.getObject();
+    }
+
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        final UserService userService = getProxyUserService(new UserService(userDao, stubUserHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
