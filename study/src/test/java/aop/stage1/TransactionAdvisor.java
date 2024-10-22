@@ -9,15 +9,22 @@ import org.springframework.aop.PointcutAdvisor;
  * AOP의 애스팩트(aspect)에 해당되는 클래스다.
  */
 public class TransactionAdvisor implements PointcutAdvisor {
+    private final Pointcut pointcut;
+    private final Advice advice;
+
+    public TransactionAdvisor(Pointcut pointcut, Advice advice) {
+        this.pointcut = pointcut;
+        this.advice = advice;
+    }
 
     @Override
     public Pointcut getPointcut() {
-        return null;
+        return pointcut;
     }
 
     @Override
     public Advice getAdvice() {
-        return null;
+        return advice;
     }
 
     @Override
