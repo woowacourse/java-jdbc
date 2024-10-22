@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -28,11 +28,13 @@ class UserServiceTest {
         userDao = new UserDao(jdbcTemplate);
 
         jdbcTemplate.update("DELETE FROM users");
+        DataSourceUtils.releaseAllConnections();
         jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+        DataSourceUtils.releaseAllConnections();
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
     }
 
     @Test

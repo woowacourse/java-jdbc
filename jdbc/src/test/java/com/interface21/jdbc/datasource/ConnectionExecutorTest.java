@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,14 +18,13 @@ import org.junit.jupiter.api.Test;
 
 class ConnectionExecutorTest {
 
-    private DataSource dataSource;
     private Connection connection;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        dataSource = mock(DataSource.class);
+    void setUp() {
         connection = mock(Connection.class);
-        when(dataSource.getConnection()).thenReturn(connection);
+        DataSource dataSource = mock(DataSource.class);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
     }
 
     @DisplayName("입력된 Consumer를 하나의 트랜잭션 안에서 처리한다.")
@@ -35,11 +34,10 @@ class ConnectionExecutorTest {
         List<Integer> list = new ArrayList<>();
 
         // when
-        ConnectionExecutor.executeTransactional(dataSource, () -> addZero(list));
+        ConnectionExecutor.executeTransactional(() -> addZero(list));
 
         // then
         assertThat(list).contains(0);
-        verify(connection).setAutoCommit(false);
         verify(connection).commit();
         verify(connection).close();
     }
@@ -49,11 +47,10 @@ class ConnectionExecutorTest {
     void executeTransactional_rollback() throws SQLException {
         // when
         assertThatThrownBy(
-                () -> ConnectionExecutor.executeTransactional(dataSource, this::throwException))
+                () -> ConnectionExecutor.executeTransactional(this::throwException))
                 .isInstanceOf(DataAccessException.class);
 
         // then
-        verify(connection).setAutoCommit(false);
         verify(connection).rollback();
         verify(connection).close();
     }
@@ -65,7 +62,7 @@ class ConnectionExecutorTest {
         List<Integer> list = new ArrayList<>();
 
         // when
-        ConnectionExecutor.execute(dataSource, () -> addZero(list));
+        ConnectionExecutor.execute(() -> addZero(list));
 
         // then
         assertThat(list).contains(0);
@@ -76,7 +73,7 @@ class ConnectionExecutorTest {
     @Test
     void supply() throws SQLException {
         // when
-        int value = ConnectionExecutor.supply(dataSource, this::getZero);
+        int value = ConnectionExecutor.supply(this::getZero);
 
         // then
         assertThat(value).isEqualTo(0);

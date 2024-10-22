@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -14,12 +14,11 @@ import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
-    private DataSource dataSource;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        dataSource = DataSourceConfig.getInstance();
+        DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
@@ -29,12 +28,12 @@ class UserDaoTest {
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
     }
 
     @AfterEach
     void teardown() {
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
     }
 
     @Test
@@ -55,7 +54,7 @@ class UserDaoTest {
     void findByAccount() {
         final var account = "paper";
         userDao.insert(new User(account, "password", "paper@woowahan.com"));
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
@@ -66,7 +65,7 @@ class UserDaoTest {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
 
         final var actual = userDao.findById(2L);
 
@@ -77,11 +76,11 @@ class UserDaoTest {
     void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
         user.changePassword(newPassword);
 
         userDao.update(user);
-        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseAllConnections();
 
         final var actual = userDao.findById(1L);
 

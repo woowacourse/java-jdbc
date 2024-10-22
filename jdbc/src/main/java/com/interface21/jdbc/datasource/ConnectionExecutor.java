@@ -1,10 +1,7 @@
 package com.interface21.jdbc.datasource;
 
 import com.interface21.dao.DataAccessException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.function.Supplier;
-import javax.sql.DataSource;
 
 public class ConnectionExecutor {
 
@@ -12,49 +9,25 @@ public class ConnectionExecutor {
 
     }
 
-    public static void executeTransactional(DataSource dataSource, Runnable runnable) {
-        Connection connection = null;
+    public static void executeTransactional(Runnable runnable) {
         try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
             runnable.run();
-            connection.commit();
         } catch (Exception e) {
-            rollback(connection);
+            DataSourceUtils.rollbackAllConnections();
             throw new DataAccessException(e);
         } finally {
-            close(connection, dataSource);
+            DataSourceUtils.releaseAllConnections();
         }
     }
 
-    private static void rollback(Connection connection) {
-        if (connection == null) {
-            return;
-        }
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private static void close(Connection connection, DataSource dataSource) {
-        if (connection == null) {
-            return;
-        }
-        DataSourceUtils.releaseConnection(connection, dataSource);
-    }
-
-    public static void execute(DataSource dataSource, Runnable runnable) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+    public static void execute(Runnable runnable) {
         runnable.run();
-        DataSourceUtils.releaseConnection(connection, dataSource);
+        DataSourceUtils.releaseAllConnections();
     }
 
-    public static <T> T supply(DataSource dataSource, Supplier<T> supplier) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+    public static <T> T supply(Supplier<T> supplier) {
         T result = supplier.get();
-        DataSourceUtils.releaseConnection(connection, dataSource);
+        DataSourceUtils.releaseAllConnections();
         return result;
     }
 }
