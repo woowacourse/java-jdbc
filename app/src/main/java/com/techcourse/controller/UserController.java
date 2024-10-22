@@ -6,7 +6,7 @@ import com.interface21.web.bind.annotation.RequestMethod;
 import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JsonView;
 import com.techcourse.domain.User;
-import com.techcourse.service.UserService;
+import com.techcourse.service.model.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;

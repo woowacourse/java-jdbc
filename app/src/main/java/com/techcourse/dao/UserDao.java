@@ -7,7 +7,6 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,10 +46,10 @@ public class UserDao {
         log.info("user insert successful");
     }
 
-    public void updateWithTransaction(Connection connection, User user) {
+    public void updateWithTransaction(User user) {
         ArgumentPreparedStatementSetter argumentPreparedStatementSetter = setUserArguments(user);
 
-        jdbcTemplate.update(connection, UPDATE_USER_QUERY, argumentPreparedStatementSetter);
+        jdbcTemplate.update(UPDATE_USER_QUERY, argumentPreparedStatementSetter);
         log.info("user update successful");
     }
 

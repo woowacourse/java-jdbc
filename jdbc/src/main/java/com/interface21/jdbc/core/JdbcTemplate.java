@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,30 +28,21 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            int rows = executeUpdate(preparedStatementSetter, statement);
-            connection.commit();
-            return rows;
+            return executeUpdate(preparedStatementSetter, statement);
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
             throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
-        }
-    }
-
-    public void update(Connection connection, String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            executeUpdate(preparedStatementSetter, statement);
-        } catch (SQLException e) {
-            log.error("error : {}", e.getMessage(), e);
-            throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             preparedStatementSetter.setValues(statement);
             ResultSet resultSet = statement.executeQuery();
@@ -58,6 +50,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("error : {}", e.getMessage(), e);
             throw new DataAccessException(String.format(DATABASE_CONNECTION_ERROR, e.getMessage()));
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
