@@ -10,6 +10,12 @@ public class TxUserService implements UserService {
         this.userService = userService;
     }
 
+
+    @Override
+    public void save(User user) {
+        userService.save(user);
+    }
+
     @Override
     public User findById(long id) {
         return userService.findById(id);

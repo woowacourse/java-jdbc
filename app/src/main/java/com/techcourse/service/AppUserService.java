@@ -17,6 +17,11 @@ public class AppUserService implements UserService {
     }
 
     @Override
+    public void save(User user) {
+        userDao.insert(user);
+    }
+
+    @Override
     public User findById(long id) {
         return userDao.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));

@@ -29,6 +29,18 @@ class AppUserServiceTest {
     }
 
     @Test
+    void testSave() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new AppUserService(userDao, userHistoryDao);
+
+        User user = new User("gugu2", "password2", "hkkang2@woowahan.com");
+        userService.save(user);
+        final var actual = userService.findById(2L);
+
+        assertThat(actual.getAccount()).isEqualTo(user.getAccount());
+    }
+
+    @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new AppUserService(userDao, userHistoryDao);
