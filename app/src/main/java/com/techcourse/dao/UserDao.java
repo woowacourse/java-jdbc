@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.SqlParameterSource;
-import com.interface21.jdbc.core.mapper.ConstructorRowMapper;
 import com.interface21.jdbc.core.mapper.RowMapper;
 import com.techcourse.domain.User;
 
@@ -28,11 +27,16 @@ public class UserDao {
     public void insert(final User user) {
         final String baseQuery = "INSERT INTO users (account, password, email) VALUES (:account, :password, :email)";
         final SqlParameterSource sqlParameterSource = new SqlParameterSource(user);
-        jdbcTemplate.insert(baseQuery, sqlParameterSource);
+        jdbcTemplate.update(baseQuery, sqlParameterSource);
     }
 
-    private ConstructorRowMapper<User> rowMapper() {
-        return new ConstructorRowMapper<>(User.class);
+    private RowMapper<User> rowMapper() {
+        return (rs) -> new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        );
     }
 
     public void update(final User user) {
