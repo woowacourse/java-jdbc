@@ -20,18 +20,18 @@ public class TransactionHandler implements InvocationHandler {
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
-        if (targetMethod.isAnnotationPresent(Transactional.class)) {
-            final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
-            try {
-                Object result = method.invoke(target, args);
-                transactionManager.commit(transactionStatus);
-                return result;
-            } catch (Exception e) {
-                transactionManager.rollback(transactionStatus);
-                throw new DataAccessException(e);
-            }
+        if (!targetMethod.isAnnotationPresent(Transactional.class)) {
+            return method.invoke(target, args);
         }
-        return method.invoke(target, args);
+
+        final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        try {
+            Object result = method.invoke(target, args);
+            transactionManager.commit(transactionStatus);
+            return result;
+        } catch (Exception e) {
+            transactionManager.rollback(transactionStatus);
+            throw new DataAccessException(e);
+        }
     }
 }
