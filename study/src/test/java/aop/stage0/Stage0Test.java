@@ -37,6 +37,8 @@ class Stage0Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    private UserService userService;
+
     @BeforeEach
     void setUp() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -45,13 +47,7 @@ class Stage0Test {
 
     @Test
     void testChangePassword() {
-        final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = (UserService) Proxy.newProxyInstance(
-                appUserService.getClass().getClassLoader(),
-                appUserService.getClass().getInterfaces(),
-                new TransactionHandler(platformTransactionManager, appUserService)
-        );
-
+        initUserService(new AppUserService(userDao, userHistoryDao));
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -63,13 +59,7 @@ class Stage0Test {
 
     @Test
     void testTransactionRollback() {
-        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = (UserService) Proxy.newProxyInstance(
-                appUserService.getClass().getClassLoader(),
-                appUserService.getClass().getInterfaces(),
-                new TransactionHandler(platformTransactionManager, appUserService)
-        );
-
+        initUserService(new AppUserService(userDao, stubUserHistoryDao));
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         assertThrows(DataAccessException.class,
@@ -78,5 +68,13 @@ class Stage0Test {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    void initUserService(AppUserService appUserService) {
+        userService = (UserService) Proxy.newProxyInstance(
+                appUserService.getClass().getClassLoader(),
+                appUserService.getClass().getInterfaces(),
+                new TransactionHandler(platformTransactionManager, appUserService)
+        );
     }
 }
