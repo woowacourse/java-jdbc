@@ -14,7 +14,9 @@ import com.interface21.webmvc.servlet.view.JspView;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.service.AppUserService;
 import com.techcourse.service.UserService;
+import com.techcourse.service.transaction.TxUserService;
 
 @Controller
 public class LoginController {
@@ -24,7 +26,7 @@ public class LoginController {
     private final UserService userService;
 
     public LoginController() {
-        this.userService = new UserService(new UserDao(), new UserHistoryDao());
+        this.userService = new TxUserService(new AppUserService(new UserDao(), new UserHistoryDao()));
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)

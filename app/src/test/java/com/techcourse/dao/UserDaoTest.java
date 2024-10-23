@@ -2,8 +2,6 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.SQLException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,15 +14,13 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
 
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
-            userDao.insert(connection, user);
-        }
+        userDao.insert(user);
     }
 
     @Test
@@ -50,12 +46,10 @@ class UserDaoTest {
     }
 
     @Test
-    void insert() throws SQLException {
+    void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
-            userDao.insert(connection, user);
-        }
+        userDao.insert(user);
 
         final var actual = userDao.findById(2L);
 
@@ -63,14 +57,12 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException {
+    void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L).get();
         user.changePassword(newPassword);
 
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
-            userDao.update(connection, user);
-        }
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
