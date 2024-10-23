@@ -1,5 +1,7 @@
 package com.techcourse.service.transaction;
 
+import com.interface21.transaction.manager.TransactionManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.service.UserService;
 
@@ -23,11 +25,11 @@ public class TxUserService implements UserService {
 
     @Override
     public void save(User user) {
-        TransactionManager.runTransaction(() -> userService.save(user));
+        TransactionManager.runTransaction(() -> userService.save(user), DataSourceConfig.getInstance());
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        TransactionManager.runTransaction(() -> userService.changePassword(id, newPassword, createdBy));
+        TransactionManager.runTransaction(() -> userService.changePassword(id, newPassword, createdBy), DataSourceConfig.getInstance());
     }
 }

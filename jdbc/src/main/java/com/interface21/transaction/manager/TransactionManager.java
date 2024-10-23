@@ -1,4 +1,4 @@
-package com.techcourse.service.transaction;
+package com.interface21.transaction.manager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -7,14 +7,12 @@ import javax.sql.DataSource;
 
 import com.interface21.jdbc.core.exception.JdbcSQLException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.techcourse.config.DataSourceConfig;
 
 public class TransactionManager {
 
     private TransactionManager() {}
 
-    public static void runTransaction(TransactionExecutor executor) {
-        DataSource dataSource = DataSourceConfig.getInstance();
+    public static void runTransaction(TransactionExecutor executor, DataSource dataSource) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             executeWithinConnectionTransaction(connection, executor);

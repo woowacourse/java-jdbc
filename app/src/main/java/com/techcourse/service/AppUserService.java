@@ -1,10 +1,11 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.manager.TransactionManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import com.techcourse.service.transaction.TransactionManager;
 
 public class AppUserService implements UserService {
 
@@ -30,7 +31,7 @@ public class AppUserService implements UserService {
 
     @Override
     public void save(User user) {
-        TransactionManager.runTransaction(() -> userDao.insert(user));
+        TransactionManager.runTransaction(() -> userDao.insert(user), DataSourceConfig.getInstance());
     }
 
     @Override
@@ -39,8 +40,9 @@ public class AppUserService implements UserService {
         user.changePassword(newPassword);
 
         TransactionManager.runTransaction(() -> {
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
-        });
+                    userDao.update(user);
+                    userHistoryDao.log(new UserHistory(user, createBy));
+                },
+                DataSourceConfig.getInstance());
     }
 }
