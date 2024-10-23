@@ -1,8 +1,5 @@
 package com.interface21.jdbc.core;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -75,24 +73,26 @@ public class JdbcTemplate {
             final ResultSetExtractor<T> resultSetExtractor
     ) {
         log.debug("query : {}", sql);
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             if (resultSetExtractor == null) {
                 preparedStatement.executeUpdate();
                 return null;
             }
-            resultSet = preparedStatement.executeQuery();
+            final var resultSet = preparedStatement.executeQuery();
             return resultSetExtractor.extract(resultSet);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException("Failed to execute sql: %s".formatted(sql), e);
         } finally {
-            JdbcResourceCloser.close(connection, preparedStatement, resultSet);
+            try {
+                if (connection.getAutoCommit()) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException e) {
+                throw new DataAccessException("Failed to release connection.", e);
+            }
         }
     }
 
