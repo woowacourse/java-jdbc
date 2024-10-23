@@ -1,6 +1,8 @@
 package aop.stage1;
 
-import aop.DataAccessException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import aop.StubUserHistoryDao;
 import aop.domain.User;
 import aop.repository.UserDao;
@@ -9,12 +11,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import transaction.stage1.jdbc.DataAccessException;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
@@ -33,15 +34,26 @@ class Stage1Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    private ProxyFactoryBean proxyFactoryBean;
+
     @BeforeEach
     void setUp() {
+        proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setProxyTargetClass(true);
+        TransactionPointcut pointcut = new TransactionPointcut();
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        UserService target = new UserService(userDao, userHistoryDao);
+        proxyFactoryBean.setTarget(target);
+
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +66,10 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        UserService target = new UserService(userDao, stubUserHistoryDao);
+        proxyFactoryBean.setTarget(target);
+
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
