@@ -63,8 +63,11 @@ class Stage0Test {
 
     @Test
     void testTransactionRollback() {
-        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = null;
+        AppUserService appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        UserService userService = (UserService) Proxy.newProxyInstance(
+                appUserService.getClass().getClassLoader(),
+                appUserService.getClass().getInterfaces(),
+                new TransactionHandler(platformTransactionManager, appUserService));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
