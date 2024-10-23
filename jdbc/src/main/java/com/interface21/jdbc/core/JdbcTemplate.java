@@ -1,8 +1,10 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.DataQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,12 +18,15 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final PreparedStatementSetter preparedStatementSetter;
+    private final DataSource dataSource;
 
-    public JdbcTemplate() {
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
         this.preparedStatementSetter = new PreparedStatementSetter();
     }
 
-    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... values) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... values) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         return Optional.ofNullable(executeQuery(connection, sql,
                 resultSet -> mapSingleRow(rowMapper, resultSet),
                 values)
@@ -35,7 +40,8 @@ public class JdbcTemplate {
         return null;
     }
 
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... values) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... values) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         return executeQuery(connection, sql,
                 resultSet -> mapRows(rowMapper, resultSet),
                 values);
@@ -60,7 +66,8 @@ public class JdbcTemplate {
         }));
     }
 
-    public void update(Connection connection, String sql, Object... values) {
+    public void update(String sql, Object... values) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         execute(connection, sql, (preparedStatement -> {
             log.debug("query : {}", sql);
             preparedStatementSetter.setValues(values, preparedStatement);
