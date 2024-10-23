@@ -31,7 +31,7 @@ public class TransactionManager {
             connection.setAutoCommit(false);
             executor.execute();
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             connection.rollback();
             throw e;
         }
