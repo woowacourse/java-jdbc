@@ -5,6 +5,7 @@ import aop.Transactional;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -31,7 +32,15 @@ public class TransactionHandler implements InvocationHandler {
             platformTransactionManager.commit(transactionStatus);
             return result;
         } catch (Exception e) {
+            rollback(transactionStatus);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(TransactionStatus transactionStatus) {
+        try {
             platformTransactionManager.rollback(transactionStatus);
+        } catch (TransactionException e) {
             throw new DataAccessException(e);
         }
     }
