@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,6 +33,16 @@ public class JdbcTemplate {
         }
     }
 
+    private boolean isNewConnection() {
+        return TransactionSynchronizationManager.getResource(dataSource) == null;
+    }
+
+    private void releaseConnection(boolean isNewConnection, Connection connection) {
+        if (isNewConnection) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
 
@@ -47,6 +58,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        boolean isNewConnection = isNewConnection();
         Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
         ResultSet resultSet = execute(preparedStatement, args);
@@ -56,6 +68,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("EXECUTE_QUERY_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        } finally {
+            releaseConnection(isNewConnection, connection);
         }
     }
 
@@ -78,6 +92,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        boolean isNewConnection = isNewConnection();
         Connection connection = DataSourceUtils.getConnection(dataSource);
         PreparedStatement preparedStatement = getPreparedStatement(connection, sql);
 
@@ -87,6 +102,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.info("EXECUTE_UPDATE_ERROR :: {}", e.getMessage(), e);
             throw new DataAccessException(sql + "을 실행하던 중 오류가 발생했습니다.");
+        } finally {
+            releaseConnection(isNewConnection, connection);
         }
     }
 }
