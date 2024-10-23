@@ -1,18 +1,22 @@
-create table if not exists users (
-    id bigint auto_increment,
-    account varchar(100) not null,
-    password varchar(100) not null,
-    email varchar(100) not null,
-    primary key(id)
+DROP TABLE IF EXISTS users;
+CREATE TABLE IF NOT EXISTS users
+(
+    id       BIGINT AUTO_INCREMENT,
+    account  VARCHAR(100) NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    email    VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
 );
 
-create table if not exists user_history (
-    id bigint auto_increment,
-    user_id bigint not null,
-    account varchar(100) not null,
-    password varchar(100) not null,
-    email varchar(100) not null,
-    created_at datetime not null,
-    created_by varchar(100) not null,
-    primary key(id)
+DROP TABLE IF EXISTS user_history;
+CREATE TABLE IF NOT EXISTS user_history
+(
+    id         BIGINT AUTO_INCREMENT,
+    user_id    BIGINT       NOT NULL,
+    account    VARCHAR(100) NOT NULL,
+    password   VARCHAR(100) NOT NULL,
+    email      VARCHAR(100) NOT NULL,
+    created_at DATETIME     NOT NULL,
+    created_by VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
 );

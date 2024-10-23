@@ -5,10 +5,14 @@ import aop.StubUserHistoryDao;
 import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import aop.service.AppUserService;
+import aop.stage0.TransactionHandler;
+import java.lang.reflect.Proxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,7 +45,17 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+
+        proxyFactoryBean.setTarget(appUserService);
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        TransactionPointcut pointcut = new TransactionPointcut();
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
+
+        AppUserService userService = (AppUserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +68,17 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+
+        proxyFactoryBean.setTarget(appUserService);
+        proxyFactoryBean.setProxyTargetClass(true);
+
+        TransactionPointcut pointcut = new TransactionPointcut();
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(pointcut, advice));
+
+        AppUserService userService = (AppUserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
