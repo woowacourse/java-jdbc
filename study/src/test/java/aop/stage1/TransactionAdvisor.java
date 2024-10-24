@@ -3,21 +3,28 @@ package aop.stage1;
 import org.aopalliance.aop.Advice;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.PointcutAdvisor;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * 어드바이저(advisor). 포인트컷과 어드바이스를 하나씩 갖고 있는 객체.
- * AOP의 애스팩트(aspect)에 해당되는 클래스다.
+ * 어드바이저(advisor). 포인트컷과 어드바이스를 하나씩 갖고 있는 객체. AOP의 애스팩트(aspect)에 해당되는 클래스다.
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
+    private final TransactionPointcut pointcut = new TransactionPointcut();
+    private final TransactionAdvice advice;
+
+    public TransactionAdvisor(PlatformTransactionManager transactionManager) {
+        advice = new TransactionAdvice(transactionManager);
+    }
+
     @Override
     public Pointcut getPointcut() {
-        return null;
+        return this.pointcut;
     }
 
     @Override
     public Advice getAdvice() {
-        return null;
+        return this.advice;
     }
 
     @Override
