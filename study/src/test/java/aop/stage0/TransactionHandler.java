@@ -23,9 +23,9 @@ public class TransactionHandler implements InvocationHandler {
     public Object invoke(final Object proxy, final Method method, final Object[] args) {
         var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            Object ret = method.invoke(target, args); // 타겟 객체의 메서드 실행
+            Object result = method.invoke(target, args); // 타겟 객체의 메서드 실행
             transactionManager.commit(transactionStatus);
-            return ret;
+            return result;
         } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
             throw new DataAccessException(e);
