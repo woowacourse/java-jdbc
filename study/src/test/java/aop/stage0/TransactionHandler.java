@@ -1,12 +1,13 @@
 package aop.stage0;
 
+import aop.DataAccessException;
 import aop.Transactional;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+
 
 public class TransactionHandler implements InvocationHandler {
 
@@ -21,21 +22,18 @@ public class TransactionHandler implements InvocationHandler {
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         if (method.isAnnotationPresent(Transactional.class)) {
-            return handleTransaction(method, args);
-        } else {
             return method.invoke(target, args);
         }
-    }
 
-    private Object handleTransaction(Method method, Object[] args) throws Throwable {
+        // 트랜잭션을 시작
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object result = method.invoke(target, args);
             transactionManager.commit(status);
             return result;
         } catch (Throwable ex) {
-            transactionManager.rollback(status);
-            throw ex;
+            transactionManager.rollback(status); // 실패 시 트랜잭션 롤백
+            throw new DataAccessException(ex);
         }
     }
 }
