@@ -28,7 +28,7 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        if (connection == null || isConnectionTransactional(connection, dataSource)) {
+        if (connection == null || isConnectionTransactional(connection)) {
             return;
         }
 
@@ -40,13 +40,13 @@ public abstract class DataSourceUtils {
         }
     }
 
-    private static boolean isConnectionTransactional(Connection connection, DataSource dataSource) {
+    private static boolean isConnectionTransactional(Connection connection) {
         if (connection == null) {
             return false;
         }
 
         try {
-            return !connection.isClosed() && connection.getMetaData().getURL().equals(dataSource.getConnection().getMetaData().getURL());
+            return !connection.isClosed() && !connection.getAutoCommit();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to determine if the connection is transactional", e);
         }
