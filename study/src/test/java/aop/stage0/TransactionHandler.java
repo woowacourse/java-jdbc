@@ -25,14 +25,13 @@ public class TransactionHandler implements InvocationHandler {
             return method.invoke(target, args);
         }
 
-        // 트랜잭션을 시작
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object result = method.invoke(target, args);
             transactionManager.commit(status);
             return result;
         } catch (Throwable ex) {
-            transactionManager.rollback(status); // 실패 시 트랜잭션 롤백
+            transactionManager.rollback(status);
             throw new DataAccessException(ex);
         }
     }
