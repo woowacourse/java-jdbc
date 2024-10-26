@@ -6,6 +6,7 @@ import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
 import aop.service.AppUserService;
+import aop.service.TxUserService;
 import aop.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class Stage0Test {
     @Test
     void testChangePassword() {
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = null;
+        final UserService userService = new TxUserService(platformTransactionManager, appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -59,7 +60,7 @@ class Stage0Test {
     @Test
     void testTransactionRollback() {
         final var appUserService = new AppUserService(userDao, stubUserHistoryDao);
-        final UserService userService = null;
+        final UserService userService = new TxUserService(platformTransactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
