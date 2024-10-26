@@ -1,26 +1,26 @@
 package com.techcourse.service;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.transaction.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
+
 	private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
+	private final TransactionManager transactionManager;
 	private final AppUserService appUserService;
-	private final DataSource dataSource = DataSourceConfig.getInstance();
 
-	public TxUserService(final AppUserService appUserService) {
+	public TxUserService(
+		final TransactionManager transactionManager,
+		final AppUserService appUserService
+	) {
+		this.transactionManager = transactionManager;
 		this.appUserService = appUserService;
 	}
 
@@ -29,23 +29,16 @@ public class TxUserService implements UserService {
 	}
 
 	public void insert(final User user) {
-		appUserService.insert(user);
+		final DataSource dataSource = DataSourceConfig.getInstance();
+		transactionManager.beginTransaction(dataSource, connection -> appUserService.insert(user));
 	}
 
 	public void changePassword(final long id, final String newPassword, final String createBy) {
-		Connection connection = DataSourceUtils.getConnection(dataSource);
-		try {
-			connection.setAutoCommit(false);
+		log.info("[TxUserService] changePassword: id={}, newPassword={}, createBy={}", id, newPassword, createBy);
+		final DataSource dataSource = DataSourceConfig.getInstance();
+
+		transactionManager.beginTransaction(dataSource, connection -> {
 			appUserService.changePassword(id, newPassword, createBy);
-			connection.commit();
-		} catch (Exception e) {
-			try {
-				connection.rollback();
-			} catch (SQLException ignored) {}
-			throw new DataAccessException("Failed to change password", e);
-		} finally {
-			DataSourceUtils.releaseConnection(connection, dataSource);
-			TransactionSynchronizationManager.unbindResource(dataSource);
-		}
+		});
 	}
 }

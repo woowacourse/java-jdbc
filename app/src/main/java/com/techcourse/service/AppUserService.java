@@ -8,7 +8,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-public class AppUserService implements UserService{
+public class AppUserService implements UserService {
+
 	private static final Logger log = LoggerFactory.getLogger(AppUserService.class);
 
 	private final UserDao userDao;
@@ -31,10 +32,10 @@ public class AppUserService implements UserService{
 	}
 
 	public void changePassword(final long id, final String newPassword, final String createBy) {
-		log.info("changePassword id={}, newPassword={}, createBy={}", id, newPassword, createBy);
+		log.info("[AppUserService] changePassword: id={}, newPassword={}, createBy={}", id, newPassword, createBy);
 		final User user = findById(id);
 		user.changePassword(newPassword);
 		userDao.update(user);
-		userHistoryDao.log(new UserHistory(user, createBy));
+		userHistoryDao.create(new UserHistory(user, createBy));
 	}
 }

@@ -34,33 +34,29 @@ public class UserDao {
 
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        log.info(sql);
-        jdbcTemplate.write(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        log.info(sql);
-        jdbcTemplate.write(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        log.info("[UserDao] updateWithTransactional: {}", user.toString());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        log.info(sql);
-        return jdbcTemplate.readAll(sql, userRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        log.info(sql);
-        final Optional<User> user = jdbcTemplate.read(sql, userRowMapper, id);
+        final Optional<User> user = jdbcTemplate.query(sql, userRowMapper, id);
         return user.orElseThrow(() -> new IllegalArgumentException("User가 존재하지 않습니다. id = " + id));
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        log.info(sql);
-        final Optional<User> user = jdbcTemplate.read(sql, userRowMapper, account);
+        final Optional<User> user = jdbcTemplate.query(sql, userRowMapper, account);
         return user.orElseThrow(() -> new IllegalArgumentException("User가 존재하지 않습니다. account = " + account));
     }
 }
