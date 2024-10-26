@@ -24,6 +24,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 - 매번 인터페이스 만들지 않아도 됨
 - 메서드 외에 클래스도 지정 가능함
 - 프록시 생성 방법(JDK Proxy 또는 CGLib) 정할 수 있음
+
+### 과정
+1. ProxyFactoryBean 객체를 생성
+    - 프록시할 타겟 빈을 설정
+    - 프록시 생성 방식 설정
+    - 프록시 객체에 부가기능을 적용할 Advisor를 추가
+2. getObject()를 호출하여 프록시 객체를 가져옴
+    - UserService처럼 동작하지만, 메서드 호출 시 트랜잭션 관리가 추가된 프록시 객체
 */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage1Test {
@@ -42,16 +50,16 @@ class Stage1Test {
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
-    private TransactionPointcut pointcut;
+    private TransactionPointcut pointcut; // 어드바이스(부가기능)를 적용할 조인 포인트를 선별하는 클래스
 
-    private TransactionAdvice advice;
+    private TransactionAdvice advice; //  부가기능을 담고 있는 클래스
 
     @BeforeEach
     void setUp() {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
-        pointcut = new TransactionPointcut();
-        advice = new TransactionAdvice(platformTransactionManager);
+        pointcut = new TransactionPointcut(); // 메서드에 트랜잭션 어노테이션 붙어있다면 부가 기능 적용
+        advice = new TransactionAdvice(platformTransactionManager); // 부가 기능으로 트랜잭션 적용
     }
 
     @Test
