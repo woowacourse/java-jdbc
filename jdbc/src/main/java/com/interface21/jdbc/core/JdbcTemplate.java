@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
@@ -29,10 +31,6 @@ public class JdbcTemplate {
         executeStatement(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public void update(Connection connection, String sql, Object... params) {
-        executeStatement(connection, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = query(sql, rowMapper, params);
         validateSingleResult(results);
@@ -48,34 +46,16 @@ public class JdbcTemplate {
     }
 
     private <T> T executeStatement(String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = prepareStatement(connection, sql, args)) {
-            log.debug("Executing query: {}", sql);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
-            return preparedStatementExecutor.execute(preparedStatement);
-        } catch (SQLException e) {
-            log.error("Error executing statement: {}", e.getMessage(), e);
-            throw new DataAccessException("Failed to execute statement", e);
-        }
-    }
-
-    private <T> T executeStatement(Connection connection, String sql, PreparedStatementExecutor<T> preparedStatementExecutor, Object... args) {
         try (PreparedStatement preparedStatement = prepareStatement(connection, sql, args)) {
             log.debug("Executing query: {}", sql);
-
             return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error("Error executing statement: {}", e.getMessage(), e);
             throw new DataAccessException("Failed to execute statement", e);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error("Failed to get connection", e);
-            throw new CannotGetJdbcConnectionException("Unable to get a connection", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

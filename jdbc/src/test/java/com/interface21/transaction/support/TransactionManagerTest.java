@@ -1,18 +1,17 @@
 package com.interface21.transaction.support;
 
+import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-
-import static org.mockito.Mockito.*;
 
 class TransactionManagerTest {
 
@@ -22,78 +21,78 @@ class TransactionManagerTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = Mockito.mock(DataSource.class);
-        connection = Mockito.mock(Connection.class);
-        transactionManager = new TransactionManager(dataSource);
+        dataSource = mock(DataSource.class);
+        connection = mock(Connection.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
+        DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(databaseMetaData);
+        when(databaseMetaData.getURL()).thenReturn("jdbc");
+
+        transactionManager = new TransactionManager(dataSource);
     }
 
-    @DisplayName("startTransaction 성공")
     @Test
-    void startTransaction() throws SQLException {
+    @DisplayName("트랜잭션이 시작 성공: auto-commit이 false로 설정")
+    void testBeginTransaction() throws SQLException {
         // given & when
-        Connection conn = transactionManager.startTransaction();
+        transactionManager.begin();
 
         // then
         verify(connection).setAutoCommit(false);
-        assertNotNull(conn);
     }
 
-    @DisplayName("startTransaction 실패")
     @Test
-    void startTransaction_dataAccessException() throws SQLException {
-        // give
-        when(dataSource.getConnection()).thenThrow(new SQLException("Connection error"));
+    @DisplayName("트랜잭션 커밋 성공")
+    void testCommitTransaction() throws SQLException {
+        // given
+        transactionManager.begin();
 
-        // when & then
-        DataAccessException exception = assertThrows(DataAccessException.class,
-                () -> transactionManager.startTransaction());
-        assertEquals("Failed to start transaction", exception.getMessage());
-    }
-
-    @DisplayName("commit 성공")
-    @Test
-    void commit() throws SQLException {
-        // given & when
-        transactionManager.commit(connection);
+        // when
+        transactionManager.commit();
 
         // then
         verify(connection).commit();
     }
 
-    @DisplayName("commit 실패")
     @Test
-    void commit_dataAccessException() throws SQLException {
+    @DisplayName("롤백 성공")
+    void testRollbackTransaction() throws SQLException {
         // given
-        doThrow(new SQLException("Commit error")).when(connection).commit();
+        transactionManager.begin();
 
-        // when & then
-        DataAccessException exception = assertThrows(DataAccessException.class,
-                () -> transactionManager.commit(connection));
-        assertEquals("Failed to commit transaction", exception.getMessage());
-    }
+        // when
+        transactionManager.rollback();
 
-    @DisplayName("rollback 성공")
-    @Test
-    void rollback() throws SQLException {
-        // given & when
-        transactionManager.rollback(connection);
-
-        // then:
+        // then
         verify(connection).rollback();
     }
 
-    @DisplayName("rollback 실패")
     @Test
-    void rollback_dataAccessException() throws SQLException {
-        // given
-        doThrow(new SQLException("Rollback error")).when(connection).rollback();
+    @DisplayName("트랜잭션 내 실행 성공 : 커밋")
+    void testExecuteInTransactionSuccess() throws SQLException {
+        // given & when
+        transactionManager.executeInTransaction(() -> {
+        });
 
-        // when & then
-        DataAccessException exception = assertThrows(DataAccessException.class,
-                () -> transactionManager.rollback(connection));
-        assertEquals("Failed to rollback transaction", exception.getMessage());
+        // then
+        verify(connection).setAutoCommit(false);
+        verify(connection).commit();
+    }
+
+    @Test
+    @DisplayName("트랜잭션 내 실행 실패 : 롤백")
+    void testExecuteInTransactionFailure() throws SQLException {
+        // given & when
+        assertThrows(DataAccessException.class, () -> {
+            transactionManager.executeInTransaction(() -> {
+                throw new RuntimeException();
+            });
+        });
+
+        // then
+        verify(connection).rollback();
     }
 }
+
 
