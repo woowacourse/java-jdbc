@@ -23,10 +23,10 @@ public class TransactionAdvice implements MethodInterceptor {
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         final TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
-            Object object = Objects.requireNonNull(invocation.proceed());
+            Object object = invocation.proceed();
             transactionManager.commit(status);
             return object;
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             transactionManager.rollback(status);
             throw new DataAccessException();
         }
