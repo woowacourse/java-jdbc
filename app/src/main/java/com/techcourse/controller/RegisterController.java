@@ -11,7 +11,9 @@ import com.interface21.webmvc.servlet.view.JspView;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.service.AppUserService;
 import com.techcourse.service.UserService;
+import com.techcourse.service.transaction.TxUserService;
 
 @Controller
 public class RegisterController {
@@ -19,7 +21,7 @@ public class RegisterController {
     private final UserService userService;
 
     public RegisterController() {
-        this.userService = new UserService(new UserDao(), new UserHistoryDao());
+        this.userService = new TxUserService(new AppUserService(new UserDao(), new UserHistoryDao()));
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
@@ -28,7 +30,7 @@ public class RegisterController {
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        userService.insert(user);
+        userService.save(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }

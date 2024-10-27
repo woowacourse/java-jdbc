@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,14 +32,14 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final Connection connection, final User user) {
+    public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final Connection connection, final User user) {
+    public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ?";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
