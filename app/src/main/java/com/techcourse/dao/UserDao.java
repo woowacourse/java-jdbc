@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -31,12 +30,12 @@ public class UserDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void insert(Connection conn, User user) {
+    public void insert(User user) {
         String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void insertWithPss(Connection conn, User user) {
+    public void insertWithPss(User user) {
         String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
 
         PreparedStatementSetter pss = pstmt -> {
@@ -45,36 +44,36 @@ public class UserDao {
             pstmt.setString(3, user.getEmail());
         };
 
-        jdbcTemplate.update(conn, sql, pss);
+        jdbcTemplate.update(sql, pss);
     }
 
-    public void update(Connection conn, User user) {
+    public void update(User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll(Connection conn) {
+    public List<User> findAll() {
         String sql = "SELECT id, account, password, email FROM users";
-        return jdbcTemplate.query(conn, sql, userRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
-    public List<User> findAllByEmailWithPss(Connection conn, String email) {
+    public List<User> findAllByEmailWithPss(String email) {
         String sql = "SELECT id, account, password, email FROM users WHERE email = ?";
 
         PreparedStatementSetter pss = pstmt -> {
             pstmt.setString(1, email);
         };
 
-        return jdbcTemplate.query(conn, sql, pss, userRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper, pss);
     }
 
-    public User findById(Connection conn, Long id) {
+    public User findById(Long id) {
         String sql = "SELECT id, account, password, email FROM users WHERE id = ?";
-        return jdbcTemplate.queryForObject(conn, sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
-    public User findByAccount(Connection conn, String account) {
+    public User findByAccount(String account) {
         String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
-        return jdbcTemplate.queryForObject(conn, sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
