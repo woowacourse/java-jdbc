@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,12 +25,6 @@ public class UserDao {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.executeQuery(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
-    public void update(final User user, Connection connection) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        jdbcTemplate.executeQuery(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
