@@ -26,7 +26,7 @@ public class TxUserService implements UserService {
     @Override
     public void insert(User user) {
         transactionManager.executeTransaction(
-                (Consumer<Connection>) (connection) -> userService.insert(user)
+                (Consumer<Connection>) connection -> userService.insert(user)
         );
     }
 
