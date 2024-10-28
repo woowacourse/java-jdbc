@@ -19,20 +19,20 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(long id) {
-        return transactionManager.executeTransaction(
-                (Function<Connection, User>) connection -> userService.findById(id));
+        return transactionManager.executeTransactionWithResult(
+                connection -> userService.findById(id));
     }
 
     @Override
     public void insert(User user) {
-        transactionManager.executeTransaction(
-                (Consumer<Connection>) connection -> userService.insert(user)
+        transactionManager.executeTransactionWithoutResult(
+                connection -> userService.insert(user)
         );
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        transactionManager.executeTransaction(
-                (Consumer<Connection>) (connection) -> userService.changePassword(id, newPassword, createdBy));
+        transactionManager.executeTransactionWithoutResult(
+                (connection) -> userService.changePassword(id, newPassword, createdBy));
     }
 }

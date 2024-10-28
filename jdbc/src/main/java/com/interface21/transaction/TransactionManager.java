@@ -20,25 +20,26 @@ public class TransactionManager {
         this.dataSource = dataSource;
     }
 
-    public <T> T executeTransaction(Function<Connection, T> function) {
+    public <T> T executeTransactionWithResult(Function<Connection, T> function) {
         try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
-            return executeTransaction(function, connection);
+            return executeTransactionWithoutResult(function, connection);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    public void executeTransaction(Consumer<Connection> consumer) {
+    public void executeTransactionWithoutResult(Consumer<Connection> consumer) {
         try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
-            executeTransaction(consumer, connection);
+            executeTransactionWithoutResult(consumer, connection);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T executeTransaction(Function<Connection, T> function, Connection connection) throws SQLException {
+    private <T> T executeTransactionWithoutResult(Function<Connection, T> function, Connection connection)
+            throws SQLException {
         try {
             connection.setAutoCommit(false);
             T result = function.apply(connection);
@@ -52,7 +53,8 @@ public class TransactionManager {
         }
     }
 
-    private void executeTransaction(Consumer<Connection> consumer, Connection connection) throws SQLException {
+    private void executeTransactionWithoutResult(Consumer<Connection> consumer, Connection connection)
+            throws SQLException {
         try {
             connection.setAutoCommit(false);
             consumer.accept(connection);
