@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -16,13 +17,16 @@ import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
 
+    private TransactionManager transactionManager;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        final var dataSource = DataSourceConfig.getInstance();
+        transactionManager = new TransactionManager(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -33,7 +37,7 @@ class UserServiceTest {
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(transactionManager, appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,7 +52,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(transactionManager, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

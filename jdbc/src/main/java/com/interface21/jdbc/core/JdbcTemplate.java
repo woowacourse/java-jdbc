@@ -51,13 +51,24 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> action,
-                          final PreparedStatementSetter pss) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final PreparedStatementSetter pss) {
         final var conn = DataSourceUtils.getConnection(dataSource);
         try (final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        } finally {
+            releaseConnection(conn);
+        }
+    }
+
+    private void releaseConnection(final Connection conn) {
+        try {
+            if (conn.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
