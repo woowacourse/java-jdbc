@@ -1,14 +1,17 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TxUserService implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final AppUserService appUserService;
 
@@ -39,9 +42,9 @@ public class TxUserService implements UserService {
             try {
                 connection.rollback();
             } catch (SQLException ex) {
-                throw new DataAccessException("Failed to rollback", ex);
+                log.error(ex.getMessage(), ex);
             }
-            throw new DataAccessException(e);
+            throw new RuntimeException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
