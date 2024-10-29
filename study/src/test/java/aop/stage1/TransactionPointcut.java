@@ -1,5 +1,6 @@
 package aop.stage1;
 
+import aop.Transactional;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 import java.lang.reflect.Method;
@@ -14,6 +15,7 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
-        return false;
+        // @Transactional 애노테이션이 붙은 메서드만 대상으로 한다.
+        return method.isAnnotationPresent(Transactional.class);
     }
 }
