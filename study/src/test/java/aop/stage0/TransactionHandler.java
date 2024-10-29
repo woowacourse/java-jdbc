@@ -4,9 +4,6 @@ import aop.DataAccessException;
 import aop.Transactional;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -14,14 +11,10 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 public class TransactionHandler implements InvocationHandler {
 
     private final Object target;
-    private final Map<String, Method> transactionalMethods;
     private final PlatformTransactionManager transactionManager;
 
     public TransactionHandler(Object target, PlatformTransactionManager transactionManager) {
         this.target = target;
-        this.transactionalMethods = Arrays.stream(target.getClass().getDeclaredMethods())
-                .filter(method -> method.isAnnotationPresent(Transactional.class))
-                .collect(Collectors.toMap(Method::getName, method -> method));
         this.transactionManager = transactionManager;
     }
 
@@ -30,7 +23,9 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        if (transactionalMethods.containsKey(method.getName())) {
+        Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
+
+        if (targetMethod.isAnnotationPresent(Transactional.class)) {
             return invokeWithTransaction(target, method, args);
         }
 
