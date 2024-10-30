@@ -10,6 +10,7 @@ import com.techcourse.domain.User;
 public class TxUserService implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
+
     private final UserService userService;
     private final TransactionManager transactionManager;
 
