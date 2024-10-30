@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 public class AutocommitConnectionTest {
 
-    @DisplayName("커넥션이 재사용될 경우, autocomit의 상태를 물려 받는다.")
+    @DisplayName("커넥션이 재사용될 경우, HikariPool은 autocomit의 상태를 물려 받지 않는다.")
     @Test
     void connectionAutoCommit() throws SQLException {
         HikariConfig config = new HikariConfig();
@@ -27,6 +27,6 @@ public class AutocommitConnectionTest {
         connection1.close();
 
         Connection connection2 = dataSource.getConnection();
-        assertThat(connection2.getAutoCommit()).isFalse();
+        assertThat(connection2.getAutoCommit()).isTrue();
     }
 }
