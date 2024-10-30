@@ -25,7 +25,6 @@ import org.mockito.Mockito;
 
 class JdbcTemplateTest {
 
-    private Connection conn;
     private PreparedStatement pstmt;
     private ResultSet rs;
     private JdbcTemplate jdbcTemplate;
@@ -35,7 +34,7 @@ class JdbcTemplateTest {
     void setUp() throws SQLException {
         final var dataSource = Mockito.mock(DataSource.class);
 
-        conn = Mockito.mock(Connection.class);
+        final var conn = Mockito.mock(Connection.class);
         pstmt = Mockito.mock(PreparedStatement.class);
         rs = Mockito.mock(ResultSet.class);
 
@@ -50,7 +49,6 @@ class JdbcTemplateTest {
 
     @AfterEach
     void tearDown() throws SQLException {
-        verify(conn).close();
         verify(pstmt).close();
     }
 

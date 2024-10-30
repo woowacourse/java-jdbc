@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,10 +26,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, new PreparedStatementSetter(args));
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, PreparedStatement::executeUpdate, new PreparedStatementSetter(args));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -55,21 +52,23 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        try (final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            releaseConnection(conn);
         }
     }
 
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallback<T> action, final PreparedStatementSetter pss) {
-        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            pss.setValues(pstmt);
-            return action.doInPreparedStatement(pstmt);
+    private void releaseConnection(final Connection conn) {
+        try {
+            if (conn.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
