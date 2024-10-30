@@ -85,12 +85,12 @@ class JdbcTemplateTest {
     void update() throws SQLException {
         String sql = "update users set account=?, password=?, email=? where id=?";
 
-        jdbcTemplate.update(sql, ps -> {
+        jdbcTemplate.update(conn, sql, ps -> {
             ps.setString(1, "account");
             ps.setString(2, "password");
             ps.setString(3, "email");
             ps.setLong(4, 1L);
-        });
+        }, true);
 
         verify(pstmt).executeUpdate();
     }
