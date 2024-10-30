@@ -26,8 +26,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, PreparedStatementSetter pstmtSetter) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
+    public void update(Connection conn, String sql, PreparedStatementSetter pstmtSetter, boolean needClose) {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.info("query : {}", sql);
 
@@ -36,6 +35,10 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            if (needClose) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 
@@ -88,5 +91,9 @@ public class JdbcTemplate {
             list.add(rowMapper.mapRow(rs, rs.getRow()));
         }
         return list;
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

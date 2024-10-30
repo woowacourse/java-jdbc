@@ -2,9 +2,11 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -26,24 +28,26 @@ public class UserDao {
     }
 
     public void insert(User user) {
+        Connection conn = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, pstmt -> {
+        jdbcTemplate.update(conn, sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
-        });
+        }, true);
     }
 
     public void update(User user) {
+        Connection conn = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
         String sql = "update users set account=?, password=?, email=? where id=?";
 
-        jdbcTemplate.update(sql, pstmt -> {
+        jdbcTemplate.update(conn, sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
-        });
+        }, false);
     }
 
     public List<User> findAll() {
