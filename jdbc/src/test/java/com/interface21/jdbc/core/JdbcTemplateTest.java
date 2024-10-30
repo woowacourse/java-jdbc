@@ -56,7 +56,6 @@ class JdbcTemplateTest {
                 () -> verify(preparedStatement).setObject(1, "Redddy"),
                 () -> verify(preparedStatement).setObject(2, 1),
                 () -> verify(preparedStatement).executeUpdate(),
-                () -> verify(connection).close(),
                 () -> verify(preparedStatement).close()
         );
     }
@@ -105,8 +104,7 @@ class JdbcTemplateTest {
         assertAll(
                 () -> assertThat(users).isEqualTo(expected),
                 () -> verify(preparedStatement).executeQuery(),
-                () -> verify(preparedStatement).close(),
-                () -> verify(connection).close()
+                () -> verify(preparedStatement).close()
         );
     }
 

@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.SqlExecutionException;
 
 public class JdbcTemplate {
@@ -49,8 +50,8 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         log.debug("queryForList Executing SQL: {}", sql);
 
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement ps = conn.prepareStatement(sql);
              final ResultSet resultSet = ps.executeQuery()) {
 
             setParameter(params).setValue(ps);
@@ -65,8 +66,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQuery(final String sql, final PreparedStatementSetter pss, final SqlExecutor<T> executor) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = conn.prepareStatement(sql)) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement ps = conn.prepareStatement(sql)) {
             pss.setValue(ps);
             return executor.executor(ps);
         } catch (final SQLException e) {

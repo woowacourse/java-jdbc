@@ -25,6 +25,7 @@ public class TransactionManager {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
             consumer.accept(connection);
+            connection.setAutoCommit(true);
             connection.commit();
         } catch (final Exception e) {
             rollback(connection);
