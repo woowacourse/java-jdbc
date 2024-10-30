@@ -40,8 +40,4 @@ public abstract class TransactionSynchronizationManager {
         }
         return removed;
     }
-
-    public static void unload() {
-        RESOURCES.remove();
-    }
 }
