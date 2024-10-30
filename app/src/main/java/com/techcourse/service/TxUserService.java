@@ -28,18 +28,12 @@ public class TxUserService implements UserService {
 
     @Override
     public void save(User user) {
-        executeWithTransaction(userService -> {
-            userService.save(user);
-            return null;
-        });
+        executeWithTransactionVoid(() -> userService.save(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        executeWithTransaction(userService -> {
-            userService.changePassword(id, newPassword, createdBy);
-            return null;
-        });
+        executeWithTransactionVoid(() -> userService.changePassword(id, newPassword, createdBy));
     }
 
     private <T> T executeWithTransaction(Function<UserService, T> action) {
@@ -51,6 +45,27 @@ public class TxUserService implements UserService {
 
             connection.commit();
             return t;
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                throw new DataAccessException("Failed to rollback transaction", rollbackEx);
+            }
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void executeWithTransactionVoid(Runnable action) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
+
+            action.run();
+
+            connection.commit();
         } catch (SQLException e) {
             try {
                 connection.rollback();
