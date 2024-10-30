@@ -27,23 +27,23 @@ public class TransactionExecutor {
 
         try {
             return commit(action, connection);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollback(e, connection);
             throw new DataAccessException("트랜잭션 수행 실패", e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
             setAutoCommitTrue(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    private static <T> T commit(Supplier<T> action, Connection connection) throws SQLException {
+    private static <T> T commit(Supplier<T> action, Connection connection) throws Exception {
         connection.setAutoCommit(false);
         T result = action.get();
         connection.commit();
         return result;
     }
 
-    private static void rollback(SQLException e, Connection connection) {
+    private static void rollback(Exception e, Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException exception) {

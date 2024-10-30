@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class RegisterController {
 
     private final UserService userService;
+    private int userAmount = 0;
 
     public RegisterController() {
         userService = new TransactionUserService(
@@ -31,10 +32,12 @@ public class RegisterController {
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(final HttpServletRequest request, final HttpServletResponse response) {
-        final var user = new User(2,
+        final var user = new User(
+                ++userAmount,
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
+
         userService.save(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
