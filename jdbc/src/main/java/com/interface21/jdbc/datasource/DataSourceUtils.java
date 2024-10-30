@@ -27,6 +27,10 @@ public abstract class DataSourceUtils {
         }
     }
 
+    public static boolean noConnection(DataSource dataSource) {
+        return TransactionSynchronizationManager.getResource(dataSource) == null;
+    }
+
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
             connection.close();

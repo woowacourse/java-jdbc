@@ -70,14 +70,18 @@ public class JdbcTemplate {
     }
 
     private <T> T executePreparedStatement(String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> callback) {
+        boolean noTransaction = DataSourceUtils.noConnection(dataSource);
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setParameters(preparedStatement);
-
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             return handleSQLException(e);
+        } finally {
+            if (noTransaction) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 }
