@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.utils.DefaultDataExtractor;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,14 +32,6 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... parameters) {
         update(sql, createDefaultPreparedStatementSetter(parameters));
-    }
-
-    public void update(Connection connection, String sql, PreparedStatementSetter setter) {
-        executePreparedStatement(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
-    public void update(Connection connection, String sql, Object... parameters) {
-        update(connection, sql, createDefaultPreparedStatementSetter(parameters));
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
@@ -77,21 +70,18 @@ public class JdbcTemplate {
     }
 
     private <T> T executePreparedStatement(String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection()) {
-            return executePreparedStatement(conn, sql, setter, callback);
-        } catch (SQLException e) {
-            return handleSQLException(e);
-        }
-    }
-
-    private <T> T executePreparedStatement(Connection conn, String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> callback) {
+        boolean noTransaction = DataSourceUtils.noConnection(dataSource);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setParameters(preparedStatement);
-
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             return handleSQLException(e);
+        } finally {
+            if (noTransaction) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 }
