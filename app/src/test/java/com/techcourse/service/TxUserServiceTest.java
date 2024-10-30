@@ -18,9 +18,11 @@ class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
+        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
@@ -30,7 +32,7 @@ class TxUserServiceTest {
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new AppUserService(userDao, userHistoryDao);
 
@@ -50,7 +52,7 @@ class TxUserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService, transactionManager);
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
