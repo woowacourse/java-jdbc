@@ -4,16 +4,15 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 
-public class InMemoryUserHistoryDao extends UserHistoryDao {
+public class AlwaysThrowUserHistoryDao extends UserHistoryDao {
 
-    public InMemoryUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public AlwaysThrowUserHistoryDao(final JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public void log(Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         throw new DataAccessException();
     }
 }

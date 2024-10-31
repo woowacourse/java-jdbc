@@ -9,8 +9,6 @@ import static org.mockito.Mockito.when;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +34,7 @@ class TransactionManagerTest {
     void executeTransactionWithFunction() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        String result = transactionManager.executeTransaction(conn -> "Success");
+        String result = transactionManager.executeTransactionWithResult(conn -> "Success");
 
         assertThat(result).isEqualTo("Success");
         verify(connection).setAutoCommit(false);
@@ -49,7 +47,7 @@ class TransactionManagerTest {
     void executeTransactionWithFunctionRollback() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        assertThatThrownBy(() -> transactionManager.executeTransaction((Function<Connection, Object>) conn -> {
+        assertThatThrownBy(() -> transactionManager.executeTransactionWithResult(conn -> {
             throw new RuntimeException("Test exception");
         })).isInstanceOf(DataAccessException.class);
 
@@ -63,7 +61,7 @@ class TransactionManagerTest {
     void executeTransactionWithConsumer() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        transactionManager.executeTransaction(conn -> {
+        transactionManager.executeTransactionWithoutResult(conn -> {
         });
 
         verify(connection).setAutoCommit(false);
@@ -76,7 +74,7 @@ class TransactionManagerTest {
     void executeTransactionWithConsumerRollback() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(true);
 
-        assertThatThrownBy(() -> transactionManager.executeTransaction((Consumer<Connection>) conn -> {
+        assertThatThrownBy(() -> transactionManager.executeTransactionWithoutResult(conn -> {
             throw new RuntimeException("Test exception");
         })).isInstanceOf(DataAccessException.class);
 
@@ -90,7 +88,7 @@ class TransactionManagerTest {
     void handleSQLException() throws SQLException {
         when(dataSource.getConnection()).thenThrow(new SQLException("Database connection failed"));
 
-        assertThatThrownBy(() -> transactionManager.executeTransaction(conn -> "Test"))
+        assertThatThrownBy(() -> transactionManager.executeTransactionWithResult(conn -> "Test"))
                 .isInstanceOf(DataAccessException.class);
     }
 }
