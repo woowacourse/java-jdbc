@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -41,24 +42,26 @@ class TransactionManagerTest {
 
     @Test
     @DisplayName("정상적으로 트랜잭션이 실행되고 commit을 한다.")
-    void execute() throws SQLException {
+    void execute() {
         //given
 
-        //when
+        // when
         transactionManager.execute(consumer);
 
         //then
-        verify(connection).setAutoCommit(false);
-        verify(consumer).accept(connection);
-        verify(connection).commit();
-        verify(connection, never()).rollback();
-        verify(connection).setAutoCommit(true);
-        verify(connection).close();
+        assertAll(
+                () -> verify(connection).setAutoCommit(false),
+                () -> verify(consumer).accept(connection),
+                () -> verify(connection).commit(),
+                () -> verify(connection).setAutoCommit(true),
+                () -> verify(connection, never()).rollback(),
+                () -> verify(connection).close()
+        );
     }
 
     @Test
     @DisplayName("예외가 발생하면 rollback을 한다.")
-    void rollback() throws SQLException {
+    void rollback() {
         //given
         doThrow(new SqlExecutionException("예외 발생"))
                 .when(consumer).accept(connection);
@@ -68,10 +71,11 @@ class TransactionManagerTest {
                 .isInstanceOf(TransactionExecutionException.class);
 
         //then
-        verify(consumer).accept(connection);
-        verify(connection, never()).commit();
-        verify(connection, atLeastOnce()).rollback();
-        verify(connection).setAutoCommit(true);
-        verify(connection).close();
+        assertAll(
+                () -> verify(consumer).accept(connection),
+                () -> verify(connection, never()).commit(),
+                () -> verify(connection, atLeastOnce()).rollback(),
+                () -> verify(connection).close()
+        );
     }
 }
