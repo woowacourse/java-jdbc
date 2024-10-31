@@ -18,7 +18,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) {
         try (final var pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             pstmt.executeUpdate();
@@ -31,7 +31,7 @@ public class JdbcTemplate {
         update(connection, sql, createPreparedStatementSetter(parameters));
     }
 
-    public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final String sql, final PreparedStatementSetter pss) {
         try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             pstmt.executeUpdate();
@@ -71,7 +71,7 @@ public class JdbcTemplate {
         return queryForObject(connection, sql, rm, createPreparedStatementSetter(parameters));
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) throws DataAccessException {
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
         try (final var pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             return mapResultSetToObject(rm, pstmt);

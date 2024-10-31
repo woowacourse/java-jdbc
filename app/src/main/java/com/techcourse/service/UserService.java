@@ -1,36 +1,12 @@
 package com.techcourse.service;
 
-import java.sql.Connection;
-
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 
-public class UserService {
+public interface UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
+	User findById(long id);
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-    }
+	void insert(User user);
 
-    public User findById(final long id, final Connection conn) {
-        return TransactionExecutor.executeInReadOnly(conn, () -> userDao.findById(id, conn));
-    }
-
-    public void insert(final User user, final Connection conn) {
-		TransactionExecutor.executeInTransaction(conn, () -> userDao.insert(user, conn));
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy, final Connection conn) {
-		TransactionExecutor.executeInTransaction(conn, () -> {
-			final var user = userDao.findById(id, conn);
-			user.changePassword(newPassword);
-			userDao.update(user, conn);
-			userHistoryDao.log(new UserHistory(user, createBy), conn);
-		});
-	}
+	void changePassword(long id, String newPassword, String createdBy);
 }
