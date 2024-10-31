@@ -67,12 +67,12 @@ class UserDaoTest {
     }
 
     @Test
-    void update() throws SQLException {
+    void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user, dataSource.getConnection());
+        userDao.update(user);
 
         final var actual = userDao.findById(1L);
 

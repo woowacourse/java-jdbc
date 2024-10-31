@@ -9,19 +9,20 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
+        this.transactionManager = new TransactionManager(DataSourceConfig.getInstance());
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
@@ -31,9 +32,9 @@ class UserServiceTest {
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -47,14 +48,17 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var exceptionUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, exceptionUserHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService, transactionManager);
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
+
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+        userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
 
