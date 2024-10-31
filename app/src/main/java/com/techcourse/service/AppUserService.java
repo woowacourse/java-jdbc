@@ -1,13 +1,11 @@
-package aop.service;
+package com.techcourse.service;
 
-import aop.Transactional;
-import aop.domain.User;
-import aop.domain.UserHistory;
-import aop.repository.UserDao;
-import aop.repository.UserHistoryDao;
-import org.springframework.stereotype.Service;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
+import org.springframework.transaction.annotation.Transactional;
 
-@Service
 public class AppUserService implements UserService {
 
     private final UserDao userDao;

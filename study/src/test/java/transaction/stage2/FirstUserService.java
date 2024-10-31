@@ -34,12 +34,14 @@ public class FirstUserService {
         return userRepository.findAll();
     }
 
+    // 생성된 트랜잭션이 아무것도 없으면 새로운 트랜잭션을 생성한다.
     @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithRequired() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
 
+        // 이미 생성된 트랜잭션을 사용한다.
         final var secondTransactionName = secondUserService.saveSecondTransactionWithRequired();
 
         return of(firstTransactionName, secondTransactionName);
@@ -66,7 +68,7 @@ public class FirstUserService {
         throw new RuntimeException();
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithSupports() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -77,7 +79,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithMandatory() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -88,7 +90,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    //    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithNotSupported() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -99,7 +101,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    //    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithNested() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
@@ -110,7 +112,7 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    //    @Transactional(propagation = Propagation.REQUIRED)
     public Set<String> saveFirstTransactionWithNever() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());

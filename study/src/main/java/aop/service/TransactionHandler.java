@@ -1,34 +1,33 @@
-package aop.stage1;
+package aop.service;
 
 import aop.DataAccessException;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-/**
- * 어드바이스(advice). 부가기능을 담고 있는 클래스
- */
-public class TransactionAdvice implements MethodInterceptor {
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 
+public class TransactionHandler implements InvocationHandler {
+
+    private final Object target;
     private final PlatformTransactionManager transactionManager;
 
-    public TransactionAdvice(PlatformTransactionManager transactionManager) {
+    public TransactionHandler(Object target, final PlatformTransactionManager transactionManager) {
+        this.target = target;
         this.transactionManager = transactionManager;
     }
 
     @Override
-    public Object invoke(final MethodInvocation invocation) throws Throwable {
+    public Object invoke(final Object proxy, final Method method, final Object[] args) {
         TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
-
         try {
-            Object result = invocation.proceed();
+            Object result = method.invoke(target, args);
             transactionManager.commit(status);
             return result;
         } catch (Exception exception) {
             transactionManager.rollback(status);
-            throw new DataAccessException("작업이 실패하여 작업이 롤백하였습니다.");
+            throw new DataAccessException("트랜잭션을 커밋하는 데 실패하였습니다. 트랜잭션을 롤백합니다.");
         }
     }
 }
