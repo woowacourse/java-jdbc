@@ -7,7 +7,7 @@ import com.interface21.webmvc.servlet.ModelAndView;
 import com.interface21.webmvc.servlet.view.JsonView;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.service.UserService;
+import com.techcourse.service.AppUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -18,10 +18,10 @@ public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
-    private final UserService userService;
+    private final AppUserService appUserService;
 
     public UserController() {
-        this.userService = new UserService(new UserDao(), new UserHistoryDao());
+        this.appUserService = new AppUserService(new UserDao(), new UserHistoryDao());
     }
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
@@ -30,7 +30,7 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final var modelAndView = new ModelAndView(new JsonView());
-        final var user = userService.findByAccount(account);
+        final var user = appUserService.findByAccount(account);
 
         modelAndView.addObject("user", user);
         return modelAndView;
