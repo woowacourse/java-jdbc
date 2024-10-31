@@ -73,7 +73,7 @@ public class TxUserService implements UserService {
 		return null;
 	}
 
-	private void rollbackWithException(Connection conn, Exception e) throws DataAccessException {
+	private void rollbackWithException(Connection conn, Exception e) {
 		try {
 			conn.rollback();
 		} catch (SQLException rollbackException) {

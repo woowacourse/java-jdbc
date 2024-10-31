@@ -36,7 +36,7 @@ class AppUserServiceTest {
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new AppUserService(userDao, userHistoryDao);
 
