@@ -31,7 +31,6 @@ class UserDaoTest {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        System.out.println(userDao.findAll());
     }
 
     @AfterEach
