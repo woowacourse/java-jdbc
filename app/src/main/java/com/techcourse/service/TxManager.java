@@ -14,17 +14,21 @@ public class TxManager {
     private TxManager() {
     }
 
-    public static <T> T run(Function<Connection, T> function) throws SQLException {
-        DataSource dataSource = DataSourceConfig.getInstance();
-        Connection connection = dataSource.getConnection();
+    public static <T> T run(Function<Connection, T> function) {
         try {
+            DataSource dataSource = DataSourceConfig.getInstance();
+            Connection connection = dataSource.getConnection();
             return doRun(function, connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            Connection connection1 = TransactionSynchronizationManager.unbindResource(dataSource);
         }
+    }
+
+    public static void run(Consumer<Connection> consumer) {
+        run(connection -> {
+            consumer.accept(connection);
+            return null;
+        });
     }
 
     private static <T> T doRun(Function<Connection, T> function, Connection connection) throws SQLException {
@@ -37,12 +41,5 @@ public class TxManager {
             connection.rollback();
             throw new SQLException(e);
         }
-    }
-
-    public static void run(Consumer<Connection> consumer) {
-        run(connection -> {
-            consumer.accept(connection);
-            return null;
-        });
     }
 }
