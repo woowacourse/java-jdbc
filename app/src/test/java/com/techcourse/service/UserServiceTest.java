@@ -27,8 +27,8 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        Consumer<Connection> consumer = cnn -> userDao.insert(user);
-        TxManager.run(consumer);
+        Runnable runnable = () -> userDao.insert(user);
+        TxManager.run(runnable);
     }
 
     @Test
