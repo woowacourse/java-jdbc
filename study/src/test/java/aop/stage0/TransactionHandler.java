@@ -24,10 +24,17 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        if (method.isAnnotationPresent(Transactional.class)) {
-            return method.invoke(target, args);
+        Method targetMethod = target.getClass()
+            .getMethod(method.getName(), method.getParameterTypes());
+        if (targetMethod.isAnnotationPresent(Transactional.class)) {
+            return invokeWithTransaction(method, args);
+
         }
 
+        return method.invoke(target, args);
+    }
+
+    private Object invokeWithTransaction(Method method, Object[] args) throws Throwable {
         TransactionStatus status = platformTransactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             Object result = method.invoke(target, args);
