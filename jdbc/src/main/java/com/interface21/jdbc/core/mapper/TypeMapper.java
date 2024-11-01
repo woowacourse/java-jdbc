@@ -4,9 +4,9 @@ import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public final class TypeMappedStatement extends PreparedStatementMapper {
+public final class TypeMapper extends PreparedStatementMapper {
 
-    public TypeMappedStatement(PreparedStatement preparedStatement, Object[] params, JDBCType[] types) {
+    public TypeMapper(PreparedStatement preparedStatement, Object[] params, JDBCType[] types) {
         super(preparedStatement, params, types);
     }
 

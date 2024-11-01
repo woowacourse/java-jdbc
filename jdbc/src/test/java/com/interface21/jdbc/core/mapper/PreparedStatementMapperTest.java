@@ -7,10 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.CannotReleaseJdbcResourceException;
-import com.interface21.jdbc.core.extractor.ManualExtractor;
-import com.interface21.jdbc.mapper.User;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -27,9 +24,9 @@ class PreparedStatementMapperTest {
         Object[] objects = new Object[3];
 
         assertAll(() -> {
-            Assertions.assertThatThrownBy(() -> new ObjectMappedStatement(nullPss, objects))
+            Assertions.assertThatThrownBy(() -> new ObjectMapper(nullPss, objects))
                     .isInstanceOf(CannotGetJdbcConnectionException.class);
-            Assertions.assertThatThrownBy(() -> new ObjectMappedStatement(closedPss, objects))
+            Assertions.assertThatThrownBy(() -> new ObjectMapper(closedPss, objects))
                     .isInstanceOf(CannotGetJdbcConnectionException.class);
         });
     }
@@ -39,7 +36,7 @@ class PreparedStatementMapperTest {
     void close() throws SQLException {
         PreparedStatement pss = mock(PreparedStatement.class);
         Object[] objects = new Object[3];
-        PreparedStatementMapper pssMapper = new ObjectMappedStatement(pss, objects);
+        PreparedStatementMapper pssMapper = new ObjectMapper(pss, objects);
         doThrow(new SQLException()).when(pss).close();
 
         Assertions.assertThatThrownBy(pssMapper::close)

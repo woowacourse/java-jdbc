@@ -1,12 +1,8 @@
 package com.interface21.jdbc.core.mapper;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -21,7 +17,7 @@ class ObjectMappedStatementTest {
         PreparedStatement pss = mock(PreparedStatement.class);
         Object[] params = new Object[]{"id", "name", "value"};
 
-        ObjectMappedStatement oms = new ObjectMappedStatement(pss, params);
+        ObjectMapper oms = new ObjectMapper(pss, params);
         oms.setStatement();
 
         verify(pss, times(2)).setObject(1, params[0]);

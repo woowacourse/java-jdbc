@@ -5,10 +5,15 @@ import aop.StubUserHistoryDao;
 import aop.domain.User;
 import aop.repository.UserDao;
 import aop.repository.UserHistoryDao;
+import aop.service.AppUserService;
+import aop.stage0.TransactionHandler;
+import java.lang.reflect.Proxy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
+import org.springframework.aop.framework.adapter.AdvisorAdapterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,11 +46,17 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        UserService userService = new UserService(userDao, userHistoryDao);
+
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setProxyTargetClass(true);
+        proxyFactoryBean.setTarget(userService);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(new TransactionPointcut(), new TransactionAdvice(platformTransactionManager)));
+        UserService userServiceProxy = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userServiceProxy.changePassword(1L, newPassword, createBy);
 
         final var actual = userService.findById(1L);
 
@@ -54,12 +65,18 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        UserService userService = new UserService(userDao, stubUserHistoryDao);
+
+        ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setProxyTargetClass(true);
+        proxyFactoryBean.setTarget(userService);
+        proxyFactoryBean.addAdvisor(new TransactionAdvisor(new TransactionPointcut(), new TransactionAdvice(platformTransactionManager)));
+        UserService userServiceProxy = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userServiceProxy.changePassword(1L, newPassword, createBy));
 
         final var actual = userService.findById(1L);
 

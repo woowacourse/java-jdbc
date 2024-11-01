@@ -5,11 +5,11 @@ import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.core.extractor.ExtractionRule;
 import com.interface21.jdbc.core.extractor.ExtractorMaker;
 import com.interface21.jdbc.core.extractor.ManualExtractor;
-import com.interface21.jdbc.core.mapper.ObjectMappedStatement;
+import com.interface21.jdbc.core.mapper.ObjectMapper;
 import com.interface21.jdbc.core.extractor.ResultSetExtractor;
 import com.interface21.jdbc.core.extractor.ReflectiveExtractor;
 import com.interface21.jdbc.core.mapper.PreparedStatementMapper;
-import java.sql.Connection;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,14 +34,14 @@ public class JdbcTemplate {
 
 
     @Nullable
-    public <T> T queryOne(Connection connection, Class<T> clazz, String sql, Object... params) {
-        return doQueryOne(query(connection, clazz, sql, params));
+    public <T> T queryOne(Class<T> clazz, String sql, Object... params) {
+        return doQueryOne(query(clazz, sql, params));
     }
 
 
     @Nullable
-    public <T> T queryOne(Connection connection, ExtractionRule<T> extractionRule, String sql, Object... params) {
-        return doQueryOne(query(connection, extractionRule, sql, params));
+    public <T> T queryOne(ExtractionRule<T> extractionRule, String sql, Object... params) {
+        return doQueryOne(query(extractionRule, sql, params));
     }
 
     private <T> T doQueryOne(List<T> result) {
@@ -56,18 +56,18 @@ public class JdbcTemplate {
     }
 
     @Nonnull
-    public <T> List<T> query(Connection connection, Class<T> clazz, String sql, Object... params) {
-        return doQuery(connection, sql, params, resultSet -> new ReflectiveExtractor<>(resultSet, clazz));
+    public <T> List<T> query(Class<T> clazz, String sql, Object... params) {
+        return doQuery(sql, params, resultSet -> new ReflectiveExtractor<>(resultSet, clazz));
     }
 
     @Nonnull
-    public <T> List<T> query(Connection connection, ExtractionRule<T> extractionRule, String sql, Object... params) {
-        return doQuery(connection, sql, params, resultSet -> new ManualExtractor<>(resultSet, extractionRule));
+    public <T> List<T> query(ExtractionRule<T> extractionRule, String sql, Object... params) {
+        return doQuery(sql, params, resultSet -> new ManualExtractor<>(resultSet, extractionRule));
     }
 
-    private <T> List<T> doQuery(Connection connection, String sql, Object[] params, ExtractorMaker<T> extractorMaker) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             PreparedStatementMapper statement = new ObjectMappedStatement(preparedStatement, params);
+    private <T> List<T> doQuery(String sql, Object[] params, ExtractorMaker<T> extractorMaker) {
+        try (PreparedStatement preparedStatement = DataSourceUtils.getConnection(dataSource).prepareStatement(sql);
+             PreparedStatementMapper statement = new ObjectMapper(preparedStatement, params);
              ResultSet resultSet = statement.executeQuery();
              ResultSetExtractor<T> extractor = extractorMaker.from(resultSet)) {
             return extractor.extract();
@@ -76,9 +76,9 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(Connection connection, String sql, Object... params) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             PreparedStatementMapper objectMapper = new ObjectMappedStatement(preparedStatement, params)) {
+    public int update(String sql, Object... params) {
+        try (PreparedStatement preparedStatement = DataSourceUtils.getConnection(dataSource).prepareStatement(sql);
+             PreparedStatementMapper objectMapper = new ObjectMapper(preparedStatement, params)) {
             return objectMapper.executeUpdate();
         } catch (SQLException e) {
             throw new JdbcException(e);

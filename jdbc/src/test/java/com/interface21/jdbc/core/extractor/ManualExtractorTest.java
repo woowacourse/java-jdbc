@@ -5,10 +5,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.core.JdbcTemplateTest;
-import com.interface21.jdbc.mapper.User;
+import com.interface21.jdbc.core.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
