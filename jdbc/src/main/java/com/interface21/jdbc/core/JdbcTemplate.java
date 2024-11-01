@@ -9,6 +9,7 @@ import com.interface21.jdbc.core.mapper.ObjectMappedStatement;
 import com.interface21.jdbc.core.extractor.ResultSetExtractor;
 import com.interface21.jdbc.core.extractor.ReflectiveExtractor;
 import com.interface21.jdbc.core.mapper.PreparedStatementMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,7 +67,7 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> doQuery(String sql, Object[] params, ExtractorMaker<T> extractorMaker) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = DataSourceUtils.getConnection(dataSource).prepareStatement(sql);
              PreparedStatementMapper statement = new ObjectMappedStatement(preparedStatement, params);
              ResultSet resultSet = statement.executeQuery();
              ResultSetExtractor<T> extractor = extractorMaker.from(resultSet)) {
@@ -77,7 +78,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = DataSourceUtils.getConnection(dataSource).prepareStatement(sql);
              PreparedStatementMapper objectMapper = new ObjectMappedStatement(preparedStatement, params)) {
             return objectMapper.executeUpdate();
         } catch (SQLException e) {
