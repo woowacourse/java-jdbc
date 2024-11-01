@@ -23,10 +23,7 @@ class UserDaoTest extends DatabaseTest {
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
-    @AfterEach
-    void dispose() throws SQLException {
-        connection.close();
-    }
+
 
     @Test
     void findAll() {

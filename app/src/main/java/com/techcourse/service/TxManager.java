@@ -16,8 +16,7 @@ public class TxManager {
 
     public static <T> T run(Function<Connection, T> function) {
         try {
-            DataSource dataSource = DataSourceConfig.getInstance();
-            Connection connection = dataSource.getConnection();
+            Connection connection = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
             return doRun(function, connection);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -40,6 +39,9 @@ public class TxManager {
         } catch (SQLException e) {
             connection.rollback();
             throw new SQLException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, DataSourceConfig.getInstance());
+            TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
         }
     }
 }
