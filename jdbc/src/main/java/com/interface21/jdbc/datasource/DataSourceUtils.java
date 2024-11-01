@@ -9,7 +9,8 @@ import java.sql.SQLException;
 
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
+    private DataSourceUtils() {
+    }
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
@@ -28,6 +29,12 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
+            if (connection == null) {
+                return;
+            }
+            if (dataSource != null && TransactionSynchronizationManager.getResource(dataSource).equals(connection)) {
+                return;
+            }
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
