@@ -21,7 +21,7 @@ class UserDaoTest extends DatabaseTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
         connection = DataSourceConfig.getInstance().getConnection();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
     @AfterEach
     void dispose() throws SQLException {
@@ -37,7 +37,7 @@ class UserDaoTest extends DatabaseTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(connection, 1L);
+        final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -45,7 +45,7 @@ class UserDaoTest extends DatabaseTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(connection,account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -54,9 +54,9 @@ class UserDaoTest extends DatabaseTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection,user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById(connection, 2L);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -64,12 +64,12 @@ class UserDaoTest extends DatabaseTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(connection, 1L);
+        final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(connection,user);
+        userDao.update(user);
 
-        final var actual = userDao.findById(connection, 1L);
+        final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
