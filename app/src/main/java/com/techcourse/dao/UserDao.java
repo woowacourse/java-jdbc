@@ -31,28 +31,28 @@ public class UserDao {
         this(new JdbcTemplate(dataSource));
     }
 
-    public void insert(Connection connection, User user) {
+    public void insert(User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(Connection connection, User user) {
+    public void update(User user) {
         final var sql = "update users set account=?, password=?, email=? where id=?";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll(Connection connection) {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(connection, User.class, sql);
+        return jdbcTemplate.query(User.class, sql);
     }
 
-    public User findById(Connection connection, Long id) {
+    public User findById(Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryOne(connection, EXTRACT_RULE, sql, id);
+        return jdbcTemplate.queryOne(EXTRACT_RULE, sql, id);
     }
 
-    public User findByAccount(Connection connection, String account) {
+    public User findByAccount(String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryOne(connection, User.class, sql, account);
+        return jdbcTemplate.queryOne(User.class, sql, account);
     }
 }
