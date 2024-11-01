@@ -15,19 +15,16 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        Consumer<Connection> consumer = (connection) -> userService.changePassword(id, newPassword, createBy);
-        TxManager.run(consumer);
+        TxManager.run(() -> userService.changePassword(id, newPassword, createBy));
     }
 
     @Override
     public void save(User user) {
-        Consumer<Connection> consumer = (connection) -> userService.save(user);
-        TxManager.run(consumer);
+        TxManager.run(() -> userService.save(user));
     }
 
     @Override
     public User findById(long id) {
-        Function<Connection, User> consumer = (connection) -> userService.findById(id);
-        return TxManager.run(consumer);
+        return TxManager.run(() -> userService.findById(id));
     }
 }
