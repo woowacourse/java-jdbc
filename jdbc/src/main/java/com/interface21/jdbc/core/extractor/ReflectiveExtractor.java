@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+
 public final class ReflectiveExtractor<T> extends ResultSetExtractor<T> {
     private final Class<T> clazz;
 

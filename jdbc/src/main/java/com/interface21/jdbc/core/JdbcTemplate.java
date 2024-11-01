@@ -5,12 +5,11 @@ import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.core.extractor.ExtractionRule;
 import com.interface21.jdbc.core.extractor.ExtractorMaker;
 import com.interface21.jdbc.core.extractor.ManualExtractor;
-import com.interface21.jdbc.core.mapper.ObjectMappedStatement;
+import com.interface21.jdbc.core.mapper.ObjectMapper;
 import com.interface21.jdbc.core.extractor.ResultSetExtractor;
 import com.interface21.jdbc.core.extractor.ReflectiveExtractor;
 import com.interface21.jdbc.core.mapper.PreparedStatementMapper;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -68,7 +67,7 @@ public class JdbcTemplate {
 
     private <T> List<T> doQuery(String sql, Object[] params, ExtractorMaker<T> extractorMaker) {
         try (PreparedStatement preparedStatement = DataSourceUtils.getConnection(dataSource).prepareStatement(sql);
-             PreparedStatementMapper statement = new ObjectMappedStatement(preparedStatement, params);
+             PreparedStatementMapper statement = new ObjectMapper(preparedStatement, params);
              ResultSet resultSet = statement.executeQuery();
              ResultSetExtractor<T> extractor = extractorMaker.from(resultSet)) {
             return extractor.extract();
@@ -79,7 +78,7 @@ public class JdbcTemplate {
 
     public int update(String sql, Object... params) {
         try (PreparedStatement preparedStatement = DataSourceUtils.getConnection(dataSource).prepareStatement(sql);
-             PreparedStatementMapper objectMapper = new ObjectMappedStatement(preparedStatement, params)) {
+             PreparedStatementMapper objectMapper = new ObjectMapper(preparedStatement, params)) {
             return objectMapper.executeUpdate();
         } catch (SQLException e) {
             throw new JdbcException(e);

@@ -3,9 +3,9 @@ package com.interface21.jdbc.core.mapper;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class ObjectMappedStatement extends PreparedStatementMapper {
+public class ObjectMapper extends PreparedStatementMapper {
 
-    public ObjectMappedStatement(PreparedStatement preparedStatement, Object[] params) throws SQLException {
+    public ObjectMapper(PreparedStatement preparedStatement, Object[] params) throws SQLException {
         super(preparedStatement, params);
     }
 
