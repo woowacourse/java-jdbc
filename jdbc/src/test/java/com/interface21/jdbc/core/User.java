@@ -1,4 +1,4 @@
-package com.interface21.jdbc.mapper;
+package com.interface21.jdbc.core;
 
 
 import java.util.Objects;

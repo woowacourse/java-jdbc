@@ -3,7 +3,6 @@ package com.interface21.jdbc.core;
 import static org.mockito.Mockito.*;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.mapper.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

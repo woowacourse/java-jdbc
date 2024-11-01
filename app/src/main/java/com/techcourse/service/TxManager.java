@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.sql.DataSource;
 
 public class TxManager {
 

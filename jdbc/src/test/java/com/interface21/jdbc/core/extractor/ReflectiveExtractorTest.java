@@ -1,10 +1,9 @@
 package com.interface21.jdbc.core.extractor;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.interface21.jdbc.mapper.User;
+import com.interface21.jdbc.core.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.assertj.core.api.Assertions;

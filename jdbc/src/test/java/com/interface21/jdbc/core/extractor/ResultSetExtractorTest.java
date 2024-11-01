@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core.extractor;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -8,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.jdbc.CannotReleaseJdbcResourceException;
-import com.interface21.jdbc.mapper.User;
+import com.interface21.jdbc.core.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
