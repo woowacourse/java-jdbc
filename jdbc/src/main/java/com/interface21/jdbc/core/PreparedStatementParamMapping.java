@@ -16,7 +16,7 @@ public class PreparedStatementParamMapping {
     public void callSetter(final String typeName, final PreparedStatement pstmt, final int index, final Object value) throws SQLException {
         PreparedStatementSetter setter = setters.get(typeName);
         if (setter == null) return;
-        setter.set(pstmt, index, value);
+        setter.execute(pstmt, index, value);
     }
 
     private void setString(final PreparedStatement pstmt, final int index, final Object value) throws SQLException {
