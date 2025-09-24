@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +42,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryOne(String sql, Function<ResultSet, T> f, Object... values) {
+    public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -58,7 +57,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             if (rs.next()) {
-                return f.apply(rs);
+                return re.extract(rs);
             }
             return null;
         } catch (SQLException e) {
@@ -71,7 +70,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryMany(String sql, Function<ResultSet, T> f, Object... values) {
+    public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -87,7 +86,7 @@ public class JdbcTemplate {
 
             List<T> results = new ArrayList<>();
             if (rs.next()) {
-                results.add(f.apply(rs));
+                results.add(re.extract(rs));
             }
             return results;
         } catch (SQLException e) {
