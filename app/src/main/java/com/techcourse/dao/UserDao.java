@@ -38,7 +38,13 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        jdbcTemplate.update(
+                "update users set account=?, password=?, email=? where id=?",
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 
     public List<User> findAll() {
@@ -57,7 +63,10 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        return jdbcTemplate.queryOne(
+                "select id, account, password, email from users where account = ?",
+                RESULT_SET_TO_USER,
+                account
+        );
     }
 }
