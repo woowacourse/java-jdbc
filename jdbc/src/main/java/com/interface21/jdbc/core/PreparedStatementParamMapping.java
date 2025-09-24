@@ -15,7 +15,11 @@ public class PreparedStatementParamMapping {
 
     public void callSetter(final String typeName, final PreparedStatement pstmt, final int index, final Object value) throws SQLException {
         PreparedStatementSetter setter = setters.get(typeName);
-        if (setter == null) return;
+
+        if (setter == null) {
+            throw new RuntimeException("SQL 매핑을 지원하지 않는 타입입니다.");
+        }
+
         setter.execute(pstmt, index, value);
     }
 
