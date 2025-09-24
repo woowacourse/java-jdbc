@@ -30,7 +30,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to execute update", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -41,7 +41,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new RuntimeException("Query returned more than one row");
+            throw new RuntimeException();
         }
 
         return results.getFirst();
