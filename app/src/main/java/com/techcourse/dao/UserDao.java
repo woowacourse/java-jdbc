@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,28 +18,13 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.handleQuery(sql, (final PreparedStatement pstmt) -> {
-            try {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        jdbcTemplate.handleQuery(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
 
-        jdbcTemplate.handleQuery(sql, (final PreparedStatement pstmt) -> {
-            try {
-                pstmt.setString(1, user.getPassword());
-                pstmt.setLong(2, user.getId());
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        jdbcTemplate.handleQuery(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
@@ -48,8 +32,6 @@ public class UserDao {
 
         List<User> list = new ArrayList<>();
         jdbcTemplate.handleQueryAndGet(sql,
-                (final PreparedStatement pstmt) -> {
-                },
                 (final ResultSet rs) -> {
                     try {
                         while (rs.next()) {
@@ -71,13 +53,6 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where id = ?";
 
         return (User) jdbcTemplate.handleQueryAndGet(sql,
-                (final PreparedStatement pstmt) -> {
-                    try {
-                        pstmt.setLong(1, id);
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
                 (final ResultSet rs) -> {
                     try {
                         if (rs.next()) {
@@ -91,20 +66,14 @@ public class UserDao {
                         throw new RuntimeException(e);
                     }
                     return null;
-                });
+                },
+                id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
         return (User) jdbcTemplate.handleQueryAndGet(sql,
-                (final PreparedStatement pstmt) -> {
-                    try {
-                        pstmt.setString(1, account);
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
                 (final ResultSet rs) -> {
                     try {
                         if (rs.next()) {
@@ -118,6 +87,7 @@ public class UserDao {
                         throw new RuntimeException(e);
                     }
                     return null;
-                });
+                },
+                account);
     }
 }
