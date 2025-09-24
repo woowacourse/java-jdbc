@@ -42,8 +42,10 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        return jdbcTemplate.queryMany(
+                "select id, account, password, email from users",
+                RESULT_SET_TO_USER
+        );
     }
 
     public User findById(final Long id) {

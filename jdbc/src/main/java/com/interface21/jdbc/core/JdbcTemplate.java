@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -59,6 +61,35 @@ public class JdbcTemplate {
                 return f.apply(rs);
             }
             return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            closeResultSet(rs);
+            closePreparedStatement(pstmt);
+            closeConnection(conn);
+        }
+    }
+
+    public <T> List<T> queryMany(String sql, Function<ResultSet, T> f, Object... values) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            for (int i = 1; i <= values.length; i++) {
+                pstmt.setObject(i, values[i - 1]);
+            }
+            rs = pstmt.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            List<T> results = new ArrayList<>();
+            if (rs.next()) {
+                results.add(f.apply(rs));
+            }
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
