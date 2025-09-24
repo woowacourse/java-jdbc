@@ -16,7 +16,7 @@ import java.util.List;
 
 public class UserDao {
 
-    public static final ResultsetMapper<User> USER_MAPPER = rs -> new User(
+    private static final ResultsetMapper<User> USER_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),

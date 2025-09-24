@@ -60,11 +60,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(mapper.mapRow(rs));
-            }
-            return results;
+            return getQueryResult(mapper, rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -79,6 +75,14 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
+    }
+
+    private <T> List<T> getQueryResult(ResultsetMapper<T> mapper, ResultSet rs) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(mapper.mapRow(rs));
+        }
+        return results;
     }
 
     private static void close(final Connection conn) {
