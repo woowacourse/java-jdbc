@@ -5,22 +5,16 @@ import java.util.Map;
 
 public class Set {
 
-    private final Map<String, Object> setMap = new HashMap<>();
+    private final Map<String, DbObject> setMap = new HashMap<>();
 
     public void add(String key, Object value) {
-        setMap.put(key, value);
+        setMap.put(key, new DbObject(value));
     }
 
     @Override
     public String toString() {
         return " SET " + setMap.entrySet().stream()
-                .map(entry -> {
-                    if (entry.getValue() instanceof String) {
-                        return entry.getKey() + " = '" + entry.getValue() + "'";
-                    } else {
-                        return entry.getKey() + " = " + entry.getValue();
-                    }
-                })
+                .map(entry -> entry.getKey() + " = " + entry.getValue())
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
     }

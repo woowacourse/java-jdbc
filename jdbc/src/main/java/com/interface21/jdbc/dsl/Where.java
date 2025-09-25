@@ -5,10 +5,10 @@ import java.util.Map;
 
 public class Where {
 
-    private final Map<String, Object> whereMap = new HashMap<>();
+    private final Map<String, DbObject> whereMap = new HashMap<>();
 
     public void add(String key, Object value) {
-        whereMap.put(key, value);
+        whereMap.put(key, new DbObject(value));
     }
 
     public boolean isEmpty() {
@@ -20,13 +20,7 @@ public class Where {
         if (isEmpty()) return "";
 
         return " WHERE " + whereMap.entrySet().stream()
-                .map(entry -> {
-                    if (entry.getValue() instanceof String) {
-                        return entry.getKey() + " = '" + entry.getValue() + "'";
-                    } else {
-                        return entry.getKey() + " = " + entry.getValue();
-                    }
-                })
+                .map(entry -> entry.getKey() + " = " + entry.getValue())
                 .reduce((a, b) -> a + " AND " + b)
                 .orElse("");
     }

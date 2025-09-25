@@ -7,11 +7,10 @@ import java.util.Map;
 
 public class Values {
 
-    private final Map<String, Object> valueMap = new HashMap<>();
-
+    private final Map<String, DbObject> valueMap = new HashMap<>();
 
     void add(String key, Object value) {
-        valueMap.put(key, value);
+        valueMap.put(key, new DbObject(value));
     }
 
     @Override
@@ -20,11 +19,7 @@ public class Values {
         List<String> columnValues = new ArrayList<>();
         valueMap.forEach((key, value) -> {
             columnNames.add(key);
-            if (value instanceof String) {
-                columnValues.add("'" + value + "'");
-            } else {
-                columnValues.add(value.toString());
-            }
+            columnValues.add(value.toString());
         });
         String columns = columnNames.stream().reduce((a, b) -> a + ", " + b).orElse("");
         String values = columnValues.stream().reduce((a, b) -> a + ", " + b).orElse("");
