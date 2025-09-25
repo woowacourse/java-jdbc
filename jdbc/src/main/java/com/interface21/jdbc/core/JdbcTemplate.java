@@ -21,11 +21,9 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... values) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             for (int i = 1; i <= values.length; i++) {
                 pstmt.setObject(i, values[i - 1]);
             }
@@ -35,19 +33,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            closePreparedStatement(pstmt);
-            closeConnection(conn);
         }
     }
 
     public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             for (int i = 1; i <= values.length; i++) {
                 pstmt.setObject(i, values[i - 1]);
             }
@@ -64,18 +57,14 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         } finally {
             closeResultSet(rs);
-            closePreparedStatement(pstmt);
-            closeConnection(conn);
         }
     }
 
     public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
         ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             for (int i = 1; i <= values.length; i++) {
                 pstmt.setObject(i, values[i - 1]);
             }
@@ -93,8 +82,6 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         } finally {
             closeResultSet(rs);
-            closePreparedStatement(pstmt);
-            closeConnection(conn);
         }
     }
 
@@ -102,24 +89,6 @@ public class JdbcTemplate {
         try {
             if (rs != null) {
                 rs.close();
-            }
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private static void closePreparedStatement(PreparedStatement pstmt) {
-        try {
-            if (pstmt != null) {
-                pstmt.close();
-            }
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private static void closeConnection(Connection conn) {
-        try {
-            if (conn != null) {
-                conn.close();
             }
         } catch (SQLException ignored) {
         }
