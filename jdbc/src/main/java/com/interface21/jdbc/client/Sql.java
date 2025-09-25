@@ -30,20 +30,18 @@ public class Sql {
     }
 
     public void insert(Insert insert) {
-        // TODO : 구현
+        jdbcTemplate.update(insert.toString());
     }
 
     public void update(Update update) {
-        // TODO : 구현
+        jdbcTemplate.update(update.toString());
     }
 
     public <T> List<T> selectMany(Select select, ResultExtractor<T> extractor) {
-        // TODO : 구현
-        return null;
+        return jdbcTemplate.queryMany(select.toString(), extractor);
     }
 
     public <T> T selectOne(Select select, ResultExtractor<T> extractor) {
-        // TODO : 구현
-        return null;
+        return jdbcTemplate.queryOne(select.toString(), extractor);
     }
 }

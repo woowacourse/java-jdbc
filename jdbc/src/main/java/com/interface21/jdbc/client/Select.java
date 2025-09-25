@@ -38,7 +38,9 @@ public class Select {
         return sql.selectOne(this, extractor);
     }
 
-    public String toSqlString() {
+    // 완성된 SQL의 형태를 구성한다.
+    @Override
+    public String toString() {
         // TODO : 구현
         return null;
     }

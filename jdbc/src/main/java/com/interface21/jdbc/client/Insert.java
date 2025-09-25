@@ -24,7 +24,9 @@ public class Insert {
         sql.insert(this);
     }
 
-    public String toSqlString() {
+    // 완성된 SQL의 형태를 구성한다.
+    @Override
+    public String toString() {
         // TODO : 구현
         return null;
     }
