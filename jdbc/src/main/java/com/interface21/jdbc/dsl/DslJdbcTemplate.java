@@ -1,19 +1,19 @@
-package com.interface21.jdbc.client;
+package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ResultExtractor;
 import java.util.List;
 import javax.sql.DataSource;
 
-public class Sql {
+public class DslJdbcTemplate {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public Sql(JdbcTemplate jdbcTemplate) {
+    public DslJdbcTemplate(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Sql(DataSource dataSource) {
+    public DslJdbcTemplate(DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
     }
 

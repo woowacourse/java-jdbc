@@ -1,4 +1,4 @@
-package com.interface21.jdbc.client;
+package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.ResultExtractor;
 

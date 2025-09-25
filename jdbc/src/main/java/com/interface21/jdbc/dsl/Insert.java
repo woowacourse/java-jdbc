@@ -1,17 +1,17 @@
-package com.interface21.jdbc.client;
+package com.interface21.jdbc.dsl;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class Insert {
 
-    private final Sql sql;
+    private final DslJdbcTemplate dslJdbcTemplate;
 
     private final String tableName;
     private final Map<String, Object> valueMap = new HashMap<>();
 
-    public Insert(Sql sql, String tableName) {
-        this.sql = sql;
+    public Insert(DslJdbcTemplate dslJdbcTemplate, String tableName) {
+        this.dslJdbcTemplate = dslJdbcTemplate;
         this.tableName = tableName;
     }
 
@@ -21,7 +21,7 @@ public class Insert {
     }
 
     public void execute() {
-        sql.insert(this);
+        dslJdbcTemplate.insert(this);
     }
 
     // 완성된 SQL의 형태를 구성한다.
