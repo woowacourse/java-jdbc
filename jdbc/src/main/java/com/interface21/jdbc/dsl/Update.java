@@ -33,7 +33,16 @@ public class Update {
     // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-        // TODO : 구현
-        return null;
+        String sets = setMap.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("");
+
+        String wheres = whereMap.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a, b) -> a + " AND " + b)
+                .orElse("");
+
+        return "UPDATE %s SET %s WHERE %s".formatted(tableName, sets, wheres);
     }
 }
