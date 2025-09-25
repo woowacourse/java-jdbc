@@ -1,6 +1,8 @@
 package com.interface21.jdbc.dsl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Insert {
@@ -27,7 +29,18 @@ public class Insert {
     // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-        // TODO : 구현
-        return null;
+        List<String> columnNames = new ArrayList<>();
+        List<String> columnValues = new ArrayList<>();
+        valueMap.forEach((key, value) -> {
+            columnNames.add(key);
+            if (value instanceof String) {
+                columnValues.add("'" + value + "'");
+            } else {
+                columnValues.add(value.toString());
+            }
+        });
+        String columns = columnNames.stream().reduce((a, b) -> a + ", " + b).orElse("");
+        String values = columnValues.stream().reduce((a, b) -> a + ", " + b).orElse("");
+        return "INSERT INTO %s (%s) VALUES (%s)".formatted(tableName, columns, values);
     }
 }
