@@ -22,12 +22,8 @@ public class JdbcTemplate {
 
     public void update(String sql, Object... values) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+             PreparedStatement pstmt = createPstmt(conn, sql, values)
         ) {
-            for (int i = 1; i <= values.length; i++) {
-                pstmt.setObject(i, values[i - 1]);
-            }
-
             pstmt.executeUpdate();
             log.debug("query : {}", sql);
         } catch (SQLException e) {
@@ -39,18 +35,12 @@ public class JdbcTemplate {
     public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+             PreparedStatement pstmt = createPstmt(conn, sql, values)
         ) {
-            for (int i = 0; i < values.length; i++) {
-                pstmt.setObject(i + 1, values[i]);
-            }
-
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return re.extract(rs);
-            }
+            if (rs.next()) return re.extract(rs);
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -63,19 +53,13 @@ public class JdbcTemplate {
     public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+             PreparedStatement pstmt = createPstmt(conn, sql, values)
         ) {
-            for (int i = 0; i < values.length; i++) {
-                pstmt.setObject(i + 1, values[i]);
-            }
-
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
 
             List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(re.extract(rs));
-            }
+            while (rs.next()) results.add(re.extract(rs));
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -83,6 +67,14 @@ public class JdbcTemplate {
         } finally {
             closeResultSet(rs);
         }
+    }
+
+    private static PreparedStatement createPstmt(Connection conn, String sql, Object... values) throws SQLException {
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        for (int i = 0; i < values.length; i++) {
+            pstmt.setObject(i + 1, values[i]);
+        }
+        return pstmt;
     }
 
     private static void closeResultSet(ResultSet rs) {
