@@ -9,7 +9,7 @@ public class Update {
 
     private final String tableName;
     private final Map<String, Object> setMap = new HashMap<>();
-    private final Map<String, Object> whereMap = new HashMap<>();
+    private final Where where = new Where();
 
     public Update(DslJdbcTemplate dslJdbcTemplate, String tableName) {
         this.dslJdbcTemplate = dslJdbcTemplate;
@@ -22,7 +22,7 @@ public class Update {
     }
 
     public Update where(String key, Object value) {
-        whereMap.put(key, value);
+        where.add(key, value);
         return this;
     }
 
@@ -43,18 +43,6 @@ public class Update {
                 })
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
-
-        String wheres = whereMap.entrySet().stream()
-                .map(entry -> {
-                    if (entry.getValue() instanceof String) {
-                        return entry.getKey() + " = '" + entry.getValue() + "'";
-                    } else {
-                        return entry.getKey() + " = " + entry.getValue();
-                    }
-                })
-                .reduce((a, b) -> a + " AND " + b)
-                .orElse("");
-
-        return "UPDATE %s SET %s WHERE %s".formatted(tableName, sets, wheres);
+        return "UPDATE %s SET %s %s".formatted(tableName, sets, where);
     }
 }

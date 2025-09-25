@@ -2,9 +2,7 @@ package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.ResultExtractor;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Select {
 
@@ -12,7 +10,7 @@ public class Select {
 
     private String tableName;
     private final List<String> rowList;
-    private final Map<String, Object> whereMap = new HashMap<>();
+    private final Where where = new Where();
 
     public Select(DslJdbcTemplate dslJdbcTemplate, String... rowNames) {
         this.dslJdbcTemplate = dslJdbcTemplate;
@@ -25,7 +23,7 @@ public class Select {
     }
 
     public Select where(String key, Object value) {
-        this.whereMap.put(key, value);
+        this.where.add(key, value);
         return this;
     }
 
@@ -47,20 +45,6 @@ public class Select {
     @Override
     public String toString() {
         String rows = rowList.stream().reduce((a, b) -> a + ", " + b).orElse("");
-        if (whereMap.isEmpty()) {
-            return "SELECT %s FROM %s".formatted(rows, tableName);
-        } else {
-            String wheres = whereMap.entrySet().stream()
-                    .map(entry -> {
-                        if (entry.getValue() instanceof String) {
-                            return entry.getKey() + " = '" + entry.getValue() + "'";
-                        } else {
-                            return entry.getKey() + " = " + entry.getValue();
-                        }
-                    })
-                    .reduce((a, b) -> a + " AND " + b)
-                    .orElse("");
-            return "SELECT %s FROM %s WHERE %s".formatted(rows, tableName, wheres);
-        }
+        return "SELECT %s FROM %s %s".formatted(rows, tableName, where);
     }
 }
