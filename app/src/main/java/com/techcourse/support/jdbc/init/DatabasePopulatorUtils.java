@@ -1,15 +1,13 @@
 package com.techcourse.support.jdbc.init;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabasePopulatorUtils {
 
@@ -18,10 +16,11 @@ public class DatabasePopulatorUtils {
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
         Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+        try (var in = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql")) {
+            if (in == null) {
+                throw new IllegalArgumentException("schema.sql not found in classpath");
+            }
+            final var sql = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
@@ -32,15 +31,18 @@ public class DatabasePopulatorUtils {
                 if (statement != null) {
                     statement.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
 
             try {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 
-    private DatabasePopulatorUtils() {}
+    private DatabasePopulatorUtils() {
+    }
 }
