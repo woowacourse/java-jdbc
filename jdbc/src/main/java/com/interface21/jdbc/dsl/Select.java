@@ -47,10 +47,20 @@ public class Select {
     @Override
     public String toString() {
         String rows = rowList.stream().reduce((a, b) -> a + ", " + b).orElse("");
-        String wheres = whereMap.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                .reduce((a, b) -> a + " AND " + b)
-                .orElse("");
-        return "SELECT %s FROM %s WHERE %s".formatted(rows, tableName, wheres);
+        if (whereMap.isEmpty()) {
+            return "SELECT %s FROM %s".formatted(rows, tableName);
+        } else {
+            String wheres = whereMap.entrySet().stream()
+                    .map(entry -> {
+                        if (entry.getValue() instanceof String) {
+                            return entry.getKey() + " = '" + entry.getValue() + "'";
+                        } else {
+                            return entry.getKey() + " = " + entry.getValue();
+                        }
+                    })
+                    .reduce((a, b) -> a + " AND " + b)
+                    .orElse("");
+            return "SELECT %s FROM %s WHERE %s".formatted(rows, tableName, wheres);
+        }
     }
 }

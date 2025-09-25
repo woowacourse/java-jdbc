@@ -34,12 +34,24 @@ public class Update {
     @Override
     public String toString() {
         String sets = setMap.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .map(entry -> {
+                    if (entry.getValue() instanceof String) {
+                        return entry.getKey() + " = '" + entry.getValue() + "'";
+                    } else {
+                        return entry.getKey() + " = " + entry.getValue();
+                    }
+                })
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
         String wheres = whereMap.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .map(entry -> {
+                    if (entry.getValue() instanceof String) {
+                        return entry.getKey() + " = '" + entry.getValue() + "'";
+                    } else {
+                        return entry.getKey() + " = " + entry.getValue();
+                    }
+                })
                 .reduce((a, b) -> a + " AND " + b)
                 .orElse("");
 
