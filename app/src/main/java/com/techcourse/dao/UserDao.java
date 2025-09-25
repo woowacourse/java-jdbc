@@ -1,22 +1,16 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.ResultsetMapper;
-import com.techcourse.config.DataSourceConfig;
+import com.interface21.jdbc.core.ResultSetMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
-    private static final ResultsetMapper<User> USER_MAPPER = rs -> new User(
+    private static final ResultSetMapper<User> USER_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
