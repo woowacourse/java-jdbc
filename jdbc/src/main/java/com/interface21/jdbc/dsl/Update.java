@@ -1,14 +1,11 @@
 package com.interface21.jdbc.dsl;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class Update {
 
     private final DslJdbcTemplate dslJdbcTemplate;
 
     private final String tableName;
-    private final Map<String, Object> setMap = new HashMap<>();
+    private final Set set = new Set();
     private final Where where = new Where();
 
     public Update(DslJdbcTemplate dslJdbcTemplate, String tableName) {
@@ -17,7 +14,7 @@ public class Update {
     }
 
     public Update set(String key, Object value) {
-        setMap.put(key, value);
+        set.add(key, value);
         return this;
     }
 
@@ -33,16 +30,7 @@ public class Update {
     // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-        String sets = setMap.entrySet().stream()
-                .map(entry -> {
-                    if (entry.getValue() instanceof String) {
-                        return entry.getKey() + " = '" + entry.getValue() + "'";
-                    } else {
-                        return entry.getKey() + " = " + entry.getValue();
-                    }
-                })
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("");
-        return "UPDATE %s SET %s %s".formatted(tableName, sets, where);
+
+        return "UPDATE %s %s %s".formatted(tableName, set, where);
     }
 }
