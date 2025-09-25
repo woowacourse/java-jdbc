@@ -38,10 +38,19 @@ public class Select {
         return dslJdbcTemplate.selectOne(this, extractor);
     }
 
+    /*
+    select ... from %s
+    where ...
+     */
+
     // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-        // TODO : 구현
-        return null;
+        String rows = rowList.stream().reduce((a, b) -> a + ", " + b).orElse("");
+        String wheres = whereMap.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .reduce((a, b) -> a + " AND " + b)
+                .orElse("");
+        return "SELECT %s FROM %s WHERE %s".formatted(rows, tableName, wheres);
     }
 }
