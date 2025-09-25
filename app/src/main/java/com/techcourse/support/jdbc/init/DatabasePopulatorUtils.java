@@ -1,5 +1,6 @@
 package com.techcourse.support.jdbc.init;
 
+import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +20,11 @@ public class DatabasePopulatorUtils {
         Connection connection = null;
         Statement statement = null;
         try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            final var contents = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql");
+            if (contents == null) {
+                throw new IllegalStateException("schema.sql이 없습니다.");
+            }
+            final var sql = new String(contents.readAllBytes(), StandardCharsets.UTF_8);
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
