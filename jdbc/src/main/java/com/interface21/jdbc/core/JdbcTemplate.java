@@ -41,8 +41,8 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= values.length; i++) {
-                pstmt.setObject(i, values[i - 1]);
+            for (int i = 0; i < values.length; i++) {
+                pstmt.setObject(i + 1, values[i]);
             }
 
             rs = pstmt.executeQuery();
@@ -65,8 +65,8 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= values.length; i++) {
-                pstmt.setObject(i, values[i - 1]);
+            for (int i = 0; i < values.length; i++) {
+                pstmt.setObject(i + 1, values[i]);
             }
 
             rs = pstmt.executeQuery();
