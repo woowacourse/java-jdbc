@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +40,34 @@ public class JdbcTemplate {
             setParameters(pstmt, args);
             var rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rowMapper.mapRow(rs);
+                var mappedRow = rowMapper.mapRow(rs);
+                rs.close();
+                return mappedRow;
             }
+
+            rs.close();
             return null;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, Object... args) {
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, args);
+            var rs = pstmt.executeQuery();
+            var list = new ArrayList<T>();
+            while (rs.next()) {
+                var mappedRow = rowMapper.mapRow(rs);
+                list.add(mappedRow);
+            }
+
+            rs.close();
+            return list;
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
