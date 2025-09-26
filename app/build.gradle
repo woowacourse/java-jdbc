@@ -27,6 +27,9 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation 'org.apache.commons:commons-lang3:3.18.0'
     implementation 'com.h2database:h2:2.3.232'
+    
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
 
     testImplementation 'org.assertj:assertj-core:3.26.3'
     testImplementation 'org.mockito:mockito-core:5.15.2'

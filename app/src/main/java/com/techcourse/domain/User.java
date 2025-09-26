@@ -1,5 +1,9 @@
 package com.techcourse.domain;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
 public class User {
 
     private Long id;
