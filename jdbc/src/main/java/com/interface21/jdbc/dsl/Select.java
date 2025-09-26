@@ -1,7 +1,6 @@
 package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.ResultExtractor;
-import java.util.Arrays;
 import java.util.List;
 
 public class Select {
@@ -9,12 +8,12 @@ public class Select {
     private final DslJdbcTemplate dslJdbcTemplate;
 
     private String tableName;
-    private final List<String> rowList;
+    private final ColumnNames columnNames = new ColumnNames();
     private final Where where = new Where();
 
     public Select(DslJdbcTemplate dslJdbcTemplate, String... rowNames) {
         this.dslJdbcTemplate = dslJdbcTemplate;
-        this.rowList = Arrays.stream(rowNames).toList();
+        this.columnNames.add(rowNames);
     }
 
     public Select from(String table) {
@@ -44,7 +43,6 @@ public class Select {
     // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-        String rows = rowList.stream().reduce((a, b) -> a + ", " + b).orElse("");
-        return "SELECT %s FROM %s %s".formatted(rows, tableName, where);
+        return "SELECT %s FROM %s %s".formatted(columnNames, tableName, where);
     }
 }

@@ -1,29 +1,19 @@
 package com.interface21.jdbc.dsl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Values {
 
-    private final Map<String, DbObject> valueMap = new HashMap<>();
+    private final List<DbObject> valueList = new ArrayList<>();
 
-    void add(String key, Object value) {
-        valueMap.put(key, new DbObject(value));
+    void add(Object value) {
+        valueList.add(new DbObject(value));
     }
 
     @Override
     public String toString() {
-        List<String> columnNames = new ArrayList<>();
-        List<String> columnValues = new ArrayList<>();
-        valueMap.forEach((key, value) -> {
-            columnNames.add(key);
-            columnValues.add(value.toString());
-        });
-        String columns = columnNames.stream().reduce((a, b) -> a + ", " + b).orElse("");
-        String values = columnValues.stream().reduce((a, b) -> a + ", " + b).orElse("");
-
-        return " (%s) VALUES (%s)".formatted(columns, values);
+        String values = valueList.stream().map(DbObject::toString).reduce((a, b) -> a + ", " + b).orElse("");
+        return " VALUES (%s)".formatted(values);
     }
 }

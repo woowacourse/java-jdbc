@@ -5,6 +5,7 @@ public class Insert {
     private final DslJdbcTemplate dslJdbcTemplate;
 
     private final String tableName;
+    private final ColumnNames columnNames = new ColumnNames();
     private final Values values = new Values();
 
     public Insert(DslJdbcTemplate dslJdbcTemplate, String tableName) {
@@ -13,7 +14,8 @@ public class Insert {
     }
 
     public Insert of(String key, Object value) {
-        values.add(key, value);
+        columnNames.add(key);
+        values.add(value);
         return this;
     }
 
@@ -24,6 +26,6 @@ public class Insert {
     // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-        return "INSERT INTO %s %s".formatted(tableName, values);
+        return "INSERT INTO %s (%s) %s".formatted(tableName, columnNames, values);
     }
 }
