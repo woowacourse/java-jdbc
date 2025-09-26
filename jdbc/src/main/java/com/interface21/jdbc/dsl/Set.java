@@ -13,7 +13,7 @@ public class Set {
 
     @Override
     public String toString() {
-        return " SET " + setMap.entrySet().stream()
+        return "SET " + setMap.entrySet().stream()
                 .map(entry -> entry.getKey() + " = " + entry.getValue())
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");

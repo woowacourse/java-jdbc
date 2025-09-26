@@ -14,6 +14,6 @@ public class Values {
     @Override
     public String toString() {
         String values = valueList.stream().map(DbObject::toString).reduce((a, b) -> a + ", " + b).orElse("");
-        return " VALUES (%s)".formatted(values);
+        return "VALUES (%s)".formatted(values);
     }
 }

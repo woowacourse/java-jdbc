@@ -19,7 +19,7 @@ public class Where {
     public String toString() {
         if (isEmpty()) return "";
 
-        return " WHERE " + whereMap.entrySet().stream()
+        return "WHERE " + whereMap.entrySet().stream()
                 .map(entry -> entry.getKey() + " = " + entry.getValue())
                 .reduce((a, b) -> a + " AND " + b)
                 .orElse("");
