@@ -23,7 +23,6 @@ public class Insert {
         dslJdbcTemplate.insert(this);
     }
 
-    // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
         return "INSERT INTO %s (%s) %s".formatted(tableName, columnNames, values);

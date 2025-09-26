@@ -27,10 +27,8 @@ public class Update {
         dslJdbcTemplate.update(this);
     }
 
-    // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
-
         return "UPDATE %s %s %s".formatted(tableName, set, where);
     }
 }

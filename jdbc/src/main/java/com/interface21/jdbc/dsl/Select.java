@@ -35,12 +35,6 @@ public class Select {
         return dslJdbcTemplate.selectOne(this, extractor);
     }
 
-    /*
-    select ... from %s
-    where ...
-     */
-
-    // 완성된 SQL의 형태를 구성한다.
     @Override
     public String toString() {
         return "SELECT %s FROM %s %s".formatted(columnNames, tableName, where);
