@@ -1,6 +1,7 @@
 package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.ResultExtractor;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -11,7 +12,9 @@ public class ResultExtractorFactory {
     public static <T> ResultExtractor<T> create(Class<T> targetClass) {
         return resultSet -> {
             try {
-                T instance = targetClass.getDeclaredConstructor().newInstance();
+                Constructor<T> noArgsConstructor = targetClass.getDeclaredConstructor();
+                noArgsConstructor.setAccessible(true);
+                T instance = noArgsConstructor.newInstance();
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
 
