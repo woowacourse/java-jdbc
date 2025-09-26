@@ -41,20 +41,20 @@ public class UserDao {
     public List<User> findAll() {
         return jdbc.select("id", "account", "password", "email")
                 .from("users")
-                .many(EXTRACTOR);
+                .many(User.class);
     }
 
     public User findById(final Long id) {
         return jdbc.select("id", "account", "password", "email")
                 .from("users")
                 .where("id", id)
-                .one(EXTRACTOR);
+                .one(User.class);
     }
 
     public User findByAccount(final String account) {
         return jdbc.select("id", "account", "password", "email")
                 .from("users")
                 .where("account", account)
-                .one(EXTRACTOR);
+                .one(User.class);
     }
 }

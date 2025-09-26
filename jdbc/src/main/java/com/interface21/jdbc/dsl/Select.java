@@ -26,13 +26,22 @@ public class Select {
         return this;
     }
 
-    // TODO : ResultExtractor를 구현하지 않아도 추출 가능하도록 팩토리 사용
     public <T> List<T> many(ResultExtractor<T> extractor) {
         return dslJdbcTemplate.selectMany(this, extractor);
     }
 
+    public <T> List<T> many(Class<T> clazz) {
+        ResultExtractor<T> extractor = ResultExtractorFactory.create(clazz);
+        return many(extractor);
+    }
+
     public <T> T one(ResultExtractor<T> extractor) {
         return dslJdbcTemplate.selectOne(this, extractor);
+    }
+
+    public <T> T one(Class<T> clazz) {
+        ResultExtractor<T> extractor = ResultExtractorFactory.create(clazz);
+        return one(extractor);
     }
 
     @Override
