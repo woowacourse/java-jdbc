@@ -1,14 +1,15 @@
 package com.interface21.jdbc.dsl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Values {
 
     private final List<DbObject> valueList = new ArrayList<>();
 
-    void add(Object value) {
-        valueList.add(new DbObject(value));
+    void add(Object... value) {
+        Arrays.stream(value).map(DbObject::new).forEach(valueList::add);
     }
 
     @Override
