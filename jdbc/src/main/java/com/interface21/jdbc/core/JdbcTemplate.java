@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -14,6 +16,42 @@ public class JdbcTemplate {
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
         testConnection(dataSource);
+    }
+
+    public void update(String sql, Object... args) {
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, args);
+            pstmt.execute();
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T selectOne(RowMapper<T> rowMapper, String sql, Object... args) {
+        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, args);
+            var rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            pstmt.setObject(i, args[i - 1]);
+        }
     }
 
     private void testConnection(DataSource dataSource) {
