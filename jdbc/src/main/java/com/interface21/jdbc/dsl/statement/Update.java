@@ -1,5 +1,8 @@
-package com.interface21.jdbc.dsl;
+package com.interface21.jdbc.dsl.statement;
 
+import com.interface21.jdbc.dsl.DslJdbcTemplate;
+import com.interface21.jdbc.dsl.component.Set;
+import com.interface21.jdbc.dsl.component.Where;
 import java.util.Map;
 
 public class Update {

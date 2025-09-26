@@ -1,4 +1,4 @@
-package com.interface21.jdbc.dsl;
+package com.interface21.jdbc.dsl.component;
 
 import java.util.HashMap;
 import java.util.Map;

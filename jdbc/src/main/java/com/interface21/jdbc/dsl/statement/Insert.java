@@ -1,5 +1,8 @@
-package com.interface21.jdbc.dsl;
+package com.interface21.jdbc.dsl.statement;
 
+import com.interface21.jdbc.dsl.DslJdbcTemplate;
+import com.interface21.jdbc.dsl.component.ColumnNames;
+import com.interface21.jdbc.dsl.component.Values;
 import java.util.Map;
 
 public class Insert {

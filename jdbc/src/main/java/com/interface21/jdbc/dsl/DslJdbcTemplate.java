@@ -2,6 +2,9 @@ package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ResultExtractor;
+import com.interface21.jdbc.dsl.statement.Insert;
+import com.interface21.jdbc.dsl.statement.Select;
+import com.interface21.jdbc.dsl.statement.Update;
 import java.util.List;
 import javax.sql.DataSource;
 

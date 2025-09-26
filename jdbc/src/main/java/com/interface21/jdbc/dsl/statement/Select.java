@@ -1,6 +1,10 @@
-package com.interface21.jdbc.dsl;
+package com.interface21.jdbc.dsl.statement;
 
 import com.interface21.jdbc.core.ResultExtractor;
+import com.interface21.jdbc.dsl.DslJdbcTemplate;
+import com.interface21.jdbc.dsl.ResultExtractorFactory;
+import com.interface21.jdbc.dsl.component.ColumnNames;
+import com.interface21.jdbc.dsl.component.Where;
 import java.util.List;
 import java.util.Map;
 

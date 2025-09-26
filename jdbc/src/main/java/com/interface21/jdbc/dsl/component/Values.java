@@ -1,4 +1,4 @@
-package com.interface21.jdbc.dsl;
+package com.interface21.jdbc.dsl.component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,7 +8,7 @@ public class Values {
 
     private final List<DbObject> valueList = new ArrayList<>();
 
-    void add(Object... value) {
+    public void add(Object... value) {
         Arrays.stream(value).map(DbObject::new).forEach(valueList::add);
     }
 
