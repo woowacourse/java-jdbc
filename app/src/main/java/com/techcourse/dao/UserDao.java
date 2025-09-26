@@ -1,19 +1,11 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.ResultExtractor;
 import com.interface21.jdbc.dsl.DslJdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.List;
 
 public class UserDao {
-
-    private static final ResultExtractor<User> EXTRACTOR = rs -> new User(
-            rs.getLong("id"),
-            rs.getString("account"),
-            rs.getString("password"),
-            rs.getString("email")
-    );
 
     private final DslJdbcTemplate jdbc;
 
