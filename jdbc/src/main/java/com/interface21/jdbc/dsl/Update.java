@@ -1,5 +1,7 @@
 package com.interface21.jdbc.dsl;
 
+import java.util.Map;
+
 public class Update {
 
     private final DslJdbcTemplate dslJdbcTemplate;
@@ -18,9 +20,13 @@ public class Update {
         return this;
     }
 
-    public Update where(String key, Object value) {
-        where.add(key, value);
+    public Update where(Map<String, Object> map) {
+        map.forEach(where::add);
         return this;
+    }
+
+    public Update where(String key, Object value) {
+        return where(Map.of(key, value));
     }
 
     public void execute() {

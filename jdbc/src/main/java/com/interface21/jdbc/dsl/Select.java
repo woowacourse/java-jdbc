@@ -2,6 +2,7 @@ package com.interface21.jdbc.dsl;
 
 import com.interface21.jdbc.core.ResultExtractor;
 import java.util.List;
+import java.util.Map;
 
 public class Select {
 
@@ -18,6 +19,11 @@ public class Select {
 
     public Select from(String table) {
         this.tableName = table;
+        return this;
+    }
+
+    public Select where(Map<String, Object> map) {
+        map.forEach(where::add);
         return this;
     }
 

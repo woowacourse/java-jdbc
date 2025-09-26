@@ -1,5 +1,7 @@
 package com.interface21.jdbc.dsl;
 
+import java.util.Map;
+
 public class Insert {
 
     private final DslJdbcTemplate dslJdbcTemplate;
@@ -13,10 +15,16 @@ public class Insert {
         this.tableName = tableName;
     }
 
-    public Insert of(String key, Object value) {
-        columnNames.add(key);
-        values.add(value);
+    public Insert of(Map<String, Object> map) {
+        map.forEach((k, v) -> {
+            columnNames.add(k);
+            values.add(v);
+        });
         return this;
+    }
+
+    public Insert of(String key, Object value) {
+        return of(Map.of(key, value));
     }
 
     public void execute() {
