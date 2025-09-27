@@ -1,18 +1,13 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
-import com.interface21.jdbc.core.JdbcTemplate;
-import java.util.ArrayList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -44,44 +39,21 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        final var sql = "select account, password, email from users";
+        final var sql = "select id, account, password, email from users";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            final ResultSet resultSet = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            final ArrayList<User> users = new ArrayList<>();
-
-            while (resultSet.next()) {
-                final String account = resultSet.getString("account");
-                final String password = resultSet.getString("password");
-                final String email = resultSet.getString("email");
-                final User user = new User(account, password, email);
-                users.add(user);
-            }
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
+        return jdbcTemplate.executeQueryForList(sql, (rs -> {
+                    try {
+                        return new User(
+                                rs.getLong(1),
+                                rs.getString(2),
+                                rs.getString(3),
+                                rs.getString(4));
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
+                )
+        );
     }
 
     public User findById(final Long id) {
