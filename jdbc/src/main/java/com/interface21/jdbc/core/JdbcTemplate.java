@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,20 +20,21 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(final String sql, final Object... params) {
+    public int update(final String sql, final Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             setParams(pstmt, params);
-            pstmt.executeUpdate();
+
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public <T> T executeQueryForSingleRow(final String sql, final Function<ResultSet, T> function, final Object... params) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -44,7 +44,7 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return function.apply(rs);
+                return rowMapper.mapRow(rs);
             }
             return null;
         } catch (SQLException e) {
@@ -55,7 +55,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQueryForList(final String sql, final Function<ResultSet, T> function, final Object... params) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         ResultSet rs = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
@@ -66,8 +66,8 @@ public class JdbcTemplate {
 
             final ArrayList<T> result = new ArrayList<>();
             while (rs.next()) {
-                final T applied = function.apply(rs);
-                result.add(applied);
+                final T mappedRow = rowMapper.mapRow(rs);
+                result.add(mappedRow);
             }
             return result;
         } catch (SQLException e) {
