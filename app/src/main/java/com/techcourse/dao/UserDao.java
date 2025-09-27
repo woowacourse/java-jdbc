@@ -1,6 +1,6 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.ResultSetMapper;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final ResultSetMapper<User> USER_MAPPER = rs -> new User(
+    private static final RowMapper<User> USER_MAPPER = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
