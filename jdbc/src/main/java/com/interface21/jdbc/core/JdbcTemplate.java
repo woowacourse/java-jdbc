@@ -21,14 +21,28 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParams(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        log.debug("query : {}", sql);
+        execute(
+                pstmt -> {
+                    pstmt.executeUpdate();
+                    return null;
+                },
+                sql,
+                args
+        );
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... args) {
+        log.debug("query : {}", sql);
+        return execute(
+                pstmt -> {
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        return getQueryResult(mapper, rs);
+                    }
+                },
+                sql,
+                args
+        );
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... args) {
@@ -42,15 +56,15 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... args) {
+    private <T> T execute(
+            final SqlExecutor<T> executor,
+            final String sql,
+            final Object[] args
+    ) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, args);
-            log.debug("query : {}", sql);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return getQueryResult(mapper, rs);
-            }
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
