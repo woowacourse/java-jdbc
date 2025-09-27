@@ -20,63 +20,32 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T getSingleResult(RowMapper<T> rowMapper, String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);) {
-
-            setParameters(pstmt, args);
-
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                log.info("query : {}", sql);
-
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                return rs.next() ? rowMapper.mapRow(rs) : null;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-
-        return null;
+        }, args);
     }
 
     public <T> List<T> getResults(RowMapper<T> rowMapper, String sql, Object... args) {
+        return execute(sql, pstmt -> {
+            List<T> result = new ArrayList<>();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        }, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);) {
-
             setParameters(pstmt, args);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                log.info("query : {}", sql);
-
-                List<T> result = new ArrayList<>();
-
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
-                }
-
-                return result;
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
