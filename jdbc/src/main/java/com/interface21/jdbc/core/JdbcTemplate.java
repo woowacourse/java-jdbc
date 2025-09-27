@@ -47,8 +47,10 @@ public class JdbcTemplate {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 log.debug("queryForObject : {}", sql);
+                int rowNum = 0;
                 if (rs.next()) {
-                    return rowMapper.rowMap(rs, 1);
+                    rowNum++;
+                    return rowMapper.rowMap(rs, rowNum);
                 }
                 return null;
             }
@@ -68,8 +70,10 @@ public class JdbcTemplate {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 log.debug("query : {}", sql);
+                int rowNum = 0;
                 while (rs.next()) {
-                    results.add(rowMapper.rowMap(rs, 1));
+                    rowNum++;
+                    results.add(rowMapper.rowMap(rs, rowNum));
                 }
                 return results;
             }
