@@ -38,7 +38,7 @@ public class UserDao {
                 resultSet.getString("account"),
                 resultSet.getString("password"),
                 resultSet.getString("email")
-        ), sql, null);
+        ), sql, (Object[]) null);
     }
 
     public User findById(final Long id) {
