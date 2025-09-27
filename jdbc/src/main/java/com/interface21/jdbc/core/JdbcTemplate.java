@@ -19,29 +19,29 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    // INSERT, UPDATE, DELETE 용
-    //TODO: 콜백 인터페이스 구현하면 Objcet...처럼 순서에 의존하지 않아도 된다고 함. 다음 스텝에..  (2025-09-27, 토, 17:38)
-    public int update(String sql, Object... params) {
+    private <T> T execute(String sql, StatementExecutor<T> executor, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParameters(pstmt, params);
-            int updatedRows = pstmt.executeUpdate();
             log.debug("query : {}", sql);
-            return updatedRows;
+
+            return executor.execute(pstmt);
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
+    // INSERT, UPDATE, DELETE
+    //TODO: 별도의 콜백 인터페이스 구현하면 Objcet...처럼 순서에 의존하지 않아도 된다고 함. 다음 스텝에..  (2025-09-27, 토, 17:38)
+    public int update(String sql, Object... params) {
+        return execute(sql, PreparedStatement::executeUpdate, params);
+    }
+
     // SELECT
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameters(pstmt, params);
-            log.debug("query : {}", sql);
-
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -49,9 +49,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        }, params);
     }
 
     // SELECT 단일
