@@ -21,19 +21,13 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            close(pstmt);
-            close(conn);
         }
     }
 
@@ -49,25 +43,17 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final ResultSetMapper<T> mapper, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParams(pstmt, args);
-            rs = pstmt.executeQuery();
-
             log.debug("query : {}", sql);
 
-            return getQueryResult(mapper, rs);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return getQueryResult(mapper, rs);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            close(rs);
-            close(pstmt);
-            close(conn);
         }
     }
 
@@ -85,24 +71,4 @@ public class JdbcTemplate {
         return results;
     }
 
-    private static void close(final Connection conn) {
-        try {
-            if (conn != null) conn.close();
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private static void close(final PreparedStatement pstmt) {
-        try {
-            if (pstmt != null) pstmt.close();
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private static void close(final ResultSet rs) {
-        try {
-            if (rs != null) rs.close();
-        } catch (SQLException ignored) {
-        }
-    }
 }

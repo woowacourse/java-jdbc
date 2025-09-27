@@ -18,38 +18,17 @@ public class DatabasePopulatorUtils {
     private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
     public static void execute(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        InputStream inputStream = null;
-        try {
-            inputStream = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql");
+        try (InputStream inputStream = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql");
+             Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            
             if (inputStream == null) {
                 throw new IllegalStateException("schema.sql이 없습니다.");
             }
             final var sql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
+        } catch (IOException | SQLException e) {
             log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException ignored) {}
         }
     }
 
