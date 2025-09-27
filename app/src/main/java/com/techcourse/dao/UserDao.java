@@ -1,10 +1,11 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +14,13 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -41,55 +39,32 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.executeQueryForList(sql, (rs -> {
-                    try {
-                        return new User(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4));
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                )
-        );
+        return jdbcTemplate.executeQueryForList(sql, getUserFromResultSet());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.executeQueryForSingleRow(sql, (rs -> {
-                    try {
-                        return new User(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4));
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                ),
-                id
-        );
+        return jdbcTemplate.executeQueryForSingleRow(sql, getUserFromResultSet(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.executeQueryForSingleRow(sql, (rs) -> {
-                    try {
-                        return new User(
-                                rs.getLong(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getString(4));
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                account
-        );
+        return jdbcTemplate.executeQueryForSingleRow(sql, getUserFromResultSet(), account);
+    }
+
+    private Function<ResultSet, User> getUserFromResultSet() {
+        return (rs) -> {
+            try {
+                return new User(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }
