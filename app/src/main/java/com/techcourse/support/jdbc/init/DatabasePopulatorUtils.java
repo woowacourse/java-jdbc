@@ -1,5 +1,7 @@
 package com.techcourse.support.jdbc.init;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +20,13 @@ public class DatabasePopulatorUtils {
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
         Statement statement = null;
+        InputStream inputStream = null;
         try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            inputStream = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql");
+            if (inputStream == null) {
+                throw new IllegalStateException("schema.sql이 없습니다.");
+            }
+            final var sql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
@@ -39,6 +44,12 @@ public class DatabasePopulatorUtils {
                     connection.close();
                 }
             } catch (SQLException ignored) {}
+
+            try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            } catch (IOException ignored) {}
         }
     }
 
