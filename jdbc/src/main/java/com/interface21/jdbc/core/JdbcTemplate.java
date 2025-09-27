@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,14 +37,8 @@ public class JdbcTemplate {
             try (ResultSet rs = pstmt.executeQuery()) {
                 final var metaData = rs.getMetaData();
                 final int columnCount = metaData.getColumnCount();
-
                 while (rs.next()) {
-                    Map<String, Object> row = new HashMap<>();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = metaData.getColumnName(i);
-                        Object value = rs.getObject(i);
-                        row.put(columnName, value);
-                    }
+                    Map<String, Object> row = getMapRow(columnCount, metaData, rs);
                     results.add(row);
                 }
             }
@@ -63,12 +58,7 @@ public class JdbcTemplate {
                 if (rs.next()) {
                     final var metaData = rs.getMetaData();
                     final int columnCount = metaData.getColumnCount();
-                    Map<String, Object> row = new HashMap<>();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = metaData.getColumnName(i);
-                        Object value = rs.getObject(i);
-                        row.put(columnName, value);
-                    }
+                    Map<String, Object> row = getMapRow(columnCount, metaData, rs);
                     return Optional.of(row);
                 }
             }
@@ -89,6 +79,17 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private Map<String, Object> getMapRow(int columnCount, ResultSetMetaData metaData, ResultSet rs)
+            throws SQLException {
+        Map<String, Object> row = new HashMap<>();
+        for (int i = 1; i <= columnCount; i++) {
+            String columnName = metaData.getColumnLabel(i);
+            Object value = rs.getObject(i);
+            row.put(columnName, value);
+        }
+        return row;
     }
 
     private void setParameter(Object[] args, PreparedStatement pstmt) throws SQLException {
