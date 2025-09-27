@@ -43,7 +43,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, args);
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
