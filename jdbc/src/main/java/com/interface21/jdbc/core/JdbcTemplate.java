@@ -10,6 +10,21 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Java Database Connectivity Template
+ * <p>
+ * 데이터베이스 연결, PreparedStatement 생성, 파라미터 설정, 결과 처리, 리소스 해제 등의 반복적인 JDBC 작업을 자동화하여 코드 중복을 제거합니다.
+ * </p>
+ *
+ * <p>
+ * JDBC 핵심 구성요소:
+ * <ul>
+ *   <li>DataSource: 커넥션 풀을 통한 데이터베이스 연결 관리</li>
+ *   <li>Connection: 데이터베이스 연결</li>
+ *   <li>Statement/PreparedStatement: SQL 실행</li>
+ *   <li>ResultSet: 조회 결과 처리</li>
+ * </ul>
+ */
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -108,7 +123,9 @@ public class JdbcTemplate {
         }
     }
 
-    // JDBC 리소스 정리
+    // JDBC 리소스들 정리
+    // ResultSet, PreparedStatement, Connection을 역순으로 해제
+    // conn.close()만 성공해도 내부적으로 ResultSet, PreparedStatement도 자동 해제되지만, 역순 해제는 좋은 관습임. 생성 순서를 기억하고 있다는 의미.
     private void closeResources(final ResultSet rs, final PreparedStatement pstmt, final Connection conn) {
         try {
             if (rs != null) {
