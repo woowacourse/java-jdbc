@@ -1,27 +1,21 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
-    private final DataSource dataSource;
-
-    public UserHistoryDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void log(final UserHistory userHistory) {
@@ -30,7 +24,7 @@ public class UserHistoryDao {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
+            conn = jdbcTemplate.getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
