@@ -12,6 +12,22 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * JdbcTemplate 특징 정리
+ * <p>
+ * Connection 획득: DataSource에서 Connection을 안전하게 획득
+ * <p>
+ * PreparedStatement 생성: SQL과 매개변수를 이용해 Statement 준비
+ * <p>
+ * 쿼리 실행: SQL 실행 및 결과 처리
+ * <p>
+ * ResultSet 매핑: RowMapper를 통해 자바 객체로 변환
+ * <p>
+ * 예외 변환: SQLException을 Spring의 DataAccessException으로 변환
+ * <p>
+ * 리소스 정리: Connection, Statement, ResultSet 자동 해제
+ */
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -21,20 +37,6 @@ public class JdbcTemplate {
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
-
-    /**
-     * Connection 획득: DataSource에서 Connection을 안전하게 획득
-     * <p>
-     * PreparedStatement 생성: SQL과 매개변수를 이용해 Statement 준비
-     * <p>
-     * 쿼리 실행: SQL 실행 및 결과 처리
-     * <p>
-     * ResultSet 매핑: RowMapper를 통해 자바 객체로 변환
-     * <p>
-     * 예외 변환: SQLException을 Spring의 DataAccessException으로 변환
-     * <p>
-     * 리소스 정리: Connection, Statement, ResultSet 자동 해제
-     */
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
