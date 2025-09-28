@@ -38,6 +38,26 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query: {}, args: {}", sql, args);
+            setParameters(pstmt, args);
+
+            try (final ResultSet resultSet = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                int rowNum = 0;
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet, rowNum++));
+                }
+                return results;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -61,7 +81,7 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            log.debug("query: {}, args: {}", sql, args);
+            log.debug("queryForObject: {}, args: {}", sql, args);
 
             setParameters(pstmt, args);
 
