@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public class UserDao {
 
@@ -21,28 +22,21 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private final InsertJdbcTemplate insertJdbcTemplate;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.insertJdbcTemplate = new InsertJdbcTemplate(jdbcTemplate);
+        this.updateJdbcTemplate = new UpdateJdbcTemplate(jdbcTemplate);
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (:account, :password, :email)";
-        Map<String, Object> params = new HashMap<>();
-        params.put("account", user.getAccount());
-        params.put("password", user.getPassword());
-        params.put("email", user.getEmail());
-        jdbcTemplate.update(sql, params);
+        insertJdbcTemplate.insert(user, this);
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = :account, password = :password, email = :email where id = :id";
-        Map<String, Object> params = new HashMap<>();
-        params.put("account", user.getAccount());
-        params.put("password", user.getPassword());
-        params.put("email", user.getEmail());
-        params.put("id", user.getId());
-        jdbcTemplate.update(sql, params);
+        updateJdbcTemplate.update(user, this);
     }
 
     public List<User> findAll() {
