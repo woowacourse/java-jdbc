@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -58,23 +59,6 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql);
-             final ResultSet resultSet = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-            return results;
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
 
     @Nullable
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
@@ -85,15 +69,28 @@ public class JdbcTemplate {
 
             setParameters(pstmt, args);
 
-            try (final ResultSet resultSet = pstmt.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet, 0);
-                }
-            }
-
-            return null;
+            return extractSingleResult(rowMapper, pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T extractSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+
+            if (results.isEmpty()) {
+                return null;
+            }
+            if (results.size() == 1) {
+                return results.getFirst();
+            }
+
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
     }
 
