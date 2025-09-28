@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +30,8 @@ public class JdbcTemplate {
             return executor.execute(pstmt);
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error("SQL execution failed. Query: {}", sql, e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -44,9 +46,7 @@ public class JdbcTemplate {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
+                addResultSetToResults(rowMapper, rs, results);
                 return results;
             }
         }, params);
@@ -63,6 +63,12 @@ public class JdbcTemplate {
     private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
+        }
+    }
+
+    private <T> void addResultSetToResults(RowMapper<T> rowMapper, ResultSet rs, List<T> results) throws SQLException {
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
         }
     }
 }
