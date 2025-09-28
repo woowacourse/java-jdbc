@@ -32,16 +32,25 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        final var result = jdbcTemplate.doUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.doUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.doUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+
+        return jdbcTemplate.doQuery(
+                sql, (rs, rowNum) -> new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                ), (Object) null
+        );
     }
 
     public User findById(final Long id) {
@@ -58,7 +67,15 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        return jdbcTemplate.doQueryForObject(
+                sql, (rs, rowNum) -> new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                ), account
+        );
     }
 }
