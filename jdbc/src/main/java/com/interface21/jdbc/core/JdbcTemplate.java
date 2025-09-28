@@ -90,6 +90,10 @@ public class JdbcTemplate {
     }
 
     private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
+        if (args == null) {
+            return;
+        }
+
         for (int i = 1; i <= args.length; i++) {
             pstmt.setObject(i, args[i - 1]);
         }
