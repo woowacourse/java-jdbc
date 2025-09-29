@@ -48,7 +48,7 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, values);
     }
 
-    private <T> T execute(String sql, ExecuteCallback<T> callback, Object... values) {
+    private <T> T execute(String sql, JdbcCallback<T> callback, Object... values) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
