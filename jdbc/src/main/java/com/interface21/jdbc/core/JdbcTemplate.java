@@ -24,19 +24,6 @@ public class JdbcTemplate {
         return dataSource;
     }
 
-    public int insertObject(String sql, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            createPreparedStatementSetter(parameters).setParameters(pstmt);
-
-            return pstmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void update(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
