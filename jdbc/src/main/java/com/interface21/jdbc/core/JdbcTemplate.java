@@ -83,10 +83,6 @@ public class JdbcTemplate {
                 }
             }
 
-            if (objects.isEmpty()) {
-                throw new NoSuchElementException("[ERROR] no such user" + sql);
-            }
-
             return objects;
         } catch (SQLException e) {
             throw new CustomizedDataAccessException(sql, e);
