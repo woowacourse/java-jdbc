@@ -50,13 +50,12 @@ public class JdbcTemplate {
         }
     }
 
-    // TODO. 현재는 반환값을 User에 대해서만, 나중에 전역적인 Object
-    public <T> T findByObject(String sql, RowMapper<T> rowMapper, Object object) { // TODO. 현재는 하나의 인자에 대해서만, 나중에 args
+    public <T> T findByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         ResultSet rs;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setObject(1, object);
+            createPreparedStatementSetter(parameters).setParameters(pstmt);
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
