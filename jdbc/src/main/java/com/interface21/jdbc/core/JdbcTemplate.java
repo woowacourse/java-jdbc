@@ -1,9 +1,18 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -13,5 +22,90 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public int update(String sql, Object... args) {
+        return execute(sql, pstmt -> {
+            setParameters(pstmt, args);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException("Query returned no results");
+        }
+        
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        
+        return results.get(0);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, pstmt -> {
+            setParameters(pstmt, args);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                int rowNum = 0;
+                
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs, rowNum++));
+                }
+                
+                return results;
+            }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            
+            log.debug("Executing SQL: {}", sql);
+            
+            return callback.doInPreparedStatement(pstmt);
+            
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw new DataAccessException("SQL execution failed: " + sql, e);
+        } finally {
+            closeStatement(pstmt);
+            closeConnection(conn);
+        }
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private void closeStatement(PreparedStatement pstmt) {
+        if (pstmt != null) {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                log.warn("Failed to close PreparedStatement", e);
+            }
+        }
+    }
+
+    private void closeConnection(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                log.warn("Failed to close Connection", e);
+            }
+        }
     }
 }
