@@ -45,25 +45,11 @@ public class UserDao {
     }
 
     private RowMapper<User> getUserRowMapper() {
-        // 람다 표현식은 함수형 인터페이스의 구현체
-        // 함수형 인터페이스 없이는 람다를 쓸 수 없다
-        // ex. var something = (a, b) -> a + b;  // 타입이 없어 불가능
         return rs -> new User(
                 rs.getLong("id"),
                 rs.getString("account"),
                 rs.getString("password"),
                 rs.getString("email")
         );
-//        return new RowMapper<User>() {
-//            @Override
-//            public User mapRow(ResultSet rs) throws SQLException {
-//                return new User(
-//                        rs.getLong("id"),
-//                        rs.getString("account"),
-//                        rs.getString("password"),
-//                        rs.getString("email")
-//                );
-//            }
-//        };
     }
 }
