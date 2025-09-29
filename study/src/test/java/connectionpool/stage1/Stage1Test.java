@@ -1,13 +1,13 @@
 package connectionpool.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.SQLException;
+import java.util.Properties;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class Stage1Test {
 
@@ -30,13 +30,24 @@ class Stage1Test {
     void testJdbcConnectionPool() throws SQLException {
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
+        // 커넥션 풀을 막 생성했을 때, 아직 아무도 커넥션을 사용하지 않았으므로 활성 커넥션 수가 0이어야 함
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
         try (final var connection = jdbcConnectionPool.getConnection()) {
+            // 가져온 커넥션이 1초 이내에 응답하는지 체크
+            // 1. 데이터베이스에 간단한 쿼리를 보냄 (예: SELECT 1)
+            // 2. timeout 시간 내에 응답이 오면 → true (유효함)
+            // 3. timeout 시간 내에 응답이 없으면 → false (유효하지 않음)
+            // -> 네트워크 문제, DB 다운 등으로 응답이 없는 경우를 대비한 타임아웃
             assertThat(connection.isValid(1)).isTrue();
+            // 활성 커넥션 수가 1인지 검증
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
         }
+        // try-with-resources 블록을 벗어나 커넥션을 반납했으므로, 활성 커넥션 수가 0이어야 함.
+        // 활성 커넥션 수가 0인지 검증
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
+        // close(): 커넥션을 풀로 반납 (실제로 닫는 게 아님!) → 활성 커넥션 감소
+        // dispose(): 커넥션 풀 자체를 정리하고, 모든 커넥션을 닫음
         jdbcConnectionPool.dispose();
     }
 
@@ -69,10 +80,12 @@ class Stage1Test {
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
-        final var dataSource = new HikariDataSource(hikariConfig);
-        final var properties = dataSource.getDataSourceProperties();
+        final HikariDataSource dataSource = new HikariDataSource(hikariConfig);
+        final Properties properties = dataSource.getDataSourceProperties();
 
+        // 최대 커넥션 수: 5개
         assertThat(dataSource.getMaximumPoolSize()).isEqualTo(5);
+        //
         assertThat(properties.getProperty("cachePrepStmts")).isEqualTo("true");
         assertThat(properties.getProperty("prepStmtCacheSize")).isEqualTo("250");
         assertThat(properties.getProperty("prepStmtCacheSqlLimit")).isEqualTo("2048");
