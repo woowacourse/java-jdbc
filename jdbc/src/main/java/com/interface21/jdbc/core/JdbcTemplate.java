@@ -1,9 +1,11 @@
 package com.interface21.jdbc.core;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -13,5 +15,19 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void update(String sql, Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            for (int i = 1; i <= args.length; i++) {
+                preparedStatement.setObject(i, args[i - 1]);
+            }
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.error("SQL failed. query: {}", sql, e);
+            throw new RuntimeException(e);
+        }
     }
 }
