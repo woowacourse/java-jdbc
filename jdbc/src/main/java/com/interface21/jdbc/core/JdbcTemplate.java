@@ -23,6 +23,7 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParameters(pstmt, parameters);
+            log.debug("query : {}", sql);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -35,6 +36,7 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParameters(pstmt, parameters);
+            log.debug("query : {}", sql);
             rs = pstmt.executeQuery();
             return rowMapper.mapForObject(rs);
         } catch (SQLException e) {
@@ -50,6 +52,7 @@ public class JdbcTemplate {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParameters(pstmt, parameters);
+            log.debug("query : {}", sql);
             rs = pstmt.executeQuery();
             return rowMapper.mapForObjects(rs);
         } catch (SQLException e) {
