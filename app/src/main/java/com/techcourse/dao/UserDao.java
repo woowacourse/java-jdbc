@@ -26,7 +26,7 @@ public class UserDao {
     public void update(final User user) {
         // account를 제외하고는 수정 가능
         final var sql = "update users set password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
