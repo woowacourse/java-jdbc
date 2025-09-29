@@ -27,7 +27,7 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<User> ROW_MAPPER = ((rs, rowNum) -> {
+    private static final RowMapper<User> ROW_MAPPER = ((rs, rowNum) -> {
         long id = rs.getLong("id");
         String account = rs.getString("account");
         String password = rs.getString("password");
