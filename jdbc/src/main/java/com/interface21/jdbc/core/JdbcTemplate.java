@@ -32,34 +32,30 @@ public class JdbcTemplate {
     }
 
     public <T> T executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        ResultSet rs = null;
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParameters(pstmt, parameters);
             log.debug("query : {}", sql);
-            rs = pstmt.executeQuery();
-            return rowMapper.mapForObject(rs);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return rowMapper.mapForObject(rs);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException("리소스 해제에 실패했습니다.");
-        } finally {
-            closeResultSet(rs);
         }
     }
 
     public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        ResultSet rs = null;
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setStatementParameters(pstmt, parameters);
             log.debug("query : {}", sql);
-            rs = pstmt.executeQuery();
-            return rowMapper.mapForObjects(rs);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return rowMapper.mapForObjects(rs);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException("리소스 해제에 실패했습니다.");
-        } finally {
-            closeResultSet(rs);
         }
     }
 
@@ -72,15 +68,6 @@ public class JdbcTemplate {
             if (parameter instanceof Long) {
                 pstmt.setLong(i + 1, (Long) parameter);
             }
-        }
-    }
-
-    private void closeResultSet(final ResultSet rs) {
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException ignored) {
         }
     }
 }
