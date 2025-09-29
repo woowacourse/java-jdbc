@@ -24,14 +24,13 @@ public class JdbcTemplate {
         return dataSource;
     }
 
-    // TODO. insert의 반환값은? void vs T
-    public void insertObject(String sql, Object... parameters) {
+    public int insertObject(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             createPreparedStatementSetter(parameters).setParameters(pstmt);
 
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
