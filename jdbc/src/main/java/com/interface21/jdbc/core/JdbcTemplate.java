@@ -25,13 +25,11 @@ public class JdbcTemplate {
     }
 
     // TODO. insert의 반환값은? void vs T
-    public void insertObject(String sql, Object o1, Object o2, Object o3) { // TODO. 현재는 3개의 인자에 대해서만, 나중에 args
+    public void insertObject(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setObject(1, o1);
-            pstmt.setObject(2, o2);
-            pstmt.setObject(3, o3);
+            createPreparedStatementSetter(parameters).setParameters(pstmt);
 
             pstmt.executeUpdate();
 
@@ -40,14 +38,11 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(String sql, Object o1, Object o2, Object o3, Object o4) { // TODO. 현재는 4개의 인자에 대해서만, 나중에 args
+    public void update(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            pstmt.setObject(1, o1);
-            pstmt.setObject(2, o2);
-            pstmt.setObject(3, o3);
-            pstmt.setObject(4, o4);
+            createPreparedStatementSetter(parameters).setParameters(pstmt);
 
             pstmt.executeUpdate();
 
@@ -92,4 +87,16 @@ public class JdbcTemplate {
             throw new RuntimeException(e);
         }
     }
+
+    private PreparedStatementSetter createPreparedStatementSetter(Object... parameters) throws SQLException {
+        return pstmt -> {
+            for (int i = 0; i < parameters.length; i++) {
+                pstmt.setObject(i + 1, parameters[i]);
+            }
+        };
+    }
+}
+
+interface PreparedStatementSetter {
+    void setParameters(final PreparedStatement pstmt) throws SQLException;
 }
