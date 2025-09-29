@@ -40,6 +40,22 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(String sql, Object o1, Object o2, Object o3, Object o4) { // TODO. 현재는 4개의 인자에 대해서만, 나중에 args
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            pstmt.setObject(1, o1);
+            pstmt.setObject(2, o2);
+            pstmt.setObject(3, o3);
+            pstmt.setObject(4, o4);
+
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // TODO. 현재는 반환값을 User에 대해서만, 나중에 전역적인 Object
     public <T> T findByObject(String sql, RowMapper<T> rowMapper, Object object) { // TODO. 현재는 하나의 인자에 대해서만, 나중에 args
         ResultSet rs;
