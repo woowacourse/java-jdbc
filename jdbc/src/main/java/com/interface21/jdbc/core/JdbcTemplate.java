@@ -21,61 +21,43 @@ public class JdbcTemplate {
     }
 
     public <T> T select(final String sql, final JdbcCallback<T> callback, final Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 1; i <= values.length; i++) {
-                final Object value = values[i - 1];
-                pstmt.setObject(i, value);
-            }
-
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
                 if (rs.next()) {
                     return callback.call(rs);
                 }
                 return null;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, values);
     }
 
     public <T> List<T> selectList(final String sql, final JdbcCallback<T> callback, final Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 1; i <= values.length; i++) {
-                final Object value = values[i - 1];
-                pstmt.setObject(i, value);
-            }
-
+        return execute(sql, pstmt -> {
+            final List<T> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
                 if (rs.next()) {
                     final T call = callback.call(rs);
                     results.add(call);
                 }
-                return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return results;
+        }, values);
     }
 
     public void update(final String sql, final Object... values) {
+        execute(sql, PreparedStatement::executeUpdate, values);
+    }
+
+    private <T> T execute(String sql, ExecuteCallback<T> callback, Object... values) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            for (int i = 1; i <= values.length; i++) {
-                final Object value = values[i - 1];
-                pstmt.setObject(i, value);
+            for (int i = 0; i < values.length; i++) {
+                pstmt.setObject(i + 1, values[i]);
             }
-            pstmt.executeUpdate();
+            return callback.call(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
