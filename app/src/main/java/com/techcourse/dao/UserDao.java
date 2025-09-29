@@ -17,11 +17,16 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
+    private final DataSource dataSource; // TODO. 추후 필드 제거
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.dataSource = jdbcTemplate.getDataSource();
+    }
+
+    public UserDao(final DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.dataSource = dataSource;
     }
 
     public void insert(final User user) {
