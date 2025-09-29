@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CustomizedDataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,7 +26,11 @@ public class JdbcTemplate {
             String sql,
             Object... args
     ) {
-        try(PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
+
+        try(
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
             setParameters(preparedStatement, args);
             logQuery(sql);
 
@@ -40,7 +45,10 @@ public class JdbcTemplate {
         RowMapper<T> rowMapper,
         Object... args
     ) {
-        try(PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
+        try(
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
             setParameters(preparedStatement, args);
             logQuery(sql);
 
@@ -62,7 +70,10 @@ public class JdbcTemplate {
             Object... args
     ) {
         List<T> objects = new ArrayList<>();
-        try(PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
+        try(
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
             setParameters(preparedStatement, args);
             logQuery(sql);
 
