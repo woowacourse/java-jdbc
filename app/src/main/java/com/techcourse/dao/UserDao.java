@@ -1,6 +1,6 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.JdbcCallback;
+import com.interface21.jdbc.core.RowMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -34,20 +34,20 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return template.selectList(sql,userCallBack());
+        return template.selectList(sql, userMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return template.select(sql, userCallBack(), id);
+        return template.select(sql, userMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return template.select(sql, userCallBack(), account);
+        return template.select(sql, userMapper(), account);
     }
 
-    private JdbcCallback<User> userCallBack() {
+    private RowMapper<User> userMapper() {
         return (rs) -> {
             final User user = new User(
                     rs.getLong(1),

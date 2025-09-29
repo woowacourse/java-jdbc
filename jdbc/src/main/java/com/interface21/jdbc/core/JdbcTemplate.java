@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T select(final String sql, final JdbcCallback<T> callback, final Object... values) {
+    public <T> T select(final String sql, final RowMapper<T> callback, final Object... values) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -31,7 +31,7 @@ public class JdbcTemplate {
         }, values);
     }
 
-    public <T> List<T> selectList(final String sql, final JdbcCallback<T> callback, final Object... values) {
+    public <T> List<T> selectList(final String sql, final RowMapper<T> callback, final Object... values) {
         return execute(sql, pstmt -> {
             final List<T> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
