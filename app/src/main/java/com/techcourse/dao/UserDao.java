@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcCallback;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -36,33 +37,21 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return template.selectList(sql, (rs) -> {
-            final User user = new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)
-            );
-            return user;
-        });
+        return template.selectList(sql,userCallBack());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return template.select(sql, (rs) -> {
-            final User user = new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)
-            );
-            return user;
-        }, id);
+        return template.select(sql, userCallBack(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return template.select(sql, (rs) -> {
+        return template.select(sql, userCallBack(), account);
+    }
+
+    private JdbcCallback<User> userCallBack() {
+        return (rs) -> {
             final User user = new User(
                     rs.getLong(1),
                     rs.getString(2),
@@ -70,6 +59,6 @@ public class UserDao {
                     rs.getString(4)
             );
             return user;
-        }, account);
+        };
     }
 }
