@@ -1,0 +1,9 @@
+package com.interface21.jdbc.core;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+@FunctionalInterface
+public interface ResultProcessor<T> {
+    T processResult (ResultSet rs) throws SQLException;
+}

@@ -23,37 +23,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> queryForResultList(String sql, RowMapper<T> rowMapper) {
-        final List<T> results = new ArrayList<>();
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
+    public <T> List<T> queryForResultList(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rs -> {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
             }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-        return results;
+            return results;
+        }, args);
     }
 
     public <T> Optional<T> queryForResult(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameter(args, pstmt);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(rowMapper.mapRow(rs));
-                }
+        return query(sql, rs -> {
+            if (rs.next()) {
+                return Optional.of(rowMapper.mapRow(rs));
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-        return Optional.empty();
+            return Optional.empty();
+        }, args);
     }
 
     public void queryForUpdate(final String sql, final Object... args) {
@@ -64,7 +50,21 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T query(String sql, ResultProcessor<T> extractor, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParameter(args, pstmt);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractor.processResult(rs);
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
