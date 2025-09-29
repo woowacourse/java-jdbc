@@ -96,6 +96,17 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) throws SQLException {
+        List<T> results = query(sql, rowMapper, params);
+        if(results.isEmpty()){
+            throw new SQLException("No result found for query.");
+        }
+        if(results.size() > 1){
+            throw new SQLException("Returns more than 1 row.");
+        }
+        return results.getFirst();
+    }
+
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for(int i=0; i<parameters.length; i++){
             pstmt.setObject(i+1, parameters[i]);
