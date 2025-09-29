@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,24 @@ public class JdbcTemplate {
             }
             return null;
 
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // TODO. 추후 네이밍 수정
+    public <T> List<T> findAll(String sql, RowMapper<T> rowMapper) {
+        ResultSet rs;
+        List<T> list = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                list.add(rowMapper.mapRow(rs, rs.getRow()));
+            }
+            return list;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
