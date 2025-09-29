@@ -94,8 +94,10 @@ public class JdbcTemplate {
         List<T> result = execute(sql, args, pstmt -> getQueryResult(rowMapper, pstmt));
         if (result.isEmpty()) {
             throw new DataAccessException("조회 결과가 없습니다.");
+        } else if (result.size() > 1) {
+            throw new DataAccessException("조회 결과가 2건 이상입니다.");
         }
-        return result.get(0);
+        return result.getFirst();
     }
 
     /**
