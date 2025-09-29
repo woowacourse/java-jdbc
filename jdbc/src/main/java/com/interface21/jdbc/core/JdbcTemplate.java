@@ -70,8 +70,7 @@ public class JdbcTemplate {
         }
     }
 
-    // TODO. 추후 네이밍 수정
-    public <T> List<T> findAll(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         ResultSet rs;
         List<T> list = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
