@@ -3,15 +3,10 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
 
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
