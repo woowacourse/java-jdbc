@@ -35,9 +35,9 @@ public class JdbcTemplate {
         return execute(sql, pstmt -> {
             final List<T> results = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    final T call = callback.call(rs);
-                    results.add(call);
+                while (rs.next()) {
+                    T result = callback.call(rs);
+                    results.add(result);
                 }
             }
             return results;
