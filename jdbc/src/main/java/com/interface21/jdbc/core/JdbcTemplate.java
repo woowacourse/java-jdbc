@@ -26,7 +26,6 @@ public class JdbcTemplate {
             String sql,
             Object... args
     ) {
-
         try(
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
