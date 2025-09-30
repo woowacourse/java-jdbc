@@ -3,140 +3,62 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ResultMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final ResultMapper<User> MAPPER = resultSet -> new User(
+    private static final ResultMapper<User> USER_MAPPER = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
             resultSet.getString("email")
     );
 
-    private final DataSource dataSource;
-
-    public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.update(
+                "insert into users (account, password, email) values (?, ?, ?)",
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        jdbcTemplate.update(
+                "update users set account = ?, password = ?, email = ? where id = ?",
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            log.debug("query : {}", sql);
-
-            List<User> users = new ArrayList<>();
-
-            while (rs.next()) {
-                users.add(MAPPER.mapResult(rs));
-            }
-
-            return users;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.selectList(
+                "select id, account, password, email from users",
+                USER_MAPPER
+        );
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setLong(1, id);
-
-            log.debug("query : {}", sql);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return MAPPER.mapResult(rs);
-                }
-            }
-
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.selectOne(
+                "select id, account, password, email from users where id = ?",
+                USER_MAPPER,
+                id
+        );
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, account);
-
-            log.debug("query : {}", sql);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return MAPPER.mapResult(rs);
-                }
-            }
-
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.selectOne(
+                "select id, account, password, email from users where account = ?",
+                USER_MAPPER,
+                account
+        );
     }
 }
