@@ -2,6 +2,7 @@ package com.interface21.core.util;
 
 import com.interface21.context.stereotype.Component;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -11,18 +12,18 @@ public class DIContainer {
     private final Map<Class<?>, Object> beanMap = new HashMap<>();
 
     public void scanAndRegister(String basePackage) {
-        try{
-            Reflections reflections = new Reflections(basePackage);
-            Set<Class<?>> componentClasses = reflections.getTypesAnnotatedWith(Component.class);
-
-            for (Class<?> clazz : componentClasses) {
-                if (!clazz.isInterface()) {
-                    getBean(clazz);
-                }
-            }
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
+        Reflections reflections = new Reflections(basePackage);
+        Set<Class<?>> componentClasses = reflections.getTypesAnnotatedWith(Component.class);
+        componentClasses.stream()
+                .filter(clazz -> !clazz.isInterface())
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
+                .forEach(clazz -> {
+                    try {
+                        getBean(clazz);
+                    } catch (Exception e) {
+                        throw new RuntimeException(clazz.getName(), e);
+                    }
+                });
     }
 
     public <T> T getBean(Class<T> type) {
