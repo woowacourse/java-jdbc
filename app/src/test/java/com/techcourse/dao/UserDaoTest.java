@@ -37,7 +37,11 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
+        final var account = "link";
+        final var password = "password";
+        final var email = " test@test.com";
+        userDao.insert(new User(account, password, email));
+
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
