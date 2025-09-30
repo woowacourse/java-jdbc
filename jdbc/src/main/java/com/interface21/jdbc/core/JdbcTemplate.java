@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,15 +20,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private static void closeResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        } catch (SQLException ignored) {
-            throw new RuntimeException("Result Set Close Error");
-        }
-    }
 
     /**
      * INSERT, UPDATE, DELETE 같은 데이터 변경 쿼리를 실행한다.
@@ -36,19 +28,25 @@ public class JdbcTemplate {
      * @param params PreparedStatement에 바인딩할 파라미터
      * @return 영향을 받은 row 개수 INSERT, UPDATE, DELETE, DDL(CREATE TABLE 등) 문을 실행할 때 사용
      */
+    // 가변 인자 버전(기존 유지)
     public int executeUpdate(
             final String sql, final Object... params
+    ) {
+        var pstmtSetter = ofParams(params);
+        return executeUpdate(sql, pstmtSetter);
+    }
+
+    // PreparedStatementSetter 버전
+    public int executeUpdate(
+            final String sql, final PreparedStatementSetter pstmtSetter
     ) {
         try (var connection = dataSource.getConnection();
              var pstmt = connection.prepareStatement(sql)) {
 
-            for (int i = 1; i <= params.length; i++) { // SQL 파라미터 바인딩
-                pstmt.setObject(i, params[i - 1]);
-            }
-
+            pstmtSetter.setValues(pstmt);
             return pstmt.executeUpdate(); // 실행 후 영향을 받은 row 개수 반환
         } catch (SQLException e) {
-            throw new RuntimeException("Execute Update Error");
+            throw new DataAccessException("Execute Update Error: " + sql, e);
         }
     }
 
@@ -66,10 +64,8 @@ public class JdbcTemplate {
         ResultSet resultSet = null;
         try (var connection = dataSource.getConnection();
              var pstmt = connection.prepareStatement(sql)) {
-
-            for (int i = 1; i <= params.length; i++) { // SQL 파라미터 바인딩
-                pstmt.setObject(i, params[i - 1]);
-            }
+            var pstmtSetter = ofParams(params);
+            pstmtSetter.setValues(pstmt);
 
             // 쿼리 실행
             resultSet = pstmt.executeQuery();
@@ -108,5 +104,29 @@ public class JdbcTemplate {
         }
 
         return result.getFirst();
+    }
+
+    /**
+     * 가변 인자 -> PSS 변환 메서드
+     */
+    private PreparedStatementSetter ofParams(final Object... params) {
+        return pstmt -> {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        };
+    }
+
+    /**
+     * Result Set 객체 close 메서드
+     */
+    private void closeResultSet(ResultSet resultSet) {
+        try {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+        } catch (SQLException ignored) {
+            throw new RuntimeException("Result Set Close Error");
+        }
     }
 }
