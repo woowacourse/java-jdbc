@@ -10,14 +10,18 @@ import org.reflections.Reflections;
 public class DIContainer {
     private final Map<Class<?>, Object> beanMap = new HashMap<>();
 
-    public void scanAndRegister(String basePackage) throws Exception {
-        Reflections reflections = new Reflections(basePackage);
-        Set<Class<?>> componentClasses = reflections.getTypesAnnotatedWith(Component.class);
+    public void scanAndRegister(String basePackage) {
+        try{
+            Reflections reflections = new Reflections(basePackage);
+            Set<Class<?>> componentClasses = reflections.getTypesAnnotatedWith(Component.class);
 
-        for (Class<?> clazz : componentClasses) {
-            if (!clazz.isInterface()) {
-                getBean(clazz);
+            for (Class<?> clazz : componentClasses) {
+                if (!clazz.isInterface()) {
+                    getBean(clazz);
+                }
             }
+        } catch (Exception e) {
+            throw new RuntimeException();
         }
     }
 

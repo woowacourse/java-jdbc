@@ -17,6 +17,7 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
     @Override
     public void onStartup(final ServletContext servletContext) {
         DIContainer diContainer = new DIContainer();
+        diContainer.scanAndRegister("com.techcourse");
 
         final var dispatcherServlet = new DispatcherServlet();
         dispatcherServlet.addHandlerMapping(new ManualHandlerMapping());
