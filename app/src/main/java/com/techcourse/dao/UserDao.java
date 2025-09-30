@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.ResultMapper;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,6 +16,12 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final ResultMapper<User> MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
 
     private final DataSource dataSource;
 
@@ -37,6 +44,7 @@ public class UserDao {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -76,12 +84,7 @@ public class UserDao {
             List<User> users = new ArrayList<>();
 
             while (rs.next()) {
-                users.add(new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4)
-                ));
+                users.add(MAPPER.mapResult(rs));
             }
 
             return users;
@@ -103,12 +106,7 @@ public class UserDao {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4)
-                    );
+                    return MAPPER.mapResult(rs);
                 }
             }
 
@@ -131,12 +129,7 @@ public class UserDao {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4)
-                    );
+                    return MAPPER.mapResult(rs);
                 }
             }
 
