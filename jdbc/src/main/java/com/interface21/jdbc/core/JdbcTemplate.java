@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -32,16 +33,16 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        List<T> objectMappingResultSet = query(sql, rowMapper, parameters);
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        final List<T> results = query(sql, rowMapper, parameters);
 
-        if (objectMappingResultSet.isEmpty()) {
-            return null;
+        if (results.isEmpty()) {
+            return Optional.empty();
         }
-        if(objectMappingResultSet.size() > 1) {
-            throw new DataAccessException("Incorrect result size: expected 1, but got " + objectMappingResultSet.size());
+        if (results.size() > 1) {
+            throw new DataAccessException("Incorrect result size: expected 1, but got " + results.size());
         }
-        return objectMappingResultSet.getFirst();
+        return Optional.of(results.getFirst());
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {

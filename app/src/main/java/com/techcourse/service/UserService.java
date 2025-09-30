@@ -16,7 +16,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
     public void insert(final User user) {
