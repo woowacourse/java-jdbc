@@ -1,4 +1,4 @@
-package com.interface21.rowMapper;
+package com.interface21.rowmapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

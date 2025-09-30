@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.rowMapper.RowMapper;
+import com.interface21.rowmapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -1,7 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.rowMapper.RowMapper;
+import com.interface21.rowmapper.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 
