@@ -1,16 +1,17 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.RowMapper;
+import com.interface21.jdbc.exception.JdbcFailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -22,110 +23,55 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql,Object... objects) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
-
-            for(int i=1;i<=objects.length;i++){
-                preparedStatement.setObject(i,objects[i-1]);
-            }
-            preparedStatement.executeUpdate();
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeConnections(preparedStatement, connection);
+            throw new JdbcFailException(e.getSQLState(), e.getMessage());
         }
     }
 
-    public void insert(String sql,Object... objects) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
-
-            for(int i=1;i<=objects.length;i++){
-                preparedStatement.setObject(i,objects[i-1]);
-            }
-            preparedStatement.executeUpdate();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeConnections(preparedStatement, connection);
-        }
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
     }
 
-    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        List<T> result = new ArrayList<>();
-
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if(!resultSet.next()){
-                return List.of();
-            }
-
-            T row = rowMapper.mapRow(resultSet, resultSet.getRow());
-            result.add(row);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeConnections(preparedStatement, connection);
-        }
-
-        return result;
+    public void update(String sql, Object... objects) {
+        execute(sql, preparedStatement -> {
+            setParameters(preparedStatement, objects);
+            return preparedStatement.executeUpdate();
+        });
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper,Object... objects) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
-
-            for(int i=1;i<=objects.length;i++){
-                preparedStatement.setObject(i,objects[i-1]);
+    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... objects) {
+        return execute(sql, preparedStatement -> {
+            setParameters(preparedStatement, objects);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet, resultSet.getRow()));
+                }
+                return results;
             }
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if(resultSet.next()){
-                return rowMapper.mapRow(resultSet, resultSet.getRow());
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeConnections(preparedStatement, connection);
-        }
-
-        throw new RuntimeException("유효한 데이터를 찾는데 실패하였습니다.");
+        });
     }
 
-    private void closeConnections(PreparedStatement preparedStatement, Connection connection) {
-        try {
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-        } catch (SQLException ignored) {}
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
+        List<T> results = queryForObjects(sql, rowMapper, objects);
+        if (results.isEmpty()) {
+            throw new JdbcFailException("유효한 데이터를 찾는데 실패하였습니다.");
+        }
+        if (results.size() > 1) {
+            throw new JdbcFailException("결과가 하나 이상입니다.");
+        }
+        return results.getFirst();
+    }
 
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException ignored) {}
+    private void setParameters(PreparedStatement preparedStatement, Object... objects) throws SQLException {
+        for (int i = 0; i < objects.length; i++) {
+            preparedStatement.setObject(i + 1, objects[i]);
+        }
     }
 }
