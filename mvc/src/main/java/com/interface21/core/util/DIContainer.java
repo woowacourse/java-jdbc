@@ -4,12 +4,14 @@ import com.interface21.context.stereotype.Component;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.reflections.Reflections;
 
 public class DIContainer {
     private final Map<Class<?>, Object> beanMap = new HashMap<>();
+    private final Set<Class<?>> creatingBeans = new HashSet<>();
 
     public void scanAndRegister(String basePackage) {
         Reflections reflections = new Reflections(basePackage);
@@ -20,8 +22,8 @@ public class DIContainer {
                 .forEach(clazz -> {
                     try {
                         getBean(clazz);
-                    } catch (Exception e) {
-                        throw new RuntimeException(clazz.getName(), e);
+                    } catch (RuntimeException e) {
+                        throw e;
                     }
                 });
     }
@@ -30,9 +32,17 @@ public class DIContainer {
         if (beanMap.containsKey(type)) {
             return type.cast(beanMap.get(type));
         }
-
+        if (creatingBeans.contains(type)) {
+            throw new IllegalStateException("Bean 순환오류 " + type.getName());
+        }
         try {
-            Constructor<?> constructor = type.getDeclaredConstructors()[0];
+            creatingBeans.add(type);
+            Constructor<?>[] constructors = type.getDeclaredConstructors();
+            if (constructors.length != 1) {
+                throw new IllegalStateException(("Bean은 하나이상의 public 생성자 필요." + type.getName()));
+            }
+            Constructor<?> constructor = constructors[0];
+            constructor.setAccessible(true);
             Class<?>[] dependencyTypes = constructor.getParameterTypes();
             Object[] dependencies = new Object[dependencyTypes.length];
 
@@ -44,9 +54,10 @@ public class DIContainer {
             beanMap.put(type, instance);
 
             return instance;
-
         } catch (Exception e) {
-            throw new RuntimeException();
+            throw new RuntimeException(type.getName(), e);
+        } finally {
+            creatingBeans.remove(type);
         }
     }
 }
