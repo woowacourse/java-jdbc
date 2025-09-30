@@ -34,7 +34,7 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final List<T> results = query(sql, rowMapper, parameters);
+        final List<T> results = queryForList(sql, rowMapper, parameters);
 
         if (results.isEmpty()) {
             return Optional.empty();
@@ -45,7 +45,7 @@ public class JdbcTemplate {
         return Optional.of(results.getFirst());
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             setParameters(preparedStatement, parameters);
