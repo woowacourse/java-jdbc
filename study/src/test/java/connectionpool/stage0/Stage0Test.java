@@ -41,7 +41,7 @@ class Stage0Test {
      * 구현체는 각 vendor에서 제공한다.
      * 테스트 코드의 JdbcDataSource 클래스는 h2에서 제공하는 클래스다.
      *
-     * DirverManager가 아닌 DataSource를 사용하는 이유
+     * DriverManager가 아닌 DataSource를 사용하는 이유
      * - 애플리케이션 코드를 직접 수정하지 않고 properties로 디비 연결을 변경할 수 있다.
      * - 커넥션 풀링(Connection pooling) 또는 분산 트랜잭션은 DataSource를 통해서 사용 가능하다.
      *
