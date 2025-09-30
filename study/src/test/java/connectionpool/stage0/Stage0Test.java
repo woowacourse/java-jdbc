@@ -32,14 +32,14 @@ class Stage0Test {
     void driverManager() throws Exception {
         // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
-        Properties props = loadProps();
+        final Properties props = loadProps();
 
-        String url = props.getProperty(PROPERTY_DB_URL);
-        String user = props.getProperty(PROPERTY_DB_USER);
-        String password = props.getProperty(PROPERTY_DB_PASSWORD);
+        final String url = props.getProperty(PROPERTY_DB_URL);
+        final String user = props.getProperty(PROPERTY_DB_USER);
+        final String password = props.getProperty(PROPERTY_DB_PASSWORD);
 
-        try (final Connection conn = DriverManager.getConnection(url, user, password)) {
-            assertThat(conn.isValid(1)).isTrue();
+        try (final Connection connection = DriverManager.getConnection(url, user, password)) {
+            assertThat(connection.isValid(1)).isTrue();
         }
     }
 
@@ -49,7 +49,7 @@ class Stage0Test {
      * 구현체는 각 vendor에서 제공한다.
      * 테스트 코드의 JdbcDataSource 클래스는 h2에서 제공하는 클래스다.
      *
-     * DirverManager가 아닌 DataSource를 사용하는 이유
+     * DriverManager가 아닌 DataSource를 사용하는 이유
      * - DataSource는 인터페이스이기 때문에 H2, MySQL, PostgreSQL 같은 DB 벤더별 DataSource,
      *   혹은 HikariCP/DBCP2 같은 커넥션 풀 구현체를 코드 수정 없이 교체할 수 있다.
      * - 커넥션 풀링(Connection pooling) 또는 분산 트랜잭션은 DataSource를 통해서 사용 가능하다.
@@ -79,8 +79,8 @@ class Stage0Test {
     }
 
     private Properties loadProps() throws Exception {
-        Properties props = new Properties();
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream(DB_PROPERTIES)) {
+        final Properties props = new Properties();
+        try (final InputStream in = getClass().getClassLoader().getResourceAsStream(DB_PROPERTIES)) {
             props.load(in);
         }
         return props;
