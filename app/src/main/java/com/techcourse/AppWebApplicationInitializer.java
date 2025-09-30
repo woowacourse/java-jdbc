@@ -1,5 +1,6 @@
 package com.techcourse;
 
+import com.interface21.core.util.DIContainer;
 import jakarta.servlet.ServletContext;
 import com.interface21.webmvc.servlet.mvc.DispatcherServlet;
 import com.interface21.webmvc.servlet.mvc.asis.ControllerHandlerAdapter;
@@ -15,9 +16,11 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
 
     @Override
     public void onStartup(final ServletContext servletContext) {
+        DIContainer diContainer = new DIContainer();
+
         final var dispatcherServlet = new DispatcherServlet();
         dispatcherServlet.addHandlerMapping(new ManualHandlerMapping());
-        dispatcherServlet.addHandlerMapping(new AnnotationHandlerMapping("com.techcourse.controller"));
+        dispatcherServlet.addHandlerMapping(new AnnotationHandlerMapping(diContainer, "com.techcourse.controller"));
 
         dispatcherServlet.addHandlerAdapter(new ControllerHandlerAdapter());
         dispatcherServlet.addHandlerAdapter(new HandlerExecutionHandlerAdapter());
