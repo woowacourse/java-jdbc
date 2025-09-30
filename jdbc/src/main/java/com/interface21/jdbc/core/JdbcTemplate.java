@@ -42,9 +42,10 @@ public class JdbcTemplate {
      * @return 제네릭 타입 결과값 (쿼리 결과나 update 결과 등)
      */
     public <R> R execute(String sql, Object[] args, StatementExecutor<R> executor) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        final Connection conn = getConnection();
+        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
 
+        try (conn; pstmt) {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
 
@@ -52,6 +53,18 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
         }
+    }
+
+    /**
+     * PreparedStatement에 파라미터를 순서대로 바인딩하는 내부 메서드.
+     *
+     * @param args SQL ? 에 바인딩할 파라미터
+     * @param pstmt PreparedStatement 객체
+     * @throws SQLException SQL 실행 중 발생한 예외
+     */
+    private void setPreparedStatementParameter(Object[] args, PreparedStatement pstmt) throws SQLException {
+        final PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(args);
+        pss.setValues(pstmt);
     }
 
     /**
@@ -120,15 +133,32 @@ public class JdbcTemplate {
     }
 
     /**
-     * PreparedStatement에 파라미터를 순서대로 바인딩하는 내부 메서드.
+     * PreparedStatement 객체 생성
      *
-     * @param args SQL ? 에 바인딩할 파라미터
-     * @param pstmt PreparedStatement 객체
-     * @throws SQLException SQL 실행 중 발생한 예외
+     * @param sql  쿼리 실행에 사용할 SQL 문자열
+     * @param conn 쿼리를 실행할 데이터베이스 Connection 객체
+     * @return 준비된 PreparedStatement 객체
+     * @throws DataAccessException PreparedStatement 생성 중 SQL 오류가 발생한 경우
      */
-    private void setPreparedStatementParameter(Object[] args, PreparedStatement pstmt) throws SQLException {
-        for (int idx = 1; idx <= args.length; idx++) {
-            pstmt.setObject(idx, args[idx - 1]);
+    private PreparedStatement getPreparedStatement(String sql, Connection conn) {
+        try {
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    /**
+     * DataSource에서 새로운 데이터베이스 Connection 객체 획득
+     *
+     * @return 데이터베이스에 연결된 Connection 객체
+     * @throws DataAccessException 커넥션 획득 과정에서 SQL 오류가 발생한 경우
+     */
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
