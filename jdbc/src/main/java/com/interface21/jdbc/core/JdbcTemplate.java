@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,7 +47,10 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, args[i]);
             }
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rowMapper.map(rs);
+                if (rs.next()) {
+                    return rowMapper.map(rs);
+                }
+                throw new DataAccessException("No data found");
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 throw new RuntimeException(e);
@@ -57,7 +61,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> query(
+    public <T> List<T> query(
             final String sql,
             RowMapper<T> rowMapper,
             Object... args
