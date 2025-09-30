@@ -38,6 +38,9 @@ public class JdbcTemplate {
         if (objectMappingResultSet.isEmpty()) {
             return null;
         }
+        if(objectMappingResultSet.size() > 1) {
+            throw new DataAccessException("Incorrect result size: expected 1, but got " + objectMappingResultSet.size());
+        }
         return objectMappingResultSet.getFirst();
     }
 
