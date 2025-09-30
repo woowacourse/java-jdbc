@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.util.HashMap;
+import java.util.Map;
 
 public class InsertJdbcTemplate {
 
@@ -17,12 +19,12 @@ public class InsertJdbcTemplate {
 
     public void insert(User user, UserDao userDao) {
         final var sql = createQueryForInsert();
-        java.util.Map<String, Object> params = new java.util.HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         setValuesForInsert(user, params);
         jdbcTemplate.update(sql, params);
     }
 
-    private void setValuesForInsert(User user, java.util.Map<String, Object> params) {
+    private void setValuesForInsert(User user, Map<String, Object> params) {
         params.put("account", user.getAccount());
         params.put("password", user.getPassword());
         params.put("email", user.getEmail());
