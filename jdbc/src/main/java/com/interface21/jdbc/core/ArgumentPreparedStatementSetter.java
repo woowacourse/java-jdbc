@@ -2,12 +2,11 @@ package com.interface21.jdbc.core;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import javax.annotation.Nullable;
 
 public class ArgumentPreparedStatementSetter implements PreparedStatementSetter {
     private final Object[] args;
 
-    public ArgumentPreparedStatementSetter(@Nullable Object[] args) {
+    public ArgumentPreparedStatementSetter(Object[] args) {
         this.args = args;
     }
 
