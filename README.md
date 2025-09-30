@@ -33,3 +33,24 @@
 > 중복을 제거하기 위한 라이브러리는 JdbcTemplate 클래스에 구현한다.
 >
 > DataSource는 DataSourceConfig 클래스의 getInstance() 메서드를 호출하면 된다.
+
+## 🚀 2단계 - 리팩터링
+
+- 미션 설명) 자바가 제공하는 기능을 극한으로 활용해 클린 코드를 작성하는 연습을 한다.
+    - 익명 클래스 / 함수형 인터페이스 / 제네릭 / 가변 인자 / 람다 / try-with-resources / checked vs unchecked exception
+
+### 기능 요구 사항
+
+- [x] 아래의 동작들에 맞춰 코드를 리팩터링 한다.
+    - 개발자의 동작:
+        - 연결 매개변수 설정
+        - SQL문 작성
+        - SQL문의 매개변수와 값 설정
+        - Result Set에서 데이터 추출
+    - JDBC 라이브러리의 동작:
+        - Connection 생성
+        - Statement 준비 및 실행
+        - ResultSet 생성
+        - 예외처리
+        - 트랜젝션 관리
+        - Connection, Statement, ResultSet 객체 close
