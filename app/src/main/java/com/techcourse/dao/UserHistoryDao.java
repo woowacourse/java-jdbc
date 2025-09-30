@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.context.stereotype.Component;
 import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+@Component
 public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);

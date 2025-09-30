@@ -2,6 +2,7 @@ package com.techcourse.controller;
 
 import com.techcourse.domain.User;
 import com.techcourse.repository.InMemoryUserRepository;
+import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JspView;
@@ -16,6 +17,11 @@ import org.slf4j.LoggerFactory;
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+    private final UserService userService;
+
+    public LoginController(UserService userService) {
+        this.userService = userService;
+    }
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
@@ -33,7 +39,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
+        return userService.findByAccount("account")
                 .map(user -> {
                     log.info("User : {}", user);
                     return login(request, user);

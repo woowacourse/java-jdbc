@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.context.stereotype.Component;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.mapper.UserMapper;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
 
+@Component
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
@@ -38,9 +40,8 @@ public class UserDao {
         jdbcTemplate.queryForUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        Optional<User> user = jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, account);
-        return user.orElseThrow(IllegalArgumentException::new);
+        return jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, account);
     }
 }
