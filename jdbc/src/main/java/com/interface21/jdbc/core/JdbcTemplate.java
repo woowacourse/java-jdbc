@@ -47,9 +47,6 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException("Query returned no results.");
         }
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException("Query returned more than one result.");
-        }
 
         return results.getFirst();
     }
