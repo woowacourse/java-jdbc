@@ -17,6 +17,7 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = UserDao::mapUser;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -42,36 +43,28 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final var rowMapper = rowMapper();
 
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final var rowMapper = rowMapper();
 
-       return jdbcTemplate.queryForObject(sql, rowMapper, id);
+       return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final var rowMapper = rowMapper();
 
-        return jdbcTemplate.queryForObject(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 
-    private RowMapper rowMapper() {
-        return new RowMapper() {
-            @Override
-            public User rowMap(ResultSet rs, int rowNumber) throws SQLException {
-                return new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")
-                );
-            }
-        };
+    private static User mapUser(ResultSet rs, int rowNumber) throws SQLException {
+        return new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email")
+        );
     }
 }

@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.EmptyResultDataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.rowmapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,29 +40,20 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper rowMapper, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 1; i <= parameters.length; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        List<T> results = query(sql, rowMapper, parameters);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("queryForObject : {}", sql);
-                int rowNum = 0;
-                if (rs.next()) {
-                    rowNum++;
-                    return rowMapper.rowMap(rs, rowNum);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException("Query returned no results.");
         }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("Query returned more than one result.");
+        }
+
+        return results.getFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper rowMapper, Object... parameters) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         final var results = new ArrayList<T>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
