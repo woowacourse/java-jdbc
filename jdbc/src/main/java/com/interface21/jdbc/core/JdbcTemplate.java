@@ -18,6 +18,21 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public void update(final String sql, final Object... parameters) {
+        try (
+                final Connection connection = dataSource.getConnection();
+                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            setPreparedStatementParameters(preparedStatement, parameters);
+            log.debug("query : {}", sql);
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (
                 final Connection connection = dataSource.getConnection();
