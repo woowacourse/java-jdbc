@@ -76,7 +76,7 @@ public class JdbcTemplate {
             }
             return result;
         } catch (SQLException e) {
-            throw new RuntimeException("Execute Query Error");
+            throw new DataAccessException("Execute Query Error");
         } finally {
             closeResultSet(resultSet);
         }
@@ -96,11 +96,11 @@ public class JdbcTemplate {
         List<T> result = executeQuery(sql, rowMapper, params);
 
         if (result.isEmpty()) {
-            throw new RuntimeException("Execute Query For Object Error: 쿼리 결과가 비어있습니다.");
+            throw new DataAccessException("Execute Query For Object Error: 쿼리 결과가 비어있습니다.");
         }
 
         if (result.size() > 1) {
-            throw new RuntimeException("Execute Query For Object Error: 쿼리 결과가 2개 이상입니다.");
+            throw new DataAccessException("Execute Query For Object Error: 쿼리 결과가 2개 이상입니다.");
         }
 
         return result.getFirst();
