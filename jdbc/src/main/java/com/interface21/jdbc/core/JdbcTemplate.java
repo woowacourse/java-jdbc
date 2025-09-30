@@ -42,7 +42,7 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         
-        return results.get(0);
+        return results.getFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
