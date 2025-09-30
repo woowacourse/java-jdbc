@@ -13,13 +13,20 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> userRowMapper;
 
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.userRowMapper = (resultSet, rowNum) -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        );
     }
 
     public void insert(final User user) {
@@ -34,25 +41,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, getUserRowMapper());
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
-    }
-
-    private RowMapper<User> getUserRowMapper() {
-        return (resultSet, rowNum) -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        );
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
