@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -37,7 +38,10 @@ public class JdbcTemplate {
             setStatementParameters(pstmt, parameters);
             log.debug("query : {}", sql);
             try (final ResultSet rs = pstmt.executeQuery()) {
-                return rowMapper.mapForObject(rs);
+                if (rs.next()) {
+                    return rowMapper.mapForObject(rs);
+                }
+                return null;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -51,7 +55,11 @@ public class JdbcTemplate {
             setStatementParameters(pstmt, parameters);
             log.debug("query : {}", sql);
             try (final ResultSet rs = pstmt.executeQuery()) {
-                return rowMapper.mapForObjects(rs);
+                final List<T> instances = new ArrayList<>();
+                while (rs.next()) {
+                    instances.add(rowMapper.mapForObject(rs));
+                }
+                return instances;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
