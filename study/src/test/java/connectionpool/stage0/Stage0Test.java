@@ -1,19 +1,25 @@
 package connectionpool.stage0;
 
-import org.h2.jdbcx.JdbcDataSource;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Properties;
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.Test;
 
 class Stage0Test {
 
     private static final String H2_URL = "jdbc:h2:./test";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
+    private static final String DB_PROPERTIES = "db.properties";
+    private static final String PROPERTY_DB_URL = "db.url";
+    private static final String PROPERTY_DB_USER = "db.user";
+    private static final String PROPERTY_DB_PASSWORD = "db.password";
 
     /**
      * DriverManager
@@ -49,11 +55,16 @@ class Stage0Test {
      * https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/javax/sql/package-summary.html
      */
     @Test
-    void dataSource() throws SQLException {
+    void dataSource() throws IOException, SQLException {
+        final Properties props = new Properties();
+        try (final InputStream input = getClass().getClassLoader().getResourceAsStream(DB_PROPERTIES)) {
+            props.load(input);
+        }
+
         final JdbcDataSource dataSource = new JdbcDataSource();
-        dataSource.setURL(H2_URL);
-        dataSource.setUser(USER);
-        dataSource.setPassword(PASSWORD);
+        dataSource.setURL(props.getProperty(PROPERTY_DB_URL));
+        dataSource.setUser(props.getProperty(PROPERTY_DB_USER));
+        dataSource.setPassword(props.getProperty(PROPERTY_DB_PASSWORD));
 
         try (final var connection = dataSource.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
