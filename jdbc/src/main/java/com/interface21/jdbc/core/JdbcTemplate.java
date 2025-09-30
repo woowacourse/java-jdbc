@@ -41,8 +41,8 @@ public class JdbcTemplate {
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             setPreparedStatementParameters(preparedStatement, parameters);
+            log.debug("query : {}", sql);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                log.debug("query : {}", sql);
                 if (resultSet.next()) {
                     return rowMapper.mapRow(resultSet, 1);
                 }
