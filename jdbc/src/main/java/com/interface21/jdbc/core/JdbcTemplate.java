@@ -48,6 +48,10 @@ public class JdbcTemplate {
             throw new EmptyResultDataAccessException("Query returned no results.");
         }
 
+        if (results.size() > 1) {
+            throw new DataAccessException("Query returned over one results.");
+        }
+
         return results.getFirst();
     }
 
