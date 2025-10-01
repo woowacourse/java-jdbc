@@ -1,19 +1,16 @@
 package com.techcourse.support.jdbc.init;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.sql.DataSource;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DatabasePopulatorUtils {
-
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
 
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
