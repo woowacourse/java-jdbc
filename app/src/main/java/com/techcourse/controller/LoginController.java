@@ -34,10 +34,15 @@ public class LoginController {
         if (UserSession.isLoggedIn(request.getSession())) {
             return redirect("/index.jsp");
         }
+        User user = null;
+        try {
+            user = userService.findByAccount(request.getParameter("account"));
+            if (user == null) {
+                log.info("존재하지 않는 Account 입니다");
+                return redirect("/401.jsp");
+            }
 
-        User user = userService.findByAccount(request.getParameter("account"));
-        if (user == null) {
-            log.info("존재하지 않는 Account 입니다");
+        } catch (RuntimeException e) {
             return redirect("/401.jsp");
         }
         return login(request, user);
