@@ -1,4 +1,4 @@
-package com.techcourse.dao;
+package com.techcourse.dao.template;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
