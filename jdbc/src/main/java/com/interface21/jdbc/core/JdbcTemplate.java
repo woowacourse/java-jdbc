@@ -49,28 +49,36 @@ public class JdbcTemplate {
     private static <T> Callback<List<T>> getListCallback(RowMapper<T> rowMapper) {
         return (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    rowNum++;
-                    results.add(rowMapper.rowMap(rs, rowNum));
-                }
-                return results;
+                return mapResultSetToObjects(rowMapper, rs);
             }
         };
     }
 
+    private static <T> List<T> mapResultSetToObjects(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            rowNum++;
+            results.add(rowMapper.rowMap(rs, rowNum));
+        }
+        return results;
+    }
+
     private <T> T execute(String sql, Callback<T> callback, Object... parameters) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            for (int i = 1; i <= parameters.length; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            bindParameters(parameters, pstmt);
             return callback.call(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private static void bindParameters(Object[] parameters, PreparedStatement pstmt) throws SQLException {
+        for (int i = 1; i <= parameters.length; i++) {
+            pstmt.setObject(i, parameters[i - 1]);
         }
     }
 }
