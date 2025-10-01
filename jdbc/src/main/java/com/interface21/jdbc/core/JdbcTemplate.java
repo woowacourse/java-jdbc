@@ -22,57 +22,51 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-            pstmt.execute();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        execute(PreparedStatement::execute, sql, args);
     }
 
     public <T> T selectOne(RowMapper<T> rowMapper, String sql, Object... args) {
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-            var rs = pstmt.executeQuery();
+        StatementExecutor<T> stmtExecutor = pstmt -> {
+            ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                var mappedRow = rowMapper.mapRow(rs);
-                rs.close();
-                return mappedRow;
+                return rowMapper.mapRow(rs);
             }
-
-            rs.close();
             return null;
+        };
 
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(stmtExecutor, sql, args);
     }
 
     public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, Object... args) {
-        try (var conn = dataSource.getConnection(); var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, args);
-            var rs = pstmt.executeQuery();
+        StatementExecutor<List<T>> stmtExecutor = pstmt -> {
+            ResultSet rs = pstmt.executeQuery();
             var list = new ArrayList<T>();
             while (rs.next()) {
                 var mappedRow = rowMapper.mapRow(rs);
                 list.add(mappedRow);
             }
-
-            rs.close();
             return list;
+        };
+
+        return execute(stmtExecutor, sql, args);
+    }
+
+    private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, Object... args) {
+        ResultSet rs = null;
+        try (var conn = dataSource.getConnection();
+             var pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, args);
+            return stmtExecutor.execute(pstmt);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+
+        } finally {
+            closeResultSet(rs);
         }
     }
 
@@ -93,6 +87,18 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e.getCause());
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void closeResultSet(ResultSet rs) {
+        if (rs == null) {
+            return;
+        }
+
+        try {
+            rs.close();
+        } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
