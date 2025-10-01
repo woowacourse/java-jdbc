@@ -46,7 +46,7 @@ public class JdbcTemplate {
         return execute(sql, callback, parameters);
     }
 
-    private static <T> Callback<List<T>> getListCallback(RowMapper<T> rowMapper) {
+    private <T> Callback<List<T>> getListCallback(RowMapper<T> rowMapper) {
         return (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 return mapResultSetToObjects(rowMapper, rs);
@@ -54,7 +54,7 @@ public class JdbcTemplate {
         };
     }
 
-    private static <T> List<T> mapResultSetToObjects(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> List<T> mapResultSetToObjects(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
         List<T> results = new ArrayList<>();
         int rowNum = 0;
         while (rs.next()) {
@@ -76,7 +76,7 @@ public class JdbcTemplate {
         }
     }
 
-    private static void bindParameters(Object[] parameters, PreparedStatement pstmt) throws SQLException {
+    private void bindParameters(Object[] parameters, PreparedStatement pstmt) throws SQLException {
         for (int i = 1; i <= parameters.length; i++) {
             pstmt.setObject(i, parameters[i - 1]);
         }
