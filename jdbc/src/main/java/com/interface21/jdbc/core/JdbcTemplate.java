@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,7 +16,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(final DataSource dataSource) throws DataAccessException {
         this.dataSource = dataSource;
         testConnection(dataSource);
     }
@@ -29,7 +30,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -50,7 +51,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -71,7 +72,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -88,11 +89,11 @@ public class JdbcTemplate {
 
         } catch (NullPointerException e) {
             log.error("Connection is null on dataSource {}", dataSource);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e.getCause());
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
