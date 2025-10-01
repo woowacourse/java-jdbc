@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.EmptyResultDataAccessException;
-import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.rowmapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,19 +25,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("update : {}", sql);
-
-            for (int i = 1; i <= parameters.length; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public int update(String sql, Object... parameters) {
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -48,22 +36,18 @@ public class JdbcTemplate {
             throw new EmptyResultDataAccessException("Query returned no results.");
         }
 
-        if (results.size() > 1) {
-            throw new DataAccessException("Query returned over one results.");
-        }
-
         return results.getFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        final var results = new ArrayList<T>();
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 1; i <= parameters.length; i++) {
-                pstmt.setObject(i, parameters[i - 1]);
-            }
+        Callback<List<T>> callback = getListCallback(sql, rowMapper);
+        return execute(sql, callback, parameters);
+    }
 
+    private static <T> Callback<List<T>> getListCallback(String sql, RowMapper<T> rowMapper) {
+        return (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
                 log.debug("query : {}", sql);
                 int rowNum = 0;
                 while (rs.next()) {
@@ -72,6 +56,17 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        };
+    }
+
+    private <T> T execute(String sql, Callback<T> callback, Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            for (int i = 1; i <= parameters.length; i++) {
+                pstmt.setObject(i, parameters[i - 1]);
+            }
+            return callback.call(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
