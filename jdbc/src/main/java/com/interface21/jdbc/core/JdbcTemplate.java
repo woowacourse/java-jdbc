@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.dao.SqlExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,7 @@ public class JdbcTemplate {
             preparedStatementSetter.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlExecutionException(e);
         }
     }
 
@@ -51,7 +53,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new RuntimeException();
+            throw new IncorrectResultSizeDataAccessException();
         }
 
         return results.get(0);
@@ -89,7 +91,7 @@ public class JdbcTemplate {
                 return results;
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlExecutionException(e);
         }
     }
 }
