@@ -51,12 +51,12 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Class<T> requiredType, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
 
         return null;
     }
 
-    public <T> List<T> queryForList(String sql, Class<T> requiredType, Object... args) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... args) {
         return null;
     }
 }
