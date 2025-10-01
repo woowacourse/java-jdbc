@@ -46,10 +46,14 @@ public class JdbcTemplate {
             setParameters(pstmt, parameters);
 
             try (ResultSet resultSet = pstmt.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet, parameters.length);
+                if (!resultSet.next()) {
+                    throw new DataAccessException("조회 결과가 존재하지 않습니다.");
                 }
-                throw new DataAccessException("해당 데이터가 존재하지 않습니다.");
+                T result = rowMapper.mapRow(resultSet, parameters.length);
+                if (resultSet.next()) {
+                    throw new DataAccessException("조회 결과가 2개 이상입니다.");
+                }
+                return result;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
