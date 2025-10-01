@@ -43,7 +43,7 @@ public class SimpleJdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new RuntimeException("결과값이 1개보다 많습니다. 결과 크기: " + results.size());
+            throw new IncorrectResultSizeDataAccessException("결과값이 1개보다 많습니다. 결과 크기: " + results.size());
         }
         return results.get(0);
     }
@@ -98,7 +98,7 @@ public class SimpleJdbcTemplate {
             }
             return executor.execute(pstmt);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("JDBC 작업 중 오류 발생", e);
         }
     }
 
