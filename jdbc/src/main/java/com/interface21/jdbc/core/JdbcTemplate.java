@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.CustomizedDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,23 +48,24 @@ public class JdbcTemplate {
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            final int EXPECTED_SINGLE_RESULT = 1;
-            final int AT_LEAST_TWO_RESULTS = 2;
-
             setParameters(preparedStatement, args);
             logQuery(sql);
 
             try(ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    T wantToFind = rowMapper.mapRow(resultSet);
-                    if (resultSet.next()) {
-                        throw new IncorrectResultSizeDataAccessException(sql, EXPECTED_SINGLE_RESULT, AT_LEAST_TWO_RESULTS);
-                    }
-
-                    return Optional.of(wantToFind);
+                if (!resultSet.next()) {
+                    return Optional.empty();
                 }
 
-                return Optional.empty();
+                T wantToFind = rowMapper.mapRow(resultSet);
+
+                if (resultSet.next()) {
+                    throw new CustomizedDataAccessException(
+                            sql,
+                            new IllegalArgumentException("[ERROR] Query returned too many rows (Expected 1 but found 2 or more)")
+                    );
+                }
+
+                return Optional.of(wantToFind);
             }
         } catch (SQLException e) {
             throw new CustomizedDataAccessException(sql, e);
