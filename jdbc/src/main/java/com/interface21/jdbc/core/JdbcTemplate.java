@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.CustomizedDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T>T queryForObject(
+    public <T> Optional<T> queryForObject(
         String sql,
         RowMapper<T> rowMapper,
         Object... args
@@ -48,15 +49,23 @@ public class JdbcTemplate {
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            final int EXPECTED_SINGLE_RESULT = 1;
+            final int AT_LEAST_TWO_RESULTS = 2;
+
             setParameters(preparedStatement, args);
             logQuery(sql);
 
             try(ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
+                    T wantToFind = rowMapper.mapRow(resultSet);
+                    if (resultSet.next()) {
+                        throw new IncorrectResultSizeDataAccessException(sql, EXPECTED_SINGLE_RESULT, AT_LEAST_TWO_RESULTS);
+                    }
+
+                    return Optional.of(wantToFind);
                 }
 
-                throw new NoSuchElementException("[ERROR] no such user" + sql);
+                return Optional.empty();
             }
         } catch (SQLException e) {
             throw new CustomizedDataAccessException(sql, e);

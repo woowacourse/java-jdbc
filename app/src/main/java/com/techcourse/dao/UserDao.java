@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class UserDao {
 
@@ -37,11 +38,17 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select * from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userMapper, id);
+        return jdbcTemplate.queryForObject(sql, userMapper, id)
+                .orElseThrow(
+                        () -> new NoSuchElementException("[ERROR] no such user id: " + id)
+                );
     }
 
     public User findByAccount(final String account) {
         final String sql = "select * from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userMapper, account);
+        return jdbcTemplate.queryForObject(sql, userMapper, account)
+                .orElseThrow(
+                        () -> new NoSuchElementException("[ERROR] no such user account: " + account)
+                );
     }
 }
