@@ -27,11 +27,10 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
 
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -44,10 +43,8 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
 
-            for (int i = 0; i < parameters.length; i++) {
-                pstmt.setObject(i + 1, parameters[i]);
-            }
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (resultSet.next()) {
                     return rowMapper.mapRow(resultSet, parameters.length);
@@ -65,12 +62,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
-
-            if (parameters.length > 0) {
-                for (int i = 0; i < parameters.length; i++) {
-                    pstmt.setObject(i + 1, parameters[i]);
-                }
-            }
+            setParameters(pstmt, parameters);
 
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -82,6 +74,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
+        if (parameters == null || parameters.length == 0) {
+            return;
+        }
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
         }
     }
 }
