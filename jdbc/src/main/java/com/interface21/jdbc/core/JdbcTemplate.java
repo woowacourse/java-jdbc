@@ -3,7 +3,9 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -25,12 +27,8 @@ public final class JdbcTemplate {
     ) {
         try (
                 final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args)
         ) {
-            log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
             preparedStatement.executeUpdate();
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
@@ -44,19 +42,10 @@ public final class JdbcTemplate {
     ) {
         try (
                 final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args);
+                final ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-            try (final var resultSet = preparedStatement.executeQuery()) {
-                final var results = new java.util.ArrayList<T>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
+            return mapResultSetToList(resultSet, rowMapper);
         } catch (final SQLException exception) {
             throw new DataAccessException(exception);
         }
@@ -69,18 +58,10 @@ public final class JdbcTemplate {
     ) {
         try (
                 final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args);
+                final ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-            try (final var resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                return null;
-            }
+            return mapResultSetToObject(resultSet, rowMapper);
         } catch (final SQLException exception) {
             throw new DataAccessException(exception);
         }
@@ -93,18 +74,10 @@ public final class JdbcTemplate {
     ) {
         try (
                 final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args);
+                final ResultSet resultSet = preparedStatement.executeQuery()
         ) {
-            log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-            try (final var resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                return null;
-            }
+            return mapResultSetToObject(resultSet, rowMapper);
         } catch (final SQLException exception) {
             throw new DataAccessException(exception);
         }
@@ -115,16 +88,47 @@ public final class JdbcTemplate {
             final Object... args
     ) {
         try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+                final Connection connection = dataSource.getConnection();
+                final PreparedStatement preparedStatement = createPreparedStatement(connection, sql, args)
         ) {
-            log.debug("query : {}", sql);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
             return preparedStatement.executeUpdate();
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
+    }
+
+    private PreparedStatement createPreparedStatement(
+            final Connection con,
+            final String sql,
+            final Object... args
+    )
+            throws SQLException {
+        final PreparedStatement ps = con.prepareStatement(sql);
+        log.debug("query : {}", sql);
+        for (int i = 0; i < args.length; i++) {
+            ps.setObject(i + 1, args[i]);
+        }
+        return ps;
+    }
+
+    private <T> List<T> mapResultSetToList(
+            final ResultSet resultSet,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        final var results = new ArrayList<T>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
+    }
+
+    private <T> T mapResultSetToObject(
+            final ResultSet resultSet,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        if (resultSet.next()) {
+            return rowMapper.mapRow(resultSet);
+        }
+        return null;
     }
 }
