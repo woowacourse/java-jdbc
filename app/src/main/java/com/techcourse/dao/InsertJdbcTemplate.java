@@ -13,15 +13,15 @@ public class InsertJdbcTemplate {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (:account, :password, :email)";
-    }
-
     public void insert(User user, UserDao userDao) {
         final var sql = createQueryForInsert();
         Map<String, Object> params = new HashMap<>();
         setValuesForInsert(user, params);
         jdbcTemplate.update(sql, params);
+    }
+
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (:account, :password, :email)";
     }
 
     private void setValuesForInsert(User user, Map<String, Object> params) {

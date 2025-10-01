@@ -15,15 +15,15 @@ public class UpdateJdbcTemplate {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private String createQueryForUpdate() {
-        return "update users set account = :account, password = :password, email = :email where id = :id";
-    }
-
     public void update(User user, UserDao userDao) {
         final var sql = createQueryForUpdate();
         java.util.Map<String, Object> params = new java.util.HashMap<>();
         setValuesForUpdate(user, params);
         jdbcTemplate.update(sql, params);
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set account = :account, password = :password, email = :email where id = :id";
     }
 
     private void setValuesForUpdate(User user, java.util.Map<String, Object> params) {
