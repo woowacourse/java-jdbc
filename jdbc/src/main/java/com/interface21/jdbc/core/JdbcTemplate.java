@@ -61,7 +61,7 @@ public class JdbcTemplate {
                 if (resultSet.next()) {
                     throw new CustomizedDataAccessException(
                             sql,
-                            new IllegalArgumentException("[ERROR] Query returned too many rows (Expected 1 but found 2 or more)")
+                            new IllegalArgumentException("[ERROR] too many rows (Expected 1 but found 2 or more)")
                     );
                 }
 
