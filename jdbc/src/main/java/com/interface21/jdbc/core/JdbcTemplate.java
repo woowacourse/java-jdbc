@@ -26,6 +26,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... parameters) {
+        log.debug("update : {}", sql);
         return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
@@ -40,15 +41,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        Callback<List<T>> callback = getListCallback(sql, rowMapper);
+        log.debug("query : {}", sql);
+        Callback<List<T>> callback = getListCallback(rowMapper);
         return execute(sql, callback, parameters);
     }
 
-    private static <T> Callback<List<T>> getListCallback(String sql, RowMapper<T> rowMapper) {
+    private static <T> Callback<List<T>> getListCallback(RowMapper<T> rowMapper) {
         return (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
-                log.debug("query : {}", sql);
                 int rowNum = 0;
                 while (rs.next()) {
                     rowNum++;
