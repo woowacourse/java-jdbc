@@ -11,6 +11,9 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
+    public UserHistoryDao(JdbcTemplate jdbcTemplate) {
+    }
+
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
