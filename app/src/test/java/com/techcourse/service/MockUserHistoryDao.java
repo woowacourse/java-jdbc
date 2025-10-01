@@ -4,11 +4,12 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        super(jdbcTemplate);
+    public MockUserHistoryDao(final DataSource dataSource) {
+        super(dataSource);
     }
 
     @Override
