@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.dao.SqlExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,42 +20,65 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... args) throws CannotGetJdbcConnectionException {
+    public void update(final String sql, final Object... args) {
+        update(sql, pstmt -> {
+            for(int i=0; i<args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        });
+    }
+
+    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var pstmt = connection.prepareStatement(sql)) {
 
-            for(var i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
-            return pstmt.executeUpdate();
-
+            preparedStatementSetter.setValues(pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlExecutionException(e);
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) throws CannotGetJdbcConnectionException {
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args) {
         var results = query(sql, rowMapper, args);
 
+        return getSingleResult(results);
+    }
+
+    private <T> T getSingleResult(List<T> results) {
         if (results.isEmpty()) {
             return null;
         }
         if (results.size() > 1) {
-            throw new RuntimeException();
+            throw new IncorrectResultSizeDataAccessException();
         }
 
-        return results.getFirst();
+        return results.get(0);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) throws CannotGetJdbcConnectionException {
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args) {
+        return query(sql, preparedStatement -> {
+            for (int i = 0; i < args.length; i++) {
+                preparedStatement.setObject(i + 1, args[i]);
+            }
+        }, rowMapper);
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final RowMapper<T> rowMapper) {
         try (
             final var connection = dataSource.getConnection();
             final var pstmt = connection.prepareStatement(sql)
         ) {
-            for(var i=0; i<args.length; i++) {
-                pstmt.setObject(i+1, args[i]);
-            }
+            preparedStatementSetter.setValues(pstmt);
 
             try(final var resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -67,7 +91,7 @@ public class JdbcTemplate {
                 return results;
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlExecutionException(e);
         }
     }
 }
