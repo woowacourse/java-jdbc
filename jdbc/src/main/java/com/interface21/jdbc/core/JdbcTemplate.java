@@ -49,7 +49,7 @@ public class JdbcTemplate {
                 if (resultSet.next()) {
                     return rowMapper.mapRow(resultSet, parameters.length);
                 }
-                throw new DataAccessException("no result");
+                throw new DataAccessException("해당 데이터가 존재하지 않습니다.");
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
