@@ -46,15 +46,6 @@ public class JdbcTemplate {
         return getSingleResult(results);
     }
 
-    public <T> T queryForObject(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper) {
-        var results = query(sql, preparedStatementSetter, rowMapper);
-
-        return getSingleResult(results);
-    }
-
     private <T> T getSingleResult(List<T> results) {
         if (results.isEmpty()) {
             return null;
