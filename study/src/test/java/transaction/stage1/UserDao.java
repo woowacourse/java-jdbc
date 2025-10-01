@@ -1,11 +1,10 @@
 package transaction.stage1;
 
-import transaction.stage1.jdbc.JdbcTemplate;
-import transaction.stage1.jdbc.RowMapper;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
+import javax.sql.DataSource;
+import transaction.stage1.jdbc.JdbcTemplate;
+import transaction.stage1.jdbc.RowMapper;
 
 public class UserDao {
 
@@ -27,7 +26,7 @@ public class UserDao {
     }
 
     public void updatePasswordGreaterThan(final Connection connection, final String password, final long id) {
-        final var sql = "update users set password = ? where id >= ?";
+        final var sql = "update users set password = ? where id > ?";
         jdbcTemplate.update(connection, sql, password, id);
     }
 
@@ -42,7 +41,7 @@ public class UserDao {
     }
 
     public List<User> findGreaterThan(final Connection connection, final long id) {
-        final var sql = "select id, account, password, email from users where id >= ?";
+        final var sql = "select id, account, password, email from users where id > ?";
         return jdbcTemplate.query(connection, sql, createRowMapper(), id);
     }
 
