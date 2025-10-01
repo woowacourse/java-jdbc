@@ -21,7 +21,7 @@ public class SimpleJdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Map<String, Object> params) {
+    public void updateWithParam(String sql, Map<String, Object> params) {
         executeUpdate(sql, params);
     }
 
@@ -29,7 +29,7 @@ public class SimpleJdbcTemplate {
         executeUpdate(sql, null);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> mapper, Map<String, Object> params) {
+    public <T> List<T> queryWithParam(String sql, RowMapper<T> mapper, Map<String, Object> params) {
         return executeQuery(sql, mapper, params);
     }
 
@@ -38,7 +38,7 @@ public class SimpleJdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> mapper, Map<String, Object> params) {
-        List<T> results = query(sql, mapper, params);
+        List<T> results = queryWithParam(sql, mapper, params);
         if (results.isEmpty()) {
             return null;
         }

@@ -30,6 +30,6 @@ public class SimpleUserHistoryDao {
         params.put("created_at", userHistory.getCreatedAt());
         params.put("created_by", userHistory.getCreateBy());
 
-        jdbcTemplate.update(sql, params);
+        jdbcTemplate.updateWithParam(sql, params);
     }
 }

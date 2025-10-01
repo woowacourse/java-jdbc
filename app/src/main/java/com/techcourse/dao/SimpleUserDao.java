@@ -33,7 +33,7 @@ public class SimpleUserDao {
         params.put("account", user.getAccount());
         params.put("password", user.getPassword());
         params.put("email", user.getEmail());
-        jdbcTemplate.update(sql, params);
+        jdbcTemplate.updateWithParam(sql, params);
     }
 
     public void update(final User user) {
@@ -43,7 +43,7 @@ public class SimpleUserDao {
         params.put("password", user.getPassword());
         params.put("email", user.getEmail());
         params.put("id", user.getId());
-        jdbcTemplate.update(sql, params);
+        jdbcTemplate.updateWithParam(sql, params);
     }
 
     public List<User> findAll() {
