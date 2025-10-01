@@ -13,11 +13,13 @@ public class UserDao {
     private final InsertJdbcTemplate insertJdbcTemplate;
     private final UpdateJdbcTemplate updateJdbcTemplate;
     private final SelectJdbcTemplate selectJdbcTemplate;
+    private final DeleteAllJdbcTemplate deleteAllJdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.insertJdbcTemplate = new InsertJdbcTemplate(dataSource);
         this.updateJdbcTemplate = new UpdateJdbcTemplate(dataSource);
         this.selectJdbcTemplate = new SelectJdbcTemplate(dataSource);
+        this.deleteAllJdbcTemplate = new DeleteAllJdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
@@ -38,5 +40,9 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         return selectJdbcTemplate.findByAccount(account);
+    }
+    
+    public void deleteAll() {
+        deleteAllJdbcTemplate.update(null);
     }
 }
