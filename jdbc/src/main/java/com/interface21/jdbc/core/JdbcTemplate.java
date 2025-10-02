@@ -1,17 +1,18 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.RowMapper;
+import com.interface21.jdbc.datasource.LocalTransactionManager;
 import com.interface21.jdbc.exception.JdbcFailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -19,14 +20,15 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            return callback.doInPreparedStatement(preparedStatement);
+        try {
+            Connection connection = LocalTransactionManager.getConnection(dataSource);
+            PreparedStatement ps = connection.prepareStatement(sql);
+            return callback.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcFailException(e.getSQLState(), e.getMessage());
