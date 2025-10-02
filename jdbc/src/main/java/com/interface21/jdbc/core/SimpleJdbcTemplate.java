@@ -15,7 +15,7 @@ import javax.sql.DataSource;
 
 public class SimpleJdbcTemplate {
 
-    private static final String NAMED_PARAMETER_REGEX = ":([a-zA-Z]*)";
+    private static final Pattern NAMED_PARAMETER_PATTERN = Pattern.compile(":([a-zA-Z_][a-zA-Z0-9_]*)");
 
     private final DataSource dataSource;
 
@@ -56,7 +56,7 @@ public class SimpleJdbcTemplate {
         }
 
         List<String> parameterNames = extractParameterNames(sql);
-        String executableSql = sql.replaceAll(NAMED_PARAMETER_REGEX, "?");
+        String executableSql = NAMED_PARAMETER_PATTERN.matcher(sql).replaceAll("?");
         Object[] args = parameterNames.stream()
                 .map(params::get)
                 .toArray();
@@ -64,8 +64,7 @@ public class SimpleJdbcTemplate {
     }
 
     private List<String> extractParameterNames(String sql) {
-        Pattern pattern = Pattern.compile(NAMED_PARAMETER_REGEX);
-        Matcher matcher = pattern.matcher(sql);
+        Matcher matcher = NAMED_PARAMETER_PATTERN.matcher(sql);
         List<String> names = new ArrayList<>();
         while (matcher.find()) {
             names.add(matcher.group(1));
