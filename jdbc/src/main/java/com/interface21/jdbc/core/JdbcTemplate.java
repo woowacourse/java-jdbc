@@ -37,12 +37,18 @@ public class JdbcTemplate {
 
     // insert, update, delete
     public void update(final String sql, final Object... args) {
+        update(sql, getPreparedStatementSetter(args));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -52,12 +58,18 @@ public class JdbcTemplate {
 
     // 단일 객체 조회
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, getPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) {
@@ -77,12 +89,18 @@ public class JdbcTemplate {
 
     // 객체 리스트 조회
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, getPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             // 쿼리 실행 결과(ResultSet) 반환
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -99,11 +117,13 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            // SQL의 ?(placeholder)에 실제 값을 대입
-            // SQL Injection 공격 방지
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter getPreparedStatementSetter(Object... args) {
+        return ps -> {
+            if (args != null) {
+                for (int i = 0; i < args.length; i++) {
+                    ps.setObject(i + 1, args[i]);
+                }
+            }
+        };
     }
 }
