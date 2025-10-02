@@ -63,49 +63,21 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             log.debug("Executing SQL: {}", sql);
-            
+
             return callback.doInPreparedStatement(pstmt);
-            
+
         } catch (SQLException e) {
             log.error("SQL execution failed: {}", sql, e);
             throw new DataAccessException("SQL execution failed: " + sql, e);
-        } finally {
-            closeStatement(pstmt);
-            closeConnection(conn);
         }
     }
-
     private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
-        }
-    }
-
-    private void closeStatement(PreparedStatement pstmt) {
-        if (pstmt != null) {
-            try {
-                pstmt.close();
-            } catch (SQLException e) {
-                log.warn("Failed to close PreparedStatement", e);
-            }
-        }
-    }
-
-    private void closeConnection(Connection conn) {
-        if (conn != null) {
-            try {
-                conn.close();
-            } catch (SQLException e) {
-                log.warn("Failed to close Connection", e);
-            }
         }
     }
 }
