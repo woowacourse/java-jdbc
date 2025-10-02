@@ -1,13 +1,15 @@
 package com.techcourse.dao;
 
+import com.interface21.context.stereotype.Component;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.util.Map;
+import com.techcourse.mapper.UserMapper;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
 
+@Component
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
@@ -24,16 +26,13 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        List<Map<String, Object>> rows = jdbcTemplate.queryForResultList("SELECT * FROM users");
-        return rows.stream()
-                .map(this::mapToUser)
-                .toList();
+        return jdbcTemplate.queryForResultList("SELECT * FROM users", UserMapper.USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        Optional<Map<String, Object>> stringObjectMap = jdbcTemplate.queryForResult(sql, id);
-        return stringObjectMap.map(this::mapToUser).orElse(null);
+        Optional<User> user = jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, id);
+        return user.orElseThrow(IllegalArgumentException::new);
     }
 
     public void update(final User user) {
@@ -41,18 +40,8 @@ public class UserDao {
         jdbcTemplate.queryForUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        Optional<Map<String, Object>> stringObjectMap = jdbcTemplate.queryForResult(sql, account);
-        return stringObjectMap.map(this::mapToUser).orElse(null);
-    }
-
-    private User mapToUser(Map<String, Object> row) {
-        return new User(
-                (Long) row.get("ID"),
-                (String) row.get("ACCOUNT"),
-                (String) row.get("PASSWORD"),
-                (String) row.get("EMAIL")
-        );
+        return jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, account);
     }
 }
