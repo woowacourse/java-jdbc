@@ -57,8 +57,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatementParams(final PreparedStatement pstmt, final Object[] args) throws SQLException {
+    private void setPreparedStatementParams(final PreparedStatement pstmt, final Object... args) throws SQLException {
         final int parameterCount = pstmt.getParameterMetaData().getParameterCount();
+        if (args.length != parameterCount) {
+            throw new DataAccessException();
+        }
         for (int i = 0; i < parameterCount; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
