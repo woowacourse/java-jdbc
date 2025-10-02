@@ -1,25 +1,25 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.dsl.DslJdbcTemplate;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final DslJdbcTemplate jdbc;
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbc = new DslJdbcTemplate(jdbcTemplate);
     }
 
     public void log(final UserHistory userHistory) {
-        jdbcTemplate.update(
-                "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
+        jdbc.insert("user_history")
+                .of("user_id", userHistory.getUserId())
+                .of("account", userHistory.getAccount())
+                .of("password", userHistory.getPassword())
+                .of("email", userHistory.getEmail())
+                .of("created_at", userHistory.getCreatedAt())
+                .of("created_by", userHistory.getCreateBy())
+                .execute();
     }
 }
