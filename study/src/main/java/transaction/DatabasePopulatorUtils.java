@@ -20,6 +20,9 @@ public class DatabasePopulatorUtils {
         Statement statement = null;
         try {
             final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
+            if (url == null) {
+                throw new IllegalArgumentException("schema.sql not found");
+            }
             final var file = new File(url.getFile());
             final var sql = Files.readString(file.toPath());
             connection = dataSource.getConnection();
