@@ -28,8 +28,8 @@ public class DslJdbcTemplate {
         return new Update(this, table);
     }
 
-    public Select select(String... rowNames) {
-        return new Select(this, rowNames);
+    public Select select(String... colNames) {
+        return new Select(this, colNames);
     }
 
     public void insert(Insert insert) {

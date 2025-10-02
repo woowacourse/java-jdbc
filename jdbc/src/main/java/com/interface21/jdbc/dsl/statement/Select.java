@@ -16,9 +16,9 @@ public class Select {
     private final ColumnNames columnNames = new ColumnNames();
     private final Where where = new Where();
 
-    public Select(DslJdbcTemplate dslJdbcTemplate, String... rowNames) {
+    public Select(DslJdbcTemplate dslJdbcTemplate, String... colNames) {
         this.dslJdbcTemplate = dslJdbcTemplate;
-        this.columnNames.add(rowNames);
+        this.columnNames.add(colNames);
     }
 
     public Select from(String table) {
