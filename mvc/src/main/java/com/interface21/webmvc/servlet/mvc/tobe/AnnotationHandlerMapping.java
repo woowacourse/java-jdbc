@@ -29,16 +29,33 @@ public class AnnotationHandlerMapping implements HandlerMapping {
 
     public void initialize() {
         final ControllerScanner controllerScanner = new ControllerScanner(basePackage);
-        final Map<Class<?>, Object> controllers = createDiCompletedControllers(controllerScanner);
+        final Set<Class<?>> controllerClasses = controllerScanner.getControllerClasses();
+
+        final Map<Class<?>, Object> controllers = new HashMap<>();
+        for (Class<?> clazz : controllerClasses) {
+            Object instance = diContainer.getBean(clazz);
+            controllers.put(clazz, instance);
+        }
+
         final var methods = getRequestMappingMethods(controllers.keySet());
         for (final var method : methods) {
             final var requestMapping = method.getAnnotation(RequestMapping.class);
-            log.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
             addHandlerExecutions(controllers, method, requestMapping);
         }
-
-        log.info("Initialized AnnotationHandlerMapping!");
     }
+
+//    public void initialize() {
+//        final ControllerScanner controllerScanner = new ControllerScanner(basePackage);
+//        final Map<Class<?>, Object> controllers = createDiCompletedControllers(controllerScanner);
+//        final var methods = getRequestMappingMethods(controllers.keySet());
+//        for (final var method : methods) {
+//            final var requestMapping = method.getAnnotation(RequestMapping.class);
+//            log.debug("register handlerExecution : url is {}, request method : {}, method is {}", requestMapping.value(), requestMapping.method(), method);
+//            addHandlerExecutions(controllers, method, requestMapping);
+//        }
+//
+//        log.info("Initialized AnnotationHandlerMapping!");
+//    }
 
     private Map<Class<?>, Object> createDiCompletedControllers(ControllerScanner controllerScanner) {
         final Map<Class<?>, Object> controllersWithDI = new HashMap<>();

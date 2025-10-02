@@ -37,4 +37,12 @@ public class ControllerScanner {
 
         return controllers;
     }
+
+    // 클래스만 반환 (인스턴스 생성 X)
+    public Set<Class<?>> getControllerClasses() {
+        final Set<Class<?>> controllerClasses = reflections.getTypesAnnotatedWith(Controller.class);
+        log.info("Found {} controller classes: {}", controllerClasses.size(), controllerClasses);
+        return controllerClasses;
+    }
+
 }
