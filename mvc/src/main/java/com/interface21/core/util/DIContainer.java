@@ -1,6 +1,7 @@
 package com.interface21.core.util;
 
 import com.interface21.context.stereotype.Component;
+import com.interface21.context.stereotype.Controller;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -13,9 +14,16 @@ public class DIContainer {
     private final Map<Class<?>, Object> beanMap = new HashMap<>();
     private final Set<Class<?>> creatingBeans = new HashSet<>();
 
+    public <T> void registerBean(Class<T> type, T instance) {
+        beanMap.put(type, instance);
+    }
+
     public void scanAndRegister(String basePackage) {
         Reflections reflections = new Reflections(basePackage);
-        Set<Class<?>> componentClasses = reflections.getTypesAnnotatedWith(Component.class);
+        Set<Class<?>> componentClasses = new HashSet<>();
+        componentClasses.addAll(reflections.getTypesAnnotatedWith(Component.class));
+        componentClasses.addAll(reflections.getTypesAnnotatedWith(Controller.class));
+
         componentClasses.stream()
                 .filter(clazz -> !clazz.isInterface())
                 .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
@@ -35,6 +43,10 @@ public class DIContainer {
         if (creatingBeans.contains(type)) {
             throw new IllegalStateException("Bean 순환오류 " + type.getName());
         }
+        if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+            return findImplementation(type);
+        }
+
         try {
             creatingBeans.add(type);
             Constructor<?>[] constructors = type.getDeclaredConstructors();
@@ -59,5 +71,14 @@ public class DIContainer {
         } finally {
             creatingBeans.remove(type);
         }
+    }
+
+    private <T> T findImplementation(Class<T> type) {
+        for (Map.Entry<Class<?>, Object> entry : beanMap.entrySet()) {
+            if (type.isAssignableFrom(entry.getKey())) {
+                return type.cast(entry.getValue());
+            }
+        }
+        throw new IllegalStateException(type.getName());
     }
 }
