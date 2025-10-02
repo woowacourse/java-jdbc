@@ -51,7 +51,7 @@ public class DIContainer {
             creatingBeans.add(type);
             Constructor<?>[] constructors = type.getDeclaredConstructors();
             if (constructors.length != 1) {
-                throw new IllegalStateException(("Bean은 하나이상의 public 생성자 필요." + type.getName()));
+                throw new IllegalStateException(("Bean은 하나의 public 생성자 필요." + type.getName()));
             }
             Constructor<?> constructor = constructors[0];
             constructor.setAccessible(true);
