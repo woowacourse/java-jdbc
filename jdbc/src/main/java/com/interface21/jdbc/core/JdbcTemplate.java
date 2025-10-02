@@ -25,10 +25,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            return pstmt.executeUpdate();
-        });
+        return update(sql, createPreparedStatementSetter(args));
     }
 
     public int update(String sql, PreparedStatementSetter pss) {
@@ -39,64 +36,22 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
-        
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException("Query returned no results");
-        }
-        
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        
-        return results.getFirst();
+        return queryForObject(sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
         List<T> results = query(sql, pss, rowMapper);
-        
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException("Query returned no results");
-        }
-        
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        
-        return results.getFirst();
+        return getSingleResult(results);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rowNum++));
-                }
-                
-                return results;
-            }
-        });
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
         return execute(sql, pstmt -> {
             pss.setValues(pstmt);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rowNum++));
-                }
-                
-                return results;
-            }
+            return extractResults(pstmt.executeQuery(), rowMapper);
         });
     }
 
@@ -113,9 +68,39 @@ public class JdbcTemplate {
             throw new DataAccessException("SQL execution failed: " + sql, e);
         }
     }
+
+    private PreparedStatementSetter createPreparedStatementSetter(Object... args) {
+        return ps -> setParameters(ps, args);
+    }
+
     private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
+    }
+
+    private <T> List<T> extractResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        try (rs) {
+            List<T> results = new ArrayList<>();
+            int rowNum = 0;
+
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rowNum++));
+            }
+
+            return results;
+        }
+    }
+
+    private <T> T getSingleResult(List<T> results) {
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException("Query returned no results");
+        }
+
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+
+        return results.getFirst();
     }
 }
