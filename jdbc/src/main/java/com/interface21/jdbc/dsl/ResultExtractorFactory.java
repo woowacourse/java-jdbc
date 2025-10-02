@@ -20,7 +20,7 @@ public class ResultExtractorFactory {
 
                 for (int i = 1; i <= columnCount; i++) {
                     String columnName = metaData.getColumnName(i);
-                    Object value = resultSet.getObject(i);
+                    Object value = resultSet.getObject(columnName);
 
                     try {
                         Field field = targetClass.getDeclaredField(snakeToCamel(columnName));
