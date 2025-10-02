@@ -77,20 +77,25 @@ public class JdbcTemplate {
 
     private <T> T extractSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (final ResultSet resultSet = pstmt.executeQuery()) {
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet, rowNum++));
-            }
-
-            if (results.isEmpty()) {
+            if (!resultSet.next()) {
                 return null;
             }
-            if (results.size() == 1) {
-                return results.getFirst();
-            }
 
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+            T result = rowMapper.mapRow(resultSet, 0);
+
+            validateSingleResult(resultSet);
+
+            return result;
+        }
+    }
+
+    private  void validateSingleResult(ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            int count = 2;
+            while (resultSet.next()) {
+                count++;
+            }
+            throw new IncorrectResultSizeDataAccessException(1, count);
         }
     }
 
