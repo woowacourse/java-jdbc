@@ -1,4 +1,4 @@
-package com.techcourse.dao;
+package com.techcourse.dao.simple;
 
 import com.interface21.jdbc.core.RowMapper;
 import com.interface21.jdbc.core.SimpleJdbcTemplate;

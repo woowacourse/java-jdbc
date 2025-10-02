@@ -47,7 +47,7 @@ public class SimpleJdbcTemplate {
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException("결과값이 1개보다 많습니다. 결과 크기: " + results.size());
         }
-        return results.get(0);
+        return results.getFirst();
     }
 
     private ParameterProcessResult processNamedParameters(String sql, Map<String, Object> params) {

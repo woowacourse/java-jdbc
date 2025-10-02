@@ -1,8 +1,8 @@
 package com.techcourse.service;
 
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.SimpleUserDao;
-import com.techcourse.dao.SimpleUserHistoryDao;
+import com.techcourse.dao.simple.SimpleUserDao;
+import com.techcourse.dao.simple.SimpleUserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;

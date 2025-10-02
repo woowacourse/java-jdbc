@@ -1,6 +1,5 @@
-package com.techcourse.dao;
+package com.techcourse.dao.template;
 
-import com.techcourse.dao.template.InsertUserHistoryJdbcTemplate;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
