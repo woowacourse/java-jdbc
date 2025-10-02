@@ -35,11 +35,6 @@ public class JdbcTemplate {
         }
     }
 
-    @FunctionalInterface
-    private interface PreparedStatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
-    }
-
     public void update(String sql, Object... objects) {
         execute(sql, preparedStatement -> {
             setParameters(preparedStatement, objects);
@@ -76,4 +71,11 @@ public class JdbcTemplate {
             preparedStatement.setObject(i + 1, objects[i]);
         }
     }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
+    }
 }
+
+

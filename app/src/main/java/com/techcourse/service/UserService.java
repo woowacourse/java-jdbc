@@ -44,12 +44,7 @@ public class UserService {
 
             LocalTransactionManager.commit();
         } catch (Exception e) {
-            try {
-                LocalTransactionManager.rollback();
-                throw e;
-            } catch (SQLException ex) {
-                throw new JdbcFailException("롤백에 실패하였습니다.");
-            }
+            LocalTransactionManager.rollback();
         }finally {
             LocalTransactionManager.end();
         }
