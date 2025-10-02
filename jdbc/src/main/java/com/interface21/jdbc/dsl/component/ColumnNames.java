@@ -14,6 +14,6 @@ public class ColumnNames {
 
     @Override
     public String toString() {
-        return nameList.stream().reduce((a, b) -> a + ", " + b).orElse("");
+        return nameList.stream().reduce((a, b) -> a + ", " + b).orElse("*");
     }
 }
