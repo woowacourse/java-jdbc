@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... params) {
+    public int update(final String sql, final Object... params) {
         return executeWithPreparedStatement(sql, (pstmt -> {
             settingPrepareStatement(params, pstmt);
 
@@ -28,7 +28,7 @@ public class JdbcTemplate {
         }));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return executeWithPreparedStatement(sql, (pstmt -> {
             settingPrepareStatement(params, pstmt);
 
@@ -42,7 +42,7 @@ public class JdbcTemplate {
         }));
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return executeWithPreparedStatement(sql, (pstmt -> {
             settingPrepareStatement(params, pstmt);
 
@@ -58,7 +58,7 @@ public class JdbcTemplate {
         }));
     }
 
-    private <T> T executeWithPreparedStatement(String sql, PreparedStatementAction<T> action) {
+    private <T> T executeWithPreparedStatement(final String sql, final PreparedStatementAction<T> action) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
