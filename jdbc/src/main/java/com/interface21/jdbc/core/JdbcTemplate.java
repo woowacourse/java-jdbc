@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final PositionalParameterPreparedStatementSetter DEFAULT_PREPARED_STATEMENT_SETTERS = new PositionalParameterPreparedStatementSetter();
+    private static final PositionalParameterPreparedStatementSetter DEFAULT_PREPARED_STATEMENT_SETTER = new PositionalParameterPreparedStatementSetter();
 
     private final DataSource dataSource;
 
@@ -29,7 +29,7 @@ public class JdbcTemplate {
      * @param parameters SQL 업데이트에 사용할 파라미터들
      */
     public void update(final String sql, final Object... parameters) {
-        update(sql, DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters));
+        update(sql, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
     public void update(
@@ -61,7 +61,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return queryForObject(
                 sql,
-                DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters),
                 rowMapper
         );
     }
@@ -106,7 +106,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return query(
                 sql,
-                DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters),
                 rowMapper
         );
     }
