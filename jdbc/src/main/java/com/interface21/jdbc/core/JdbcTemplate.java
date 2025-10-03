@@ -47,12 +47,15 @@ public class JdbcTemplate {
                 setStatementParameter(pstmt, i + 1, parameters[i]);
             }
 
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return resultSetMapper.map(rs);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return resultSetMapper.map(rs);
+                }
+                return null;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new RuntimeException(e);
             }
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -68,14 +71,15 @@ public class JdbcTemplate {
                 setStatementParameter(pstmt, i + 1, parameters[i]);
             }
 
-            ResultSet rs = pstmt.executeQuery();
-
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(resultSetMapper.map(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(resultSetMapper.map(rs));
+                }
+                return result;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-
-            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
