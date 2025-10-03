@@ -82,10 +82,9 @@ public class JdbcTemplate {
     private <T> List<T> extractResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
         try (rs) {
             List<T> results = new ArrayList<>();
-            int rowNum = 0;
 
             while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rowNum++));
+                results.add(rowMapper.mapRow(rs));
             }
 
             return results;

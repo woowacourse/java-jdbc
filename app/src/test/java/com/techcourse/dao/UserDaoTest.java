@@ -97,7 +97,7 @@ class UserDaoTest {
         final var user = jdbcTemplate.queryForObject(
                 sql,
                 ps -> ps.setLong(1, 1L),
-                (rs, rowNum) -> new User(
+                (rs) -> new User(
                         rs.getLong("id"),
                         rs.getString("account"),
                         rs.getString("password"),
