@@ -19,6 +19,10 @@ public class UserService {
         return userDao.findById(id);
     }
 
+    public User findByAccount(final String account) {
+        return userDao.findByAccount(account);
+    }
+
     public void insert(final User user) {
         userDao.insert(user);
     }
