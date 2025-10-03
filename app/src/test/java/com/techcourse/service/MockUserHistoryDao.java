@@ -1,6 +1,6 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.template.UserHistoryDao;
+import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
 import javax.sql.DataSource;

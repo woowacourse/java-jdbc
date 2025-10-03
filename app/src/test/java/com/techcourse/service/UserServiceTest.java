@@ -1,30 +1,30 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.simple.SimpleUserDao;
-import com.techcourse.dao.simple.SimpleUserHistoryDao;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @Disabled
 class UserServiceTest {
 
-    private SimpleUserDao userDao;
+    private UserDao userDao;
     private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
-        this.userDao = new SimpleUserDao(dataSource);
+        this.userDao = new UserDao(dataSource);
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -32,7 +32,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new SimpleUserHistoryDao(dataSource);
+        final var userHistoryDao = new UserHistoryDao(dataSource);
         final var userService = new UserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
@@ -48,7 +48,7 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new SimpleUserHistoryDao(dataSource) {
+        final var userHistoryDao = new UserHistoryDao(dataSource) {
             @Override
             public void log(final UserHistory userHistory) {
                 throw new DataAccessException("롤백 테스트를 위한 예외");
