@@ -25,62 +25,52 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        return update(sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             return pstmt.executeUpdate();
         });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
-        
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException("Query returned no results");
-        }
-        
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        
-        return results.getFirst();
+        return queryForObject(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        List<T> results = query(sql, pss, rowMapper);
+        return getSingleResult(results);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
         return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rowNum++));
-                }
-                
-                return results;
-            }
+            pss.setValues(pstmt);
+            return extractResults(pstmt.executeQuery(), rowMapper);
         });
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             log.debug("Executing SQL: {}", sql);
-            
+
             return callback.doInPreparedStatement(pstmt);
-            
+
         } catch (SQLException e) {
             log.error("SQL execution failed: {}", sql, e);
             throw new DataAccessException("SQL execution failed: " + sql, e);
-        } finally {
-            closeStatement(pstmt);
-            closeConnection(conn);
         }
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(Object... args) {
+        return ps -> setParameters(ps, args);
     }
 
     private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
@@ -89,23 +79,27 @@ public class JdbcTemplate {
         }
     }
 
-    private void closeStatement(PreparedStatement pstmt) {
-        if (pstmt != null) {
-            try {
-                pstmt.close();
-            } catch (SQLException e) {
-                log.warn("Failed to close PreparedStatement", e);
+    private <T> List<T> extractResults(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        try (rs) {
+            List<T> results = new ArrayList<>();
+
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
             }
+
+            return results;
         }
     }
 
-    private void closeConnection(Connection conn) {
-        if (conn != null) {
-            try {
-                conn.close();
-            } catch (SQLException e) {
-                log.warn("Failed to close Connection", e);
-            }
+    private <T> T getSingleResult(List<T> results) {
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException("Query returned no results");
         }
+
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+
+        return results.getFirst();
     }
 }
