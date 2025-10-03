@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,22 +21,38 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
+    }
+
+    private <T> T execute(
             final String sql,
-            final PreparedStatementSetter preparedStatementSetter
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> action
     ) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatementSetter.execute(preparedStatement);
 
-            preparedStatement.executeUpdate();
-
-            logSql(sql);
+            return action.doInPreparedStatement(preparedStatement);
 
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    public void update(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        execute(sql,
+                preparedStatementSetter, preparedStatement -> {
+                    preparedStatement.executeUpdate();
+                    logSql(sql);
+                    return null;
+                });
     }
 
     public <T> Optional<T> queryForObject(
@@ -59,24 +76,20 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final PreparedStatementSetter preparedStatementSetter
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+        return execute(sql,
+                preparedStatementSetter, preparedStatement -> {
+                    try (final var queryResultSet = preparedStatement.executeQuery()) {
 
-            preparedStatementSetter.execute(preparedStatement);
+                        logSql(sql);
 
-            try (final var queryResultSet = preparedStatement.executeQuery()) {
-                logSql(sql);
+                        final var objectMappingResultSet = new ArrayList<T>();
 
-                final var objectMappingResultSet = new ArrayList<T>();
-
-                while (queryResultSet.next()) {
-                    objectMappingResultSet.add(rowMapper.mapRow(queryResultSet));
-                }
-                return objectMappingResultSet;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+                        while (queryResultSet.next()) {
+                            objectMappingResultSet.add(rowMapper.mapRow(queryResultSet));
+                        }
+                        return objectMappingResultSet;
+                    }
+                });
     }
 
     private void logSql(String sql) {
