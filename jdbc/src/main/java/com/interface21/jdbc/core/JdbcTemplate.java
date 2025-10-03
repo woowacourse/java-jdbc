@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final DefaultPreparedStatementSetters DEFAULT_PREPARED_STATEMENT_SETTERS = new DefaultPreparedStatementSetters();
+    private static final PositionalParameterPreparedStatementSetter DEFAULT_PREPARED_STATEMENT_SETTERS = new PositionalParameterPreparedStatementSetter();
 
     private final DataSource dataSource;
 
