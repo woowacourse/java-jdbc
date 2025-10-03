@@ -1,7 +1,7 @@
-package com.techcourse.dao.simple;
+package com.techcourse.dao;
 
+import com.interface21.jdbc.core.NamedParameterJdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.jdbc.core.SimpleJdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.HashMap;
 import java.util.List;
@@ -10,9 +10,9 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SimpleUserDao {
+public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(SimpleUserDao.class);
+    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
@@ -21,29 +21,29 @@ public class SimpleUserDao {
             rs.getString("email")
     );
 
-    private final SimpleJdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    public SimpleUserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new SimpleJdbcTemplate(dataSource);
+    public UserDao(final DataSource dataSource) {
+        this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (:account, :password, :email)";
-        final Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("account", user.getAccount());
         params.put("password", user.getPassword());
         params.put("email", user.getEmail());
-        jdbcTemplate.updateWithParam(sql, params);
+        jdbcTemplate.update(sql, params);
     }
 
     public void update(final User user) {
         final var sql = "update users set account = :account, password = :password, email = :email where id = :id";
-        final Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("account", user.getAccount());
         params.put("password", user.getPassword());
         params.put("email", user.getEmail());
         params.put("id", user.getId());
-        jdbcTemplate.updateWithParam(sql, params);
+        jdbcTemplate.update(sql, params);
     }
 
     public List<User> findAll() {

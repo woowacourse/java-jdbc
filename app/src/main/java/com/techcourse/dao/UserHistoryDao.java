@@ -1,6 +1,6 @@
-package com.techcourse.dao.simple;
+package com.techcourse.dao;
 
-import com.interface21.jdbc.core.SimpleJdbcTemplate;
+import com.interface21.jdbc.core.NamedParameterJdbcTemplate;
 import com.techcourse.domain.UserHistory;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,14 +8,14 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SimpleUserHistoryDao {
+public class UserHistoryDao {
 
-    private static final Logger log = LoggerFactory.getLogger(SimpleUserHistoryDao.class);
+    private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
 
-    private final SimpleJdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    public SimpleUserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new SimpleJdbcTemplate(dataSource);
+    public UserHistoryDao(final DataSource dataSource) {
+        this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
     public void log(final UserHistory userHistory) {
@@ -30,6 +30,6 @@ public class SimpleUserHistoryDao {
         params.put("created_at", userHistory.getCreatedAt());
         params.put("created_by", userHistory.getCreateBy());
 
-        jdbcTemplate.updateWithParam(sql, params);
+        jdbcTemplate.update(sql, params);
     }
 }
