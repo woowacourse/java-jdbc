@@ -28,26 +28,25 @@ public class JdbcTemplate {
      * @param sql        실행할 SQL 업데이트 문
      * @param parameters SQL 업데이트에 사용할 파라미터들
      */
-    public void update(final String sql, final Object... parameters) {
-        update(sql, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
+    public int update(final String sql, final Object... parameters) {
+        return update(sql, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
-    public void update(
+    public int update(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter
     ) {
-        execute(
+        return execute(
                 sql,
                 preparedStatementSetter,
                 preparedStatement -> executeUpdate(preparedStatement)
         );
     }
 
-    private <T> T executeUpdate(
+    private int executeUpdate(
             final PreparedStatement preparedStatement
     ) throws SQLException {
-        preparedStatement.executeUpdate();
-        return null;
+        return preparedStatement.executeUpdate();
     }
 
     /**
