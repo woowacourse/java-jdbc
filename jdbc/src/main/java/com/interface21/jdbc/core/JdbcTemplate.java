@@ -1,5 +1,8 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.IncorrectResultSizeException;
+import com.interface21.jdbc.DataAccessException;
+import com.interface21.jdbc.ParameterBindingException;
 import com.interface21.rowmapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -36,13 +39,17 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception.getMessage());
         }
     }
 
-    private void setParametersToPreparedStatement(Object[] params, PreparedStatement pstmt) throws SQLException {
-        for (int i=0; i< params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+    private void setParametersToPreparedStatement(Object[] params, PreparedStatement pstmt) {
+        try {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        } catch (SQLException exception) {
+            throw new ParameterBindingException(exception.getMessage());
         }
     }
 
@@ -64,7 +71,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception.getMessage());
         }
     }
 
@@ -88,6 +95,9 @@ public class JdbcTemplate {
         List<T> queryResult = query(sql, rowMapper, params);
         if (queryResult.isEmpty()) {
             return null;
+        }
+        if (queryResult.size() > 1) {
+            throw new IncorrectResultSizeException("검색 결과가 1개 이상입니다.");
         }
         return queryResult.getFirst();
     }
