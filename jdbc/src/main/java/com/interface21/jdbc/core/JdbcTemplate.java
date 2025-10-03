@@ -23,19 +23,18 @@ public class JdbcTemplate {
     }
 
     /**
-     * 파라미터 마커 나열 순서대로 parameters를 매핑하는 PreparedStatementSetter를 사용하여 SQL 업데이트를 실행합니다
+     * 파라미터 마커 나열 순서대로 parameters를 매핑하여 SQL 업데이트를 실행합니다
      *
      * @param sql        실행할 SQL 업데이트 문
      * @param parameters SQL 업데이트에 사용할 파라미터들
      */
     public void update(final String sql, final Object... parameters) {
-        update(sql, DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters), parameters);
+        update(sql, DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters));
     }
 
     public void update(
             final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final Object... parameters
+            final PreparedStatementSetter preparedStatementSetter
     ) {
         execute(
                 sql,
@@ -43,13 +42,12 @@ public class JdbcTemplate {
                 preparedStatement -> {
                     preparedStatement.executeUpdate();
                     return null;
-                },
-                parameters
+                }
         );
     }
 
     /**
-     * 파라미터 마커 나열 순서대로 parameters를 매핑하는 PreparedStatementSetter를 사용하여 SQL 쿼리를 실행하고, 단일 결과를 RowMapper로 매핑하여 반환합니다
+     * 파라미터 마커 나열 순서대로 parameters를 매핑하여 SQL 쿼리를 실행하고, 단일 결과를 RowMapper로 매핑하여 반환합니다
      *
      * @param sql        실행할 SQL 업데이트 문
      * @param rowMapper  결과 행을 매핑하는 RowMapper
@@ -60,16 +58,14 @@ public class JdbcTemplate {
         return queryForObject(
                 sql,
                 DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
-                rowMapper,
-                parameters
+                rowMapper
         );
     }
 
     public <T> T queryForObject(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper,
-            final Object... parameters
+            final RowMapper<T> rowMapper
     ) {
         return execute(
                 sql,
@@ -78,8 +74,7 @@ public class JdbcTemplate {
                     try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                         return mapSingleResult(resultSet, rowMapper);
                     }
-                },
-                parameters
+                }
         );
     }
 
@@ -92,7 +87,7 @@ public class JdbcTemplate {
     }
 
     /**
-     * 파라미터 마커 나열 순서대로 parameters를 매핑하는 PreparedStatementSetter를 사용하여 SQL 쿼리를 실행하고, 결과를 RowMapper로 매핑하여 리스트로 반환합니다
+     * 파라미터 마커 나열 순서대로 parameters를 매핑하여 SQL 쿼리를 실행하고, 결과를 RowMapper로 매핑하여 리스트로 반환합니다
      *
      * @param sql        실행할 SQL 업데이트 문
      * @param rowMapper  결과 행을 매핑하는 RowMapper
@@ -103,16 +98,14 @@ public class JdbcTemplate {
         return query(
                 sql,
                 DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
-                rowMapper,
-                parameters
+                rowMapper
         );
     }
 
     public <T> List<T> query(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper,
-            final Object... parameters
+            final RowMapper<T> rowMapper
     ) {
         return execute(
                 sql,
@@ -121,8 +114,7 @@ public class JdbcTemplate {
                     try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                         return mapResults(resultSet, rowMapper);
                     }
-                },
-                parameters
+                }
         );
     }
 
@@ -138,8 +130,7 @@ public class JdbcTemplate {
     private <T> T execute(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
-            final PreparedStatementCallback<T> preparedStatementCallback,
-            final Object... parameters
+            final PreparedStatementCallback<T> preparedStatementCallback
     ) {
         try (
                 final Connection connection = dataSource.getConnection();
