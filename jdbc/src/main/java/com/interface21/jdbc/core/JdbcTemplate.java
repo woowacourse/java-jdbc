@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final DefaultPreparedStatementSetters DEFAULT_PREPARED_STATEMENT_SETTERS = new DefaultPreparedStatementSetters();
 
     private final DataSource dataSource;
 
@@ -24,6 +25,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... parameters) {
         execute(
                 sql,
+                DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
                 preparedStatement -> {
                     preparedStatement.executeUpdate();
                     return null;
@@ -35,6 +37,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return execute(
                 sql,
+                DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
                 preparedStatement -> {
                     try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                         return mapSingleResult(resultSet, rowMapper);
@@ -54,6 +57,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return execute(
                 sql,
+                DEFAULT_PREPARED_STATEMENT_SETTERS.getPreparedStatementSetter(parameters),
                 preparedStatement -> {
                     try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                         return mapResult(resultSet, rowMapper);
@@ -74,6 +78,7 @@ public class JdbcTemplate {
 
     private <T> T execute(
             final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback,
             final Object... parameters
     ) {
@@ -81,22 +86,13 @@ public class JdbcTemplate {
                 final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setPreparedStatementParameters(preparedStatement, parameters);
+            preparedStatementSetter.setParameters(preparedStatement);
             log.debug("query : {}", sql);
 
             return preparedStatementCallback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setPreparedStatementParameters(
-            final PreparedStatement preparedStatement,
-            final Object... parameters
-    ) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            preparedStatement.setObject(i + 1, parameters[i]);
         }
     }
 }
