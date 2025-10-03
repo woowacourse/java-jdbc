@@ -17,13 +17,11 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
+    public UserDao(final DataSource dataSource, final JdbcTemplate jdbcTemplate) {
         this.dataSource = dataSource;
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -64,8 +62,15 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        String query = "select id, account, password, email from users";
+        return jdbcTemplate.query(
+                query,
+                (resultSet) -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+                ));
     }
 
     public User findById(final Long id) {
