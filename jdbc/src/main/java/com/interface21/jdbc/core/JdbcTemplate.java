@@ -22,7 +22,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    // TODO 한개가 아닐 경우 예외 처리
     public <T> T executeQueryObject(
         final String sql,
         final RowMapper<T> rowMapper,
@@ -33,7 +32,12 @@ public class JdbcTemplate {
              ResultSet resultSet = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
-            return rowMapper.mapRow(resultSet);
+            resultSet.next();
+            T returnValue = rowMapper.mapRow(resultSet);
+            if (!resultSet.isAfterLast()) {
+                throw new IllegalArgumentException("query returns more than one row");
+            }
+            return returnValue;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -47,6 +51,7 @@ public class JdbcTemplate {
         ) {
             log.debug("query : {}", sql);
             List<T> list = new ArrayList<>();
+            resultSet.next();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
             }
@@ -75,8 +80,8 @@ public class JdbcTemplate {
         final Object... args
     ) throws SQLException {
         PreparedStatement pstmt = conn.prepareStatement(sql);
-        for (int i = 1; i <= args.length; i++) {
-            pstmt.setObject(i, args[i]);
+        for (int i =0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
         return pstmt;
     }
