@@ -30,7 +30,6 @@ public class UserDao {
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
         });
     }
 
