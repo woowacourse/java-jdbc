@@ -84,10 +84,11 @@ public class JdbcTemplate {
     }
 
     private <T> T mapSingleResult(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
-        if (resultSet.next()) {
-            return rowMapper.mapRow(resultSet, 1);
+        final List<T> results = mapResults(resultSet, rowMapper);
+        if (results.isEmpty()) {
+            throw new DataAccessException("Not found result");
         }
-        throw new SQLException("No data found");
+        return results.getFirst();
     }
 
     /**
@@ -118,14 +119,14 @@ public class JdbcTemplate {
                 preparedStatementSetter,
                 preparedStatement -> {
                     try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                        return mapResult(resultSet, rowMapper);
+                        return mapResults(resultSet, rowMapper);
                     }
                 },
                 parameters
         );
     }
 
-    private <T> List<T> mapResult(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> mapResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
         final List<T> results = new ArrayList<>();
         int rowNum = 1;
         while (resultSet.next()) {
