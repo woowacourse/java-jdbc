@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,20 +20,30 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    public void update(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, parameters);
+
+            preparedStatementSetter.execute(preparedStatement);
 
             preparedStatement.executeUpdate();
-            log.info("query: {}", sql);
+
+            logSql(sql);
+
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final List<T> results = queryForList(sql, rowMapper, parameters);
+    public <T> Optional<T> queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        final List<T> results = queryForList(sql, rowMapper, preparedStatementSetter);
 
         if (results.isEmpty()) {
             return Optional.empty();
@@ -45,13 +54,19 @@ public class JdbcTemplate {
         return Optional.of(results.getFirst());
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> List<T> queryForList(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, parameters);
+
+            preparedStatementSetter.execute(preparedStatement);
 
             try (final var queryResultSet = preparedStatement.executeQuery()) {
-                log.info("query: {}", sql);
+                logSql(sql);
+
                 final var objectMappingResultSet = new ArrayList<T>();
 
                 while (queryResultSet.next()) {
@@ -64,10 +79,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(final PreparedStatement preparedStatement, final Object[] parameters)
-            throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            preparedStatement.setObject(i + 1, parameters[i]);
-        }
+    private void logSql(String sql) {
+        log.info("query: {}", sql);
     }
 }
