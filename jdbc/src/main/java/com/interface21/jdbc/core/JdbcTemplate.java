@@ -14,11 +14,9 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final PreparedStatementParamMapping preparedStatementParamMapping;
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.preparedStatementParamMapping = new PreparedStatementParamMapping();
         this.dataSource = dataSource;
     }
 
@@ -28,7 +26,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
-                setStatementParameter(pstmt, i + 1, parameters[i]);
+                pstmt.setObject(i + 1, parameters[i]);
             }
 
             pstmt.executeUpdate();
@@ -44,7 +42,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
-                setStatementParameter(pstmt, i + 1, parameters[i]);
+                pstmt.setObject(i + 1, parameters[i]);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -68,7 +66,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
-                setStatementParameter(pstmt, i + 1, parameters[i]);
+                pstmt.setObject(i + 1, parameters[i]);
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -84,10 +82,5 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    private void setStatementParameter(final PreparedStatement pstmt, final int index, final Object value) throws SQLException {
-        String typeName = value.getClass().getTypeName();
-        preparedStatementParamMapping.callSetter(typeName, pstmt, index, value);
     }
 }
