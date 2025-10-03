@@ -146,10 +146,12 @@ public class JdbcTemplate {
             final Object arg = args[i];
             if (arg instanceof Long) {
                 pstmt.setLong(i + 1, (long) arg);
+                continue;
             }
             if (arg instanceof String) {
                 pstmt.setString(i + 1, (String) arg);
             }
+            throw new IllegalArgumentException("Unsupported type: " + arg.getClass().getName());
         }
     }
 }
