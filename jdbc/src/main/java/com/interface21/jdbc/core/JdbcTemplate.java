@@ -4,13 +4,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -22,35 +20,49 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void insert(String sql, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    public int update(String sql, Object... params) {
+        return executeWithPreparedStatement(sql, (pstmt -> {
             settingPrepareStatement(params, pstmt);
 
-            pstmt.executeUpdate();
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return pstmt.executeUpdate();
+        }));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        return executeWithPreparedStatement(sql, (pstmt -> {
             settingPrepareStatement(params, pstmt);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                if(rs.next()) {
+
+                if (rs.next()) {
                     return rowMapper.map(rs);
                 }
                 return null;
             }
+        }));
+    }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return executeWithPreparedStatement(sql, (pstmt -> {
+            settingPrepareStatement(params, pstmt);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+
+                while (rs.next()) {
+                    results.add(rowMapper.map(rs));
+                }
+
+                return results;
+            }
+        }));
+    }
+
+    private <T> T executeWithPreparedStatement(String sql, PreparedStatementAction<T> action) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
