@@ -102,19 +102,11 @@ public class JdbcTemplate {
         try {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
+            setParameters(args, pstmt);
+
             rs = pstmt.executeQuery();
 
             log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                final Object arg = args[i];
-                if (arg instanceof Long) {
-                    pstmt.setLong(i + 1, (long) arg);
-                }
-                if (arg instanceof String) {
-                    pstmt.setString(i + 1, (String) arg);
-                }
-            }
 
             final List<T> result = new ArrayList<>();
             while (rs.next()) {
