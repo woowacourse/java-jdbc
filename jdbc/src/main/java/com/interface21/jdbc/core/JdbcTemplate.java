@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import java.sql.Connection;
+import com.interface21.dao.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,50 +20,59 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T doQueryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        final var results = doQuery(sql, rowMapper, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        final var results = query(sql, rowMapper, args);
+        if (results.size() != 1) {
+            throw new DataAccessException("result size doesn't match");
+        }
         return results.getFirst();
     }
 
-    public <T> List<T> doQuery(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)) {
-
-            final int parameterCount = pstmt.getParameterMetaData().getParameterCount();
-            for (int i = 0; i < parameterCount; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (
+                var conn = dataSource.getConnection();
+                var pstmt = conn.prepareStatement(sql)
+        ) {
+            setPreparedStatementParams(pstmt, args);
             try (var rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rowNum++));
-                }
                 log.debug("query : {}", sql);
-                return results;
+                return extractResults(rs, rowMapper);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public int doUpdate(String sql, Object... args) {
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)) {
-
-            final int parameterCount = pstmt.getParameterMetaData().getParameterCount();
-            for (int i = 0; i < parameterCount; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+    public int update(String sql, Object... args) {
+        try (
+                var conn = dataSource.getConnection();
+                var pstmt = conn.prepareStatement(sql)
+        ) {
+            setPreparedStatementParams(pstmt, args);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public interface RowMapper<T> {
-        T mapRow(ResultSet rs, int rowNum) throws SQLException;
+    private void setPreparedStatementParams(final PreparedStatement pstmt, final Object... args) throws SQLException {
+        final int parameterCount = pstmt.getParameterMetaData().getParameterCount();
+        if (args.length != parameterCount) {
+            throw new DataAccessException();
+        }
+        for (int i = 0; i < parameterCount; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> List<T> extractResults(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs, rowNum++));
+        }
+        return results;
     }
 }
