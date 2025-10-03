@@ -22,7 +22,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object...args) {
+    public void update(String sql, Object...args) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
+        ) {
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
                 ResultSet rs = preparedStatement.executeQuery();
@@ -39,7 +50,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object...args) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
                 ResultSet rs = preparedStatement.executeQuery();
@@ -58,11 +69,11 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement prepareStatement(Connection conn, String sql, Object...args)
+    private PreparedStatement prepareStatement(Connection conn, String sql, Object... args)
             throws SQLException {
         final PreparedStatement prepareStatement = conn.prepareStatement(sql);
-        for (int i=0; i< args.length; i++) {
-            prepareStatement.setObject(i+1, args[i]);
+        for (int i = 0; i < args.length; i++) {
+            prepareStatement.setObject(i + 1, args[i]);
         }
         return prepareStatement;
     }
