@@ -21,24 +21,39 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... params) {
-        return execute(sql, PreparedStatement::executeUpdate, params);
+    public int update(
+            final String sql,
+            final Object... params
+    ) {
+        return execute(sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, (pstmt) -> getSingleResult(rowMapper, pstmt), params);
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        return execute(sql, createPreparedStatementSetter(params), (pstmt) -> getSingleResult(rowMapper, pstmt));
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, (pstmt) -> getMultipleResult(rowMapper, pstmt), params);
+    public <T> List<T> queryForList(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        return execute(sql, createPreparedStatementSetter(params), (pstmt) -> getMultipleResult(rowMapper, pstmt));
     }
 
-    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... params) {
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter pss,
+            final PreparedStatementExecutor<T> executor
+    ) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            setParams(pstmt, params);
+            pss.setValues(pstmt);
 
             return executor.execute(pstmt);
         } catch (SQLException e) {
@@ -73,13 +88,12 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParams(
-            final PreparedStatement pstmt,
-            final Object[] params
-    ) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            Object param = params[i];
-            pstmt.setObject(i + 1, param);
-        }
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... params) {
+        return (pstmt) -> {
+            for (int i = 0; i < params.length; i++) {
+                Object param = params[i];
+                pstmt.setObject(i + 1, param);
+            }
+        };
     }
 }
