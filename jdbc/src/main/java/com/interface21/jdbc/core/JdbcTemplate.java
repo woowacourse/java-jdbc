@@ -39,11 +39,15 @@ public class JdbcTemplate {
         execute(
                 sql,
                 preparedStatementSetter,
-                preparedStatement -> {
-                    preparedStatement.executeUpdate();
-                    return null;
-                }
+                preparedStatement -> executeUpdate(preparedStatement)
         );
+    }
+
+    private <T> T executeUpdate(
+            final PreparedStatement preparedStatement
+    ) throws SQLException {
+        preparedStatement.executeUpdate();
+        return null;
     }
 
     /**
@@ -70,12 +74,17 @@ public class JdbcTemplate {
         return execute(
                 sql,
                 preparedStatementSetter,
-                preparedStatement -> {
-                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                        return mapSingleResult(resultSet, rowMapper);
-                    }
-                }
+                preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper)
         );
+    }
+
+    private <T> T executeQueryAndMapSingleResult(
+            final PreparedStatement preparedStatement,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            return mapSingleResult(resultSet, rowMapper);
+        }
     }
 
     private <T> T mapSingleResult(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
@@ -110,12 +119,17 @@ public class JdbcTemplate {
         return execute(
                 sql,
                 preparedStatementSetter,
-                preparedStatement -> {
-                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                        return mapResults(resultSet, rowMapper);
-                    }
-                }
+                preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper)
         );
+    }
+
+    private <T> List<T> executeQueryAndMapResults(
+            final PreparedStatement preparedStatement,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            return mapResults(resultSet, rowMapper);
+        }
     }
 
     private <T> List<T> mapResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
