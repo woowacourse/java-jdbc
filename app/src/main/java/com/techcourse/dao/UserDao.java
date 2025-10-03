@@ -28,12 +28,12 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account=?, password=?, email=? where id = ?";
-        int executed = jdbcTemplate.executeUpdate(
+        int executed = jdbcTemplate.update(
             sql,
             user.getAccount(),
             user.getPassword(),
@@ -48,16 +48,16 @@ public class UserDao {
 
     public List<User> findAll () {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.executeQuery(sql, userRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById ( final Long id){
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.executeQueryObject(sql, userRowMapper, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount ( final String account){
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.executeQueryObject(sql, userRowMapper, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }

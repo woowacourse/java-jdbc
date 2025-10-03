@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T executeQueryObject(
+    public <T> T queryForObject(
         final String sql,
         final RowMapper<T> rowMapper,
         final Object... args
@@ -32,9 +32,12 @@ public class JdbcTemplate {
              ResultSet resultSet = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
-            resultSet.next();
+
+            if (!resultSet.next()) { // 쿼리 결과 없음
+                return null;
+            }
             T returnValue = rowMapper.mapRow(resultSet);
-            if (!resultSet.isAfterLast()) {
+            if (resultSet.next()) { // 결과 1개 초과
                 throw new IllegalArgumentException("query returns more than one row");
             }
             return returnValue;
@@ -44,14 +47,13 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatementWithArguments(conn, sql, args);
              ResultSet resultSet = pstmt.executeQuery();
         ) {
             log.debug("query : {}", sql);
             List<T> list = new ArrayList<>();
-            resultSet.next();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
             }
@@ -62,7 +64,7 @@ public class JdbcTemplate {
         }
     }
 
-    public int executeUpdate(String sql, Object... args) {
+    public int update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatementWithArguments(conn, sql, args);
         ) {
