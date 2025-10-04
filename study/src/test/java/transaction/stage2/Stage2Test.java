@@ -36,8 +36,14 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * REQUIRED는 기본 전파 속성이다.
+     * 만약 진행 중인 트랜잭션이 있다면 그 트랜잭션에 참여하고, 없다면 새로운 트랜잭션을 생성한다.
+     *
+     * 생성된 트랜잭션이 몇 개인가? 1개
      * 왜 그런 결과가 나왔을까?
+     * - firstUserService.saveFirstTransactionWithRequired() 메서드에서 첫 번째 트랜잭션이 생성된다.
+     * - secondUserService.saveSecondTransactionWithRequired() 메서드에서 첫 번째 트랜잭션을 생성된다.
+     * - 두 번째 트랜잭션은 첫 번째 트랜잭션과 별개로 생성된다.
      */
     @Test
     void testRequired() {
@@ -45,41 +51,52 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
+     * REQUIRES_NEW는 항상 새로운 트랜잭션을 생성한다.
+     * 만약 진행 중인 트랜잭션이 있다면 그 트랜잭션을 일시 중단하고 새로운 트랜잭션을 생성한다.
+     *
+     * 생성된 트랜잭션이 몇 개인가? 2개
      * 왜 그런 결과가 나왔을까?
+     * - firstUserService.saveFirstTransactionWithRequiredNew() 메서드에서 첫 번째 트랜잭션이 생성된다.
+     * - secondUserService.saveSecondTransactionWithRequiresNew() 메서드에서 두 번째 트랜잭션을 생성된다.
+     * - 두 번째 트랜잭션은 첫 번째 트랜잭션과 별개로 생성된다.
      */
     @Test
     void testRequiredNew() {
         final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
-
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
+     * REQUIRES_NEW는 항상 새로운 트랜잭션을 생성한다.
+     * 만약 진행 중인 트랜잭션이 있다면 그 트랜잭션을 일시 중단하고 새로운 트랜잭션을 생성한다.
+     *
      * firstUserService.saveAndExceptionWithRequiredNew()에서 강제로 예외를 발생시킨다.
      * REQUIRES_NEW 일 때 예외로 인한 롤백이 발생하면서 어떤 상황이 발생하는 지 확인해보자.
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
+     * SUPPORTS는 트랜잭션이 있으면 참여하고, 없으면 트랜잭션 없이 실행한다.
+     *
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * - 트랜잭션이 있다면 참여, 없다면 트랜잭션 없이 실행
      */
     @Test
     void testSupports() {
@@ -87,11 +104,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
+     * MANDATORY는 트랜잭션이 있으면 참여하고, 없으면 예외를 발생시킨다.
+     *
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
@@ -102,14 +121,16 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
+     * NOT_SUPPORTED는 트랜잭션 없이 실행되지만, 만약 진행 중인 트랜잭션이 있다면 일시 중단한다.
+     *
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? 1개
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? 1개
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
@@ -119,11 +140,16 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported",
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
+     * NESTED는 부모 트랜잭션이 존재할 때 자식 트랜잭션을 생성한다.
+     * 자식 트랜잭션이 독립적으로 커밋되거나 롤백될 수 있다.
+     * 부모 트랜잭션이 롤백되면 자식 트랜잭션도 롤백된다.
+     *
      * 아래 테스트는 왜 실패할까?
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
      */
@@ -133,11 +159,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
+     * NEVER는 트랜잭션 없이 실행되지만, 만약 진행 중인 트랜잭션이 있다면 예외를 발생시킨다.
+     *
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
      */
     @Test
@@ -146,7 +174,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
