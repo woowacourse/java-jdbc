@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,9 +58,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParameters(pstmt, params);
 
@@ -67,16 +68,16 @@ public class JdbcTemplate {
                 log.debug("query : {}", sql);
 
                 if (!rs.next()) {
-                    throw new DataAccessException("Expected 1 result, but found 0");
+                    return Optional.empty();
                 }
 
                 T result = rowMapper.mapRow(rs);
 
                 if (rs.next()) {
-                    throw new DataAccessException("Expected 1 result, but found more than 1");
+                    throw new DataAccessException("Expected 0 or 1 result, but found more than 1");
                 }
 
-                return result;
+                return Optional.of(result);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

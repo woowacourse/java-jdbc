@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -43,11 +44,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
+                .orElseThrow(() -> new DataAccessException("User not found with id: " + id));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
+                .orElseThrow(() -> new DataAccessException("User not found with account: " + account));
     }
 }
