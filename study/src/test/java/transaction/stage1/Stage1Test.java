@@ -114,7 +114,7 @@ class Stage1Test {
      * Read Uncommitted | +
      * Read Committed   | +
      * Repeatable Read  | -
-     * Serializable     |
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
