@@ -17,7 +17,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> mapper, Object... params) {
+    public <T> Object queryForObject(String sql, RowMapper<T> mapper, Object... params) {
         List<T> list = query(sql, mapper, params);
         if (list.isEmpty()) {
             return Optional.empty();
@@ -25,7 +25,7 @@ public class JdbcTemplate {
         if (list.size() > 1) {
             throw new IllegalStateException("로우가 2개 이상");
         }
-        return Optional.of(list.getFirst());
+        return list.getFirst();
     }
 
     public void update(String sql, Object... params) {

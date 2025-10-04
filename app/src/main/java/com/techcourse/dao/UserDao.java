@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +34,13 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        Optional<User> user = jdbcTemplate.queryForObject(sql, userMapper, id);
-        return user.orElse(null);
+        return (User) jdbcTemplate.queryForObject(sql, userMapper, id);
+
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        Optional<User> user = jdbcTemplate.queryForObject(sql, userMapper, account);
-        return user.orElse(null);
+        return (User) jdbcTemplate.queryForObject(sql, userMapper, account);
     }
 
     public void deleteAll() {
