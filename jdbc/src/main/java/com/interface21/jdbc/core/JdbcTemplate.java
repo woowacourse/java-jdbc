@@ -58,4 +58,12 @@ public class JdbcTemplate {
             preparedStatement.setObject(i + 1, args[i]);
         }
     }
+
+    public Object queryForObject(String sql, RowMapper rowMapper, Object... args) {
+        List<Object> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
+    }
 }
