@@ -34,19 +34,23 @@ class Stage2Test {
     void test() throws InterruptedException {
         final var hikariDataSource = (HikariDataSource) dataSource;
         final var hikariPool = getPool((HikariDataSource) dataSource);
+        log.info("active connections {}", hikariPool.getActiveConnections());
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
         final var threads = new Thread[20];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(getConnection());
+            log.info("active connections {}", hikariPool.getActiveConnections());
         }
 
         for (final var thread : threads) {
             thread.start();
+            log.info("active connections {}", hikariPool.getActiveConnections());
         }
 
         for (final var thread : threads) {
             thread.join();
+            log.info("active connections {}", hikariPool.getActiveConnections());
         }
 
         // 동시에 많은 요청이 몰려도 최대 풀 사이즈를 유지한다.
