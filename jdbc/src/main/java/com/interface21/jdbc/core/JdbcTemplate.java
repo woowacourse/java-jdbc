@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,16 +24,12 @@ public class JdbcTemplate {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= args.length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
-            }
-            final var rs = preparedStatement.executeQuery();
-
-            log.debug("query : {}", sql);
+            final var rs = executeQuery(args, preparedStatement);
 
             if (rs.next()) {
                 return Optional.of(rowMapper.mapRow(rs));
             }
+
             return Optional.empty();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
@@ -48,16 +46,12 @@ public class JdbcTemplate {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= args.length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
-            }
-            final var rs = preparedStatement.executeQuery();
-
-            log.debug("query : {}", sql);
+            final var rs = executeQuery(args, preparedStatement);
 
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
+
             return results;
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
@@ -65,21 +59,37 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final String sql, final Object... args) {
+    public int update(
+            final String sql,
+            final Object... args
+    ) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)
         ) {
-            for (int i = 1; i <= args.length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
-            }
-            final int affectedRows = preparedStatement.executeUpdate();
+            buildParams(args, preparedStatement);
 
-            log.debug("query : {}, affected rows : {}", sql, affectedRows);
-
-            return affectedRows;
+            return preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private ResultSet executeQuery(
+            final Object[] args,
+            final PreparedStatement ps
+    ) throws SQLException {
+        buildParams(args, ps);
+
+        return ps.executeQuery();
+    }
+
+    private void buildParams(
+            final Object[] args,
+            final PreparedStatement ps
+    ) throws SQLException {
+        for (int i = 1; i <= args.length; i++) {
+            ps.setObject(i, args[i - 1]);
         }
     }
 }
