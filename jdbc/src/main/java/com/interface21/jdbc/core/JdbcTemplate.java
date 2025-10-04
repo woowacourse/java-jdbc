@@ -144,14 +144,7 @@ public class JdbcTemplate {
     private void setParameters(final Object[] args, final PreparedStatement pstmt) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             final Object arg = args[i];
-            if (arg instanceof Long) {
-                pstmt.setLong(i + 1, (long) arg);
-                continue;
-            }
-            if (arg instanceof String) {
-                pstmt.setString(i + 1, (String) arg);
-            }
-            throw new IllegalArgumentException("Unsupported type: " + arg.getClass().getName());
+            pstmt.setObject(i + 1, arg);
         }
     }
 }
