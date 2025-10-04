@@ -57,7 +57,7 @@ public class UserDao {
             return new User(foundId, account, password, email);
         }, id);
 
-        return Optional.of(user);
+        return Optional.ofNullable(user);
     }
 
     public Optional<User> findByAccount(final String account) {
@@ -71,6 +71,6 @@ public class UserDao {
             return new User(id, foundAccount, password, email);
         }, account);
 
-        return Optional.of(user);
+        return Optional.ofNullable(user);
     }
 }
