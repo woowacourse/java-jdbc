@@ -94,7 +94,7 @@ public class JdbcTemplate {
         }
     }
 
-    private  void validateSingleResult(ResultSet resultSet) throws SQLException {
+    private void validateSingleResult(ResultSet resultSet) throws SQLException {
         if (resultSet.next()) {
             int count = 2;
             while (resultSet.next()) {
