@@ -24,7 +24,7 @@ public class DataSourceConfig {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(MAXIMUM_POOL_SIZE);
-//        hikariConfig.setConnectionTestQuery("VALUES 1"); HIKARI CP는 Connecgtion.isValid()를 통해서 커넥션 유효성을 검사한다.
+//        hikariConfig.setConnectionTestQuery("VALUES 1"); HIKARI CP는 Connection.isValid()를 통해서 커넥션 유효성을 검사한다.
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
