@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,20 +22,11 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)
-        ) {
-            final var rs = executeQuery(args, preparedStatement);
-
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
-            }
-
-            return Optional.empty();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+        final List<T> query = query(sql, rowMapper, args);
+        if (query.size() > 1) {
+            throw new DataAccessException("결과가 2개 이상입니다: " + sql);
         }
+        return query.stream().findFirst();
     }
 
     public <T> List<T> query(
@@ -42,46 +34,37 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        final List<T> results = new ArrayList<>();
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)
-        ) {
-            final var rs = executeQuery(args, preparedStatement);
-
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+        return execute(sql, args, ps -> {
+            try (final ResultSet rs = ps.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
             }
-
-            return results;
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public int update(
             final String sql,
             final Object... args
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)
-        ) {
-            buildParams(args, preparedStatement);
-
-            return preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
-    private ResultSet executeQuery(
+    private <T> T execute(
+            final String sql,
             final Object[] args,
-            final PreparedStatement ps
-    ) throws SQLException {
-        buildParams(args, ps);
-
-        return ps.executeQuery();
+            final PreparedStatementCallback<T> callback
+    ) {
+        try (final var connection = dataSource.getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
+            buildParams(args, preparedStatement);
+            return callback.execute(preparedStatement);
+        } catch (final Exception e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private void buildParams(
@@ -91,5 +74,10 @@ public class JdbcTemplate {
         for (int i = 1; i <= args.length; i++) {
             ps.setObject(i, args[i - 1]);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T execute(PreparedStatement ps) throws SQLException;
     }
 }
