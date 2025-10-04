@@ -23,6 +23,7 @@ import java.sql.Statement;
  *
  * network bandwidth capture
  * 터미널에 iftop를 설치하고 아래 명령어를 실행한 상태에서 테스트를 실행하자.
+ * HomeBrew 사용 기준 $ brew install iftop
  * $ sudo iftop -i lo0 -nf "host localhost"
  * windows 사용자라면 wsl2를 사용하거나 다른 모니터링 툴을 찾아보자.
  */
