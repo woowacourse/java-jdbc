@@ -37,12 +37,12 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql);
+             final ResultSet resultSet = statement.executeQuery();
         ) {
             setParams(statement, params);
-            final ResultSet resultSet = statement.executeQuery();
 
             final List<T> result = new ArrayList<>();
-            while(resultSet.next()) {
+            while (resultSet.next()) {
                 result.add(rowMapper.mapRow(resultSet));
             }
             return result;
@@ -55,9 +55,9 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql);
+             final ResultSet resultSet = statement.executeQuery();
         ) {
             setParams(statement, params);
-            final ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 return Optional.of(rowMapper.mapRow(resultSet));
             }
