@@ -35,7 +35,7 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select * from users";
         List<User> users = jdbcTemplate.query(sql, ((rs, rowNum) -> {
-            Long id = rs.getLong("Id");
+            Long id = rs.getLong("id");
             String account = rs.getString("account");
             String password = rs.getString("password");
             String email = rs.getString("email");
@@ -49,7 +49,7 @@ public class UserDao {
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         User user = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-            Long foundId = rs.getLong("Id");
+            Long foundId = rs.getLong("id");
             String account = rs.getString("account");
             String password = rs.getString("password");
             String email = rs.getString("email");
@@ -63,7 +63,7 @@ public class UserDao {
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         User user = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-            Long id = rs.getLong("Id");
+            Long id = rs.getLong("id");
             String foundAccount = rs.getString("account");
             String password = rs.getString("password");
             String email = rs.getString("email");
