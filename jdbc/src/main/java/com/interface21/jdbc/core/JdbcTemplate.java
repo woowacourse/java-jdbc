@@ -40,39 +40,44 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        return execute(sql, pstmt -> {
             log.debug("query: {}, args: {}", sql, args);
-            setParameters(pstmt, args);
 
-            try (final ResultSet resultSet = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, rowNum++));
-                }
-                return results;
+            setParameters(pstmt, args);
+            return mapRows(rowMapper, pstmt);
+        });
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper)
+            throws DataAccessException {
+        return execute(sql, pstmt -> {
+            log.debug("query: {}, pss: {}", sql, pss);
+            pss.setValues(pstmt);
+
+            return mapRows(rowMapper, pstmt);
+        });
+    }
+
+    private <T> List<T> mapRows(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+
+            int rowNum = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNum++));
             }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            return results;
         }
     }
 
-
     @Nullable
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        return execute(sql, pstmt -> {
             log.debug("queryForObject: {}, args: {}", sql, args);
 
             setParameters(pstmt, args);
-
             return extractSingleResult(rowMapper, pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     private <T> T extractSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
@@ -100,17 +105,17 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) throws DataAccessException {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("update: {}, args: {}", sql, args);
-
+        return execute(sql, pstmt -> {
             setParameters(pstmt, args);
-
             return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        });
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) throws DataAccessException {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
     }
 
     private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
@@ -120,6 +125,16 @@ public class JdbcTemplate {
 
         for (int i = 1; i <= args.length; i++) {
             pstmt.setObject(i, args[i - 1]);
+        }
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> action) throws DataAccessException {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement pstmt = connection.prepareStatement(sql)
+        ) {
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
