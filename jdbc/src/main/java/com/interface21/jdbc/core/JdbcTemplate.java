@@ -24,13 +24,17 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            for (int i = 1; i <= args.length; i++) {
-                preparedStatement.setObject(i, args[i - 1]);
-            }
+            setParameters(preparedStatement, args);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            log.error("SQL failed. query: {}", sql, e);
+            log.error("query 실패 {}", sql, e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void setParameters(PreparedStatement preparedStatement, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 
@@ -50,12 +54,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL query failed. query: {}", sql, e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setParameters(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 
