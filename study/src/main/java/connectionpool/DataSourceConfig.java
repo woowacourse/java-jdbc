@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 @Configuration
 public class DataSourceConfig {
 
-    public static final int MAXIMUM_POOL_SIZE = 5;
+    public static final int MAXIMUM_POOL_SIZE = 28; // 현재 운영체제 코어 수 14 (14 * 2 + SSD(0)) 의 값으로 설정해봄
     private static final String H2_URL = "jdbc:h2:./test;DB_CLOSE_DELAY=-1";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
@@ -24,7 +24,7 @@ public class DataSourceConfig {
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
         hikariConfig.setMaximumPoolSize(MAXIMUM_POOL_SIZE);
-        hikariConfig.setConnectionTestQuery("VALUES 1");
+//        hikariConfig.setConnectionTestQuery("VALUES 1"); HIKARI CP는 Connecgtion.isValid()를 통해서 커넥션 유효성을 검사한다.
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
