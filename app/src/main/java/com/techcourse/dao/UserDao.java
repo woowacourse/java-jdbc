@@ -69,7 +69,7 @@ public class UserDao {
             String email = rs.getString("email");
 
             return new User(id, foundAccount, password, email);
-        },account);
+        }, account);
 
         return Optional.of(user);
     }

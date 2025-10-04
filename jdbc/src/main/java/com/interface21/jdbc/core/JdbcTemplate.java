@@ -25,13 +25,10 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            log.debug("query : {}", sql);
-
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
-
+            bindParameters(pstmt, params);
             pstmt.executeUpdate();
+
+            log.debug("Executed SQL: {}", sql);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -45,9 +42,7 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+            bindParameters(pstmt, params);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 int rowNum = 0;
@@ -56,7 +51,8 @@ public class JdbcTemplate {
                 }
             }
 
-            log.debug("query : {}", sql);
+            log.debug("Executed SQL: {}", sql);
+
             return results;
 
         } catch (SQLException e) {
@@ -69,22 +65,28 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            for (int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+            bindParameters(pstmt, params);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
                 int rowNum = 0;
                 if (rs.next()) {
-                    return rowMapper.mapRow(rs, rowNum++);
+                    T result = rowMapper.mapRow(rs, rowNum++);
+                    log.debug("Executed SQL: {}", sql);
+                    return result;
                 }
+                log.debug("Executed SQL: {}", sql);
                 return null;
             }
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private void bindParameters(PreparedStatement pstmt, Object... params) throws SQLException {
+        for (int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
         }
     }
 }
