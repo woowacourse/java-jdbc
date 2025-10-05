@@ -65,7 +65,7 @@ public class JdbcTemplate {
         }, setter);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
+    public <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -76,7 +76,7 @@ public class JdbcTemplate {
             }
             return callback.execute(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            log.error("SQL execution failed: {}", sql, e);
             throw new DataAccessException(e);
         }
     }
