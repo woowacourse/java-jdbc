@@ -57,7 +57,7 @@ public class JdbcTemplate {
         ) {
             if (rs.next()) {
                 T result = rowMapper.mapRow(rs);
-                if (rs.getFetchSize() > 1) {
+                if (rs.next()) {
                     throw new RuntimeException("결과가 2개 이상입니다.");
                 }
                 return Optional.of(result);
