@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.JdbcTypeMapper;
 import com.interface21.jdbc.ResultSetMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object ... params) {
+    public void update(final String sql, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
@@ -40,8 +41,8 @@ public class JdbcTemplate {
 
     public Optional<Object> queryForObject(
             final String sql,
-            final ResultSetMapper<ResultSet, ?> mapper,
-            final Object ... params
+            final ResultSetMapper<?> mapper,
+            final Object... params
     ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)
@@ -50,9 +51,10 @@ public class JdbcTemplate {
 
             setParameter(params, pstmt);
 
-            ResultSet resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return Optional.of(mapper.map(resultSet));
+            try (final ResultSet resultSet = pstmt.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(mapper.map(resultSet));
+                }
             }
 
             return Optional.empty();
@@ -64,8 +66,8 @@ public class JdbcTemplate {
 
     public List<Object> queryForList(
             final String sql,
-            final ResultSetMapper<ResultSet, ?> mapper,
-            final Object ... params
+            final ResultSetMapper<?> mapper,
+            final Object... params
     ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)
@@ -74,13 +76,14 @@ public class JdbcTemplate {
 
             setParameter(params, pstmt);
 
-            ResultSet resultSet = pstmt.executeQuery();
+            try (final ResultSet resultSet = pstmt.executeQuery()) {
+                List<Object> results = new ArrayList<>();
 
-            List<Object> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(mapper.map(resultSet));
+                while (resultSet.next()) {
+                    results.add(mapper.map(resultSet));
+                }
+                return results;
             }
-            return results;
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -95,11 +98,8 @@ public class JdbcTemplate {
         for (int idx = 1; idx <= params.length; idx++) {
             Object param = params[idx - 1];
 
-            if (param.getClass() == String.class) {
-                pstmt.setString(idx, (String) param);
-            } else if (param.getClass() == Long.class) {
-                pstmt.setLong(idx, (Long) param);
-            }
+            JdbcTypeMapper mapper = JdbcTypeMapper.fromClassType(param);
+            mapper.map(pstmt, idx, param);
         }
     }
 }
