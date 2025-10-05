@@ -19,6 +19,8 @@ public class JdbcTemplate {
             Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
 
+            validationParamLength(params, pstmt);
+
             for (int i = 0; i < params.length; i++) {
                 pstmt.setObject(i + 1, params[i]);
             }
