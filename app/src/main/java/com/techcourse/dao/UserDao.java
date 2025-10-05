@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -10,6 +11,12 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = (resultSet) -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -29,40 +36,19 @@ public class UserDao {
 
     public List<User> findAll() {
         String query = "select id, account, password, email from users";
-        return jdbcTemplate.query(
-                query,
-                (resultSet) -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-                ));
+        return jdbcTemplate.query(query, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql,
-                (resultSet) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ),
-                id
-        ).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql,
-                (resultSet) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ),
-                account
-        ).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
     }
 }
