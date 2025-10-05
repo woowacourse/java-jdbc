@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.util.NoSuchElementException;
 
 public class UserService {
 
@@ -16,7 +17,7 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id).orElseThrow(NoSuchElementException::new);
     }
 
     public void insert(final User user) {
