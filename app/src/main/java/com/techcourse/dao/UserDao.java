@@ -4,6 +4,7 @@ import com.interface21.context.stereotype.Component;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.mapper.UserMapper;
+import java.sql.Connection;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +36,20 @@ public class UserDao {
         return user.orElseThrow(IllegalArgumentException::new);
     }
 
+    public User findById(Connection conn, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        Optional<User> user = jdbcTemplate.queryForResult(conn, sql, UserMapper.USER_ROW_MAPPER, id);
+        return user.orElseThrow(IllegalArgumentException::new);
+    }
+
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.queryForUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(Connection conn, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.queryForUpdate(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public Optional<User> findByAccount(final String account) {
