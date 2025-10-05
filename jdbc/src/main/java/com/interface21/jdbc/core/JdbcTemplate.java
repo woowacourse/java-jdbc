@@ -24,13 +24,13 @@ public class JdbcTemplate {
 
     public void update(
             String sql,
-            Object... args
+            PreparedStatementSetter setter
     ) {
         try(
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setParameters(preparedStatement, args);
+            setter.setValues(preparedStatement);
             logQuery(sql);
 
             preparedStatement.executeUpdate();
@@ -41,14 +41,14 @@ public class JdbcTemplate {
 
     public <T> Optional<T> queryForObject(
         String sql,
-        RowMapper<T> rowMapper,
-        Object... args
+        PreparedStatementSetter setter,
+        RowMapper<T> rowMapper
     ) {
         try(
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setParameters(preparedStatement, args);
+            setter.setValues(preparedStatement);
             logQuery(sql);
 
             try(ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -74,15 +74,15 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForObjects(
             String sql,
-            RowMapper<T> rowMapper,
-            Object... args
+            PreparedStatementSetter setter,
+            RowMapper<T> rowMapper
     ) {
         List<T> objects = new ArrayList<>();
         try(
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            setParameters(preparedStatement, args);
+            setter.setValues(preparedStatement);
             logQuery(sql);
 
             try(ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -94,12 +94,6 @@ public class JdbcTemplate {
             return objects;
         } catch (SQLException e) {
             throw new CustomizedDataAccessException(sql, e);
-        }
-    }
-
-    private void setParameters(PreparedStatement parameters, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            parameters.setObject(i + 1, args[i]);
         }
     }
 
