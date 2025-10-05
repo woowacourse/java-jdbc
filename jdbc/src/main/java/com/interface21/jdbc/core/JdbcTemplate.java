@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,15 +60,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> results = query(sql, rowMapper, parameters);
         if (results.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
         if (results.size() != 1) {
             throw new IncorrectResultSizeException(1, results.size());
         }
-        return results.getFirst();
+        return Optional.ofNullable(results.getFirst());
     }
 
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
