@@ -23,11 +23,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
-        execute(sql, PreparedStatement::executeUpdate, params);
+    public void update(final String sql) {
+        execute(sql, PreparedStatement::executeUpdate, null);
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public void update(final String sql, final PreparedStatementSetter setter) {
+        execute(sql, PreparedStatement::executeUpdate, setter);
+    }
+
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper) {
+        return queryForObjects(sql, rowMapper, null);
+    }
+
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
@@ -36,10 +44,10 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, params);
+        }, setter);
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) {
@@ -54,22 +62,18 @@ public class JdbcTemplate {
 
                 return Optional.of(result);
             }
-        }, params);
+        }, setter);
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
-    }
-
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... params) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, params);
+            if (setter != null) {
+                setter.setValues(pstmt);
+            }
             return callback.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
