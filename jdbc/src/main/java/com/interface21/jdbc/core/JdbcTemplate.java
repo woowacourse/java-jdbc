@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(
+    public <T> Optional<T> queryForObject(
             final String sql,
             final PreparedStatementSetter pstmts,
             final RowMapper<T> rowMapper
@@ -51,9 +52,9 @@ public class JdbcTemplate {
 
             try (final ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return rowMapper.mapRow(rs);
+                    return Optional.ofNullable(rowMapper.mapRow(rs));
                 }
-                return null;
+                return Optional.empty();
             }
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);

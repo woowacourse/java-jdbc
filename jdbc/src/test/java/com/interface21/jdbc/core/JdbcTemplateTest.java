@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.dao.DataAccessException;
 import java.util.List;
+import java.util.Optional;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +55,7 @@ class JdbcTemplateTest {
             pstmt.setString(2, "듀2");
         });
 
-        final User user = findUserById(2L);
+        final User user = findUserById(2L).get();
 
         assertAll(
                 () -> assertThat(user.getId()).isEqualTo(2),
@@ -70,7 +71,7 @@ class JdbcTemplateTest {
             pstmt.setLong(2, 1);
         });
 
-        final User user = findUserById(1L);
+        final User user = findUserById(1L).get();
 
         assertAll(
                 () -> assertThat(user.getId()).isEqualTo(1),
@@ -80,7 +81,7 @@ class JdbcTemplateTest {
 
     @Test
     void testQueryForObject() {
-        final User user = findUserById(1L);
+        final User user = findUserById(1L).get();
 
         assertAll(
                 () -> assertThat(user).isNotNull(),
@@ -89,7 +90,7 @@ class JdbcTemplateTest {
         );
     }
 
-    private User findUserById(final Long id) {
+    private Optional<User> findUserById(final Long id) {
         return jdbcTemplate.queryForObject("select * from users where id = ?",
                 pstmt -> pstmt.setLong(1, id),
                 rs -> new User(rs.getLong("id"), rs.getString("name"))
