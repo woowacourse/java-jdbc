@@ -1,10 +1,8 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.JdbcException;
 import com.interface21.jdbc.MulitpleDataJdbcException;
 import com.interface21.jdbc.NoDataJdbcException;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,7 +54,9 @@ public class JdbcTemplate {
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            pss.setValues(pstmt);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -73,7 +73,9 @@ public class JdbcTemplate {
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            pss.setValues(pstmt);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             final List<T> results = queryForList(rowMapper, pstmt);
             if (results.isEmpty()) {
                 throw new NoDataJdbcException("No Data");
@@ -97,7 +99,9 @@ public class JdbcTemplate {
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            pss.setValues(pstmt);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             return queryForList(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
