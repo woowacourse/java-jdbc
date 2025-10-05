@@ -30,6 +30,7 @@ public class Transaction {
     public void commit() {
         try {
             connection.commit();
+            this.connection = null;
             this.isStarted = false;
         } catch (SQLException e) {
             // TODO : 예외처리 강화 필요
@@ -40,6 +41,7 @@ public class Transaction {
     public void rollback() {
         try {
             connection.rollback();
+            this.connection = null;
             this.isStarted = false;
         } catch (SQLException e) {
             // TODO : 예외처리 강화 필요
