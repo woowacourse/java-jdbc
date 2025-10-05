@@ -1,8 +1,11 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.DbCleaner;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,15 +19,27 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void clean() {
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DbCleaner dbCleaner = new DbCleaner(jdbcTemplate);
+        dbCleaner.CleanH2();
     }
 
     @Test
     void findAll() {
         final var users = userDao.findAll();
-
+        for(User user : users){
+            System.out.println(user.getAccount());
+        }
         assertThat(users).isNotEmpty();
     }
 
