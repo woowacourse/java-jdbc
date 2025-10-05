@@ -23,6 +23,8 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object...args) {
+        final int countValue = countPlaceholders(sql);
+        validateArgsCount(countValue, args);
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
@@ -34,6 +36,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        final int countValue = countPlaceholders(sql);
+        validateArgsCount(countValue, args);
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
                 ResultSet rs = preparedStatement.executeQuery();
@@ -51,6 +55,8 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        final int countValue = countPlaceholders(sql);
+        validateArgsCount(countValue, args);
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
                 ResultSet rs = preparedStatement.executeQuery();
@@ -71,11 +77,41 @@ public class JdbcTemplate {
 
     private PreparedStatement prepareStatement(Connection conn, String sql, Object... args)
             throws SQLException {
+        final int countValue = countPlaceholders(sql);
+        validateArgsCount(countValue, args);
+
         final PreparedStatement prepareStatement = conn.prepareStatement(sql);
         for (int i = 0; i < args.length; i++) {
             prepareStatement.setObject(i + 1, args[i]);
         }
         return prepareStatement;
+    }
+
+    private void validateArgsCount(int count, Object...args) {
+        if (args.length != count) {
+            throw new IllegalArgumentException("SQL의 파라미터 개수와 전달된 인자 개수가 일치하지 않습니다.");
+        }
+    }
+
+    private int countPlaceholders(String sql) {
+        int count = 0;
+        boolean inQuotes = false;
+
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+
+            // 작은따옴표 처리 (문자열 리터럴 내부의 ?는 제외)
+            if (c == '\'') {
+                inQuotes = !inQuotes;
+            }
+
+            // 작은따옴표 밖에 있는 ?만 카운트
+            if (c == '?' && !inQuotes) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
 }
