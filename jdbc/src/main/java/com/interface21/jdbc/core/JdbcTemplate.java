@@ -39,7 +39,7 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
             setParameters(pstmt, params);
-            return mapResults(rowMapper, pstmt.executeQuery());
+            return executionResult(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -60,6 +60,12 @@ public class JdbcTemplate {
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for(int i=0; i<parameters.length; i++){
             pstmt.setObject(i+1, parameters[i]);
+        }
+    }
+
+    private <T> List<T> executionResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try(ResultSet resultSet = pstmt.executeQuery()) {
+            return mapResults(rowMapper, resultSet);
         }
     }
 
