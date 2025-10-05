@@ -14,6 +14,13 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
+    private final RowMapper<User> userRowMapper = (rs) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
+
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -30,38 +37,18 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final RowMapper<User> rowMapper = (rs) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
-
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final RowMapper<User> rowMapper = (rs) -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
-
-        final User user = jdbcTemplate.queryForObject(sql, rowMapper, id);
+        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
         return Optional.ofNullable(user);
     }
 
     public Optional<User> findByAccount(final String account) {
-        final var sql = "select account, password, email from users where account = ?";
-        final RowMapper<User> rowMapper = (rs) -> new User(
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
-
-        final User user = jdbcTemplate.queryForObject(sql, rowMapper, account);
+        final var sql = "select id, account, password, email from users where account = ?";
+        final User user = jdbcTemplate.queryForObject(sql, userRowMapper, account);
         return Optional.ofNullable(user);
     }
 }
