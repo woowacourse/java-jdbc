@@ -47,7 +47,7 @@ public class UserService {
     private void executeChangePassword(final Connection conn, final long id, final String newPassword, final String createBy) throws SQLException {
         try {
             conn.setAutoCommit(false);
-            final var user = userDao.findById(id);
+            final var user = userDao.findById(conn, id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
