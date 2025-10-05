@@ -43,11 +43,8 @@ public class JdbcTemplate {
     }
 
     public void queryForUpdate(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameter(args, pstmt);
-            pstmt.executeUpdate();
+        try (Connection conn = dataSource.getConnection()) {
+            queryForUpdate(conn, sql, args);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -85,13 +82,8 @@ public class JdbcTemplate {
     }
 
     private <T> T query(String sql, ResultProcessor<T> extractor, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameter(args, pstmt);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return extractor.processResult(rs);
-            }
+        try (Connection conn = dataSource.getConnection()) {
+            return query(conn, sql, extractor, args);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
