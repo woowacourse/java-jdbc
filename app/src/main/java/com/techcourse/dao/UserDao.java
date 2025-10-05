@@ -23,10 +23,6 @@ public class UserDao {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public UserDao() {
-        this(DataSourceConfig.getInstance());
-    }
-
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
