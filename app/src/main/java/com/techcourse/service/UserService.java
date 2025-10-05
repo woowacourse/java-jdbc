@@ -38,21 +38,26 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (Connection conn = dataSource.getConnection()) {
-            try {
-                conn.setAutoCommit(false);
-
-                final var user = userDao.findById(id);
-                user.changePassword(newPassword);
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
-
-                conn.commit();
-            } catch (Exception e) {
-                conn.rollback();
-                throw new DataAccessException();
-            }
+            executeChangePassword(conn, id, newPassword, createBy);
         } catch (SQLException e) {
-            throw new DataAccessException();
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void executeChangePassword(final Connection conn, final long id, final String newPassword, final String createBy) throws SQLException {
+        try {
+            conn.setAutoCommit(false);
+            final var user = userDao.findById(id);
+            user.changePassword(newPassword);
+            userDao.update(conn, user);
+            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            conn.commit();
+        } catch (Exception e) {
+            conn.rollback();
+            if (e instanceof DataAccessException) {
+                throw (DataAccessException) e;
+            }
+            throw new DataAccessException(e);
         }
     }
 }
