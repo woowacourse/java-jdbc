@@ -27,9 +27,9 @@ import transaction.RunnableWrapper;
  * <p>
  * 각 테스트에서 어떤 현상이 발생하는지 직접 경험해보고 아래 표를 채워보자. + : 발생 - : 발생하지 않음 Read phenomena | Dirty reads | Non-repeatable reads |
  * Phantom reads Isolation level  |             |                      |
- * -----------------|-------------|----------------------|-------------- Read Uncommitted |             |
- *       | Read Committed   |             |                      | Repeatable Read  |             |
- * | Serializable     |             |                      |
+ * -----------------|-------------|----------------------|-------------- Read Uncommitted |             | | Read
+ * Committed   |             |                      | Repeatable Read  |             | | Serializable     |
+ * |                      |
  */
 class Stage1Test {
 
@@ -45,8 +45,8 @@ class Stage1Test {
 
     /**
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자. + : 발생 - : 발생하지 않음 Read phenomena | Dirty reads Isolation
-     * level  | -----------------|------------- Read Uncommitted |      + Read Committed   |      - Repeatable Read  |
-     * - Serializable     |      -
+     * level  | -----------------|------------- Read Uncommitted |      + Read Committed   |      - Repeatable Read  | -
+     * Serializable     |      -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -91,8 +91,9 @@ class Stage1Test {
 
     /**
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자. + : 발생 - : 발생하지 않음 Read phenomena | Non-repeatable reads
-     * Isolation level  | -----------------|--------------------- Read Uncommitted | Read Committed   | Repeatable Read
-     * | Serializable     |
+     * Isolation level  | -----------------|--------------------- Read Uncommitted |      +                Read
+     * phenomena Read Committed   |      +                Read phenomena Repeatable Read  |      -
+     * Non-repeatable reads Serializable     |      -                Non-repeatable reads
      */
     @Test
     void noneRepeatable() throws SQLException {
