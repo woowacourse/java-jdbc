@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -16,8 +17,12 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("delete from users");
+        jdbcTemplate.update("alter table users alter column id restart with 1");
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        userDao = new UserDao(DataSourceConfig.getInstance());
         userDao.insert(user);
     }
 
