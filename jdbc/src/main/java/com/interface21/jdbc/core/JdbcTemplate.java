@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.DataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +31,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -42,17 +44,17 @@ public class JdbcTemplate {
             return executionResult(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) throws SQLException {
         List<T> results = query(sql, rowMapper, params);
         if(results.isEmpty()){
-            throw new SQLException("No result found for query.");
+            throw new IncorrectResultSizeException("No result found for query.");
         }
         if(results.size() > 1){
-            throw new SQLException("Returns more than 1 row.");
+            throw new IncorrectResultSizeException("Returns more than 1 row.");
         }
         return results.getFirst();
     }
