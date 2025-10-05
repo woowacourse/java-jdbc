@@ -30,30 +30,24 @@ class JdbcTemplateTest {
 
     private void createDefaultTable(final JdbcTemplate jdbcTemplate) {
         final String sql = "create table users (id bigint auto_increment, name varchar(50))";
-        jdbcTemplate.update(sql, pstmt -> {});
+        jdbcTemplate.update(sql);
     }
 
     private void insertDefaultValue(final JdbcTemplate jdbcTemplate) {
         final String sql = "insert into users (id, name) values (?, ?)";
-        jdbcTemplate.update(sql, pstmt -> {
-            pstmt.setInt(1, 1);
-            pstmt.setString(2, "듀이");
-        });
+        jdbcTemplate.update(sql, 1, "듀이");
     }
 
     @AfterEach
     void tearDown() {
         final String sql = "drop table users";
-        jdbcTemplate.update(sql, pstmt -> {});
+        jdbcTemplate.update(sql);
     }
 
     @Test
     void testInsert() {
         final String sql = "insert into users (id, name) values (?, ?)";
-        jdbcTemplate.update(sql, pstmt -> {
-            pstmt.setLong(1, 2);
-            pstmt.setString(2, "듀2");
-        });
+        jdbcTemplate.update(sql, 2, "듀2");
 
         final User user = findUserById(2L).get();
 
@@ -66,10 +60,7 @@ class JdbcTemplateTest {
     @Test
     void testUpdate() {
         final String sql = "update users set name = ? where id = ?";
-        jdbcTemplate.update(sql, pstmt -> {
-            pstmt.setString(1, "듀2");
-            pstmt.setLong(2, 1);
-        });
+        jdbcTemplate.update(sql, "듀2", 1);
 
         final User user = findUserById(1L).get();
 
@@ -92,8 +83,8 @@ class JdbcTemplateTest {
 
     private Optional<User> findUserById(final Long id) {
         return jdbcTemplate.queryForObject("select * from users where id = ?",
-                pstmt -> pstmt.setLong(1, id),
-                rs -> new User(rs.getLong("id"), rs.getString("name"))
+                rs -> new User(rs.getLong("id"), rs.getString("name")),
+                id
         );
     }
 
@@ -112,7 +103,7 @@ class JdbcTemplateTest {
         final String invalidSql = "insert into not_exists_table (id) values (?)";
 
         assertThatThrownBy(() -> {
-            jdbcTemplate.update(invalidSql, pstmt -> pstmt.setLong(1, 1));
+            jdbcTemplate.update(invalidSql, 1);
         }).isInstanceOf(DataAccessException.class);
     }
 
