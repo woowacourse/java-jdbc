@@ -21,31 +21,36 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection conn, String sql, Object... values) {
-        try (PreparedStatement pstmt = createPstmt(conn, sql, values)
-        ) {
+    private void update(Connection conn, String sql, Object... values) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)) {
             pstmt.executeUpdate();
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            rollbackIfManualCommit();
             throw new DataAccessException(e);
         }
     }
 
     public void update(String sql, Object... values) {
-        try (Connection conn = dataSource.getConnection()
-        ) {
+        Transaction transaction = TransactionHolder.getTransaction();
+
+        if (transaction.isStarted()) {
+            Connection conn = transaction.getConnection();
             update(conn, sql, values);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } else {
+            try (Connection conn = dataSource.getConnection()) {
+                update(conn, sql, values);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
         }
     }
 
-    public <T> T queryOne(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
+    private <T> T queryOne(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
-        try (PreparedStatement pstmt = createPstmt(conn, sql, values)
-        ) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)) {
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
 
@@ -53,6 +58,7 @@ public class JdbcTemplate {
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            rollbackIfManualCommit();
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
@@ -60,19 +66,24 @@ public class JdbcTemplate {
     }
 
     public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
-        try (Connection conn = dataSource.getConnection()
-        ) {
+        Transaction transaction = TransactionHolder.getTransaction();
+
+        if (transaction.isStarted()) {
+            Connection conn = transaction.getConnection();
             return queryOne(conn, sql, re, values);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } else {
+            try (Connection conn = dataSource.getConnection()) {
+                return queryOne(conn, sql, re, values);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
         }
     }
 
-    public <T> List<T> queryMany(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
+    private <T> List<T> queryMany(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
-        try (PreparedStatement pstmt = createPstmt(conn, sql, values)
-        ) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)) {
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
 
@@ -81,6 +92,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            rollbackIfManualCommit();
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
@@ -88,12 +100,18 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
-        try (Connection conn = dataSource.getConnection()
-        ) {
+        Transaction transaction = TransactionHolder.getTransaction();
+
+        if (transaction.isStarted()) {
+            Connection conn = transaction.getConnection();
             return queryMany(conn, sql, re, values);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } else {
+            try (Connection conn = dataSource.getConnection()) {
+                return queryMany(conn, sql, re, values);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
         }
     }
 
@@ -112,5 +130,10 @@ public class JdbcTemplate {
             }
         } catch (SQLException ignored) {
         }
+    }
+
+    private static void rollbackIfManualCommit() {
+        Transaction transaction = TransactionHolder.getTransaction();
+        if (transaction.isStarted()) transaction.rollback();
     }
 }
