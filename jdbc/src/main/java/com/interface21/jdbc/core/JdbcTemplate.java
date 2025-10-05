@@ -83,7 +83,7 @@ public class JdbcTemplate {
 
     private void runWithConnection(Consumer<Connection> consumer) {
         Transaction transaction = TransactionHolder.getTransaction();
-        if (transaction.isStarted()) {
+        if (transaction != null && transaction.isStarted()) {
             Connection conn = transaction.getConnection();
             consumer.accept(conn);
         } else {
@@ -98,7 +98,7 @@ public class JdbcTemplate {
 
     private <T> T getWithConnection(Function<Connection, T> function) {
         Transaction transaction = TransactionHolder.getTransaction();
-        if (transaction.isStarted()) {
+        if (transaction != null && transaction.isStarted()) {
             Connection conn = transaction.getConnection();
             return function.apply(conn);
         } else {
