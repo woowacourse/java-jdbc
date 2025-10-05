@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,19 +35,7 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... values) {
-        Transaction transaction = TransactionHolder.getTransaction();
-
-        if (transaction.isStarted()) {
-            Connection conn = transaction.getConnection();
-            update(conn, sql, values);
-        } else {
-            try (Connection conn = dataSource.getConnection()) {
-                update(conn, sql, values);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
-        }
+        runWithConnection((conn) -> update(conn, sql, values));
     }
 
     private <T> T queryOne(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
@@ -66,19 +56,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
-        Transaction transaction = TransactionHolder.getTransaction();
-
-        if (transaction.isStarted()) {
-            Connection conn = transaction.getConnection();
-            return queryOne(conn, sql, re, values);
-        } else {
-            try (Connection conn = dataSource.getConnection()) {
-                return queryOne(conn, sql, re, values);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
-        }
+        return getWithConnection((conn) -> queryOne(conn, sql, re, values));
     }
 
     private <T> List<T> queryMany(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
@@ -100,14 +78,32 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
-        Transaction transaction = TransactionHolder.getTransaction();
+        return getWithConnection((conn) -> queryMany(conn, sql, re, values));
+    }
 
+    private void runWithConnection(Consumer<Connection> consumer) {
+        Transaction transaction = TransactionHolder.getTransaction();
         if (transaction.isStarted()) {
             Connection conn = transaction.getConnection();
-            return queryMany(conn, sql, re, values);
+            consumer.accept(conn);
         } else {
             try (Connection conn = dataSource.getConnection()) {
-                return queryMany(conn, sql, re, values);
+                consumer.accept(conn);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
+        }
+    }
+
+    private <T> T getWithConnection(Function<Connection, T> function) {
+        Transaction transaction = TransactionHolder.getTransaction();
+        if (transaction.isStarted()) {
+            Connection conn = transaction.getConnection();
+            return function.apply(conn);
+        } else {
+            try (Connection conn = dataSource.getConnection()) {
+                return function.apply(conn);
             } catch (SQLException e) {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
