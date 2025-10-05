@@ -51,6 +51,9 @@ public class JdbcTemplate {
             if (results.isEmpty()) {
                 throw new DataAccessException("No Data");
             }
+            if (results.size() != 1) {
+                throw new DataAccessException("Not only one Data");
+            }
             return results.getFirst();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
