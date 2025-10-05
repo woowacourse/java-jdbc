@@ -23,10 +23,10 @@ public class JdbcTemplate {
     }
 
     /**
-     * 파라미터 마커 나열 순서대로 parameters를 매핑하여 SQL 업데이트를 실행합니다
+     * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL를 실행합니다.
      *
-     * @param sql        실행할 SQL 업데이트 문
-     * @param parameters SQL 업데이트에 사용할 파라미터들
+     * @param sql        실행할 SQL
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      */
     public int update(final String sql, final Object... parameters) {
         return update(sql, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
@@ -50,11 +50,11 @@ public class JdbcTemplate {
     }
 
     /**
-     * 파라미터 마커 나열 순서대로 parameters를 매핑하여 SQL 쿼리를 실행하고, 단일 결과를 RowMapper로 매핑하여 반환합니다
+     * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 단일 결과를 RowMapper로 매핑하여 반환합니다.
      *
-     * @param sql        실행할 SQL 업데이트 문
-     * @param rowMapper  결과 행을 매핑하는 RowMapper
-     * @param parameters SQL 쿼리에 사용할 파라미터들
+     * @param sql        실행할 SQL 쿼리
+     * @param rowMapper  결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      * @param <T>        매핑된 결과 객체의 타입
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -95,11 +95,11 @@ public class JdbcTemplate {
     }
 
     /**
-     * 파라미터 마커 나열 순서대로 parameters를 매핑하여 SQL 쿼리를 실행하고, 결과를 RowMapper로 매핑하여 리스트로 반환합니다
+     * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 결과를 RowMapper로 매핑하여 List로 반환합니다.
      *
-     * @param sql        실행할 SQL 업데이트 문
-     * @param rowMapper  결과 행을 매핑하는 RowMapper
-     * @param parameters SQL 쿼리에 사용할 파라미터들
+     * @param sql        실행할 SQL 쿼리
+     * @param rowMapper  결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      * @param <T>        매핑된 결과 객체의 타입
      */
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
