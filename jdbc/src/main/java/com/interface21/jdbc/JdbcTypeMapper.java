@@ -21,16 +21,20 @@ public enum JdbcTypeMapper {
 
     private final Class<?> classType;
 
-    JdbcTypeMapper(Class<?> classType) {
+    JdbcTypeMapper(final Class<?> classType) {
         this.classType = classType;
     }
 
-    public static JdbcTypeMapper fromClassType(Object param) {
+    public static JdbcTypeMapper fromClassType(final Object param) {
         return Arrays.stream(values())
                 .filter(mapper -> mapper.classType.equals(param.getClass()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Wrong type for preparedStatement"));
     }
 
-    public abstract void map(PreparedStatement ps, int idx, Object value) throws SQLException;
+    public abstract void map(
+            final PreparedStatement ps,
+            final int idx,
+            final Object value
+    ) throws SQLException;
 }

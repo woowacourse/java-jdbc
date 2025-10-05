@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.JdbcTypeMapper;
 import com.interface21.jdbc.ResultSetMapper;
+import com.interface21.jdbc.SqlExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,18 +26,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            setParameter(params, pstmt);
-
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(
+                PreparedStatement::executeUpdate,
+                sql,
+                params
+        );
     }
 
     public Optional<Object> queryForObject(
@@ -44,24 +38,18 @@ public class JdbcTemplate {
             final ResultSetMapper<?> mapper,
             final Object... params
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            setParameter(params, pstmt);
-
-            try (final ResultSet resultSet = pstmt.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(mapper.map(resultSet));
-                }
-            }
-
-            return Optional.empty();
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(
+                (pstmt) -> {
+                    return getQueryResult((resultSet -> {
+                        if (resultSet.next()) {
+                            return Optional.of(mapper.map(resultSet));
+                        }
+                        return Optional.empty();
+                    }), pstmt);
+                },
+                sql,
+                params
+        );
     }
 
     public List<Object> queryForList(
@@ -69,28 +57,47 @@ public class JdbcTemplate {
             final ResultSetMapper<?> mapper,
             final Object... params
     ) {
+        return execute(
+                (pstmt) -> {
+                    return getQueryResult((resultSet -> {
+                        List<Object> results = new ArrayList<>();
+                        while (resultSet.next()) {
+                            results.add(mapper.map(resultSet));
+                        }
+                        return results;
+                    }), pstmt);
+                },
+                sql,
+                params
+        );
+    }
+
+    private <R> R execute(
+            final SqlExecution<PreparedStatement, R> execution,
+            final String sql,
+            final Object ... params
+    ) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
-            setParameter(params, pstmt);
+            setParameters(params, pstmt);
 
-            try (final ResultSet resultSet = pstmt.executeQuery()) {
-                List<Object> results = new ArrayList<>();
-
-                while (resultSet.next()) {
-                    results.add(mapper.map(resultSet));
-                }
-                return results;
-            }
+            return execution.apply(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private void setParameter(final Object[] params, final PreparedStatement pstmt) throws SQLException {
+    private <R> R getQueryResult(final SqlExecution<ResultSet, R> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
+            return queryResultMapping.apply(resultSet);
+        }
+    }
+
+    private void setParameters(final Object[] params, final PreparedStatement pstmt) throws SQLException {
         if (params.length == 0) {
             return;
         }
