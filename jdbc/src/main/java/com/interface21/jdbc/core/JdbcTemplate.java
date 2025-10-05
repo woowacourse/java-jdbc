@@ -48,7 +48,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) throws SQLException {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = query(sql, rowMapper, params);
         if(results.isEmpty()){
             throw new IncorrectResultSizeException("No result found for query.");
