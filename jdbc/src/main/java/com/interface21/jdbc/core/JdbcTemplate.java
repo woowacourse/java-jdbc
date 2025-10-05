@@ -26,14 +26,14 @@ public class JdbcTemplate {
         execute(sql, parameters);
     }
 
-    private void execute(String sql, Object[] parameters) {
+    private void execute(String sql, Object... parameters) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement pstmt = connection.prepareStatement(sql);
         ) {
+            log.debug("query : {}", sql);
             setParameters(pstmt, parameters);
             pstmt.executeUpdate();
-            log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -45,8 +45,8 @@ public class JdbcTemplate {
                 Connection connection = dataSource.getConnection();
                 PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            setParameters(pstmt, parameters);
             log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
