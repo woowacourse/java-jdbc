@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.JdbcTypeMapper;
+import com.interface21.jdbc.QueryResultSetMapper;
 import com.interface21.jdbc.ResultSetMapper;
 import com.interface21.jdbc.SqlExecution;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class JdbcTemplate {
     ) {
         return execute(
                 (pstmt) -> {
-                    return getQueryResult((resultSet -> {
+                    return mapQueryResult((resultSet -> {
                         if (resultSet.next()) {
                             return Optional.of(mapper.map(resultSet));
                         }
@@ -59,7 +60,7 @@ public class JdbcTemplate {
     ) {
         return execute(
                 (pstmt) -> {
-                    return getQueryResult((resultSet -> {
+                    return mapQueryResult((resultSet -> {
                         List<Object> results = new ArrayList<>();
                         while (resultSet.next()) {
                             results.add(mapper.map(resultSet));
@@ -73,7 +74,7 @@ public class JdbcTemplate {
     }
 
     private <R> R execute(
-            final SqlExecution<PreparedStatement, R> execution,
+            final SqlExecution<R> execution,
             final String sql,
             final Object ... params
     ) {
@@ -91,9 +92,9 @@ public class JdbcTemplate {
         }
     }
 
-    private <R> R getQueryResult(final SqlExecution<ResultSet, R> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
+    private <R> R mapQueryResult(final QueryResultSetMapper<R> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
         try (final ResultSet resultSet = pstmt.executeQuery()) {
-            return queryResultMapping.apply(resultSet);
+            return queryResultMapping.map(resultSet);
         }
     }
 
