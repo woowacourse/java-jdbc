@@ -91,6 +91,9 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new DataAccessException("Not found result");
         }
+        if (results.size() > 1) {
+            throw new DataAccessException("Multiple results");
+        }
         return results.getFirst();
     }
 
