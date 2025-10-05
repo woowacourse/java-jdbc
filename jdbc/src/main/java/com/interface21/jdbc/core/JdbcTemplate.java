@@ -148,11 +148,12 @@ public class JdbcTemplate {
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
     ) {
+        log.debug("query : {}", sql);
         try (
                 final Connection connection = dataSource.getConnection();
                 final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            return doExecute(preparedStatement, preparedStatementSetter, preparedStatementCallback, sql);
+            return doExecute(preparedStatement, preparedStatementSetter, preparedStatementCallback);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -162,11 +163,9 @@ public class JdbcTemplate {
     private <T> T doExecute(
             final PreparedStatement preparedStatement,
             final PreparedStatementSetter preparedStatementSetter,
-            final PreparedStatementCallback<T> preparedStatementCallback,
-            final String sql
+            final PreparedStatementCallback<T> preparedStatementCallback
     ) throws SQLException {
         preparedStatementSetter.setParameters(preparedStatement);
-        log.debug("query : {}", sql);
         return preparedStatementCallback.doInPreparedStatement(preparedStatement);
     }
 }
