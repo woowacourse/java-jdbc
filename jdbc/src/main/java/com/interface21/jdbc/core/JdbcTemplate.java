@@ -1,8 +1,8 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.JdbcException;
-import com.interface21.jdbc.MulitpleDataJdbcException;
-import com.interface21.jdbc.NoDataJdbcException;
+import com.interface21.jdbc.exception.JdbcException;
+import com.interface21.jdbc.exception.MulitpleDataJdbcException;
+import com.interface21.jdbc.exception.NoDataJdbcException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
