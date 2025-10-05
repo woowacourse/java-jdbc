@@ -6,14 +6,13 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-    private static final ResultSetMapper<ResultSet, User> userMapper = resultSet ->
+    private static final ResultSetMapper<User> userMapper = resultSet ->
             new User(
                     resultSet.getLong("id"),
                     resultSet.getString("account"),

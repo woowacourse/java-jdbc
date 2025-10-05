@@ -1,9 +1,10 @@
 package com.interface21.jdbc;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface ResultSetMapper<T, R> {
+public interface ResultSetMapper<R> {
 
-    R map(T t) throws SQLException;
+    R map(ResultSet resultSet) throws SQLException;
 }
