@@ -4,7 +4,6 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -25,11 +24,34 @@ public class JdbcTemplate {
             final String sql,
             final Object... args
     ) {
+        update(sql, getDefaultPreparedStatementSetter(args));
+    }
+
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        return query(sql, rowMapper, getDefaultPreparedStatementSetter(args));
+    }
+
+    public void update(
+            final String sql,
+            final PreparedStatementSetter pss
+    ) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -40,13 +62,13 @@ public class JdbcTemplate {
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
-            final Object... args
+            final PreparedStatementSetter pss
     ) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             final List<T> results = queryForList(rowMapper, pstmt);
             if (results.isEmpty()) {
                 throw new DataAccessException("No Data");
@@ -64,13 +86,13 @@ public class JdbcTemplate {
     public <T> List<T> query(
             final String sql,
             final RowMapper<T> rowMapper,
-            final Object... args
+            final PreparedStatementSetter pss
     ) {
         try (
                 final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             return queryForList(rowMapper, pstmt);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -94,12 +116,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(
-            final PreparedStatement pstmt,
-            final Object[] args
-    ) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(final Object... objects) {
+        return pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+        };
     }
 }
