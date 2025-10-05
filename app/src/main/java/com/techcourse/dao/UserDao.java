@@ -60,11 +60,7 @@ public class UserDao {
 
         try (ResultSet rs = jdbcTemplate.executeQuery(sql, id)) {
             if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                return buildUser(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -78,16 +74,20 @@ public class UserDao {
 
         try (ResultSet rs = jdbcTemplate.executeQuery(sql, account)) {
             if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                return buildUser(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
         return null;
+    }
+
+    private User buildUser(ResultSet rs) throws SQLException {
+        return new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4));
     }
 }
