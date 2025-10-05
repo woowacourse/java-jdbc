@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,71 +23,61 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public void update(final String sql) {
+        execute(sql, PreparedStatement::executeUpdate, null);
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void update(final String sql, final PreparedStatementSetter setter) {
+        execute(sql, PreparedStatement::executeUpdate, setter);
+    }
 
-            setParameters(pstmt, params);
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper) {
+        return queryForObjects(sql, rowMapper, null);
+    }
 
+    public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
-
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        }, setter);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameters(pstmt, params);
-
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
-
                 if (!rs.next()) {
-                    throw new DataAccessException("Expected 1 result, but found 0");
+                    return Optional.empty();
                 }
 
                 T result = rowMapper.mapRow(rs);
 
                 if (rs.next()) {
-                    throw new DataAccessException("Expected 1 result, but found more than 1");
+                    throw new DataAccessException("Expected 0 or 1 result, but found more than 1");
                 }
 
-                return result;
+                return Optional.of(result);
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        }, setter);
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+    public <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            if (setter != null) {
+                setter.setValues(pstmt);
+            }
+            return callback.execute(pstmt);
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw new DataAccessException(e);
         }
     }
 }
