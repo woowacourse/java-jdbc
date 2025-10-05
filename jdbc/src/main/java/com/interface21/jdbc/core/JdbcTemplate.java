@@ -21,9 +21,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPstmt(conn, sql, values)
+    public void update(Connection conn, String sql, Object... values) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)
         ) {
             pstmt.executeUpdate();
             log.debug("query : {}", sql);
@@ -33,10 +32,19 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
+    public void update(String sql, Object... values) {
+        try (Connection conn = dataSource.getConnection()
+        ) {
+            update(conn, sql, values);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T queryOne(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPstmt(conn, sql, values)
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)
         ) {
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
@@ -51,10 +59,19 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
+    public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
+        try (Connection conn = dataSource.getConnection()
+        ) {
+            return queryOne(conn, sql, re, values);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> queryMany(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPstmt(conn, sql, values)
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)
         ) {
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
@@ -67,6 +84,16 @@ public class JdbcTemplate {
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
+        }
+    }
+
+    public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
+        try (Connection conn = dataSource.getConnection()
+        ) {
+            return queryMany(conn, sql, re, values);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 
