@@ -1,9 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.JdbcException;
+import com.interface21.jdbc.MulitpleDataJdbcException;
+import com.interface21.jdbc.NoDataJdbcException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -53,9 +58,9 @@ public class JdbcTemplate {
         ) {
             pss.setValues(pstmt);
             pstmt.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -71,15 +76,15 @@ public class JdbcTemplate {
             pss.setValues(pstmt);
             final List<T> results = queryForList(rowMapper, pstmt);
             if (results.isEmpty()) {
-                throw new DataAccessException("No Data");
+                throw new NoDataJdbcException("No Data");
             }
             if (results.size() != 1) {
-                throw new DataAccessException("Not only one Data");
+                throw new MulitpleDataJdbcException("Not Only One Data");
             }
             return results.getFirst();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -94,9 +99,9 @@ public class JdbcTemplate {
         ) {
             pss.setValues(pstmt);
             return queryForList(rowMapper, pstmt);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
@@ -110,9 +115,9 @@ public class JdbcTemplate {
                 results.add(rowMapper.map(resultSet));
             }
             return results;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
