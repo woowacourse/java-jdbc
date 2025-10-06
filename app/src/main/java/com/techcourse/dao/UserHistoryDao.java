@@ -59,4 +59,29 @@ public class UserHistoryDao {
             } catch (SQLException ignored) {}
         }
     }
+
+    // Connection을 받는 메서드 추가
+    public void log(final Connection conn, final UserHistory userHistory) throws SQLException {
+        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            pstmt.setLong(1, userHistory.getUserId());
+            pstmt.setString(2, userHistory.getAccount());
+            pstmt.setString(3, userHistory.getPassword());
+            pstmt.setString(4, userHistory.getEmail());
+            pstmt.setObject(5, userHistory.getCreatedAt());
+            pstmt.setString(6, userHistory.getCreateBy());
+            pstmt.executeUpdate();
+        } finally {
+            if (pstmt != null) {
+                pstmt.close();
+            }
+            // Connection은 닫지 않음 (외부에서 관리)
+        }
+    }
 }
