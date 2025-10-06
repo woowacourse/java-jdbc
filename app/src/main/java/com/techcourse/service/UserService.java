@@ -55,8 +55,7 @@ public class UserService {
             callback.execute();
             connection.commit();
         } catch (Exception e) {
-            rollback(connection);
-            throw new SqlExecutionException(e);
+            rollbackAndThrow(connection, e);
         } finally {
             setAutoCommit(connection, originalAutoCommit);
         }
@@ -78,11 +77,12 @@ public class UserService {
         }
     }
 
-    private void rollback(final Connection connection) {
+    private void rollbackAndThrow(final Connection connection, final Exception originalException) {
         try {
             connection.rollback();
-        } catch (SQLException e) {
-            throw new SqlExecutionException(e);
+        } catch (SQLException rollbackEx) {
+            originalException.addSuppressed(rollbackEx);
         }
+        throw new SqlExecutionException(originalException);
     }
 }
