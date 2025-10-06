@@ -82,7 +82,7 @@ public class JdbcTemplate {
     }
 
     private void runWithConnection(Consumer<Connection> consumer) {
-        Transaction transaction = TransactionHolder.getTransaction();
+        Transaction transaction = TransactionManager.getTransaction();
         if (transaction != null) {
             Connection conn = transaction.getConnection();
             consumer.accept(conn);
@@ -97,7 +97,7 @@ public class JdbcTemplate {
     }
 
     private <T> T getWithConnection(Function<Connection, T> function) {
-        Transaction transaction = TransactionHolder.getTransaction();
+        Transaction transaction = TransactionManager.getTransaction();
         if (transaction != null) {
             Connection conn = transaction.getConnection();
             return function.apply(conn);
@@ -129,7 +129,7 @@ public class JdbcTemplate {
     }
 
     private static void rollbackIfManualCommit() {
-        Transaction transaction = TransactionHolder.getTransaction();
+        Transaction transaction = TransactionManager.getTransaction();
         if (transaction != null) transaction.rollback();
     }
 }

@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,19 +9,15 @@ public class Transaction {
 
     private static final Logger log = LoggerFactory.getLogger(Transaction.class);
 
-    private final DataSource dataSource;
     private Connection connection;
 
-    public Transaction(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public Transaction(Connection connection) {
+        this.connection = connection;
     }
 
     public void start() {
         try {
-            Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            this.connection = connection;
-            TransactionHolder.setTransaction(this);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
@@ -35,7 +30,6 @@ public class Transaction {
             connection.commit();
             connection.close();
             this.connection = null;
-            TransactionHolder.setTransaction(null);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
@@ -48,7 +42,6 @@ public class Transaction {
             connection.rollback();
             connection.close();
             this.connection = null;
-            TransactionHolder.setTransaction(null);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
