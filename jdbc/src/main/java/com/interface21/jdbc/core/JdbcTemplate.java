@@ -23,11 +23,11 @@ public class JdbcTemplate {
     ) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)
+                PreparedStatement preparedStatement = conn.prepareStatement(sql)
         ) {
-            setter.setValues(ps);
+            setter.setValues(preparedStatement);
             log.info("query : {}", sql);
-            return action.doInPreparedStatement(ps);
+            return action.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new CustomizedDataAccessException(sql, e);
         }
@@ -37,8 +37,8 @@ public class JdbcTemplate {
             String sql,
             PreparedStatementSetter setter
     ) {
-        execute(sql, setter, ps -> {
-            ps.executeUpdate();
+        execute(sql, setter, preparedStatement -> {
+            preparedStatement.executeUpdate();
             return Optional.empty();
         });
     }
@@ -48,20 +48,21 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             RowMapper<T> rowMapper
     ) {
-        return execute(sql, setter, ps -> {
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return Optional.empty();
-
-                T obj = rowMapper.mapRow(rs);
-
-                if (rs.next()) {
-                    throw new CustomizedDataAccessException(
-                            sql,
-                            new IllegalArgumentException("[ERROR] too many rows (Expected 1 but found 2 or more)")
-                    );
-                }
-                return Optional.of(obj);
+        return execute(sql, setter, preparedStatement -> {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                return Optional.empty();
             }
+
+            T wantToFind = rowMapper.mapRow(resultSet);
+
+            if (resultSet.next()) {
+                throw new CustomizedDataAccessException(
+                        sql,
+                        new IllegalArgumentException("[ERROR] too many rows (Expected 1 but found 2 or more)")
+                );
+            }
+            return Optional.of(wantToFind);
         });
     }
 
@@ -70,12 +71,12 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             RowMapper<T> rowMapper
     ) {
-        return execute(sql, setter, ps -> {
+        return execute(sql, setter, preparedStatement -> {
             List<T> results = new ArrayList<>();
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
         });
