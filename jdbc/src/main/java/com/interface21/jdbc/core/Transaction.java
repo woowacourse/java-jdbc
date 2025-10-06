@@ -12,7 +12,6 @@ public class Transaction {
 
     private final DataSource dataSource;
     private Connection connection;
-    private boolean isStarted = false;
 
     public Transaction(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -23,7 +22,6 @@ public class Transaction {
             Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
             this.connection = connection;
-            this.isStarted = true;
             TransactionHolder.setTransaction(this);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -37,7 +35,7 @@ public class Transaction {
             connection.commit();
             connection.close();
             this.connection = null;
-            this.isStarted = false;
+            TransactionHolder.setTransaction(null);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
@@ -50,7 +48,7 @@ public class Transaction {
             connection.rollback();
             connection.close();
             this.connection = null;
-            this.isStarted = false;
+            TransactionHolder.setTransaction(null);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
@@ -60,9 +58,5 @@ public class Transaction {
 
     public Connection getConnection() {
         return connection;
-    }
-
-    public boolean isStarted() {
-        return isStarted;
     }
 }
