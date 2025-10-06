@@ -24,13 +24,13 @@ public class JdbcTemplate {
         return dataSource;
     }
 
-    public void update(String sql, Object... parameters) {
+    public int update(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             createPreparedStatementSetter(parameters).setParameters(pstmt);
 
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
