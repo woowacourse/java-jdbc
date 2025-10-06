@@ -35,6 +35,10 @@ public class User {
         return new User("gugu", "password", "hkkang@woowahan.com");
     }
 
+    public static User createTest2() {
+        return new User("mint", "password", "mint@woowahan.com");
+    }
+
     public Long getId() {
         return id;
     }

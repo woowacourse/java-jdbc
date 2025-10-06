@@ -56,6 +56,20 @@ public class UserDao {
         return jdbcTemplate.query(connection, sql, createRowMapper());
     }
 
+    public void createTable(final Connection connection) {
+        final var sql = """
+        CREATE TABLE IF NOT EXISTS users (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            account VARCHAR(50) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+        """;
+        jdbcTemplate.update(connection, sql);
+    }
+
     private static RowMapper<User> createRowMapper() {
         return (final var rs) -> new User(
                 rs.getLong("id"),
