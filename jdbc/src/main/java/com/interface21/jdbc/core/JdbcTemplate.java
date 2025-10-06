@@ -5,6 +5,7 @@ import com.interface21.dao.SqlExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,9 +40,30 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(final String sql, final Connection connection, final Object... args) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
+            for(int i=0; i<args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new SqlExecutionException(e);
+        }
+    }
+
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
+            final Object... args) {
+        var results = query(sql, rowMapper, args);
+
+        return getSingleResult(results);
+    }
+
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Connection connection,
             final Object... args) {
         var results = query(sql, rowMapper, args);
 
@@ -76,8 +98,19 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper) {
         try (
             final var connection = dataSource.getConnection();
-            final var pstmt = connection.prepareStatement(sql)
         ) {
+            return query(sql,connection,preparedStatementSetter, rowMapper);
+        } catch (SQLException e) {
+            throw new SqlExecutionException(e);
+        }
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final Connection connection,
+            final PreparedStatementSetter preparedStatementSetter,
+            final RowMapper<T> rowMapper) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
 
             try(final var resultSet = pstmt.executeQuery()) {
