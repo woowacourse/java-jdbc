@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.ArgumentPreparedStatementSetter;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.ResultMapper;
 import com.techcourse.domain.User;
@@ -23,25 +24,30 @@ public class UserDao {
     public void insert(final User user) {
         jdbcTemplate.update(
                 "insert into users (account, password, email) values (?, ?, ?)",
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail()
+                new ArgumentPreparedStatementSetter(
+                        user.getAccount(),
+                        user.getPassword(),
+                        user.getEmail()
+                )
         );
     }
 
     public void update(final User user) {
         jdbcTemplate.update(
                 "update users set account = ?, password = ?, email = ? where id = ?",
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
+                new ArgumentPreparedStatementSetter(
+                        user.getAccount(),
+                        user.getPassword(),
+                        user.getEmail(),
+                        user.getId()
+                )
         );
     }
 
     public List<User> findAll() {
         return jdbcTemplate.selectList(
                 "select id, account, password, email from users",
+                new ArgumentPreparedStatementSetter(),
                 USER_MAPPER
         );
     }
@@ -49,16 +55,16 @@ public class UserDao {
     public User findById(final Long id) {
         return jdbcTemplate.selectOne(
                 "select id, account, password, email from users where id = ?",
-                USER_MAPPER,
-                id
+                new ArgumentPreparedStatementSetter(id),
+                USER_MAPPER
         );
     }
 
     public User findByAccount(final String account) {
         return jdbcTemplate.selectOne(
                 "select id, account, password, email from users where account = ?",
-                USER_MAPPER,
-                account
+                new ArgumentPreparedStatementSetter(account),
+                USER_MAPPER
         );
     }
 }

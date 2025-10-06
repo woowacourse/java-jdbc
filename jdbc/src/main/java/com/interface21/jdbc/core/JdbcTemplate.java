@@ -20,9 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... args) {
+    public int update(String sql, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, args)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmtSetter.setValues(pstmt);
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -31,10 +32,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T selectOne(String sql, ResultMapper<T> resultMapper, Object... args) {
+    public <T> T selectOne(String sql, PreparedStatementSetter pstmtSetter, ResultMapper<T> resultMapper) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmtSetter, pstmt)) {
 
             if (!rs.next()) {
                 throw new RuntimeException("Expected 1 result, but found 0");
@@ -53,10 +54,10 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, Object... args) {
+    public <T> List<T> selectList(String sql, PreparedStatementSetter pstmtSetter, ResultMapper<T> resultMapper) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, args);
-             ResultSet rs = pstmt.executeQuery()
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmtSetter, pstmt)
         ) {
             List<T> results = new ArrayList<>();
 
@@ -71,15 +72,9 @@ public class JdbcTemplate {
         }
     }
 
-    private PreparedStatement prepareStatement(Connection conn, String sql, Object... args) throws SQLException {
-        log.debug("query = {}", sql);
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-
-        return pstmt;
+    private ResultSet executeQuery(PreparedStatementSetter pstmtSetter, PreparedStatement pstmt) throws SQLException {
+        pstmtSetter.setValues(pstmt);
+        return pstmt.executeQuery();
     }
 }
 
