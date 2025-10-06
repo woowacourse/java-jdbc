@@ -32,13 +32,25 @@ public class JdbcTemplate {
     }
 
     public <T> T selectOne(String sql, ResultMapper<T> resultMapper, Object... args) {
-        List<T> results = selectList(sql, resultMapper, args);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = prepareStatement(conn, sql, args);
+             ResultSet rs = pstmt.executeQuery()) {
 
-        if (results.size() != 1) {
-            throw new RuntimeException("Expected 1 result, but found " + results.size());
+            if (!rs.next()) {
+                throw new RuntimeException("Expected 1 result, but found 0");
+            }
+
+            T result = resultMapper.mapResult(rs);
+
+            if (rs.next()) {
+                throw new RuntimeException("Expected 1 result, but found more than 1");
+            }
+
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
-
-        return results.getFirst();
     }
 
     public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, Object... args) {
@@ -71,3 +83,4 @@ public class JdbcTemplate {
         return pstmt;
     }
 }
+
