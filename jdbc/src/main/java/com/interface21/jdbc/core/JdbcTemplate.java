@@ -37,7 +37,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T findByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> list = query(sql, rowMapper, parameters);
         if (list.isEmpty()) {
             return null;
