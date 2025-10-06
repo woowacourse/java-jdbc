@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final List<?> params) {
+    public void update(final String sql, final Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -28,7 +28,7 @@ public class JdbcTemplate {
             pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
 
-            bindParams(params, pstmt);
+            bindParams(pstmt, params);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -51,7 +51,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> execute(final String sql, final List<?> params, RowMapper<T> mapper) {
+    public <T> List<T> execute(final String sql, RowMapper<T> mapper, final Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -59,7 +59,7 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            bindParams(params, pstmt);
+            bindParams(pstmt, params);
 
             ResultSet resultSet = pstmt.executeQuery();
 
@@ -96,7 +96,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeOne(final String sql, final List<?> params, RowMapper<T> mapper) {
+    public <T> T executeOne(final String sql, RowMapper<T> mapper, final Object... params) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -104,12 +104,16 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            bindParams(params, pstmt);
+            bindParams(pstmt, params);
 
             ResultSet resultSet = pstmt.executeQuery();
 
             if (resultSet.next()) {
-                return mapper.mapRow(resultSet);
+                T result = mapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new IllegalStateException("Expected single row");
+                }
+                return result;
             }
             return null;
         } catch (SQLException e) {
@@ -140,7 +144,7 @@ public class JdbcTemplate {
     }
 
 
-    private void bindParams(final List<?> params, final PreparedStatement pstmt) throws SQLException {
+    private void bindParams(final PreparedStatement pstmt, final Object... params) throws SQLException {
         if (params == null) {
             return;
         }
@@ -149,5 +153,4 @@ public class JdbcTemplate {
             pstmt.setObject(index++, value);
         }
     }
-
 }
