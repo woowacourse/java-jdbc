@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,23 +23,24 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... values) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPstmt(conn, sql, values)
-        ) {
+    private void update(Connection conn, String sql, Object... values) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)) {
             pstmt.executeUpdate();
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            rollbackIfManualCommit();
             throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
+    public void update(String sql, Object... values) {
+        runWithConnection((conn) -> update(conn, sql, values));
+    }
+
+    private <T> T queryOne(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPstmt(conn, sql, values)
-        ) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)) {
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
 
@@ -45,17 +48,20 @@ public class JdbcTemplate {
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            rollbackIfManualCommit();
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
         }
     }
 
-    public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
+    public <T> T queryOne(String sql, ResultExtractor<T> re, Object... values) {
+        return getWithConnection((conn) -> queryOne(conn, sql, re, values));
+    }
+
+    private <T> List<T> queryMany(Connection conn, String sql, ResultExtractor<T> re, Object... values) {
         ResultSet rs = null;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = createPstmt(conn, sql, values)
-        ) {
+        try (PreparedStatement pstmt = createPstmt(conn, sql, values)) {
             rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
 
@@ -64,9 +70,44 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            rollbackIfManualCommit();
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
+        }
+    }
+
+    public <T> List<T> queryMany(String sql, ResultExtractor<T> re, Object... values) {
+        return getWithConnection((conn) -> queryMany(conn, sql, re, values));
+    }
+
+    private void runWithConnection(Consumer<Connection> consumer) {
+        Transaction transaction = TransactionHolder.getTransaction();
+        if (transaction != null) {
+            Connection conn = transaction.getConnection();
+            consumer.accept(conn);
+        } else {
+            try (Connection conn = dataSource.getConnection()) {
+                consumer.accept(conn);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
+        }
+    }
+
+    private <T> T getWithConnection(Function<Connection, T> function) {
+        Transaction transaction = TransactionHolder.getTransaction();
+        if (transaction != null) {
+            Connection conn = transaction.getConnection();
+            return function.apply(conn);
+        } else {
+            try (Connection conn = dataSource.getConnection()) {
+                return function.apply(conn);
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new DataAccessException(e);
+            }
         }
     }
 
@@ -85,5 +126,10 @@ public class JdbcTemplate {
             }
         } catch (SQLException ignored) {
         }
+    }
+
+    private static void rollbackIfManualCommit() {
+        Transaction transaction = TransactionHolder.getTransaction();
+        if (transaction != null) transaction.rollback();
     }
 }
