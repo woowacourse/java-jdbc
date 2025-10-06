@@ -32,11 +32,9 @@ public class UserDao {
         log.debug("query : {}", sql);
 
         jdbcTemplate.update(sql,
-                ps -> {
-                    ps.setString(1, user.getAccount());
-                    ps.setString(2, user.getPassword());
-                    ps.setString(3, user.getEmail());
-                }
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
         );
     }
 
@@ -46,6 +44,20 @@ public class UserDao {
         log.debug("query : {}", sql);
 
         jdbcTemplate.update(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
+    }
+
+    public void update(final User user, final Connection connection) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        log.debug("query : {}", sql);
+
+        jdbcTemplate.update(sql,
+                connection,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
@@ -67,6 +79,14 @@ public class UserDao {
         log.debug("query : {}", sql);
 
         return jdbcTemplate.queryForObject(sql, this::mapRowToUser, id);
+    }
+
+    public User findById(final Long id, final Connection connection) {
+        final var sql = "select id, account, password, email from users where id = ?";
+
+        log.debug("query : {}", sql);
+
+        return jdbcTemplate.queryForObject(sql, this::mapRowToUser, connection, id);
     }
 
     public User findByAccount(final String account) {
