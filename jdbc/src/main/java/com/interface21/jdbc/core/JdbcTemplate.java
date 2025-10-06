@@ -28,6 +28,14 @@ public class JdbcTemplate {
         return execute(sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
     }
 
+    public int update(
+            final Connection connection,
+            final String sql,
+            final Object... params
+    ) {
+        return execute(connection, sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
+    }
+
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
@@ -52,6 +60,23 @@ public class JdbcTemplate {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
+            pss.setValues(pstmt);
+
+            return executor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(
+            final Connection conn,
+            final String sql,
+            final PreparedStatementSetter pss,
+            final PreparedStatementExecutor<T> executor
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
 
