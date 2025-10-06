@@ -32,11 +32,14 @@ public class JdbcTemplate {
         }
     }
 
-    public void executeUpdate(String sql, PreparedStatementValue pstmtValue) {
+    public void executeUpdate(String sql, Object ... params) {
         execute(conn -> {
             try (PreparedStatement pstmt = conn.prepareStatement(sql)){
                 log.debug("query : {}", sql);
-                pstmtValue.setValue(pstmt);
+
+                for (int i = 0; i < params.length; i++) {
+                    pstmt.setObject(i + 1, params[i]);
+                }
                 pstmt.executeQuery();
                 return null;
             }
