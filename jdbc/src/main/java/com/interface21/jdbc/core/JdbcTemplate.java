@@ -33,12 +33,14 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(String sql, Object ... params) {
+        Object[] safeParams = (params == null) ? new Object[0] : params;
+
         execute(conn -> {
             try (PreparedStatement pstmt = conn.prepareStatement(sql)){
                 log.debug("query : {}", sql);
 
-                for (int i = 0; i < params.length; i++) {
-                    pstmt.setObject(i + 1, params[i]);
+                for (int i = 0; i < safeParams.length; i++) {
+                    pstmt.setObject(i + 1, safeParams[i]);
                 }
                 pstmt.execute();
                 return null;
@@ -63,11 +65,13 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        Object[] safeParams = (params == null) ? new Object[0] : params;
+
         return execute(conn -> {
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 log.debug("query : {}", sql);
-                for (int i = 0; i < params.length; i++) {
-                    pstmt.setObject(i + 1, params[i]);
+                for (int i = 0; i < safeParams.length; i++) {
+                    pstmt.setObject(i + 1, safeParams[i]);
                 }
 
                 try (ResultSet rs = pstmt.executeQuery()) {
