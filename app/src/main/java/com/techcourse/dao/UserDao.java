@@ -32,11 +32,9 @@ public class UserDao {
         log.debug("query : {}", sql);
 
         jdbcTemplate.update(sql,
-                ps -> {
-                    ps.setString(1, user.getAccount());
-                    ps.setString(2, user.getPassword());
-                    ps.setString(3, user.getEmail());
-                }
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
         );
     }
 

@@ -22,19 +22,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        update(sql, pstmt -> {
-            for(int i=0; i<args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-        });
-    }
-
-    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try (final var connection = dataSource.getConnection();
-             final var pstmt = connection.prepareStatement(sql)) {
-
-            preparedStatementSetter.setValues(pstmt);
-            pstmt.executeUpdate();
+        try (final var connection = dataSource.getConnection()) {
+            update(sql, connection, args);
         } catch (SQLException e) {
             throw new SqlExecutionException(e);
         }
@@ -42,7 +31,7 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Connection connection, final Object... args) {
         try (final var pstmt = connection.prepareStatement(sql)) {
-            for(int i=0; i<args.length; i++) {
+            for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
             pstmt.executeUpdate();
@@ -51,22 +40,14 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         var results = query(sql, rowMapper, args);
-
         return getSingleResult(results);
     }
 
-    public <T> T queryForObject(
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Connection connection,
-            final Object... args) {
-        var results = query(sql, rowMapper, args);
-
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                final Connection connection, final Object... args) {
+        var results = query(sql, connection, rowMapper, args);
         return getSingleResult(results);
     }
 
@@ -77,48 +58,30 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException();
         }
-
         return results.get(0);
     }
 
-    public <T> List<T> query(
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... args) {
-        return query(sql, preparedStatement -> {
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
-        }, rowMapper);
-    }
-
-    public <T> List<T> query(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper) {
-        try (
-            final var connection = dataSource.getConnection();
-        ) {
-            return query(sql,connection,preparedStatementSetter, rowMapper);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (final var connection = dataSource.getConnection()) {
+            return query(sql, connection, rowMapper, args);
         } catch (SQLException e) {
             throw new SqlExecutionException(e);
         }
     }
 
-    public <T> List<T> query(
-            final String sql,
-            final Connection connection,
-            final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final Connection connection,
+                             final RowMapper<T> rowMapper, final Object... args) {
         try (final var pstmt = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(pstmt);
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
 
-            try(final var resultSet = pstmt.executeQuery()) {
+            try (final var resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
-                var rows = 0;
+                var rowNum = 0;
 
-                while(resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, rows++));
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet, rowNum++));
                 }
 
                 return results;

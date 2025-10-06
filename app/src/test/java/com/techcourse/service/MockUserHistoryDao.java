@@ -6,11 +6,12 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
+import javax.sql.DataSource;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
-    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        super(jdbcTemplate);
+    public MockUserHistoryDao(final DataSource dataSource) {
+        super(dataSource);
     }
 
     @Override
