@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.JdbcTypeMapper;
 import com.interface21.jdbc.QueryResultSetMapper;
 import com.interface21.jdbc.ResultSetMapper;
 import com.interface21.jdbc.SqlExecution;
@@ -106,8 +105,7 @@ public class JdbcTemplate {
         for (int idx = 1; idx <= params.length; idx++) {
             Object param = params[idx - 1];
 
-            JdbcTypeMapper mapper = JdbcTypeMapper.fromClassType(param);
-            mapper.map(pstmt, idx, param);
+            pstmt.setObject(idx, param);
         }
     }
 }
