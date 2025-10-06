@@ -28,10 +28,10 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.18.0'
     implementation 'com.h2database:h2:2.3.232'
 
-    testImplementation 'org.assertj:assertj-core:3.26.3'
-    testImplementation 'org.mockito:mockito-core:5.15.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.13.4'
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.assertj:assertj-core:3.27.3'
+    testImplementation 'org.mockito:mockito-core:5.14.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
