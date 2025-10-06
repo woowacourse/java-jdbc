@@ -52,7 +52,6 @@ public class JdbcTemplate {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     T result = rowMapper.mapRow(resultSet);
-                    System.out.println(result);
                     if (resultSet.next()) {
                         throw new DataAccessException("결과가 2개 이상입니다. 단일 결과만 가능합니다.");
                     }
