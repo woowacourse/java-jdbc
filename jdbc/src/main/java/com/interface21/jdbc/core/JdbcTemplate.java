@@ -55,17 +55,16 @@ public class JdbcTemplate {
 
     public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, args)
+             PreparedStatement pstmt = prepareStatement(conn, sql, args);
+             ResultSet rs = pstmt.executeQuery()
         ) {
-            try(ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
+            List<T> results = new ArrayList<>();
 
-                while (rs.next()) {
-                    results.add(resultMapper.mapResult(rs));
-                }
-
-                return results;
+            while (rs.next()) {
+                results.add(resultMapper.mapResult(rs));
             }
+
+            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
