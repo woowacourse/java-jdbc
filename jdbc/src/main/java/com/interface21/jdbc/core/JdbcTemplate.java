@@ -20,6 +20,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(String sql, Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
     public int update(String sql, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -30,6 +34,10 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> T selectOne(String sql, ResultMapper<T> resultMapper, Object... args) {
+        return selectOne(sql, new ArgumentPreparedStatementSetter(args), resultMapper);
     }
 
     public <T> T selectOne(String sql, PreparedStatementSetter pstmtSetter, ResultMapper<T> resultMapper) {
@@ -52,6 +60,10 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, Object... args) {
+        return selectList(sql, new ArgumentPreparedStatementSetter(args), resultMapper);
     }
 
     public <T> List<T> selectList(String sql, PreparedStatementSetter pstmtSetter, ResultMapper<T> resultMapper) {
