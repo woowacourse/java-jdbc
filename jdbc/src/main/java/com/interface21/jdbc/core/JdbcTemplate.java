@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.QueryResultSetMapper;
-import com.interface21.jdbc.ResultSetMapper;
+import com.interface21.jdbc.QueryResultMapper;
 import com.interface21.jdbc.SqlExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ public class JdbcTemplate {
 
     public Optional<Object> queryForObject(
             final String sql,
-            final ResultSetMapper<?> mapper,
+            final QueryResultMapper<?> mapper,
             final Object... params
     ) {
         return execute(
@@ -54,7 +53,7 @@ public class JdbcTemplate {
 
     public List<Object> queryForList(
             final String sql,
-            final ResultSetMapper<?> mapper,
+            final QueryResultMapper<?> mapper,
             final Object... params
     ) {
         return execute(
@@ -91,7 +90,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <R> R mapQueryResult(final QueryResultSetMapper<R> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
+    private <R> R mapQueryResult(final QueryResultMapper<R> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
         try (final ResultSet resultSet = pstmt.executeQuery()) {
             return queryResultMapping.map(resultSet);
         }

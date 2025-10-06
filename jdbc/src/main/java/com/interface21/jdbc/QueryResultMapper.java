@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface QueryResultSetMapper<R> {
+public interface QueryResultMapper<R> {
 
     R map(ResultSet resultSet) throws SQLException;
 }
