@@ -33,6 +33,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
 
         } catch (SQLException e) {
+            log.info("Fail update. sql={}, parameters={}", sql, parameters);
             throw new RuntimeException(e);
         }
     }
