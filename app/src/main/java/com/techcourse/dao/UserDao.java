@@ -99,7 +99,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.getResults((resultSet) -> new User(
+        return jdbcTemplate.query((resultSet) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
@@ -109,7 +109,7 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.getSingleResult((resultSet) -> new User(
+        return jdbcTemplate.queryForObject((resultSet) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),
@@ -119,7 +119,7 @@ public class UserDao {
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.getSingleResult((resultSet) -> new User(
+        return jdbcTemplate.queryForObject((resultSet) -> new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),
                 resultSet.getString("password"),

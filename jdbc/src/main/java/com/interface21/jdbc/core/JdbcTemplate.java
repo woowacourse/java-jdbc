@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.lang.reflect.Constructor;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,7 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> T getSingleResult(RowMapper<T> rowMapper, String sql, Object... args) {
+    public <T> T queryForObject(RowMapper<T> rowMapper, String sql, Object... args) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next() ? rowMapper.mapRow(rs) : null;
@@ -31,11 +30,13 @@ public class JdbcTemplate {
         }, args);
     }
 
-    public <T> List<T> getResults(RowMapper<T> rowMapper, String sql, Object... args) {
+    public <T> List<T> query(RowMapper<T> rowMapper, String sql, Object... args) {
         return execute(sql, pstmt -> {
             List<T> result = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) result.add(rowMapper.mapRow(rs));
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs));
+                }
             }
             return result;
         }, args);
