@@ -27,7 +27,7 @@ public class SecondUserService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String saveSecondTransactionWithRequiresNew() {
-        userRepository.save(User.createTest());
+        userRepository.save(User.createTest2());
         logActualTransactionActive();
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
@@ -53,7 +53,7 @@ public class SecondUserService {
         return TransactionSynchronizationManager.getCurrentTransactionName();
     }
 
-    @Transactional(propagation = Propagation.NESTED)
+//    @Transactional(propagation = Propagation.NESTED)
     public String saveSecondTransactionWithNested() {
         userRepository.save(User.createTest());
         logActualTransactionActive();

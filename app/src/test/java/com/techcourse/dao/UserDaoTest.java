@@ -1,12 +1,12 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -37,10 +37,13 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var account = "neo";
+        final var user = new User(account, "password", "hkkang@woowahan.com");
+        userDao.insert(user);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        final var userByAccount = userDao.findByAccount(account);
+
+        assertThat(userByAccount.getAccount()).isEqualTo(account);
     }
 
     @Test
