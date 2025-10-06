@@ -14,76 +14,59 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final PreparedStatementParamMapping preparedStatementParamMapping;
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.preparedStatementParamMapping = new PreparedStatementParamMapping();
         this.dataSource = dataSource;
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < parameters.length; i++) {
-                setStatementParameter(pstmt, i + 1, parameters[i]);
-            }
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeSql(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T query(final String sql, final ResultSetMapper<T> resultSetMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < parameters.length; i++) {
-                setStatementParameter(pstmt, i + 1, parameters[i]);
+        QueryExecutor<T> queryExecutor = (pstmt) -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return resultSetMapper.map(rs);
+                }
+                return null;
             }
+        };
 
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return resultSetMapper.map(rs);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return executeSql(sql, queryExecutor, parameters);
     }
 
     public <T> List<T> queryMany(final String sql, final ResultSetMapper<T> resultSetMapper, final Object... parameters) {
+        QueryExecutor<List<T>> queryExecutor = (pstmt) -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(resultSetMapper.map(rs));
+                }
+                return result;
+            }
+        };
+
+        return executeSql(sql, queryExecutor, parameters);
+    }
+
+    private <T> T executeSql(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < parameters.length; i++) {
-                setStatementParameter(pstmt, i + 1, parameters[i]);
-            }
-
-            ResultSet rs = pstmt.executeQuery();
-
-            List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                result.add(resultSetMapper.map(rs));
-            }
-
-            return result;
+            setParameters(pstmt, parameters);
+            return queryExecutor.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private void setStatementParameter(final PreparedStatement pstmt, final int index, final Object value) throws SQLException {
-        String typeName = value.getClass().getTypeName();
-        preparedStatementParamMapping.callSetter(typeName, pstmt, index, value);
+    private void setParameters(final PreparedStatement pstmt, final Object... parameters) throws SQLException {
+        for (int i = 0; i < parameters.length; i++) {
+            pstmt.setObject(i + 1, parameters[i]);
+        }
     }
 }
