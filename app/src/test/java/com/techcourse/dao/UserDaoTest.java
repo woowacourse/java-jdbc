@@ -60,6 +60,7 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
+
         userDao.update(user);
 
         final var actual = userDao.findById(1L);
