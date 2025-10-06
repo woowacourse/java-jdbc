@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class TransactionManager {
@@ -19,24 +19,27 @@ public class TransactionManager {
         getTransaction().start();
     }
 
-    private static void initTransaction() {
-        try {
-            Connection connection = dataSource.getConnection();
-            transaction.set(new Transaction(connection));
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void commit() {
         getTransaction().commit();
+        releaseTransaction();
     }
 
     public static void rollback() {
         getTransaction().rollback();
+        releaseTransaction();
     }
 
     public static Transaction getTransaction() {
         return transaction.get();
+    }
+
+    private static void initTransaction() {
+        Connection newConnection = DataSourceUtils.getConnection(dataSource);
+        transaction.set(new Transaction(newConnection));
+    }
+
+    private static void releaseTransaction() {
+        DataSourceUtils.releaseConnection(getTransaction().getConnection(), dataSource);
+        transaction.remove();
     }
 }
