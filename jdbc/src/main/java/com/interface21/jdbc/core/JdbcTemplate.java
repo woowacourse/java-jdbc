@@ -102,4 +102,32 @@ public class JdbcTemplate {
 
         return results.getFirst();
     }
+
+    // Connection을 받는 메서드들 추가
+    public int update(Connection conn, String sql, Object... args) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("Executing SQL with provided connection: {}", sql);
+            setParameters(pstmt, args);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw e;
+        }
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        List<T> results = query(conn, sql, rowMapper, args);
+        return getSingleResult(results);
+    }
+
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("Executing SQL with provided connection: {}", sql);
+            setParameters(pstmt, args);
+            return extractResults(pstmt.executeQuery(), rowMapper);
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw e;
+        }
+    }
 }
