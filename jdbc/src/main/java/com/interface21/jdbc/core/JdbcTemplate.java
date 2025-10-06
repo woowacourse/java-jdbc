@@ -38,29 +38,20 @@ public class JdbcTemplate {
     }
 
     public <T> T findByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        ResultSet rs;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            createPreparedStatementSetter(parameters).setParameters(pstmt);
-            rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, 1);
-            }
+        List<T> list = query(sql, rowMapper, parameters);
+        if (list.isEmpty()) {
             return null;
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
+        return list.getFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         ResultSet rs;
         List<T> list = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
+            createPreparedStatementSetter(parameters).setParameters(pstmt);
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
