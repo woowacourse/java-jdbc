@@ -57,13 +57,8 @@ public class JdbcTemplate {
             final PreparedStatementSetter pss,
             final PreparedStatementExecutor<T> executor
     ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            pss.setValues(pstmt);
-
-            return executor.execute(pstmt);
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, executor);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
