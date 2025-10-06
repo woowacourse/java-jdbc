@@ -21,57 +21,43 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, parameters);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        executeSql(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T query(final String sql, final ResultSetMapper<T> resultSetMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, parameters);
-
+        QueryExecutor<T> queryExecutor = (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return resultSetMapper.map(rs);
                 }
                 return null;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        };
+
+        return executeSql(sql, queryExecutor, parameters);
     }
 
     public <T> List<T> queryMany(final String sql, final ResultSetMapper<T> resultSetMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, parameters);
-
+        QueryExecutor<List<T>> queryExecutor = (pstmt) -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 while (rs.next()) {
                     result.add(resultSetMapper.map(rs));
                 }
                 return result;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
+        };
+
+        return executeSql(sql, queryExecutor, parameters);
+    }
+
+    private <T> T executeSql(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, parameters);
+            return queryExecutor.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
