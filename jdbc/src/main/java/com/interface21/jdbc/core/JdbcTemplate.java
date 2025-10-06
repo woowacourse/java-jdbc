@@ -45,6 +45,7 @@ public class JdbcTemplate {
             for(int i=0; i<args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new SqlExecutionException(e);
