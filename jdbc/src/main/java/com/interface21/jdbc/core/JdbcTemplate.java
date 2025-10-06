@@ -32,9 +32,9 @@ public class JdbcTemplate {
         );
     }
 
-    public Optional<Object> queryForObject(
+    public <T> Optional<T> queryForObject(
             final String sql,
-            final QueryResultMapper<?> mapper,
+            final QueryResultMapper<T> mapper,
             final Object... params
     ) {
         return execute(
@@ -51,15 +51,15 @@ public class JdbcTemplate {
         );
     }
 
-    public List<Object> queryForList(
+    public <T> List<T> queryForList(
             final String sql,
-            final QueryResultMapper<?> mapper,
+            final QueryResultMapper<T> mapper,
             final Object... params
     ) {
         return execute(
                 (pstmt) -> {
                     return mapQueryResult((resultSet -> {
-                        List<Object> results = new ArrayList<>();
+                        List<T> results = new ArrayList<>();
                         while (resultSet.next()) {
                             results.add(mapper.map(resultSet));
                         }
@@ -71,8 +71,8 @@ public class JdbcTemplate {
         );
     }
 
-    private <R> R execute(
-            final SqlExecution<R> execution,
+    private <T> T execute(
+            final SqlExecution<T> execution,
             final String sql,
             final Object ... params
     ) {
@@ -90,7 +90,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <R> R mapQueryResult(final QueryResultMapper<R> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
+    private <T> T mapQueryResult(final QueryResultMapper<T> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
         try (final ResultSet resultSet = pstmt.executeQuery()) {
             return queryResultMapping.map(resultSet);
         }
