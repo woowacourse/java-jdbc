@@ -109,7 +109,7 @@ public class JdbcTemplate {
                 results.add(result);
             }
             return results;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error("조회 결과 바인딩 실패: {}", e.getMessage(), e);
             throw new DataAccessException("조회 결과 바인딩 실패", e);
         }
