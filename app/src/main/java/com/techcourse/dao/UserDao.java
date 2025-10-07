@@ -1,8 +1,10 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.rowmapper.RowMapper;
+import com.interface21.jdbc.preparedstatementsetter.PreparedStatementSetter;
+import com.interface21.jdbc.rowmapper.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -85,5 +87,23 @@ public class UserDao {
         );
         Object[] params = new Object[]{account};
         return jdbcTemplate.queryForObject(sql, userRowMapper, params);
+    }
+
+    public User findByEmail(final String email) throws SQLException {
+        final String sql = """
+            SELECT id, account, password, email
+            FROM users
+            WHERE email = ?
+        """;
+        RowMapper<User> userRowMapper = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+        );
+        PreparedStatementSetter preparedStatementSetter = pstmt -> {
+            pstmt.setString(1, email);
+        };
+        return jdbcTemplate.queryForObject(sql, userRowMapper, preparedStatementSetter);
     }
 }

@@ -3,7 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.jdbc.IncorrectResultSizeException;
 import com.interface21.jdbc.DataAccessException;
 import com.interface21.jdbc.ParameterBindingException;
-import com.interface21.rowmapper.RowMapper;
+import com.interface21.jdbc.preparedstatementsetter.PreparedStatementSetter;
+import com.interface21.jdbc.rowmapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -53,6 +54,18 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            preparedStatementSetter.setParameters(pstmt);
+            return pstmt.executeUpdate();
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception.getMessage());
+        }
+    }
+
     /**
      * SELECT 전용 메서드
      * 여러 행을 반환
@@ -83,6 +96,20 @@ public class JdbcTemplate {
         return results;
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            preparedStatementSetter.setParameters(pstmt);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapResultSet(rowMapper, rs);
+            }
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception.getMessage());
+        }
+    }
+
     /**
      * SELECT 단건 조회 전용 메서드
      * 결과가 없을 시 null을 반환
@@ -93,6 +120,17 @@ public class JdbcTemplate {
      */
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> queryResult = query(sql, rowMapper, params);
+        if (queryResult.isEmpty()) {
+            return null;
+        }
+        if (queryResult.size() > 1) {
+            throw new IncorrectResultSizeException("검색 결과가 1개 이상입니다.");
+        }
+        return queryResult.getFirst();
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
+        List<T> queryResult = query(sql, rowMapper, preparedStatementSetter);
         if (queryResult.isEmpty()) {
             return null;
         }
