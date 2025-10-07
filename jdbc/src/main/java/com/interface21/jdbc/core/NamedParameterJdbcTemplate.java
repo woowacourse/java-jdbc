@@ -33,6 +33,17 @@ public class NamedParameterJdbcTemplate {
         return jdbcExecutor.executeQuery(parsed.executableSql(), parsed.args(), mapper);
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> mapper) {
+        List<T> results = query(sql, mapper);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("결과값이 1개보다 많습니다. 결과 크기: " + results.size());
+        }
+        return results.getFirst();
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Map<String, Object> params) {
         List<T> results = query(sql, mapper, params);
         if (results.isEmpty()) {
