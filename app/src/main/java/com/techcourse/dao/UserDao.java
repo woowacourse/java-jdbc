@@ -55,10 +55,10 @@ public class UserDao {
         @Override
         public User mapRow(final ResultSet resultSet) throws SQLException {
             return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"));
         }
     }
 }
