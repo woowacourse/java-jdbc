@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,31 +22,42 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, args)) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
 
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public int update(String sql, PreparedStatementSetter pstmtSetter) {
+        return execute(sql, pstmtSetter, PreparedStatement::executeUpdate);
     }
 
     public <T> T selectOne(String sql, ResultMapper<T> resultMapper, Object... args) {
-        List<T> results = selectList(sql, resultMapper, args);
+        return selectOne(sql, resultMapper, new ArgumentPreparedStatementSetter(args));
+    }
 
-        if (results.size() != 1) {
-            throw new RuntimeException("Expected 1 result, but found " + results.size());
-        }
+    public <T> T selectOne(String sql, ResultMapper<T> resultMapper, PreparedStatementSetter pstmtSetter) {
+        return execute(sql, pstmtSetter, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new DataAccessException("Expected 1 result, but found 0");
+                }
 
-        return results.getFirst();
+                T result = resultMapper.mapResult(rs);
+
+                if (rs.next()) {
+                    throw new DataAccessException("Expected 1 result, but found more than 1");
+                }
+
+                return result;
+            }
+        });
     }
 
     public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = prepareStatement(conn, sql, args)
-        ) {
-            try(ResultSet rs = pstmt.executeQuery()) {
+        return selectList(sql, resultMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, PreparedStatementSetter pstmtSetter) {
+        return execute(sql, pstmtSetter, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
 
                 while (rs.next()) {
@@ -54,20 +66,18 @@ public class JdbcTemplate {
 
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementSetter pstmtSetter, StatementExecutor<T> executor) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmtSetter.setValues(pstmt);
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
-    }
-
-    private PreparedStatement prepareStatement(Connection conn, String sql, Object... args) throws SQLException {
-        log.debug("query = {}", sql);
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-
-        return pstmt;
     }
 }
+
