@@ -42,7 +42,7 @@ public class JdbcTemplate {
                 for (int i = 0; i < safeParams.length; i++) {
                     pstmt.setObject(i + 1, safeParams[i]);
                 }
-                pstmt.execute();
+                pstmt.executeUpdate();
                 return null;
             }
         } );
