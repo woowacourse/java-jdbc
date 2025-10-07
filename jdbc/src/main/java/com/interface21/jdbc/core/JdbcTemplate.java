@@ -23,50 +23,52 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object...args) {
+    public void update(String sql, Object... args) {
         SqlParameterValidator.validate(sql, args);
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
-        ) {
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         SqlParameterValidator.validate(sql, args);
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
-                ResultSet rs = preparedStatement.executeQuery();
-        ) {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(sql,
+                pstmt -> {
+                    ResultSet rs = pstmt.executeQuery();
+                    List<T> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(rowMapper.mapRow(rs));
+                    }
+                    return results;
+                },
+                args
+        );
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         SqlParameterValidator.validate(sql, args);
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement preparedStatement = prepareStatement(conn, sql, args);
-                ResultSet rs = preparedStatement.executeQuery();
+
+       return execute(sql,
+                pstmt -> {
+                    ResultSet rs = pstmt.executeQuery();
+                    if (rs.next()) {
+                        T result = rowMapper.mapRow(rs);
+                        if (rs.next()) {
+                            throw new DataAccessException("결과가 2개 이상입니다.");
+                        }
+                        return Optional.of(result);
+                    }
+                    return Optional.empty();
+                },
+                args
+        );
+
+    }
+
+    private <T> T execute(String sql, PrepareStatementCallback<T> action, Object... args) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = prepareStatement(conn, sql, args)
         ) {
-            if (rs.next()) {
-                T result = rowMapper.mapRow(rs);
-                if (rs.next()) {
-                    throw new DataAccessException("결과가 2개 이상입니다.");
-                }
-                return Optional.of(result);
-            }
-            return Optional.empty();
+            return action.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
