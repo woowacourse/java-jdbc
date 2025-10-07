@@ -18,27 +18,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    @FunctionalInterface
-    private interface StatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
-    }
-
-    private <T> T execute(final String sql, final StatementCallback<T> action, final Object... args) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            if (args != null) {
-                for (int i = 0; i < args.length; i++) {
-                    pstmt.setObject(i + 1, args[i]);
-                }
-            }
-            return action.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     public int update(final String sql, final Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
@@ -64,5 +43,26 @@ public class JdbcTemplate {
                 return result;
             }
         }, args);
+    }
+
+    private <T> T execute(final String sql, final StatementCallback<T> action, final Object... args) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            if (args != null) {
+                for (int i = 0; i < args.length; i++) {
+                    pstmt.setObject(i + 1, args[i]);
+                }
+            }
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
     }
 }
