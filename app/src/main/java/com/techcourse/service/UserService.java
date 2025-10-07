@@ -9,8 +9,8 @@ import com.techcourse.domain.UserHistory;
 
 public class UserService {
 
-    private final UserDao userDao = new UserDao();
-    private final UserHistoryDao userHistoryDao = new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserHistoryDao userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
 
     public User findById(final long id) {
         return userDao.findById(id);
