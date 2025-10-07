@@ -29,7 +29,6 @@ public class Transaction {
         try {
             connection.commit();
             connection.close();
-            this.connection = null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
@@ -41,7 +40,6 @@ public class Transaction {
         try {
             connection.rollback();
             connection.close();
-            this.connection = null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             // TODO : 예외처리 강화 필요
