@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    public static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<>() {
+    private static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<>() {
         @Override
         public User map(ResultSet resultSet) throws SQLException {
             return new User(
