@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -87,12 +88,9 @@ public class JdbcTemplate {
             Connection conn = transaction.getConnection();
             consumer.accept(conn);
         } else {
-            try (Connection conn = dataSource.getConnection()) {
-                consumer.accept(conn);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            consumer.accept(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -102,12 +100,10 @@ public class JdbcTemplate {
             Connection conn = transaction.getConnection();
             return function.apply(conn);
         } else {
-            try (Connection conn = dataSource.getConnection()) {
-                return function.apply(conn);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            T result = function.apply(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            return result;
         }
     }
 
