@@ -52,7 +52,7 @@ public final class UserDao {
                 FROM users
                 WHERE id = ?
                 """;
-        return jdbcTemplate.findById(sql, (rs) -> new User(
+        return jdbcTemplate.queryForObject(sql, (rs) -> new User(
                 rs.getLong(1),
                 rs.getString(2),
                 rs.getString(3),
