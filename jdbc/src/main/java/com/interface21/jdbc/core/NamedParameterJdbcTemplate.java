@@ -30,7 +30,7 @@ public class NamedParameterJdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Map<String, Object> params) {
         NamedParameterParsedSql parsed = namedParameterSqlParser.parse(sql, params);
-        return jdbcExecutor.executeQuery(parsed.executableSql(), parsed.args(), mapper);
+        return jdbcExecutor.executeQuery(mapper, parsed.executableSql(), parsed.args());
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper) {
