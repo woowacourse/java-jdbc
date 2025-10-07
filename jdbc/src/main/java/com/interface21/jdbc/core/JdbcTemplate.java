@@ -18,52 +18,51 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
+    }
+
+    private <T> T execute(final String sql, final StatementCallback<T> action, final Object... args) {
         try (final var conn = dataSource.getConnection();
-             final var pstmt = setValues(conn.prepareStatement(sql), args)) {
+             final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            pstmt.executeUpdate();
+            if (args != null) {
+                for (int i = 0; i < args.length; i++) {
+                    pstmt.setObject(i + 1, args[i]);
+                }
+            }
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public int update(final String sql, final Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = setValues(conn.prepareStatement(sql), args);
-             final var rs = pstmt.executeQuery()) {
-            log.debug("query : {}", sql);
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+        return execute(sql, pstmt -> {
+            try (final var rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
             }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, args);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = setValues(conn.prepareStatement(sql), args);
-             final var rs = pstmt.executeQuery()) {
-            final List<T> result = new ArrayList<>();
-            log.debug("query : {}", sql);
-            while (rs.next()) {
-                result.add(rowMapper.mapRow(rs));
+        return execute(sql, pstmt -> {
+            try (final var rs = pstmt.executeQuery()) {
+                final List<T> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(rowMapper.mapRow(rs));
+                }
+                return result;
             }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private PreparedStatement setValues(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
-        return pstmt;
+        }, args);
     }
 }
