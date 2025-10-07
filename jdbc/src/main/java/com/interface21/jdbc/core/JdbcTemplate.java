@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.EmptyResultDataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeException;
 import com.interface21.jdbc.rowmapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,6 +36,10 @@ public class JdbcTemplate {
 
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException("Query returned no results.");
+        }
+        
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeException("Query returned more than one result.");
         }
 
         return results.getFirst();
