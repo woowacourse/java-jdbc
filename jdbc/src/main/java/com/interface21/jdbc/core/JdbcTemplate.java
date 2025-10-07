@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,54 +23,49 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        return update(sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(String sql, PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
+    }
+
+    public <T> T execute(String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> action) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            pss.setValues(pstmt);
 
-            return pstmt.executeUpdate();
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResources(null, pstmt, conn);
+            throw new DataAccessException(e);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
+    }
 
-            log.debug("query : {}", sql);
+    public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(sql, pss, pstmt -> extractResults(pstmt, rowMapper));
+    }
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
-            rs = pstmt.executeQuery();
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rowNum++));
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResources(rs, pstmt, conn);
+    private <T> List<T> extractResults(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            return mapRows(rs, rowMapper);
         }
+    }
+
+    private <T> List<T> mapRows(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs, rowNum++));
+        }
+        return results;
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -78,31 +74,16 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new RuntimeException("Result가 여러 개 입니다: " + results.size());
+            throw new DataAccessException("Result가 여러 개 입니다: " + results.size());
         }
         return results.get(0);
     }
 
-    private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
-        try {
-            if (rs != null) {
-                rs.close();
+    private PreparedStatementSetter createPreparedStatementSetter(Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
             }
-        } catch (SQLException ignored) {
-        }
-
-        try {
-            if (pstmt != null) {
-                pstmt.close();
-            }
-        } catch (SQLException ignored) {
-        }
-
-        try {
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException ignored) {
-        }
+        };
     }
 }
