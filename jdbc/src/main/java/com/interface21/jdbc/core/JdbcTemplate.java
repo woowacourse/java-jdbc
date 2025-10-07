@@ -40,7 +40,9 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             bindPreparedStatement(pstmt, parameters);
             ResultSet resultSet = executeQuery(pstmt);
-            return bindQueryResult(resultSet, rowMapper);
+            List<T> result = bindQueryResults(resultSet, rowMapper);
+            validateResultCountIsOne(result.size());
+            return result.getFirst();
         } catch (SQLException e) {
             log.error("SQL 예외 발생: {}", e.getMessage(), e);
             throw new DataAccessException("SQL 예외 발생", e);
@@ -115,13 +117,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T bindQueryResult(ResultSet resultSet, RowMapper<T> rowMapper) {
-        try {
-            resultSet.next();
-            return rowMapper.mapRowToObject(resultSet, 0);
-        } catch (SQLException e) {
-            log.error("조회 결과 바인딩 실패: {}", e.getMessage(), e);
-            throw new DataAccessException("조회 결과 바인딩 실패", e);
+    private void validateResultCountIsOne(int actualCount) {
+        if (actualCount != 1) {
+            log.error("조회 결과 바인딩 실패: 조회 결과가 존재하지 않거나 여러개가 존재");
+            throw new DataAccessException("조회 결과 바인딩 실패 : 조회 결과가 존재하지 않거나 여러개가 존재");
         }
     }
 }
