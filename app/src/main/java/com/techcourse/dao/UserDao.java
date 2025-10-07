@@ -24,7 +24,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -32,16 +33,14 @@ public class UserDao {
         return jdbcTemplate.query(sql, userMapper);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        Optional<User> user = jdbcTemplate.queryForObject(sql, userMapper, id);
-        return user.orElse(null);
+        return jdbcTemplate.queryForObject(sql, userMapper, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        Optional<User> user = jdbcTemplate.queryForObject(sql, userMapper, account);
-        return user.orElse(null);
+        return jdbcTemplate.queryForObject(sql, userMapper, account);
     }
 
     public void deleteAll() {
