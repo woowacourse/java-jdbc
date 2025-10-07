@@ -88,7 +88,7 @@ public class JdbcTemplate {
             Connection conn = transaction.getConnection();
             consumer.accept(conn);
         } else {
-            Connection conn = DataSourceUtils.getConnection(dataSource);
+            Connection conn = DataSourceUtils.createConnection(dataSource);
             consumer.accept(conn);
             DataSourceUtils.releaseConnection(conn, dataSource);
         }
@@ -100,7 +100,7 @@ public class JdbcTemplate {
             Connection conn = transaction.getConnection();
             return function.apply(conn);
         } else {
-            Connection conn = DataSourceUtils.getConnection(dataSource);
+            Connection conn = DataSourceUtils.createConnection(dataSource);
             T result = function.apply(conn);
             DataSourceUtils.releaseConnection(conn, dataSource);
             return result;
