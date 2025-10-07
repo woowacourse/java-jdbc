@@ -30,14 +30,16 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         SqlParameterValidator.validate(sql, args);
-        return execute(sql,
+        return execute(
+                sql,
                 pstmt -> {
-                    ResultSet rs = pstmt.executeQuery();
-                    List<T> results = new ArrayList<>();
-                    while (rs.next()) {
-                        results.add(rowMapper.mapRow(rs));
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        List<T> results = new ArrayList<>();
+                        while (rs.next()) {
+                            results.add(rowMapper.mapRow(rs));
+                        }
+                        return results;
                     }
-                    return results;
                 },
                 args
         );
@@ -46,15 +48,16 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         SqlParameterValidator.validate(sql, args);
 
-       return execute(sql,
+        return execute(sql,
                 pstmt -> {
-                    ResultSet rs = pstmt.executeQuery();
-                    if (rs.next()) {
-                        T result = rowMapper.mapRow(rs);
+                    try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
-                            throw new DataAccessException("결과가 2개 이상입니다.");
+                            T result = rowMapper.mapRow(rs);
+                            if (rs.next()) {
+                                throw new DataAccessException("결과가 2개 이상입니다.");
+                            }
+                            return Optional.of(result);
                         }
-                        return Optional.of(result);
                     }
                     return Optional.empty();
                 },
