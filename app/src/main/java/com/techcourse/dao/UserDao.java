@@ -50,7 +50,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 
-    class UserRowMapper implements RowMapper<User> {
+    static class UserRowMapper implements RowMapper<User> {
 
         @Override
         public User mapRow(final ResultSet resultSet) throws SQLException {
