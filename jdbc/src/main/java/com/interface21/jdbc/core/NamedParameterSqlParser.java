@@ -14,13 +14,13 @@ public class NamedParameterSqlParser {
 
     private static final Pattern NAMED_PARAMETER_PATTERN = Pattern.compile(":([a-zA-Z_][a-zA-Z0-9_]*)");
 
-    ParsedSql parse(final String sql, final Map<String, Object> params) {
+    NamedParameterParsedSql parse(final String sql, final Map<String, Object> params) {
         List<String> parameterNames = extractParameterNames(sql);
         String executableSql = getExecutableSql(sql);
 
         // 네임드 파라미터가 전혀 없으면 빈 인자 배열로 반환
         if (parameterNames.isEmpty()) {
-            return new ParsedSql(executableSql, new Object[0]);
+            return new NamedParameterParsedSql(executableSql, new Object[0]);
         }
 
         // 파라미터가 필요한데 맵이 null 이면 즉시 예외
@@ -29,7 +29,7 @@ public class NamedParameterSqlParser {
         }
 
         Object[] args = getParameterArguments(params, parameterNames);
-        return new ParsedSql(executableSql, args);
+        return new NamedParameterParsedSql(executableSql, args);
     }
 
     private List<String> extractParameterNames(final String sql) {

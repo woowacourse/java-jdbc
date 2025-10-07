@@ -22,7 +22,7 @@ public abstract class JdbcTemplate<T> {
         final Map<String, Object> params = new HashMap<>();
         setValues(object, params);
 
-        final ParameterProcessResult result = processNamedParameters(sql, params);
+        final NamedParameterParsedSql result = processNamedParameters(sql, params);
         final String executableSql = result.executableSql();
         final Object[] args = result.args();
 
@@ -37,7 +37,7 @@ public abstract class JdbcTemplate<T> {
     }
 
     public <R> List<R> query(final String sql, final RowMapper<R> rowMapper, final Map<String, Object> params) {
-        final ParameterProcessResult result = processNamedParameters(sql, params);
+        final NamedParameterParsedSql result = processNamedParameters(sql, params);
         final String executableSql = result.executableSql();
         final Object[] args = result.args();
 
@@ -62,9 +62,9 @@ public abstract class JdbcTemplate<T> {
 
     protected abstract DataSource getDataSource();
 
-    private ParameterProcessResult processNamedParameters(final String sql, final Map<String, Object> params) {
+    private NamedParameterParsedSql processNamedParameters(final String sql, final Map<String, Object> params) {
         if (params == null) {
-            return new ParameterProcessResult(sql, null);
+            return new NamedParameterParsedSql(sql, null);
         }
 
         final List<String> parameterNames = extractParameterNames(sql);
@@ -72,7 +72,7 @@ public abstract class JdbcTemplate<T> {
         final Object[] args = parameterNames.stream()
                 .map(params::get)
                 .toArray();
-        return new ParameterProcessResult(executableSql, args);
+        return new NamedParameterParsedSql(executableSql, args);
     }
 
     private List<String> extractParameterNames(final String sql) {

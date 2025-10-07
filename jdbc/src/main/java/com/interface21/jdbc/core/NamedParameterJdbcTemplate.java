@@ -20,7 +20,7 @@ public class NamedParameterJdbcTemplate {
     }
 
     public void update(final String sql, final Map<String, Object> params) {
-        ParsedSql parsed = namedParameterSqlParser.parse(sql, params);
+        NamedParameterParsedSql parsed = namedParameterSqlParser.parse(sql, params);
         jdbcExecutor.executeUpdate(parsed.executableSql(), parsed.args());
     }
 
@@ -29,7 +29,7 @@ public class NamedParameterJdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Map<String, Object> params) {
-        ParsedSql parsed = namedParameterSqlParser.parse(sql, params);
+        NamedParameterParsedSql parsed = namedParameterSqlParser.parse(sql, params);
         return jdbcExecutor.executeQuery(parsed.executableSql(), parsed.args(), mapper);
     }
 
