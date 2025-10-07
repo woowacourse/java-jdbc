@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,10 +22,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
     public void update(String sql, Object... params){
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)){
@@ -33,7 +31,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
@@ -43,20 +41,20 @@ public class JdbcTemplate {
 
             log.debug("query : {}", sql);
             setParameters(pstmt, params);
-            return mapResults(rowMapper, pstmt.executeQuery());
+            return executionResult(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) throws SQLException {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = query(sql, rowMapper, params);
         if(results.isEmpty()){
-            throw new SQLException("No result found for query.");
+            throw new IncorrectResultSizeException("No result found for query.");
         }
         if(results.size() > 1){
-            throw new SQLException("Returns more than 1 row.");
+            throw new IncorrectResultSizeException("Returns more than 1 row.");
         }
         return results.getFirst();
     }
@@ -64,6 +62,12 @@ public class JdbcTemplate {
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for(int i=0; i<parameters.length; i++){
             pstmt.setObject(i+1, parameters[i]);
+        }
+    }
+
+    private <T> List<T> executionResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try(ResultSet resultSet = pstmt.executeQuery()) {
+            return mapResults(rowMapper, resultSet);
         }
     }
 
