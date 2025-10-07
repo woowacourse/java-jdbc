@@ -53,12 +53,16 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = :id";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, Map.of("id", id));
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, params);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = :account";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, Map.of("account", account));
+        Map<String, Object> params = new HashMap<>();
+        params.put("account", account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, params);
     }
 
     public void deleteAll() {
