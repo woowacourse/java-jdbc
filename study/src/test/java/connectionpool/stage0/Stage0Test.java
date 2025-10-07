@@ -31,7 +31,7 @@ class Stage0Test {
         // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
         try (final Connection connection = DriverManager.getConnection(H2_URL, USER, PASSWORD)) {
-            assertThat(connection.isValid(1)).isTrue();
+            assertThat(connection.isValid(1 )).isTrue();
         }
     }
 

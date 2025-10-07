@@ -27,6 +27,54 @@ class Stage2Test {
      * DataSourceConfig 클래스를 찾아서 어떻게 빈으로 직접 생성하는지 확인해보자.
      * 그리고 아래 DataSource가 직접 생성한 빈으로 주입 받았는지 getPoolName() 메서드로 확인해보자.
      */
+    /**
+     * 실제 로그 확인해보면
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-5] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-8] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-6] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-9] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-10] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-11] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-7] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-12] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-13] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-5] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-14] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-6] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-8] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-10] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-15] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [       Thread-9] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-22] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-16] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.398+09:00  INFO 42458 --- [      Thread-17] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-18] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-19] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-20] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-21] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-23] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.399+09:00  INFO 42458 --- [      Thread-24] connectionpool.stage2.Stage2Test         : Before acquire
+     * 2025-10-05T17:34:10.900+09:00  INFO 42458 --- [      Thread-11] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.903+09:00  INFO 42458 --- [       Thread-7] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.904+09:00  INFO 42458 --- [      Thread-13] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.904+09:00  INFO 42458 --- [      Thread-14] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:10.904+09:00  INFO 42458 --- [      Thread-12] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.402+09:00  INFO 42458 --- [      Thread-15] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.407+09:00  INFO 42458 --- [      Thread-22] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.408+09:00  INFO 42458 --- [      Thread-16] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.409+09:00  INFO 42458 --- [      Thread-17] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.409+09:00  INFO 42458 --- [      Thread-18] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.907+09:00  INFO 42458 --- [      Thread-19] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.910+09:00  INFO 42458 --- [      Thread-23] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.910+09:00  INFO 42458 --- [      Thread-20] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.910+09:00  INFO 42458 --- [      Thread-21] connectionpool.stage2.Stage2Test         : After acquire
+     * 2025-10-05T17:34:11.912+09:00  INFO 42458 --- [      Thread-24] connectionpool.stage2.Stage2Test         : After acquire
+     *
+     * 17:34:10.900전까지 모든 스레드에서 before acquire를 찍음.
+     * 그리고 실제 connection을 획든한 스레드는 5개뿐.
+     * 실제 커넥션 풀의 maxSize 5가 제대로 설정된 것을 확인할 수 있다.
+     * 이후에도 5개씩 acquire가 찍힌 것을 확인할 수 있다.
+     */
     @Autowired
     private DataSource dataSource;
 

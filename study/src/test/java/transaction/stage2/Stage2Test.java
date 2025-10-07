@@ -19,6 +19,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * https://docs.spring.io/spring-framework/docs/current/reference/html/data-access.html#tx-propagation
  */
+
+/**
+ * 논리 트랜잭션 : 활성 여부 관계 없이 트랜잭션 경계 단위
+ * 물리 트랜잭션 : 실제 활성되어 동작하는 트랜잭션 단위
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Stage2Test {
 
@@ -39,19 +44,27 @@ class Stage2Test {
      * 생성된 트랜잭션이 몇 개인가?
      * 왜 그런 결과가 나왔을까?
      */
+    /**
+     * 논리 트랜잭션 : 2
+     * 물리 트랜잭션 : 1
+     */
     @Test
     void testRequired() {
         final var actual = firstUserService.saveFirstTransactionWithRequired();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
      * 생성된 트랜잭션이 몇 개인가?
      * 왜 그런 결과가 나왔을까?
+     */
+    /**
+     * 논리 트랜잭션 : 2
+     * 물리 트랜잭션 : 2
      */
     @Test
     void testRequiredNew() {
@@ -59,8 +72,11 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .contains(
+                    "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew",
+                    "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew"
+                );
     }
 
     /**
@@ -69,17 +85,26 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     */
+    /**
+     * 기존 트랜잭션 존재 : 참여
+     * 논리 트랜잭션 : 2
+     * 물리 트랜잭션 : 1
+     *
+     * 기존 트랜잭션 존재x : 활성x
+     * 논리 트랜잭션 : 2
+     * 물리 트랜잭션 : 0
      */
     @Test
     void testSupports() {
@@ -87,8 +112,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+            .contains("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
@@ -96,14 +121,23 @@ class Stage2Test {
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
      */
+    /**
+     * 기존 트랜잭션 존재 : 참여
+     * 논리 트랜잭션 : 2
+     * 물리 트랜잭션 : 1
+     *
+     * 기존 트랜잭션 존재x : 예외(IllegalTransactionStateException)
+     * 논리 트랜잭션 : 2
+     * 물리 트랜잭션 : 0
+     */
     @Test
     void testMandatory() {
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -113,19 +147,30 @@ class Stage2Test {
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
+    /**
+     * 기존 트랜잭션 존재 : 기존 트랜잭션 보류. 활성x
+     *
+     * 기존 트랜잭션 존재x : 활성x
+     */
     @Test
     void testNotSupported() {
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .contains(
+                    "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported",
+                    "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported"
+                );
     }
 
     /**
      * 아래 테스트는 왜 실패할까?
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     */
+    /**
+     * 물리적
      */
     @Test
     void testNested() {
@@ -133,8 +178,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithNested");
     }
 
     /**
