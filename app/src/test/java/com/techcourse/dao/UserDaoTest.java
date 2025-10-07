@@ -47,8 +47,6 @@ class UserDaoTest {
         // given
         final var testUser = new User("testuser", "password", "test@example.com");
         userDao.insert(testUser);
-
-        // given
         final var foundUser = userDao.findByAccount("testuser").get();
 
         // when
