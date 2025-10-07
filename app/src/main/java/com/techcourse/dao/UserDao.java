@@ -5,10 +5,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -27,37 +23,27 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.getResults((resultSet) -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        ), sql, (Object[]) null);
+        return jdbcTemplate.query((resultSet) -> new User(resultSet.getLong("id"), resultSet.getString("account"),
+                resultSet.getString("password"), resultSet.getString("email")), sql, (Object[]) null);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.getSingleResult((resultSet) -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        ), sql, id);
+        return jdbcTemplate.queryForObject(
+                (resultSet) -> new User(resultSet.getLong("id"), resultSet.getString("account"),
+                        resultSet.getString("password"), resultSet.getString("email")), sql, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.getSingleResult((resultSet) -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        ), sql, account);
+        return jdbcTemplate.queryForObject(
+                (resultSet) -> new User(resultSet.getLong("id"), resultSet.getString("account"),
+                        resultSet.getString("password"), resultSet.getString("email")), sql, account);
     }
 }
