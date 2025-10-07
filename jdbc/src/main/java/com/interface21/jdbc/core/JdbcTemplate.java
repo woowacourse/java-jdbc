@@ -25,7 +25,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> mapper, final Object... params) {
-        return execute(sql, ps ->{
+        return execute(sql, ps -> {
             try (ResultSet resultSet = ps.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 while (resultSet.next()) {
@@ -38,49 +38,30 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> mapper, final Object... params) {
-        return execute(sql, ps ->{
+        return execute(sql, ps -> {
             try (ResultSet resultSet = ps.executeQuery()) {
                 if (resultSet.next()) {
                     T result = mapper.mapRow(resultSet);
                     if (resultSet.next()) {
-                        throw new IllegalStateException("Expected single row");
+                        throw new IllegalStateException("Expected single row, but gone none");
                     }
                     return result;
                 }
-
-                return null;
+                throw new IllegalStateException("Expected single row, but got multiple rows");
             }
         }, params);
     }
 
     private <R> R execute(String sql, PreparedStatementCallBack<R> action, Object... params) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             bindParams(pstmt, params);
 
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
