@@ -28,18 +28,42 @@ class Stage1Test {
      */
     @Test
     void testJdbcConnectionPool() throws SQLException {
+        // 연결 생성
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
 
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
+
+        // 연결 사용 -> 반환
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
         }
+
+        // connection 자원 반환한 후
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
         jdbcConnectionPool.dispose();
     }
 
+    @Test
+    void testJdbcConnectionPool_createThree() throws SQLException {
+        final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
+
+        assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
+        var connection = jdbcConnectionPool.getConnection();
+        assertThat(connection.isValid(1)).isTrue();
+        assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
+
+        connection = jdbcConnectionPool.getConnection();
+        assertThat(connection.isValid(1)).isTrue();
+        assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(2);
+
+        connection = jdbcConnectionPool.getConnection();
+        assertThat(connection.isValid(1)).isTrue();
+        assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(3);
+
+        jdbcConnectionPool.dispose();
+    }
     /**
      * Spring Boot 2.0 부터 HikariCP를 기본 데이터 소스로 채택하고 있다.
      * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#data.sql.datasource.connection-pool
@@ -70,6 +94,7 @@ class Stage1Test {
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         final var dataSource = new HikariDataSource(hikariConfig);
+
         final var properties = dataSource.getDataSourceProperties();
 
         assertThat(dataSource.getMaximumPoolSize()).isEqualTo(5);

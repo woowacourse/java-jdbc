@@ -65,6 +65,7 @@ class Stage2Test {
                     log.info("After acquire ");
                     quietlySleep(500); // Thread.sleep(500)과 동일한 기능
                 }
+                log.info("connection acquire stopped ");
             } catch (Exception e) {
             }
         };
