@@ -1,14 +1,19 @@
-package com.techcourse.service;
+package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.config.DataSourceConfig;
-import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 public abstract class BusinessService {
 
-    protected <R> R transaction(final BusinessMethod<Connection, R> function) {
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+    private final DataSource dataSource;
+
+    protected BusinessService(final DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    protected <R> R transaction(final TransactionalMethod<R> function) {
+        try (final var connection = dataSource.getConnection()) {
             // 트랜잭션 시작
             connection.setAutoCommit(false);
             try {

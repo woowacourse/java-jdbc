@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.BusinessService;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -11,6 +13,7 @@ public class UserService extends BusinessService {
     private final UserHistoryDao userHistoryDao;
 
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+        super(DataSourceConfig.getInstance());
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
