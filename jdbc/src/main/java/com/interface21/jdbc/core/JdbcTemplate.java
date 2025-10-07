@@ -24,9 +24,7 @@ public class JdbcTemplate {
     public void update(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i+1, params[i]);
-            }
+            setPreparedStatement(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -37,9 +35,7 @@ public class JdbcTemplate {
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i+1, params[i]);
-            }
+            setPreparedStatement(pstmt, params);
             try (ResultSet rs = pstmt.executeQuery()) {
                 log.debug("query : {}", sql);
                 if (rs.next()) {
@@ -59,9 +55,7 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i+1, params[i]);
-            }
+            setPreparedStatement(pstmt, params);
             boolean execute = pstmt.execute();
 
             List<T> results = new ArrayList<>();
@@ -81,5 +75,11 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private void setPreparedStatement(PreparedStatement pstmt, Object[] params) throws SQLException {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i+1, params[i]);
+            }
     }
 }
