@@ -1,13 +1,12 @@
 package com.interface21.jdbc.core;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+import static com.interface21.jdbc.mapper.ResultSetMapper.map;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -48,7 +47,7 @@ public class JdbcTemplate {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return makeInstance(rs, clazz);
+                return map(rs, clazz);
             }
             return null;
 
@@ -67,8 +66,7 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
 
             while (rs.next()) {
-                results.add(makeInstance(rs, clazz));
-                return results;
+                results.add(map(rs, clazz));
             }
             return results;
 
@@ -85,21 +83,5 @@ public class JdbcTemplate {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
-    }
-
-    private <T> T makeInstance(ResultSet rs, Class<T> clazz) throws Exception {
-        Field[] fields = clazz.getDeclaredFields();
-        Class<?>[] fieldTypes = Arrays.stream(fields)
-                .map(Field::getType)
-                .toArray(Class<?>[]::new);
-
-        Constructor<T> constructor = clazz.getDeclaredConstructor(fieldTypes);
-        Object[] constructorArgs = new Object[fields.length];
-
-        for (int i = 0; i < fields.length; i++) {
-            constructorArgs[i] = rs.getObject(i + 1);
-        }
-
-        return constructor.newInstance(constructorArgs);
     }
 }
