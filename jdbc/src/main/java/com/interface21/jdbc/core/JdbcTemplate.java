@@ -33,16 +33,18 @@ public class JdbcTemplate {
         return execute(sql, pstmtFunction, args);
     }
 
-    private <T> T mapSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> T mapSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) {
         try (final ResultSet resultSet = pstmt.executeQuery()) {
             if (!resultSet.next()) { // 쿼리 결과 없음
                 return null;
             }
             T returnValue = rowMapper.mapRow(resultSet);
             if (resultSet.next()) { // 결과 1개 초과
-                throw new IllegalArgumentException("query returns more than one row");
+                throw new DataAccessApiException("query returns more than one row");
             }
             return returnValue;
+        } catch (SQLException e) {
+            throw new DataAccessApiException(e);
         }
     }
 
@@ -53,13 +55,15 @@ public class JdbcTemplate {
         return execute(sql, pstmtFunction, args);
     }
 
-    private <T> List<T> mapResults(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+    private <T> List<T> mapResults(RowMapper<T> rowMapper, PreparedStatement pstmt) {
         try (final ResultSet resultSet = pstmt.executeQuery()) {
             List<T> list = new ArrayList<>();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
             }
             return list;
+        } catch (SQLException e) {
+            throw new DataAccessApiException(e);
         }
     }
 
@@ -75,7 +79,7 @@ public class JdbcTemplate {
             return pstmtFunction.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessApiException(e);
         }
     }
 
