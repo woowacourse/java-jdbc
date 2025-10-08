@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,14 +21,7 @@ public class JdbcTemplate {
     }
 
     public <T> T select(final String sql, final RowMapper<T> rowMapper, final Object... values) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.call(rs);
-                }
-                throw new DataAccessException("No data found");
-            }
-        }, values);
+        return execute(sql, new QueryObjectCallback<>(rowMapper), values);
     }
 
     public <T> List<T> selectList(final String sql, final RowMapper<T> rowMapper, final Object... values) {
