@@ -2,9 +2,7 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -32,7 +30,7 @@ public class JdbcTemplate {
         execute(sql, new UpdateCallback(), values);
     }
 
-    public <T> T execute(String sql, JdbcCallback<T> callback, PreparedStatementSetter pss) {
+    public <T> T execute(final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -44,11 +42,15 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(String sql, JdbcCallback<T> callback, Object... values) {
-        return execute(sql, callback, pstmt -> {
+    private <T> T execute(final String sql, final JdbcCallback<T> callback, final Object... values) {
+        return execute(sql, callback, createPreparedStatementSetter(values));
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... values) {
+        return pstmt -> {
             for (int i = 0; i < values.length; i++) {
                 pstmt.setObject(i + 1, values[i]);
             }
-        });
+        };
     }
 }
