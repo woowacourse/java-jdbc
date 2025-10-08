@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -15,8 +16,7 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -37,10 +37,13 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var account = "gugu1";
+        final var user = new User(account, "password", "email@email.com");
+        userDao.insert(user);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        final var foundedUser = userDao.findByAccount(account);
+
+        assertThat(foundedUser.getAccount()).isEqualTo(account);
     }
 
     @Test
