@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,30 +22,29 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> mapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatement(pstmt, args);
-            ResultSet rs = pstmt.executeQuery();
+            final ResultSet rs = pstmt.executeQuery();
 
             if (!rs.next()) {
                 throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다: " + sql);
             }
-            T result = mapper.mapRow(rs, 1);
+            final T result = mapper.mapRow(rs, 1);
             if (rs.next()) {
                 throw new IncorrectResultSizeDataAccessException("조회 결과가 1건이 아닙니다: " + sql);
             }
             return result;
         } catch (SQLException e) {
-            throw new RuntimeException("DB 조회에 실패했습니다. :" + sql, e);
+            throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             final ResultSet rs = pstmt.executeQuery();
-
             final List<T> result = new ArrayList<>();
             int rowNum = 1;
             while (rs.next()) {
@@ -52,29 +52,36 @@ public class JdbcTemplate {
             }
             return result;
         } catch (SQLException e) {
-            throw new RuntimeException("DB 조회에 실패했습니다. :" + sql, e);
+            throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
         }
     }
 
-    public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void update(final String sql, final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatement(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("DB 조회에 실패했습니다. :" + sql, e);
+            throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
         }
     }
 
-    private void setPreparedStatement(PreparedStatement pstmt, Object... args) {
-        int paramCount = 0;
+    private void setPreparedStatement(final PreparedStatement pstmt, final Object... args) {
         try {
-            paramCount = pstmt.getParameterMetaData().getParameterCount();
+            final int paramCount = pstmt.getParameterMetaData().getParameterCount();
+            if (paramCount != args.length) {
+                throw new IllegalArgumentException(
+                        "SQL 파라미터 개수 불일치: expected " + paramCount + ", actual " + args.length);
+            }
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
         } catch (SQLException ex) {
-            throw new IllegalArgumentException("SQL 파라미터 개수 불일치: expected " + paramCount + ", actual " + args.length);
+            throw new DataAccessException("SQL 파라미터 설정 실패: " + ex.getMessage(), ex);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
