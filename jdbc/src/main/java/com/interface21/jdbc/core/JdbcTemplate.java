@@ -47,13 +47,17 @@ public class JdbcTemplate {
         return execute(conn -> conn.prepareStatement(sql), ps -> {
             pss.setValues(ps);
             try (final ResultSet rs = ps.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
+                return extractData(rs, rowMapper);
             }
         });
+    }
+
+    private <T> List<T> extractData(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs));
+        }
+        return results;
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -85,6 +89,6 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
-        return results.get(0);
+        return results.getFirst();
     }
 }
