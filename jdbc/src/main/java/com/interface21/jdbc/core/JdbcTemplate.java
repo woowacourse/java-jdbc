@@ -20,6 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    @Deprecated
     public int update(String sql, Object... params) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
@@ -32,6 +33,19 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(String sql, PreparedStatementSetter setter) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.accept(pstmt);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    @Deprecated
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         final List<T> result = new ArrayList<>();
         try (final var conn = dataSource.getConnection();
@@ -49,6 +63,24 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
+        final List<T> result = new ArrayList<>();
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            try (final var rs = executeQuery(pstmt, setter)) {
+                while (rs.next()) {
+                    result.add(rowMapper.apply(rs));
+                }
+                return result;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    @Deprecated
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
@@ -65,9 +97,35 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            try (final var rs = executeQuery(pstmt, setter)) {
+                if (rs.next()) {
+                    return rowMapper.apply(rs);
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
     private ResultSet executeQuery(PreparedStatement pstmt, Object... params) {
         try {
             bindParams(pstmt, params);
+            return pstmt.executeQuery();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt, PreparedStatementSetter setter) {
+        try {
+            setter.accept(pstmt);
             return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
