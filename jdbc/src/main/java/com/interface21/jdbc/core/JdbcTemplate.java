@@ -20,17 +20,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... params) {
+    public void update(String sql, Object... params) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preStmt = connection.prepareStatement(sql)
         ) {
             for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
+                preStmt.setObject(i + 1, params[i]);
             }
-            return pstmt.executeUpdate();
+            preStmt.executeUpdate();
 
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -53,6 +54,7 @@ public class JdbcTemplate {
             }
 
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -62,6 +64,6 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             return null;
         }
-        return results.get(0);
+        return results.getFirst();
     }
 }
