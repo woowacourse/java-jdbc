@@ -43,8 +43,9 @@ public class JdbcTemplate {
                     return mapQueryResult((resultSet -> {
                         if (resultSet.next()) {
                             return Optional.of(mapper.map(resultSet));
+                        } else {
+                            throw new IllegalStateException("Query Result Not Found");
                         }
-                        throw new IllegalStateException("Query Result Not Found");
                     }), pstmt);
                 },
                 sql,
