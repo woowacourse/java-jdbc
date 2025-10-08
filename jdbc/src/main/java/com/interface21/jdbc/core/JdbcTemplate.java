@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.QueryResultMapper;
 import com.interface21.jdbc.SqlExecution;
 import org.slf4j.Logger;
@@ -33,7 +32,7 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> T queryForObject(
+    public <T> Optional<T> queryForObject(
             final String sql,
             final QueryResultMapper<T> mapper,
             final Object... params
@@ -42,10 +41,9 @@ public class JdbcTemplate {
                 (pstmt) -> {
                     return mapQueryResult((resultSet -> {
                         if (resultSet.next()) {
-                            return mapper.map(resultSet);
-                        } else {
-                            throw new IllegalStateException("Query Result Not Found");
+                            return Optional.of(mapper.map(resultSet));
                         }
+                        return Optional.empty();
                     }), pstmt);
                 },
                 sql,
@@ -88,11 +86,7 @@ public class JdbcTemplate {
             return execution.apply(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
-        }
-        catch (final IllegalStateException e) {
-            log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -105,11 +99,6 @@ public class JdbcTemplate {
     private void setParameters(final Object[] params, final PreparedStatement pstmt) throws SQLException {
         if (params.length == 0) {
             return;
-        }
-
-        int parameterCount = pstmt.getParameterMetaData().getParameterCount();
-        if (params.length != parameterCount) {
-            throw new IllegalStateException("PreparedStatement parameter not matches");
         }
 
         for (int idx = 1; idx <= params.length; idx++) {
