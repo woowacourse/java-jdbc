@@ -25,6 +25,7 @@ public class JdbcTemplate {
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preStmt = connection.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             for (int i = 0; i < params.length; i++) {
                 preStmt.setObject(i + 1, params[i]);
             }
@@ -41,6 +42,7 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             for (int i = 0; i < params.length; i++) {
                 pstmt.setObject(i + 1, params[i]);
             }
