@@ -49,19 +49,23 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, values);
     }
 
-    private <T> T execute(String sql, JdbcCallback<T> callback, Object... values) {
+    public <T> T execute(String sql, JdbcCallback<T> callback, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
-
-            for (int i = 0; i < values.length; i++) {
-                pstmt.setObject(i + 1, values[i]);
-            }
+            pss.setValues(pstmt);
             return callback.call(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private <T> T execute(String sql, JdbcCallback<T> callback, Object... values) {
+        return execute(sql, callback, pstmt -> {
+            for (int i = 0; i < values.length; i++) {
+                pstmt.setObject(i + 1, values[i]);
+            }
+        });
     }
 }
