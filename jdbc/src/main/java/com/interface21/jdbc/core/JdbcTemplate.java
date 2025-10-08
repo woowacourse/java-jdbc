@@ -1,17 +1,66 @@
 package com.interface21.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void update(final String sql, final Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            setParameters(pstmt, params);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setParameters(pstmt, params);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(mapper.apply(rs));
+                }
+                return results;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> T queryForObject(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
+        List<T> results = query(sql, mapper, params);
+
+        if (results.isEmpty()) {
+            throw new RuntimeException("조회 결과가 없습니다");
+        }
+        if (results.size() > 1) {
+            throw new RuntimeException("조회 결과가 2개 이상입니다");
+        }
+
+        return results.getFirst();
+    }
+
+    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
+        }
     }
 }
