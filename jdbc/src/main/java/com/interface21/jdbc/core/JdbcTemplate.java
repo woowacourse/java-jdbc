@@ -30,19 +30,25 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, params);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(mapper.apply(rs));
-                }
-                return results;
-            }
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, params)) {
+            return extractResults(rs, mapper);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt, Object... params) throws SQLException {
+        setParameters(pstmt, params);
+        return pstmt.executeQuery();
+    }
+
+    private <T> List<T> extractResults(ResultSet rs, Function<ResultSet, T> mapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        while (rs.next()) {
+            results.add(mapper.apply(rs));
+        }
+        return results;
     }
 
     public <T> T queryForObject(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
