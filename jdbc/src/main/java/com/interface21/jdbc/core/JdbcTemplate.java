@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,17 +27,20 @@ public class JdbcTemplate {
             setPreparedStatement(pstmt, args);
             ResultSet rs = pstmt.executeQuery();
 
-            if (rs.next()) {
-                return mapper.mapRow(rs, 1);
+            if (!rs.next()) {
+                throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다: " + sql);
             }
-            return null;
-
+            T result = mapper.mapRow(rs, 1);
+            if (rs.next()) {
+                throw new IncorrectResultSizeDataAccessException("조회 결과가 1건이 아닙니다: " + sql);
+            }
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException("DB 조회에 실패했습니다. :" + sql, e);
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> mapper) {
+    public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             final ResultSet rs = pstmt.executeQuery();
@@ -62,7 +66,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setPreparedStatement(PreparedStatement pstmt, Object[] args) {
+    private void setPreparedStatement(PreparedStatement pstmt, Object... args) {
         int paramCount = 0;
         try {
             paramCount = pstmt.getParameterMetaData().getParameterCount();
