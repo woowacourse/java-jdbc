@@ -37,7 +37,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.queryForList(sql,userRowMapper);
+        return jdbcTemplate.queryForList(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
@@ -50,15 +50,15 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 
-    class UserRowMapper implements RowMapper<User> {
+    static class UserRowMapper implements RowMapper<User> {
 
         @Override
         public User mapRow(final ResultSet resultSet) throws SQLException {
             return new User(
-                    resultSet.getLong(1),
-                    resultSet.getString(2),
-                    resultSet.getString(3),
-                    resultSet.getString(4));
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email"));
         }
     }
 }
