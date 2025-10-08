@@ -22,15 +22,7 @@ public class JdbcTemplate {
 
     @Deprecated
     public int update(String sql, Object... params) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindParams(pstmt, params);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        return update(sql, (pstmt) -> bindParams(pstmt, params));
     }
 
     public int update(String sql, PreparedStatementSetter setter) {
@@ -47,20 +39,7 @@ public class JdbcTemplate {
 
     @Deprecated
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        final List<T> result = new ArrayList<>();
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            try (final var rs = executeQuery(pstmt, params)) {
-                while (rs.next()) {
-                    result.add(rowMapper.apply(rs));
-                }
-                return result;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        return query(sql, (pstmt) -> bindParams(pstmt, params), rowMapper);
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
@@ -82,19 +61,7 @@ public class JdbcTemplate {
 
     @Deprecated
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            try (final var rs = executeQuery(pstmt, params)) {
-                if (rs.next()) {
-                    return rowMapper.apply(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        return queryForObject(sql, (pstmt) -> bindParams(pstmt, params), rowMapper);
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
@@ -107,16 +74,6 @@ public class JdbcTemplate {
                 }
                 return null;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
-    private ResultSet executeQuery(PreparedStatement pstmt, Object... params) {
-        try {
-            bindParams(pstmt, params);
-            return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
