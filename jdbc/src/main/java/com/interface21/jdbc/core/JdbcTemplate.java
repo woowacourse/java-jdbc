@@ -21,20 +21,46 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> action
+    ) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, parameters);
 
-            preparedStatement.executeUpdate();
-            log.info("query: {}", sql);
+            preparedStatementSetter.execute(preparedStatement);
+
+            return action.doInPreparedStatement(preparedStatement);
+
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final List<T> results = queryForList(sql, rowMapper, parameters);
+    public void update(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        execute(sql,
+                preparedStatementSetter, preparedStatement -> {
+                    preparedStatement.executeUpdate();
+                    logSql(sql);
+                    return null;
+                });
+    }
+
+    public <T> Optional<T> queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        final List<T> results = queryForList(sql, rowMapper, preparedStatementSetter);
 
         if (results.isEmpty()) {
             return Optional.empty();
@@ -45,29 +71,28 @@ public class JdbcTemplate {
         return Optional.of(results.getFirst());
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, parameters);
+    public <T> List<T> queryForList(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return execute(sql,
+                preparedStatementSetter, preparedStatement -> {
+                    try (final var queryResultSet = preparedStatement.executeQuery()) {
 
-            try (final var queryResultSet = preparedStatement.executeQuery()) {
-                log.info("query: {}", sql);
-                final var objectMappingResultSet = new ArrayList<T>();
+                        logSql(sql);
 
-                while (queryResultSet.next()) {
-                    objectMappingResultSet.add(rowMapper.mapRow(queryResultSet));
-                }
-                return objectMappingResultSet;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+                        final var objectMappingResultSet = new ArrayList<T>();
+
+                        while (queryResultSet.next()) {
+                            objectMappingResultSet.add(rowMapper.mapRow(queryResultSet));
+                        }
+                        return objectMappingResultSet;
+                    }
+                });
     }
 
-    private void setParameters(final PreparedStatement preparedStatement, final Object[] parameters)
-            throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            preparedStatement.setObject(i + 1, parameters[i]);
-        }
+    private void logSql(String sql) {
+        log.info("query: {}", sql);
     }
 }
