@@ -35,7 +35,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return null;
+        return jdbcTemplate.executeSelectAll(sql, null, User.class);
     }
 
     public User findById(final Long id) {
@@ -47,7 +47,8 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        Object[] params = {account};
+        return jdbcTemplate.executeSelect(sql, params, User.class);
     }
 }

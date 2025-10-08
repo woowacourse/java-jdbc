@@ -6,7 +6,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +57,31 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> executeSelectAll(String sql, Object[] params, Class<T> clazz) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            setParams(pstmt, params);
+            ResultSet rs = pstmt.executeQuery();
+
+            List<T> results = new ArrayList<>();
+
+            while (rs.next()) {
+                results.add(makeInstance(rs, clazz));
+                return results;
+            }
+            return results;
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void setParams(PreparedStatement pstmt, Object[] params) throws SQLException {
+        if (params == null || params.length == 0) {
+            return;
+        }
+
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
