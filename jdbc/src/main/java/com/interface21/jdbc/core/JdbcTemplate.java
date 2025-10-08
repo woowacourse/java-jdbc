@@ -5,70 +5,84 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class JdbcTemplate {
+public abstract class JdbcTemplate<T> {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String NAMED_PARAMETER_REGEX = ":([a-zA-Z]*)";
 
-    private final DataSource dataSource;
+    public void update(final T object) {
+        final String sql = createQuery();
 
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+        final Map<String, Object> params = new HashMap<>();
+        setValues(object, params);
 
-    public void update(final String sql, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setParams(pstmt, args);
+        final NamedParameterParsedSql result = processNamedParameters(sql, params);
+        final String executableSql = result.executableSql();
+        final Object[] args = result.args();
+
+        executeWithPreparedStatement(executableSql, args, pstmt -> {
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            close(pstmt);
-            close(conn);
-        }
+            return null;
+        });
     }
 
-    public <T> T queryForObject(final String sql, final ResultSetMapper<T> mapper, final Object... args) {
-        List<T> results = query(sql, mapper, args);
+    public <R> List<R> query(final String sql, final RowMapper<R> rowMapper) {
+        return query(sql, rowMapper, new HashMap<>());
+    }
+
+    public <R> List<R> query(final String sql, final RowMapper<R> rowMapper, final Map<String, Object> params) {
+        final NamedParameterParsedSql result = processNamedParameters(sql, params);
+        final String executableSql = result.executableSql();
+        final Object[] args = result.args();
+
+        return executeWithPreparedStatement(executableSql, args, pstmt -> {
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return getQueryResult(rowMapper, rs);
+            }
+        });
+    }
+
+    public <R> R queryForObject(final String sql, final RowMapper<R> rowMapper, final Map<String, Object> params) {
+        final List<R> results = query(sql, rowMapper, params);
         if (results.isEmpty()) {
             return null;
-        }
-        if (results.size() > 1) {
-            throw new RuntimeException("결과값이 1개보다 많습니다. 결과 크기: " + results.size());
         }
         return results.get(0);
     }
 
-    public <T> List<T> query(final String sql, final ResultSetMapper<T> mapper, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setParams(pstmt, args);
-            rs = pstmt.executeQuery();
+    protected abstract String createQuery();
 
-            log.debug("query : {}", sql);
+    protected abstract void setValues(T object, Map<String, Object> params);
 
-            return getQueryResult(mapper, rs);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            close(rs);
-            close(pstmt);
-            close(conn);
+    protected abstract DataSource getDataSource();
+
+    private NamedParameterParsedSql processNamedParameters(final String sql, final Map<String, Object> params) {
+        if (params == null) {
+            return new NamedParameterParsedSql(sql, null);
         }
+
+        final List<String> parameterNames = extractParameterNames(sql);
+        final String executableSql = sql.replaceAll(NAMED_PARAMETER_REGEX, "?");
+        final Object[] args = parameterNames.stream()
+                .map(params::get)
+                .toArray();
+        return new NamedParameterParsedSql(executableSql, args);
+    }
+
+    private List<String> extractParameterNames(final String sql) {
+        final Pattern pattern = Pattern.compile(NAMED_PARAMETER_REGEX);
+        final Matcher matcher = pattern.matcher(sql);
+        final List<String> names = new ArrayList<>();
+        while (matcher.find()) {
+            names.add(matcher.group(1));
+        }
+        return names;
     }
 
     private void setParams(final PreparedStatement pstmt, final Object... args) throws SQLException {
@@ -77,32 +91,23 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getQueryResult(ResultSetMapper<T> mapper, ResultSet rs) throws SQLException {
-        List<T> results = new ArrayList<>();
+    private <R> R executeWithPreparedStatement(final String sql, final Object[] args, final SqlExecutor<R> executor) {
+        try (final Connection conn = getDataSource().getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (args != null) {
+                setParams(pstmt, args);
+            }
+            return executor.execute(pstmt);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <R> List<R> getQueryResult(final RowMapper<R> mapper, final ResultSet rs) throws SQLException {
+        final List<R> results = new ArrayList<>();
         while (rs.next()) {
             results.add(mapper.mapRow(rs));
         }
         return results;
-    }
-
-    private static void close(final Connection conn) {
-        try {
-            if (conn != null) conn.close();
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private static void close(final PreparedStatement pstmt) {
-        try {
-            if (pstmt != null) pstmt.close();
-        } catch (SQLException ignored) {
-        }
-    }
-
-    private static void close(final ResultSet rs) {
-        try {
-            if (rs != null) rs.close();
-        } catch (SQLException ignored) {
-        }
     }
 }

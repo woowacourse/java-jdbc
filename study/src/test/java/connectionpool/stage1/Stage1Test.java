@@ -29,7 +29,7 @@ class Stage1Test {
     @Test
     void testJdbcConnectionPool() throws SQLException {
         final JdbcConnectionPool jdbcConnectionPool = JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
-
+        System.out.println(jdbcConnectionPool.getMaxConnections());
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
