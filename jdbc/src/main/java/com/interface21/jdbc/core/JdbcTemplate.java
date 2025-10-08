@@ -40,15 +40,15 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
+                Connection connection = dataSource.getConnection();
+                PreparedStatement preStmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
+                preStmt.setObject(i + 1, params[i]);
             }
 
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = preStmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
