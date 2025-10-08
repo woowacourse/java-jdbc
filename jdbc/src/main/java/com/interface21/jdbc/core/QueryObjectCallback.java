@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,7 +17,7 @@ public class QueryObjectCallback<T> implements JdbcCallback<T> {
             if (rs.next()) {
                 return rowMapper.call(rs);
             }
-            throw new DataAccessException("No data found");
+            throw new IncorrectResultSizeDataAccessException("Data size is incorrect");
         }
     }
 }
