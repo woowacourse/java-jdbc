@@ -25,16 +25,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> selectList(final String sql, final RowMapper<T> rowMapper, final Object... values) {
-        return execute(sql, pstmt -> {
-            final List<T> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    T result = rowMapper.call(rs);
-                    results.add(result);
-                }
-            }
-            return results;
-        }, values);
+        return execute(sql, new QueryListCallback<>(rowMapper), values);
     }
 
     public void update(final String sql, final Object... values) {
