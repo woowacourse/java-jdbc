@@ -29,7 +29,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... values) {
-        execute(sql, PreparedStatement::executeUpdate, values);
+        execute(sql, new UpdateCallback(), values);
     }
 
     public <T> T execute(String sql, JdbcCallback<T> callback, PreparedStatementSetter pss) {
