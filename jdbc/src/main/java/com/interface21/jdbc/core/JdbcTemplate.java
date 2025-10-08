@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final PositionalParameterPreparedStatementSetter DEFAULT_PREPARED_STATEMENT_SETTER = new PositionalParameterPreparedStatementSetter();
 
     private final DataSource dataSource;
 
@@ -20,67 +22,150 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setPreparedStatementParameters(preparedStatement, parameters);
-            log.debug("query : {}", sql);
-
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    /**
+     * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL를 실행합니다.
+     *
+     * @param sql        실행할 SQL
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     */
+    public int update(final String sql, final Object... parameters) {
+        return update(sql, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setPreparedStatementParameters(preparedStatement, parameters);
-            log.debug("query : {}", sql);
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet, 1);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public int update(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return execute(
+                sql,
+                preparedStatementSetter,
+                preparedStatement -> executeUpdate(preparedStatement)
+        );
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setPreparedStatementParameters(preparedStatement, parameters);
-            log.debug("query : {}", sql);
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                int rowNum = 1;
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, rowNum++));
-                }
-                return results;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void setPreparedStatementParameters(
-            final PreparedStatement preparedStatement,
-            final Object... parameters
+    private int executeUpdate(
+            final PreparedStatement preparedStatement
     ) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            preparedStatement.setObject(i + 1, parameters[i]);
+        return preparedStatement.executeUpdate();
+    }
+
+    /**
+     * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 단일 결과를 RowMapper로 매핑하여 반환합니다.
+     *
+     * @param sql        실행할 SQL 쿼리
+     * @param rowMapper  결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     * @param <T>        매핑된 결과 객체의 타입
+     */
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return queryForObject(
+                sql,
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters),
+                rowMapper
+        );
+    }
+
+    public <T> T queryForObject(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final RowMapper<T> rowMapper
+    ) {
+        return execute(
+                sql,
+                preparedStatementSetter,
+                preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper)
+        );
+    }
+
+    private <T> T executeQueryAndMapSingleResult(
+            final PreparedStatement preparedStatement,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            return mapSingleResult(resultSet, rowMapper);
         }
+    }
+
+    private <T> T mapSingleResult(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = mapResults(resultSet, rowMapper);
+        if (results.isEmpty()) {
+            throw new DataAccessException("Not found result");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("Multiple results");
+        }
+        return results.getFirst();
+    }
+
+    /**
+     * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 결과를 RowMapper로 매핑하여 List로 반환합니다.
+     *
+     * @param sql        실행할 SQL 쿼리
+     * @param rowMapper  결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     * @param <T>        매핑된 결과 객체의 타입
+     */
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return query(
+                sql,
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters),
+                rowMapper
+        );
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final RowMapper<T> rowMapper
+    ) {
+        return execute(
+                sql,
+                preparedStatementSetter,
+                preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper)
+        );
+    }
+
+    private <T> List<T> executeQueryAndMapResults(
+            final PreparedStatement preparedStatement,
+            final RowMapper<T> rowMapper
+    ) throws SQLException {
+        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+            return mapResults(resultSet, rowMapper);
+        }
+    }
+
+    private <T> List<T> mapResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        int rowNum = 1;
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet, rowNum++));
+        }
+        return results;
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> preparedStatementCallback
+    ) {
+        log.debug("query : {}", sql);
+        try (
+                final Connection connection = dataSource.getConnection();
+                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            return doExecute(preparedStatement, preparedStatementSetter, preparedStatementCallback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T doExecute(
+            final PreparedStatement preparedStatement,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> preparedStatementCallback
+    ) throws SQLException {
+        preparedStatementSetter.setParameters(preparedStatement);
+        return preparedStatementCallback.doInPreparedStatement(preparedStatement);
     }
 }
