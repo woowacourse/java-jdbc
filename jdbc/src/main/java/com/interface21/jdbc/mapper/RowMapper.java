@@ -1,9 +1,8 @@
 package com.interface21.jdbc.mapper;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public interface Mapper {
+public interface RowMapper {
 
     <T> T map(ResultSet rs, Class<T> clazz) throws Exception;
 }

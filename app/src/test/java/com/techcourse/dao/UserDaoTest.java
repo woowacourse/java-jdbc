@@ -3,8 +3,8 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.mapper.Mapper;
-import com.interface21.jdbc.mapper.ReflectionResultSetMapper;
+import com.interface21.jdbc.mapper.RowMapper;
+import com.interface21.jdbc.mapper.ReflectionResultSetRowMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -20,8 +20,8 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         DataSource dataSource = DataSourceConfig.getInstance();
-        Mapper mapper = new ReflectionResultSetMapper();
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource, mapper);
+        RowMapper rowMapper = new ReflectionResultSetRowMapper();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource, rowMapper);
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
