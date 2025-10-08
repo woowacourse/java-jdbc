@@ -33,7 +33,7 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> Optional<T> queryForObject(
+    public <T> T queryForObject(
             final String sql,
             final QueryResultMapper<T> mapper,
             final Object... params
@@ -42,7 +42,7 @@ public class JdbcTemplate {
                 (pstmt) -> {
                     return mapQueryResult((resultSet -> {
                         if (resultSet.next()) {
-                            return Optional.of(mapper.map(resultSet));
+                            return mapper.map(resultSet);
                         } else {
                             throw new IllegalStateException("Query Result Not Found");
                         }
