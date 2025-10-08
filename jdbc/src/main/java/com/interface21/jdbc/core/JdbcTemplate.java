@@ -34,27 +34,43 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Function<ResultSet, T> rowMapper, Object... params) {
-        final List<T> results = query(sql, rowMapper, params);
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.getFirst();
-    }
-
     public <T> List<T> query(String sql, Function<ResultSet, T> rowMapper, Object... params) {
-        final var result = new ArrayList<T>();
+        final List<T> result = new ArrayList<>();
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
-            bindParams(pstmt, params);
-            try (final var rs = pstmt.executeQuery()) {
+            try (final var rs = executeQuery(pstmt, params)) {
                 while (rs.next()) {
                     result.add(rowMapper.apply(rs));
                 }
+                return result;
             }
-            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    public <T> T queryForObject(String sql, Function<ResultSet, T> rowMapper, Object... params) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            try (final var rs = executeQuery(pstmt, params)) {
+                if (rs.next()) {
+                    return rowMapper.apply(rs);
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt, Object... params) {
+        try {
+            bindParams(pstmt, params);
+            return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
