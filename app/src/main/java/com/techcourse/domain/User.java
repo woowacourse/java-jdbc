@@ -1,5 +1,7 @@
 package com.techcourse.domain;
 
+import java.sql.Connection;
+
 public class User {
 
     private Long id;

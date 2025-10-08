@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
@@ -24,14 +25,12 @@ public class UserHistoryDao {
         this.dataSource = null;
     }
 
-    public void log(final UserHistory userHistory) {
+    public void log(final UserHistory userHistory, Connection connection) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = connection.prepareStatement(sql);
 
             log.debug("query : {}", sql);
 
@@ -44,19 +43,14 @@ public class UserHistoryDao {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         } finally {
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
