@@ -28,7 +28,13 @@ public class JdbcTemplate {
         final Object... args
     ) {
         PreparedStatementFunction<T> pstmtFunction = pstmt -> {
-            ResultSet resultSet = pstmt.executeQuery();
+            return mapSingleResult(rowMapper, pstmt);
+        };
+        return execute(sql, pstmtFunction, args);
+    }
+
+    private <T> T mapSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
             if (!resultSet.next()) { // 쿼리 결과 없음
                 return null;
             }
@@ -37,20 +43,24 @@ public class JdbcTemplate {
                 throw new IllegalArgumentException("query returns more than one row");
             }
             return returnValue;
-        };
-        return execute(sql, pstmtFunction, args);
+        }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         PreparedStatementFunction<List<T>> pstmtFunction = pstmt -> {
-            ResultSet resultSet = pstmt.executeQuery();
+            return mapResults(rowMapper, pstmt);
+        };
+        return execute(sql, pstmtFunction, args);
+    }
+
+    private <T> List<T> mapResults(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
             List<T> list = new ArrayList<>();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
             }
             return list;
-        };
-        return execute(sql, pstmtFunction, args);
+        }
     }
 
     public int update(String sql, Object... args) {
