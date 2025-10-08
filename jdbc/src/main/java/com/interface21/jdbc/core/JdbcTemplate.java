@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.QueryResultMapper;
 import com.interface21.jdbc.SqlExecution;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ public class JdbcTemplate {
             return execution.apply(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
         }
     }
 
