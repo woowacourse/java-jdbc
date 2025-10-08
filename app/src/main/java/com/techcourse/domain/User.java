@@ -2,12 +2,12 @@ package com.techcourse.domain;
 
 public class User {
 
-    private long id;
+    private Long id;
     private final String account;
     private final String email;
     private String password;
 
-    public User(Long id, String account, String email, String password) {
+    public User(long id, String account, String email, String password) {
         this.id = id;
         this.account = account;
         this.email = email;
