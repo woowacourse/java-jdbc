@@ -27,14 +27,18 @@ public class JdbcTemplate {
                 PreparedStatement preStmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < params.length; i++) {
-                preStmt.setObject(i + 1, params[i]);
-            }
+            initParameters(params, preStmt);
             preStmt.executeUpdate();
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private void initParameters(Object[] params, PreparedStatement preStmt) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            preStmt.setObject(i + 1, params[i]);
         }
     }
 
@@ -44,10 +48,8 @@ public class JdbcTemplate {
                 PreparedStatement preStmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            for (int i = 0; i < params.length; i++) {
-                preStmt.setObject(i + 1, params[i]);
-            }
-            return getQueryResult(rowMapper, preStmt);
+            initParameters(params, preStmt);
+            return executeQuery(rowMapper, preStmt);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -55,7 +57,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> getQueryResult(RowMapper<T> rowMapper, PreparedStatement preStmt) throws SQLException {
+    private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement preStmt) throws SQLException {
         try (ResultSet rs = preStmt.executeQuery()) {
             List<T> results = new ArrayList<>();
             while (rs.next()) {
