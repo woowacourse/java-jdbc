@@ -5,11 +5,12 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.util.Arrays;
 
-public class ResultSetMapper {
+public class ReflectionResultSetMapper implements Mapper {
 
     // Reflection을 활용한 객체 매핑.
     // 클래스의 필드 순서와 생성자의 파라미터 순서가 다르면 작동 안함.
-    public static <T> T map(ResultSet rs, Class<T> clazz) throws Exception {
+    @Override
+    public <T> T map(ResultSet rs, Class<T> clazz) throws Exception {
         Field[] fields = clazz.getDeclaredFields();
         Class<?>[] fieldTypes = Arrays.stream(fields)
                 .map(Field::getType)

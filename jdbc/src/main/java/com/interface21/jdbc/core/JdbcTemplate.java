@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
-import static com.interface21.jdbc.mapper.ResultSetMapper.map;
-
+import com.interface21.jdbc.mapper.Mapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,9 +16,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final Mapper mapper;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(final DataSource dataSource, final Mapper mapper) {
         this.dataSource = dataSource;
+        this.mapper = mapper;
     }
 
     // try - with - resources 로 자원 반환을 알아서 하게 설정
@@ -47,7 +48,7 @@ public class JdbcTemplate {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return map(rs, clazz);
+                return mapper.map(rs, clazz);
             }
             return null;
 
@@ -66,7 +67,7 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
 
             while (rs.next()) {
-                results.add(map(rs, clazz));
+                results.add(mapper.map(rs, clazz));
             }
             return results;
 
