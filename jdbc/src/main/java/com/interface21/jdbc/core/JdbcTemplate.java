@@ -44,7 +44,7 @@ public class JdbcTemplate {
                         if (resultSet.next()) {
                             return Optional.of(mapper.map(resultSet));
                         }
-                        return Optional.empty();
+                        throw new IllegalStateException("Query Result Not Found");
                     }), pstmt);
                 },
                 sql,
@@ -89,6 +89,10 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new CannotGetJdbcConnectionException(e.getMessage(), e);
         }
+        catch (final IllegalStateException e) {
+            log.error(e.getMessage(), e);
+            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+        }
     }
 
     private <T> T mapQueryResult(final QueryResultMapper<T> queryResultMapping, final PreparedStatement pstmt) throws SQLException{
@@ -100,6 +104,11 @@ public class JdbcTemplate {
     private void setParameters(final Object[] params, final PreparedStatement pstmt) throws SQLException {
         if (params.length == 0) {
             return;
+        }
+
+        int parameterCount = pstmt.getParameterMetaData().getParameterCount();
+        if (params.length != parameterCount) {
+            throw new IllegalStateException("PreparedStatement parameter not matches");
         }
 
         for (int idx = 1; idx <= params.length; idx++) {
