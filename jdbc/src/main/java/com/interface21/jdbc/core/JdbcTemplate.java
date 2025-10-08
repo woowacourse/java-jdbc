@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -24,7 +23,6 @@ public class JdbcTemplate {
     public int update(String sql, Object... params) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
             bindParams(pstmt, params);
             return pstmt.executeUpdate();
@@ -34,7 +32,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, Function<ResultSet, T> rowMapper, Object... params) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         final List<T> result = new ArrayList<>();
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
@@ -51,7 +49,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, Function<ResultSet, T> rowMapper, Object... params) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);

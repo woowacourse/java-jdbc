@@ -1,15 +1,13 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.function.Function;
 
 public class UserDao {
 
@@ -37,31 +35,26 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, getUserRowMapper());
+        return jdbcTemplate.query(sql, getRowMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), id);
+        return jdbcTemplate.queryForObject(sql, getRowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, getUserRowMapper(), account);
+        return jdbcTemplate.queryForObject(sql, getRowMapper(), account);
     }
 
-    private static Function<ResultSet, User> getUserRowMapper() {
+    private static RowMapper<User> getRowMapper() {
         return (rs) -> {
-            try {
-                final long id = rs.getLong("id");
-                final String account = rs.getString("account");
-                final String password = rs.getString("password");
-                final String email = rs.getString("email");
-                return new User(id, account, password, email);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
+            final long id = rs.getLong("id");
+            final String account = rs.getString("account");
+            final String password = rs.getString("password");
+            final String email = rs.getString("email");
+            return new User(id, account, password, email);
         };
     }
 }
