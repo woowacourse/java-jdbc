@@ -26,32 +26,28 @@ public class JdbcTemplate {
     }
 
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
-        }, params);
+        return execute(sql,
+                pstmt -> executeQuery(sql,
+                        pstmt,
+                        rs -> {
+                            if (rs.next()) {
+                                return rowMapper.mapRow(rs);
+                            }
+                            return null;
+                }), params);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        log.debug("query : {}", sql);
-                        List<T> results = new ArrayList<>();
-                        while (rs.next()) {
-                            results.add(rowMapper.mapRow(rs));
-                        }
-                        return results;
-                    }
-                }
-                , params);
+        return execute(sql,
+                pstmt -> executeQuery(sql,
+                            pstmt,
+                            rs -> {
+                                List<T> results = new ArrayList<>();
+                                while (rs.next()) {
+                                    results.add(rowMapper.mapRow(rs));
+                                }
+                                return results;
+                }), params);
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> actions, Object... params) {
@@ -59,6 +55,16 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatement(pstmt, params);
             return actions.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeQuery(String sql, PreparedStatement pstmt, ResultSetExtractor<T> extractor) {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            log.debug("query : {}", sql);
+            return extractor.extractData(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
