@@ -21,11 +21,15 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
+        execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(preparedStatement, args);
-            preparedStatement.executeUpdate();
+            return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("query 실패 {}", sql, e);
             throw new JdbcFailException(e);
@@ -39,10 +43,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(preparedStatement, args);
+        PreparedStatementCallback<List<T>> callback = preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 int rowNum = 0;
@@ -51,10 +52,8 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error("SQL query failed. query: {}", sql, e);
-            throw new JdbcFailException(e);
-        }
+        };
+        return execute(sql, callback, args);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
