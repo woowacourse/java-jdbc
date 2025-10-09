@@ -29,26 +29,65 @@ public class JdbcTemplate {
         return execute(sql, pstmtSetter, PreparedStatement::executeUpdate);
     }
 
+    public int update(Connection conn, String sql, Object... args) {
+        return update(conn, sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(Connection conn, String sql, PreparedStatementSetter pstmtSetter) {
+        return execute(conn, sql, pstmtSetter, PreparedStatement::executeUpdate);
+    }
+
+    public <T> T selectOne(Connection conn, String sql, ResultMapper<T> resultMapper, Object... args) {
+        return selectOne(conn, sql, resultMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> T selectOne(
+            Connection conn,
+            String sql,
+            ResultMapper<T> resultMapper,
+            PreparedStatementSetter pstmtSetter
+    ) {
+        return execute(
+                conn, sql, pstmtSetter, stmt -> {
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (!rs.next()) {
+                            throw new DataAccessException("Expected 1 result, but found 0");
+                        }
+
+                        T result = resultMapper.mapResult(rs);
+
+                        if (rs.next()) {
+                            throw new DataAccessException("Expected 1 result, but found more than 1");
+                        }
+
+                        return result;
+                    }
+                }
+        );
+    }
+
     public <T> T selectOne(String sql, ResultMapper<T> resultMapper, Object... args) {
         return selectOne(sql, resultMapper, new ArgumentPreparedStatementSetter(args));
     }
 
     public <T> T selectOne(String sql, ResultMapper<T> resultMapper, PreparedStatementSetter pstmtSetter) {
-        return execute(sql, pstmtSetter, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    throw new DataAccessException("Expected 1 result, but found 0");
+        return execute(
+                sql, pstmtSetter, pstmt -> {
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (!rs.next()) {
+                            throw new DataAccessException("Expected 1 result, but found 0");
+                        }
+
+                        T result = resultMapper.mapResult(rs);
+
+                        if (rs.next()) {
+                            throw new DataAccessException("Expected 1 result, but found more than 1");
+                        }
+
+                        return result;
+                    }
                 }
-
-                T result = resultMapper.mapResult(rs);
-
-                if (rs.next()) {
-                    throw new DataAccessException("Expected 1 result, but found more than 1");
-                }
-
-                return result;
-            }
-        });
+        );
     }
 
     public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, Object... args) {
@@ -56,22 +95,39 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> selectList(String sql, ResultMapper<T> resultMapper, PreparedStatementSetter pstmtSetter) {
-        return execute(sql, pstmtSetter, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
+        return execute(
+                sql, pstmtSetter, pstmt -> {
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        List<T> results = new ArrayList<>();
 
-                while (rs.next()) {
-                    results.add(resultMapper.mapResult(rs));
+                        while (rs.next()) {
+                            results.add(resultMapper.mapResult(rs));
+                        }
+
+                        return results;
+                    }
                 }
-
-                return results;
-            }
-        });
+        );
     }
 
     private <T> T execute(String sql, PreparedStatementSetter pstmtSetter, StatementExecutor<T> executor) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmtSetter.setValues(pstmt);
+            return executor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(
+            Connection conn,
+            String sql,
+            PreparedStatementSetter pstmtSetter,
+            StatementExecutor<T> executor
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
             return executor.execute(pstmt);
         } catch (SQLException e) {
