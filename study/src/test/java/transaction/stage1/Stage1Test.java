@@ -58,10 +58,12 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | -
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
+     *
+     * H2 DB에서는 격리수준이 낮더라도 dirtyReading이 발생하지 않으므로 테스트 다 통과함
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +83,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -111,10 +113,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +132,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -187,7 +189,8 @@ class Stage1Test {
         mysql.start();
         setUp(createMySQLDataSource(mysql));
 
-        // 테스트 전에 필요한 데이터를 추가한다.
+        // 테스트 전에 ㅊ필요한 데이터를 추가한다.
+        // 테스트 전에 ㅊ필요한 데이터를 추가한다.
         userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
 
         // db에 새로운 연결(사용자A)을 받아와서
@@ -197,7 +200,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -239,7 +242,9 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        final var jdbcUrl = container.getJdbcUrl();
+        final var separator = jdbcUrl.contains("?") ? "&" : "?";
+        config.setJdbcUrl(jdbcUrl + separator + "allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
