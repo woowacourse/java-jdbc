@@ -1,9 +1,19 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.exception.ConnectionCloseException;
+import com.interface21.jdbc.exception.ParameterBindingException;
+import com.interface21.jdbc.exception.QueryExecutionException;
+import com.interface21.jdbc.exception.ResultSetProcessingException;
+import com.interface21.jdbc.exception.RowMappingException;
+import com.interface21.jdbc.exception.StatementPreparationException;
+import com.interface21.jdbc.exception.UpdateExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,14 +36,14 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter setter) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        try (final var conn = getConnection();
+             final var pstmt = getPreparedStatement(sql, conn)) {
             log.debug("query : {}", sql);
-            setter.accept(pstmt);
-            return pstmt.executeUpdate();
+            bindParams(sql, pstmt, setter);
+            return executeUpdate(sql, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new ConnectionCloseException(e, sql);
         }
     }
 
@@ -44,18 +54,22 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         final List<T> result = new ArrayList<>();
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+
+        try (final var conn = getConnection();
+             final var pstmt = getPreparedStatement(sql, conn)) {
             log.debug("query : {}", sql);
-            try (final var rs = executeQuery(pstmt, setter)) {
+            try (final var rs = executeQuery(sql, pstmt, setter)) {
                 while (rs.next()) {
-                    result.add(rowMapper.apply(rs));
+                    result.add(mapRow(rowMapper, rs, sql));
                 }
                 return result;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new ResultSetProcessingException(e, sql);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new ConnectionCloseException(e, sql);
         }
     }
 
@@ -65,28 +79,76 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        try (final var conn = getConnection();
+             final var pstmt = getPreparedStatement(sql, conn)) {
             log.debug("query : {}", sql);
-            try (final var rs = executeQuery(pstmt, setter)) {
+            try (final var rs = executeQuery(sql, pstmt, setter)) {
                 if (rs.next()) {
-                    return rowMapper.apply(rs);
+                    return mapRow(rowMapper, rs, sql);
                 }
                 return null;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                throw new ResultSetProcessingException(e, sql);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new ConnectionCloseException(e, sql);
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt, PreparedStatementSetter setter) {
+    private Connection getConnection() {
         try {
-            setter.accept(pstmt);
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(String sql, Connection conn) {
+        try {
+            return conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new StatementPreparationException(e, sql);
+        }
+    }
+
+    private ResultSet executeQuery(String sql, PreparedStatement pstmt, PreparedStatementSetter setter) {
+        try {
+            bindParams(sql, pstmt, setter);
             return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
+            throw new QueryExecutionException(e, sql);
+        }
+    }
+
+    private int executeUpdate(String sql, PreparedStatement pstmt) {
+        try {
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new UpdateExecutionException(e, sql);
+        }
+    }
+
+    private <T> T mapRow(RowMapper<T> rowMapper, ResultSet rs, String sql) {
+        try {
+            return rowMapper.apply(rs);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RowMappingException(e, sql);
+        }
+    }
+
+    private void bindParams(String sql, PreparedStatement pstmt, PreparedStatementSetter setter) {
+        try {
+            setter.accept(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new ParameterBindingException(e, sql);
         }
     }
 
