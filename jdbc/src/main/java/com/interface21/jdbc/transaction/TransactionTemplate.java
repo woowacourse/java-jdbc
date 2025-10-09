@@ -1,5 +1,6 @@
 package com.interface21.jdbc.transaction;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -43,7 +44,7 @@ public class TransactionTemplate {
                 log.error("Rollback failed: {}", ex.getMessage());
             }
         }
-        throw new RuntimeException(e);
+        throw new DataAccessException(e);
     }
 
     private void closeConnection(Connection connectionToClose) {
