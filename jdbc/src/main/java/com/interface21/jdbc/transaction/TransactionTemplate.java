@@ -17,8 +17,9 @@ public class TransactionTemplate {
     }
 
     public void execute(final TransactionCallback callback) {
+        Connection connection = null;
         try {
-            Connection connection = dataSource.getConnection();
+            connection = dataSource.getConnection();
             ConnectionHolder.setConnection(connection);
             connection.setAutoCommit(false);
 
@@ -26,12 +27,10 @@ public class TransactionTemplate {
 
             connection.commit();
         } catch (Exception e) {
-            Connection connectionToRollback = ConnectionHolder.getConnection();
-            rollback(e, connectionToRollback);
-            throw new DataAccessException();
+            rollback(e, connection);
+            throw new DataAccessException(e);
         } finally {
-            Connection connectionToClose = ConnectionHolder.getConnection();
-            closeConnection(connectionToClose);
+            closeConnection(connection);
         }
     }
 
@@ -39,20 +38,21 @@ public class TransactionTemplate {
         if (connectionToRollback != null) {
             try {
                 connectionToRollback.rollback();
-            } catch (SQLException ex) {
-                log.error("Rollback failed: {}", ex.getMessage());
+                log.error("Transaction rolled back due to: ", e);
+            } catch (SQLException rollbackException) {
+                log.error("Failed to rollback transaction", rollbackException);
+                e.addSuppressed(rollbackException);
             }
         }
-        throw new DataAccessException(e);
     }
 
     private void closeConnection(Connection connectionToClose) {
+        ConnectionHolder.clear();
         if (connectionToClose != null) {
-            ConnectionHolder.clear();
             try {
                 connectionToClose.close();
-            } catch (SQLException ex) {
-                log.error("close connection failed: {}", ex.getMessage());
+            } catch (SQLException closeException) {
+                log.error("Failed to close connection", closeException);
             }
         }
     }
