@@ -5,7 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
 
-// 하나의 트랜잭션 = 하나의 Connection을 보장해주는 역할
+/**
+ * 하나의 트랜잭션 = 하나의 Connection을 보장해주는 역할
+ * @see <a href="https://github.com/spring-projects/spring-framework/blob/main/spring-tx/src/main/java/org/springframework/transaction/support/TransactionSynchronizationManager.java">Spring TransactionSynchronizationManager</a>
+ */
 public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();

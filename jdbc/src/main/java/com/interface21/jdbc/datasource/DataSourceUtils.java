@@ -6,7 +6,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-// 4단계 미션에서 사용할 것
+// DataSource의 Connection 관리를 도와주는 유틸 클래스
 public abstract class DataSourceUtils {
 
     private DataSourceUtils() {
@@ -29,6 +29,7 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         Connection transactionConnection = TransactionSynchronizationManager.getResource(dataSource);
+        // 트랜잭션이 진행 중인 커넥션은 해제하지 않음
         if (transactionConnection != null && transactionConnection == connection) {
             return;
         }
