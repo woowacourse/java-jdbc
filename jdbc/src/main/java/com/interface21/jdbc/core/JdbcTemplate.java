@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,12 +37,33 @@ public class JdbcTemplate {
         return executeUpdate(sql, pstmtSetter);
     }
 
+    // 가변 인자 버전 (+ connection)
+    public int executeUpdate(
+            final Connection connection, final String sql, final Object... params
+    ) {
+        var pstmtSetter = ofParams(params);
+        return executeUpdate(connection, sql, pstmtSetter);
+    }
+
     // PreparedStatementSetter 버전
     public int executeUpdate(
             final String sql, final PreparedStatementSetter pstmtSetter
     ) {
         try (var connection = dataSource.getConnection();
              var pstmt = connection.prepareStatement(sql)) {
+
+            pstmtSetter.setValues(pstmt);
+            return pstmt.executeUpdate(); // 실행 후 영향을 받은 row 개수 반환
+        } catch (SQLException e) {
+            throw new DataAccessException("Execute Update Error: " + sql, e);
+        }
+    }
+
+    // PreparedStatementSetter 버전 (+ connection)
+    public int executeUpdate(
+            final Connection connection, final String sql, final PreparedStatementSetter pstmtSetter
+    ) {
+        try (var pstmt = connection.prepareStatement(sql)) {
 
             pstmtSetter.setValues(pstmt);
             return pstmt.executeUpdate(); // 실행 후 영향을 받은 row 개수 반환
