@@ -54,3 +54,18 @@
         - 예외처리
         - 트랜젝션 관리
         - Connection, Statement, ResultSet 객체 close
+
+## 🚀 3단계 - Transaction 적용하기
+
+- [ ] User의 비밀번호를 변경할 수 있는 기능을 추가한다.
+    - 해당 기능은 UserService 클래스의 changePassword() 메서드에 구현되어있다.
+    - 비밀번호를 변경하면 누가, 언제, 어떤 비밀번호로 바꿨는지 이력을 남겨야 한다.
+    - changePassword() 메서드는 비밀번호 변경과 이력을 남기도록 구현되어 있다.
+
+    - 하지만 changePassword() 메서드는 원자성(Atomic)이 보장되지 않는다.
+    - 중간에 예외가 발생해서 작업을 완료할 수 없다면 작업을 원래 상태로 되돌려야 한다.
+    - 즉, 비밀번호를 바꾸고 이력을 남기는 도중에 에러가 발생하면 원래 비밀번호로 돌려놔야 한다.
+    - 원자성을 보장하기 위해 트랜잭션을 적용해야 한다.
+
+    - 현재 userDao와 userHistoryDao는 각각 Connection 객체를 만들기 때문에 개별적으로 트랜잭션이 생성된다.
+    - userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경해야 한다.
