@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -19,6 +21,12 @@ class UserDaoTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void clean() {
+        var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("TRUNCATE TABLE users RESTART IDENTITY"); // 시퀀스 초기화
     }
 
     @Test
