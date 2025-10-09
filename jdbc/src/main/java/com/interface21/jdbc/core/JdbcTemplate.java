@@ -42,7 +42,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... args) {
         PreparedStatementCallback<List<T>> callback = preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -57,9 +57,12 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
+        List<T> results = queryForObjects(sql, rowMapper, args);
         if (results.isEmpty()) {
-            return null;
+            throw new JdbcFailException("일치하는 결과가 없습니다. ");
+        }
+        if (results.size() > 1) {
+            throw new JdbcFailException("일치하는 결과가 1을 초과합니다.");
         }
         return results.get(0);
     }
