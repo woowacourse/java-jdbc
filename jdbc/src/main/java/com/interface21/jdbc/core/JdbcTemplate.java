@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,7 +26,7 @@ public class JdbcTemplate {
             setParameters(pstmt, params);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
@@ -34,7 +36,9 @@ public class JdbcTemplate {
              ResultSet rs = executeQuery(pstmt, params)) {
             return extractResults(rs, mapper);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RowMappingException("ResultSet을 객체로 매핑하는 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
@@ -55,10 +59,10 @@ public class JdbcTemplate {
         List<T> results = query(sql, mapper, params);
 
         if (results.isEmpty()) {
-            throw new RuntimeException("조회 결과가 없습니다");
+            throw new InvalidResultException("조회 결과가 없습니다");
         }
         if (results.size() > 1) {
-            throw new RuntimeException("조회 결과가 2개 이상입니다");
+            throw new InvalidResultException("조회 결과가 2개 이상입니다");
         }
 
         return results.getFirst();
