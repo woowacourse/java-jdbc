@@ -38,10 +38,9 @@ public class JdbcTemplate {
 
     public <T> T executeSelect(String sql, Object[] params, Class<T> clazz) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, params)
         ) {
-            setParams(pstmt, params);
-            ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 return rowMapper.map(rs, clazz);
@@ -55,11 +54,9 @@ public class JdbcTemplate {
 
     public <T> List<T> executeSelectAll(String sql, Object[] params, Class<T> clazz) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = executeQuery(pstmt, params)
         ) {
-            setParams(pstmt, params);
-            ResultSet rs = pstmt.executeQuery();
-
             List<T> results = new ArrayList<>();
 
             while (rs.next()) {
@@ -70,6 +67,11 @@ public class JdbcTemplate {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatement pstmt, Object[] params) throws SQLException {
+        setParams(pstmt, params);
+        return pstmt.executeQuery();
     }
 
     private void setParams(PreparedStatement pstmt, Object[] params) throws SQLException {
