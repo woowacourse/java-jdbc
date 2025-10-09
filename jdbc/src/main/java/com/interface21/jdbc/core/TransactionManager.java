@@ -8,23 +8,23 @@ public class TransactionManager {
 
     private static final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
 
-    private static DataSource dataSource;
+    private final DataSource dataSource;
 
-    public static void setDataSource(DataSource dataSource) {
-        TransactionManager.dataSource = dataSource;
+    public TransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static void start() {
+    public void start() {
         initTransaction();
         getTransaction().start();
     }
 
-    public static void commit() {
+    public void commit() {
         getTransaction().commit();
         releaseTransaction();
     }
 
-    public static void rollback() {
+    public void rollback() {
         getTransaction().rollback();
         releaseTransaction();
     }
@@ -33,12 +33,12 @@ public class TransactionManager {
         return transaction.get();
     }
 
-    private static void initTransaction() {
+    private void initTransaction() {
         Connection newConnection = DataSourceUtils.getConnection(dataSource);
         transaction.set(new Transaction(newConnection));
     }
 
-    private static void releaseTransaction() {
+    private void releaseTransaction() {
         DataSourceUtils.releaseConnection(getTransaction().getConnection(), dataSource);
         transaction.remove();
     }

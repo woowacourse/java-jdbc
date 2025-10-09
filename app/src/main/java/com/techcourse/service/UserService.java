@@ -10,10 +10,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final TransactionManager transactionManager;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionManager = transactionManager;
     }
 
     public User findById(final long id) {
@@ -25,15 +27,15 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        TransactionManager.start();
+        transactionManager.start();
         try {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
-            TransactionManager.commit();
+            transactionManager.commit();
         } catch (Exception e) {
-            TransactionManager.rollback();
+            transactionManager.rollback();
             throw e;
         }
     }
