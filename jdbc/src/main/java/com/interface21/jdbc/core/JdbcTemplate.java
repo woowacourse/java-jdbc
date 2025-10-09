@@ -1,9 +1,13 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -20,15 +24,35 @@ public class JdbcTemplate {
     }
 
     public <T> T select(final String sql, final RowMapper<T> rowMapper, final Object... values) {
-        return execute(sql, new QueryObjectCallback<>(rowMapper), values);
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new EmptyResultDataAccessException("No data found");
+                }
+                T result = rowMapper.call(rs);
+                if (rs.next()) {
+                    throw new IncorrectResultSizeDataAccessException("Data size is incorrect");
+                }
+                return result;
+            }
+        }, values);
     }
 
     public <T> List<T> selectList(final String sql, final RowMapper<T> rowMapper, final Object... values) {
-        return execute(sql, new QueryListCallback<>(rowMapper), values);
+        return execute(sql, pstmt -> {
+            final List<T> results = new ArrayList<>();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    T result = rowMapper.call(rs);
+                    results.add(result);
+                }
+            }
+            return results;
+        }, values);
     }
 
     public void update(final String sql, final Object... values) {
-        execute(sql, new UpdateCallback(), values);
+        execute(sql, PreparedStatement::executeUpdate, values);
     }
 
     public <T> T execute(final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
