@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -12,10 +13,8 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class UserServiceTest {
 
     private UserDao userDao;
@@ -25,7 +24,9 @@ class UserServiceTest {
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.userDao = new UserDao(dataSource);
+        TransactionManager.initialize(dataSource);
         DatabasePopulatorUtils.execute(dataSource);
+        userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
