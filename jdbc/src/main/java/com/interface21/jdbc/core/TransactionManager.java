@@ -29,7 +29,7 @@ public class TransactionManager {
             connectionHolder.set(connection);
         } catch (SQLException e) {
             log.error("트랜잭션 시작 중 오류 발생", e);
-            throw new RuntimeException("트랜잭션 시작 실패", e);
+            throw new DataAccessException("트랜잭션 시작 실패", e);
         }
     }
 
@@ -75,6 +75,7 @@ public class TransactionManager {
                 connection.close();
             } catch (SQLException e) {
                 log.error("Connection 정리 중 오류 발생", e);
+                throw new DataAccessException("Connection 정리 실패", e);
             }
         }
     }
