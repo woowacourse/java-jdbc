@@ -3,6 +3,8 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -41,6 +43,23 @@ public class UserDao {
         int updateRowsCount = jdbcTemplate.executeUpdate(
                 sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         log.info("update 영향을 받은 row 수: {}", updateRowsCount);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        try (var pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+
+            int updateRowsCount = pstmt.executeUpdate();
+            log.info("update 영향을 받은 row 수: {}", updateRowsCount);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 
     public List<User> findAll() {
