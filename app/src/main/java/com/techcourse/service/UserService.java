@@ -23,6 +23,10 @@ public class UserService {
         return userDao.findById(id);
     }
 
+    public User findById(final Connection connection, final long id) {
+        return userDao.findById(connection, id);
+    }
+
     public User findByAccount(final String account) {
         return userDao.findByAccount(account);
     }
@@ -36,7 +40,7 @@ public class UserService {
         try {
             connection = ConnectionManager.startTransaction(DataSourceConfig.getInstance());
 
-            final var user = findById(id);
+            final var user = findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
