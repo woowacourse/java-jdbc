@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.ArrayList;
@@ -22,25 +21,12 @@ public class UserDao {
 
     public void insert(final User user) {
         final String sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final PreparedStatementSetter pss = pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-        };
-
-        jdbcTemplate.update(sql, pss);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final PreparedStatementSetter pss = pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
-        };
-
-        jdbcTemplate.update(sql, pss);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -58,10 +44,8 @@ public class UserDao {
             }
             return users;
         };
-        final PreparedStatementSetter pss = pstmt -> {
-        };
 
-        return jdbcTemplate.query(sql, pss, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
@@ -77,11 +61,8 @@ public class UserDao {
             }
             return null;
         };
-        final PreparedStatementSetter pss = pstmt -> {
-            pstmt.setLong(1, id);
-        };
 
-        return jdbcTemplate.query(sql, pss, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper, id);
     }
 
     public User findByAccount(final String account) {
@@ -97,10 +78,7 @@ public class UserDao {
             }
             return null;
         };
-        final PreparedStatementSetter pss = pstmt -> {
-            pstmt.setString(1, account);
-        };
 
-        return jdbcTemplate.query(sql, pss, rowMapper);
+        return jdbcTemplate.query(sql, rowMapper, account);
     }
 }
