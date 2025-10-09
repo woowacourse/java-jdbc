@@ -37,8 +37,13 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback,
                           PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = ConnectionHolder.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = ConnectionHolder.getConnection();
+
+        if (conn == null) {
+            throw new RuntimeException("connection is null");
+        }
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
