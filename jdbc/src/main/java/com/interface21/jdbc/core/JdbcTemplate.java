@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,7 +34,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL update failed", e);
         }
     }
 
@@ -45,7 +46,7 @@ public class JdbcTemplate {
             return Optional.empty();
         }
         if (results.size() > 1) {
-            throw new RuntimeException("쿼리 실행 결과가 2개 이상입니다.");
+            throw new DataAccessException("Expected 1 result, but got " + results.size());
         }
         return Optional.of(results.get(0));
     }
@@ -69,7 +70,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL query failed", e);
         }
     }
 }
