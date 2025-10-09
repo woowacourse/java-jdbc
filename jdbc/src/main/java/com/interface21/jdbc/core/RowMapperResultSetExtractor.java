@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowMapperResultSetExtractor<T> {
+public class RowMapperResultSetExtractor<T> implements ResultSetExtractor<List<T>> {
 
     private final RowMapper<T> rowMapper;
 

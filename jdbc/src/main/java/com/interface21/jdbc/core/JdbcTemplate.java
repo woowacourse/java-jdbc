@@ -19,10 +19,10 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(
+    public <T> T query(
             final String sql,
             final PreparedStatementSetter pss,
-            final RowMapperResultSetExtractor<T> rse
+            final ResultSetExtractor<T> rse
     ) {
         return execute(sql, (pstmt) -> {
             pss.setValues(pstmt);
