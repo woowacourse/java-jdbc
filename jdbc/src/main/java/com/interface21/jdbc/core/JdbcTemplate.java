@@ -29,28 +29,37 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, (pstmt -> {
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                if (!resultSet.next()) {
-                    throw new DataAccessException("조회 결과가 존재하지 않습니다.");
-                }
-                T result = rowMapper.mapRow(resultSet, parameters.length);
-                if (resultSet.next()) {
-                    throw new DataAccessException("조회 결과가 2개 이상입니다.");
-                }
-                return result;
+        return executeUsingExtractor(sql, resultSet -> {
+            if (!resultSet.next()) {
+                throw new DataAccessException("조회 결과가 존재하지 않습니다.");
             }
-        }), parameters);
+            T result = rowMapper.mapRow(resultSet, 0);
+            if (resultSet.next()) {
+                throw new DataAccessException("조회 결과가 2개 이상입니다.");
+            }
+            return result;
+        }, parameters);
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return executeUsingExtractor(sql, resultSet -> {
+            List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+            return results;
+        }, parameters);
+    }
+
+    private <T> T executeUsingExtractor(
+        final String sql,
+        final ResultSetExtractor<T> extractor,
+        final Object... parameters
+    ) {
         return execute(sql, pstmt -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, parameters.length));
-                }
-                return results;
+                return extractor.extractData(resultSet);
             }
         }, parameters);
     }
