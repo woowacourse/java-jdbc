@@ -17,10 +17,8 @@ public class TransactionTemplate {
     }
 
     public void execute(final TransactionCallback callback) {
-        Connection connection = null;
-
         try {
-            connection = dataSource.getConnection();
+            Connection connection = dataSource.getConnection();
             ConnectionHolder.setConnection(connection);
             connection.setAutoCommit(false);
 
