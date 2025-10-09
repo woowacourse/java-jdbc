@@ -4,17 +4,17 @@ import java.sql.Connection;
 
 public class ConnectionHolder {
 
-    private ConnectionHolder() {
-    }
-
-    public static Connection connection;
-
-    public static Connection getConnection() {
-        return connection;
-    }
+    private static final ThreadLocal<Connection> context = new ThreadLocal<>();
 
     public static void setConnection(Connection connection) {
-        System.out.println("커넥션 세팅 ! ======");
-        ConnectionHolder.connection = connection;
+        context.set(connection);
+    }
+
+    public static Connection getConnection() {
+        return context.get();
+    }
+
+    public static void clear() {
+        context.remove();
     }
 }

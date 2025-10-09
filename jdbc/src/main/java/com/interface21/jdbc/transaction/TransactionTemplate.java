@@ -48,7 +48,7 @@ public class TransactionTemplate {
 
     private void closeConnection(Connection connectionToClose) {
         if (connectionToClose != null) {
-            ConnectionHolder.setConnection(null);
+            ConnectionHolder.clear();
             try {
                 connectionToClose.close();
             } catch (SQLException ex) {

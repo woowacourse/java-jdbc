@@ -24,7 +24,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());

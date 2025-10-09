@@ -13,6 +13,12 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    private DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public void update(String sql, Object... args) {
         execute(sql, PreparedStatement::executeUpdate, newArgumentPreparedStatementSetter(args));
     }
@@ -37,13 +43,25 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback,
                           PreparedStatementSetter preparedStatementSetter) {
-        Connection conn = ConnectionHolder.getConnection();
+        Connection connection = ConnectionHolder.getConnection();
 
-        if (conn == null) {
-            throw new RuntimeException("connection is null");
+        if (connection == null) {
+            return handleForWithoutTransaction(sql, preparedStatementCallback, preparedStatementSetter);
         }
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(pstmt);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T handleForWithoutTransaction(String sql, PreparedStatementCallback<T> preparedStatementCallback,
+                                              PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
