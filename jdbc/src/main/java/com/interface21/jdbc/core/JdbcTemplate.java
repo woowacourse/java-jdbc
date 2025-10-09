@@ -1,9 +1,9 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -41,18 +41,22 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                log.debug("query : {}", sql);
 
-            if (pss != null) {
-                pss.setValues(pstmt);
+                if (pss != null) {
+                    pss.setValues(pstmt);
+                }
+                pstmt.executeUpdate();
             }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -62,28 +66,32 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                log.debug("query : {}", sql);
 
-            if (pss != null) {
-                pss.setValues(pstmt);
-            }
+                if (pss != null) {
+                    pss.setValues(pstmt);
+                }
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    throw new EmptyResultDataAccessException("Incorrect result size: expected 1, actual 0");
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new EmptyResultDataAccessException("Incorrect result size: expected 1, actual 0");
+                    }
+                    T result = rowMapper.mapRow(rs);
+                    if (rs.next()) {
+                        throw new IncorrectResultSizeDataAccessException(1);
+                    }
+                    return result;
                 }
-                T result = rowMapper.mapRow(rs);
-                if (rs.next()) {
-                    throw new IncorrectResultSizeDataAccessException(1);
-                }
-                return result;
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -93,27 +101,31 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                log.debug("query : {}", sql);
 
-            if (pss != null) {
-                pss.setValues(pstmt);
-            }
-            // 쿼리 실행 결과(ResultSet) 반환
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                // rs.next(): 다음 ResultSet이 있으면 true, 없으면 false 반환. 커서를 다음 행으로 이동.
-                while (rs.next()) {
-                    T result = rowMapper.mapRow(rs);
-                    results.add(result);
+                if (pss != null) {
+                    pss.setValues(pstmt);
                 }
-                return results;
+                // 쿼리 실행 결과(ResultSet) 반환
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    List<T> results = new ArrayList<>();
+                    // rs.next(): 다음 ResultSet이 있으면 true, 없으면 false 반환. 커서를 다음 행으로 이동.
+                    while (rs.next()) {
+                        T result = rowMapper.mapRow(rs);
+                        results.add(result);
+                    }
+                    return results;
+                }
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
