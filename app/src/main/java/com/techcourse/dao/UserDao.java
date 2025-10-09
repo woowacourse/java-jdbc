@@ -37,6 +37,7 @@ public class UserDao {
         log.info("insert 영향을 받은 row 수: {}", insertCount);
     }
 
+    // 기존 버전 (호환성을 위해서 유지)
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         int updateRowsCount = jdbcTemplate.executeUpdate(
@@ -44,6 +45,7 @@ public class UserDao {
         log.info("update 영향을 받은 row 수: {}", updateRowsCount);
     }
 
+    // connection 버전
     public void update(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 

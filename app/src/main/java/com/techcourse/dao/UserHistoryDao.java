@@ -23,6 +23,7 @@ public class UserHistoryDao {
         this.dataSource = null;
     }
 
+    // 기존 버전 (호환성을 위해서 유지)
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
@@ -55,6 +56,7 @@ public class UserHistoryDao {
         }
     }
 
+    // connection 버전
     public void log(final Connection connection, final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
