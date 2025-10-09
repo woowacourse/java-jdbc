@@ -51,7 +51,7 @@ public class UserDao {
             select id, account, password, email
             from users
             """;
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {

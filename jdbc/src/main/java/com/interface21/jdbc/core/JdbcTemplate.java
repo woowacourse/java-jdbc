@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }), parameters);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return execute(sql, pstmt -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
