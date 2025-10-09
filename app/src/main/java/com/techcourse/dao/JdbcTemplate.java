@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -16,9 +15,9 @@ public abstract class JdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(User user, PreparedStatement pstmt) throws SQLException;
+    protected abstract void setValues(PreparedStatement pstmt) throws SQLException;
 
-    public void update(User user) {
+    public void update() {
         final String sql = createQuery();
 
         Connection conn = null;
@@ -27,7 +26,7 @@ public abstract class JdbcTemplate {
             conn = getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
-            setValues(user, pstmt);
+            setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
