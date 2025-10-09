@@ -6,12 +6,12 @@ import javax.sql.DataSource;
 
 public class TransactionManager {
 
-    private static final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
-
+    private final ThreadLocal<Transaction> transaction = new ThreadLocal<>();
     private final DataSource dataSource;
 
     public TransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
+        TransactionManagerHolder.add(dataSource, this);
     }
 
     public void start() {
@@ -29,7 +29,7 @@ public class TransactionManager {
         releaseTransaction();
     }
 
-    public static Transaction getTransaction() {
+    public Transaction getTransaction() {
         return transaction.get();
     }
 
