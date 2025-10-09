@@ -4,6 +4,7 @@ import com.interface21.context.stereotype.Component;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.mapper.UserMapper;
+import java.sql.Connection;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,8 @@ import java.util.List;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
+    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -30,14 +33,21 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        Optional<User> user = jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, id);
+        Optional<User> user = jdbcTemplate.queryForResult(FIND_BY_ID_SQL, UserMapper.USER_ROW_MAPPER, id);
+        return user.orElseThrow(IllegalArgumentException::new);
+    }
+
+    public User findById(Connection conn, final Long id) {
+        Optional<User> user = jdbcTemplate.queryForResult(conn, FIND_BY_ID_SQL, UserMapper.USER_ROW_MAPPER, id);
         return user.orElseThrow(IllegalArgumentException::new);
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.queryForUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.queryForUpdate(UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(Connection conn, final User user) {
+        jdbcTemplate.queryForUpdate(conn, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public Optional<User> findByAccount(final String account) {

@@ -43,8 +43,35 @@ public class JdbcTemplate {
     }
 
     public void queryForUpdate(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            queryForUpdate(conn, sql, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> queryForResultList(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(conn, sql, rs -> {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        }, args);
+    }
+
+    public <T> Optional<T> queryForResult(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(conn, sql, rs -> {
+            if (rs.next()) {
+                return Optional.of(rowMapper.mapRow(rs));
+            }
+            return Optional.empty();
+        }, args);
+    }
+
+    public void queryForUpdate(Connection conn, final String sql, final Object... args) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameter(args, pstmt);
             pstmt.executeUpdate();
@@ -55,8 +82,16 @@ public class JdbcTemplate {
     }
 
     private <T> T query(String sql, ResultProcessor<T> extractor, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return query(conn, sql, extractor, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T query(Connection conn, String sql, ResultProcessor<T> extractor, Object... args) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameter(args, pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
