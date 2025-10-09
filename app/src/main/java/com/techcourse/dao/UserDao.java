@@ -1,6 +1,5 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,22 +21,55 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
-    }
-
     DataSource getDataSource() {
         return dataSource;
     }
 
     public void insert(final User user) {
-        InsertJdbcTemplate insertJdbcTemplate = new InsertJdbcTemplate();
-        insertJdbcTemplate.insert(user, this);
+        JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(final User user, final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        };
+
+        insertJdbcTemplate.update(user);
     }
 
     public void update(final User user) {
-        UpdateJdbcTemplate updateJdbcTemplate = new UpdateJdbcTemplate();
-        updateJdbcTemplate.update(user, this);
+        JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "update users set account = ?, password = ?, email = ? where id = ?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected void setValues(final User user, final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+        };
+        
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
