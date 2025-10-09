@@ -45,7 +45,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
-        final RowMapper rowMapper = rs -> {
+        final RowMapper<List<User>> rowMapper = rs -> {
             final List<User> users = new ArrayList<>();
             while (rs.next()) {
                 final User user = new User(
@@ -61,12 +61,12 @@ public class UserDao {
         final PreparedStatementSetter pss = pstmt -> {
         };
 
-        return (List<User>) jdbcTemplate.query(sql, pss, rowMapper);
+        return jdbcTemplate.query(sql, pss, rowMapper);
     }
 
     public User findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
-        final RowMapper rowMapper = rs -> {
+        final RowMapper<User> rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
                         rs.getLong(1),
@@ -81,12 +81,12 @@ public class UserDao {
             pstmt.setLong(1, id);
         };
 
-        return (User) jdbcTemplate.query(sql, pss, rowMapper);
+        return jdbcTemplate.query(sql, pss, rowMapper);
     }
 
     public User findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
-        final RowMapper rowMapper = rs -> {
+        final RowMapper<User> rowMapper = rs -> {
             if (rs.next()) {
                 return new User(
                         rs.getLong(1),
@@ -101,6 +101,6 @@ public class UserDao {
             pstmt.setString(1, account);
         };
 
-        return (User) jdbcTemplate.query(sql, pss, rowMapper);
+        return jdbcTemplate.query(sql, pss, rowMapper);
     }
 }

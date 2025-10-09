@@ -18,7 +18,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public Object query(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper rowMapper) {
+    public <T> T query(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
