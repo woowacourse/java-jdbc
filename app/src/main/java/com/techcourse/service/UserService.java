@@ -27,7 +27,6 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        System.out.println("비밀번호 변경 호출! =====");
         transactionTemplate.execute(() -> {
             final var user = findById(id);
             user.changePassword(newPassword);
