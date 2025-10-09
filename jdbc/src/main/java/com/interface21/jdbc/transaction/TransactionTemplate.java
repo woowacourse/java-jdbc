@@ -28,6 +28,7 @@ public class TransactionTemplate {
         } catch (Exception e) {
             Connection connectionToRollback = ConnectionHolder.getConnection();
             rollback(e, connectionToRollback);
+            throw new DataAccessException();
         } finally {
             Connection connectionToClose = ConnectionHolder.getConnection();
             closeConnection(connectionToClose);
