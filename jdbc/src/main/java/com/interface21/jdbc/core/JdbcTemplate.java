@@ -28,7 +28,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error("query 실패 {}", sql, e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -53,7 +53,7 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error("SQL query failed. query: {}", sql, e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
