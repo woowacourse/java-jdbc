@@ -38,13 +38,13 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(String sql, RowMapper rowMapper, Object... args) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(preparedStatement, args);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<Object> results = new ArrayList<>();
+                List<T> results = new ArrayList<>();
                 int rowNum = 0;
                 while (resultSet.next()) {
                     results.add(rowMapper.mapRow(resultSet, rowNum++));
@@ -57,8 +57,8 @@ public class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String sql, RowMapper rowMapper, Object... args) {
-        List<Object> results = query(sql, rowMapper, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             return null;
         }
