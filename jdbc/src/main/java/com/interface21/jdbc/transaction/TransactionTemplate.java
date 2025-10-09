@@ -3,9 +3,12 @@ package com.interface21.jdbc.transaction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionTemplate {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
     private final DataSource dataSource;
 
     public TransactionTemplate(DataSource dataSource) {
@@ -23,11 +26,9 @@ public class TransactionTemplate {
             callback.execute();
 
             connection.commit();
-
         } catch (Exception e) {
             Connection connectionToRollback = ConnectionHolder.getConnection();
             rollback(e, connectionToRollback);
-
         } finally {
             Connection connectionToClose = ConnectionHolder.getConnection();
             closeConnection(connectionToClose);
@@ -39,7 +40,7 @@ public class TransactionTemplate {
             try {
                 connectionToRollback.rollback();
             } catch (SQLException ex) {
-                System.err.println("Rollback failed: " + ex.getMessage());
+                log.error("Rollback failed: {}", ex.getMessage());
             }
         }
         throw new RuntimeException(e);
@@ -51,7 +52,7 @@ public class TransactionTemplate {
             try {
                 connectionToClose.close();
             } catch (SQLException ex) {
-                System.err.println("Connection close failed: " + ex.getMessage());
+                log.error("close connection failed: {}", ex.getMessage());
             }
         }
     }
