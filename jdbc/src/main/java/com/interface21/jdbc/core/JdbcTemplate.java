@@ -102,4 +102,43 @@ public class JdbcTemplate {
 
         return results.getFirst();
     }
+
+    // Connection을 받는 메서드들 추가
+    public int update(Connection conn, String sql, Object... args) throws SQLException {
+        return update(conn, sql, createPreparedStatementSetter(args));
+    }
+
+    private int update(Connection conn, String sql, PreparedStatementSetter pss) throws SQLException {
+        return execute(conn, sql, pstmt -> {
+            pss.setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        return queryForObject(conn, sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    private <T> T queryForObject(Connection conn, String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = query(conn, sql, pss, rowMapper);
+        return getSingleResult(results);
+    }
+
+    private <T> List<T> query(Connection conn, String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) throws SQLException {
+        return execute(conn, sql, pstmt -> {
+            pss.setValues(pstmt);
+            return extractResults(pstmt.executeQuery(), rowMapper);
+        });
+    }
+
+    // Connection을 받는 execute 메서드
+    private <T> T execute(Connection conn, String sql, PreparedStatementCallback<T> callback) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("Executing SQL with provided connection: {}", sql);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw e;
+        }
+    }
 }
