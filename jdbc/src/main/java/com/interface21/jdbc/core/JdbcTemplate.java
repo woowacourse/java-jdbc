@@ -18,70 +18,34 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmtSetter.setValues(pstmt);
-            rs = pstmt.executeQuery();
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
             log.debug("query : {}", sql);
-            return rowMapper.mapRow(rs);
+            return callback.doInStatement(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
         }
     }
 
-    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            log.debug("query : {}", sql);
+    public <T> T query(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper<T> rowMapper) {
+        return execute(sql, (pstmt) -> {
             pstmtSetter.setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return rowMapper.mapRow(rs);
             }
+        });
+    }
 
-            try {
-                if (conn != null) {
-                    conn.close();
+    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
+        execute(sql, (pstmt) -> {
+                    pstmtSetter.setValues(pstmt);
+                    pstmt.executeUpdate();
+                    return null;
                 }
-            } catch (SQLException ignored) {
-            }
-        }
+        );
     }
 }
