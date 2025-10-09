@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.transaction.ConnectionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,12 +12,6 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     public void update(String sql, Object... args) {
         execute(sql, PreparedStatement::executeUpdate, newArgumentPreparedStatementSetter(args));
@@ -42,7 +37,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback,
                           PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
+        try (Connection conn = ConnectionHolder.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             return preparedStatementCallback.doInPreparedStatement(pstmt);

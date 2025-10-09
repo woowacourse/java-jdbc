@@ -4,15 +4,18 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.interface21.jdbc.transaction.TransactionTemplate;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final TransactionTemplate transactionTemplate;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionTemplate transactionTemplate) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionTemplate = transactionTemplate;
     }
 
     public User findById(final long id) {
@@ -24,9 +27,12 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        System.out.println("비밀번호 변경 호출! =====");
+        transactionTemplate.execute(() -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+        });
     }
 }
