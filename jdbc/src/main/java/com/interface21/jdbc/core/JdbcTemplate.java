@@ -8,19 +8,25 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+
+    private final DataSource dataSource;
+
+    public JdbcTemplate(final DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public Object query(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            conn = getDataSource().getConnection();
+            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmtSetter.setValues(pstmt);
-            rs = executeQuery(pstmt);
+            rs = pstmt.executeQuery();
             log.debug("query : {}", sql);
             return rowMapper.mapRow(rs);
         } catch (final SQLException e) {
@@ -54,7 +60,7 @@ public abstract class JdbcTemplate {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = getDataSource().getConnection();
+            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             pstmtSetter.setValues(pstmt);
@@ -77,11 +83,5 @@ public abstract class JdbcTemplate {
             } catch (SQLException ignored) {
             }
         }
-    }
-
-    protected abstract DataSource getDataSource();
-
-    private ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
-        return pstmt.executeQuery();
     }
 }

@@ -14,14 +14,10 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    DataSource getDataSource() {
-        return dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
@@ -31,14 +27,8 @@ public class UserDao {
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
         };
-        final JdbcTemplate insertJdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
 
-        insertJdbcTemplate.update(sql, pss);
+        jdbcTemplate.update(sql, pss);
     }
 
     public void update(final User user) {
@@ -49,14 +39,8 @@ public class UserDao {
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
         };
-        final JdbcTemplate updateJdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
 
-        updateJdbcTemplate.update(sql, pss);
+        jdbcTemplate.update(sql, pss);
     }
 
     public List<User> findAll() {
@@ -76,14 +60,8 @@ public class UserDao {
         };
         final PreparedStatementSetter pss = pstmt -> {
         };
-        final JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
 
-        return (List<User>) selectJdbcTemplate.query(sql, pss, rowMapper);
+        return (List<User>) jdbcTemplate.query(sql, pss, rowMapper);
     }
 
     public User findById(final Long id) {
@@ -102,14 +80,8 @@ public class UserDao {
         final PreparedStatementSetter pss = pstmt -> {
             pstmt.setLong(1, id);
         };
-        final JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
 
-        return (User) selectJdbcTemplate.query(sql, pss, rowMapper);
+        return (User) jdbcTemplate.query(sql, pss, rowMapper);
     }
 
     public User findByAccount(final String account) {
@@ -128,13 +100,7 @@ public class UserDao {
         final PreparedStatementSetter pss = pstmt -> {
             pstmt.setString(1, account);
         };
-        final JdbcTemplate selectJdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
 
-        return (User) selectJdbcTemplate.query(sql, pss, rowMapper);
+        return (User) jdbcTemplate.query(sql, pss, rowMapper);
     }
 }
