@@ -25,26 +25,14 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-
+        execute(sql, (pstmt -> {
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+            return null;
+        }), parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-
+        return execute(sql, (pstmt -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (!resultSet.next()) {
                     throw new DataAccessException("조회 결과가 존재하지 않습니다.");
@@ -55,19 +43,11 @@ public class JdbcTemplate {
                 }
                 return result;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
+        }), parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-
+        return execute(sql, pstmt -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -75,6 +55,16 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        }, parameters);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
