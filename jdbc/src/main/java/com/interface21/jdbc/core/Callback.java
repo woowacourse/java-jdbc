@@ -1,0 +1,11 @@
+package com.interface21.jdbc.core;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+@FunctionalInterface
+public interface Callback<T> {
+
+    T call(PreparedStatement preparedStatement) throws SQLException;
+}
+
