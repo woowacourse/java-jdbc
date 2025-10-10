@@ -6,6 +6,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,12 +14,18 @@ import org.junit.jupiter.api.Test;
 class UserDaoTest {
 
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
