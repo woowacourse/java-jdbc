@@ -106,16 +106,17 @@ class Stage1Test {
     }
 
     /**
+     * ? non-repeatable read : 데이터를 조회하는 시점에 따라서 데이터가 변경되기 때문에, 일관된 데이터 조회 결과를 얻지 못하는 현상.
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -131,7 +132,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // 하나의 트랜잭션 내부에서 반복 조회를 하더라도 일관성을 보장
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -161,6 +162,10 @@ class Stage1Test {
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
+        // READ UNCOMMITTED - FAILED
+        // READ COMMITTED - FAILED
+        // REPEATABLE READ - SUCCESS
+        // SERIALIZABLE - SUCCESS
         assertThat(actual.getPassword()).isEqualTo("password");
 
         connection.rollback();
