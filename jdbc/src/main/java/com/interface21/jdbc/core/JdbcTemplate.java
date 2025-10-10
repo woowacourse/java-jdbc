@@ -54,13 +54,9 @@ public class JdbcTemplate {
         });
     }
 
-    private void bindParameters(
-            final Object[] params,
-            final PreparedStatement pstmt
-    ) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i+1, params[i]);
-        }
+    private void bindParameters(final Object[] params, final PreparedStatement pstmt) throws SQLException {
+        final PreparedStatementSetter pstmts = new ArgumentPreparedStatementSetter(params);
+        pstmts.setParameters(pstmt);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallBack<T> action) {
