@@ -28,7 +28,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            createPreparedStatementSetter(parameters).setParameters(pstmt);
+            createPreparedStatementSetter(parameters).setValues(pstmt);
 
             return pstmt.executeUpdate();
 
@@ -52,7 +52,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            createPreparedStatementSetter(parameters).setParameters(pstmt);
+            createPreparedStatementSetter(parameters).setValues(pstmt);
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -74,5 +74,5 @@ public class JdbcTemplate {
 }
 
 interface PreparedStatementSetter {
-    void setParameters(final PreparedStatement pstmt) throws SQLException;
+    void setValues(final PreparedStatement pstmt) throws SQLException;
 }
