@@ -4,9 +4,12 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionTemplate<T> {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
     private final DataSource dataSource;
 
     public TransactionTemplate(DataSource dataSource) {
@@ -36,7 +39,9 @@ public class TransactionTemplate<T> {
         if (connection != null) {
             try {
                 connection.rollback();
-            } catch (SQLException ignored) {}
+            } catch (SQLException x) {
+                log.error("Failed to rollback transaction", x);
+            }
         }
         throw new DataAccessException(e);
     }
