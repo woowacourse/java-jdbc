@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.mapper.RowMapper;
+import com.interface21.jdbc.mapper.Mapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,11 +16,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private final RowMapper rowMapper;
+    private final Mapper mapper;
 
-    public JdbcTemplate(final DataSource dataSource, final RowMapper rowMapper) {
+    public JdbcTemplate(final DataSource dataSource, final Mapper mapper) {
         this.dataSource = dataSource;
-        this.rowMapper = rowMapper;
+        this.mapper = mapper;
     }
 
     public void executeUpdate(String sql, Object[] params) {
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         ) {
 
             if (rs.next()) {
-                return rowMapper.map(rs, clazz);
+                return mapper.map(rs, clazz);
             }
             return null;
 
@@ -60,7 +60,7 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
 
             while (rs.next()) {
-                results.add(rowMapper.map(rs, clazz));
+                results.add(mapper.map(rs, clazz));
             }
             return results;
 
