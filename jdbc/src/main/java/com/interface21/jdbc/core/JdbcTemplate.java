@@ -47,13 +47,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        ResultSet rs;
         List<T> list = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+             PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()
+        ) {
 
             createPreparedStatementSetter(parameters).setValues(pstmt);
-            rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 list.add(rowMapper.mapRow(rs));
