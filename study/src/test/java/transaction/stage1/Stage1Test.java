@@ -52,16 +52,17 @@ class Stage1Test {
     }
 
     /**
+     * ? dirty read = 커밋되지 않은 내역을 읽어오는 것. 롤백될 가능성이 있는 데이터를 읽어오므로 dirty read 라고 함
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +82,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // -> Dirty Read 발생
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
