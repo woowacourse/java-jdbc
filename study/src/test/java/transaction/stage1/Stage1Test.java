@@ -1,7 +1,13 @@
 package transaction.stage1;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -13,31 +19,16 @@ import org.testcontainers.utility.DockerImageName;
 import transaction.DatabasePopulatorUtils;
 import transaction.RunnableWrapper;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
- * ❗phantom reads는 docker를 실행한 상태에서 테스트를 실행한다.
+ * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자. ❗phantom reads는 docker를 실행한 상태에서 테스트를 실행한다.
  * ❗phantom reads는 MySQL로 확인한다. H2 데이터베이스에서는 발생하지 않는다.
- *
- * 참고 링크
- * https://en.wikipedia.org/wiki/Isolation_(database_systems)
- *
- * 각 테스트에서 어떤 현상이 발생하는지 직접 경험해보고 아래 표를 채워보자.
- * + : 발생
- * - : 발생하지 않음
- *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
- * Isolation level  |             |                      |
- * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * <p>
+ * 참고 링크 https://en.wikipedia.org/wiki/Isolation_(database_systems)
+ * <p>
+ * 각 테스트에서 어떤 현상이 발생하는지 직접 경험해보고 아래 표를 채워보자. + : 발생 - : 발생하지 않음 Read phenomena | Dirty reads | Non-repeatable reads |
+ * Phantom reads Isolation level  |             |                      |
+ * -----------------|-------------|----------------------|-------------- Read Uncommitted |             | | Read
+ * Committed   |             |                      | Repeatable Read  |             | | Serializable     | | |
  */
 class Stage1Test {
 
@@ -52,16 +43,8 @@ class Stage1Test {
     }
 
     /**
-     * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
-     * + : 발생
-     * - : 발생하지 않음
-     *   Read phenomena | Dirty reads
-     * Isolation level  |
-     * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자. + : 발생 - : 발생하지 않음 Read phenomena | Dirty reads Isolation
+     * level  | -----------------|------------- Read Uncommitted | Read Committed   | Repeatable Read  | Serializable |
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +64,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -105,16 +88,9 @@ class Stage1Test {
     }
 
     /**
-     * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
-     * + : 발생
-     * - : 발생하지 않음
-     *   Read phenomena | Non-repeatable reads
-     * Isolation level  |
-     * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자. + : 발생 - : 발생하지 않음 Read phenomena | Non-repeatable reads
+     * Isolation level  | -----------------|--------------------- Read Uncommitted | Read Committed   | Repeatable Read
+     * | Serializable     |
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +106,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -166,17 +142,9 @@ class Stage1Test {
     }
 
     /**
-     * phantom read는 h2에서 발생하지 않는다. mysql로 확인해보자.
-     * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
-     * + : 발생
-     * - : 발생하지 않음
-     *   Read phenomena | Phantom reads
-     * Isolation level  |
-     * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * phantom read는 h2에서 발생하지 않는다. mysql로 확인해보자. 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자. + : 발생 - : 발생하지 않음
+     * Read phenomena | Phantom reads Isolation level  | -----------------|-------------- Read Uncommitted | Read
+     * Committed   | Repeatable Read  | Serializable     |
      */
     @Test
     void phantomReading() throws SQLException {
@@ -197,7 +165,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -239,7 +207,7 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        config.setJdbcUrl(container.getJdbcUrl() + "?allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
