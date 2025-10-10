@@ -3,6 +3,10 @@ package com.techcourse;
 import com.interface21.core.util.DIContainer;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.service.AppUserService;
+import com.techcourse.service.UserService;
 import jakarta.servlet.ServletContext;
 import com.interface21.webmvc.servlet.mvc.DispatcherServlet;
 import com.interface21.webmvc.servlet.mvc.asis.ControllerHandlerAdapter;
@@ -26,6 +30,11 @@ public class AppWebApplicationInitializer implements WebApplicationInitializer {
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         diContainer.registerBean(JdbcTemplate.class, jdbcTemplate);
+
+        UserDao userDao = new UserDao(jdbcTemplate);
+        UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
+        diContainer.registerBean(UserService.class, appUserService);
 
         diContainer.scanAndRegister("com.techcourse");
 
