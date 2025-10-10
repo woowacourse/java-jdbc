@@ -40,12 +40,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
-        return execute(sql, pstmt -> {
-            log.debug("query: {}, args: {}", sql, args);
-
-            setParameters(pstmt, args);
-            return mapRows(rowMapper, pstmt);
-        });
+        return query(sql, pstmt -> setParameters(pstmt, args), rowMapper);
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper)
@@ -53,11 +48,9 @@ public class JdbcTemplate {
         return execute(sql, pstmt -> {
             log.debug("query: {}, pss: {}", sql, pss);
             pss.setValues(pstmt);
-
             return mapRows(rowMapper, pstmt);
         });
     }
-
     private <T> List<T> mapRows(RowMapper<T> rowMapper, PreparedStatement pstmt) throws SQLException {
         try (final ResultSet resultSet = pstmt.executeQuery()) {
             List<T> results = new ArrayList<>();
@@ -105,10 +98,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) throws DataAccessException {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            return pstmt.executeUpdate();
-        });
+        return update(sql, pstmt -> setParameters(pstmt, args));
     }
 
     public int update(String sql, PreparedStatementSetter pss) throws DataAccessException {
