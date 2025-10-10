@@ -22,10 +22,18 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        execute(PreparedStatement::execute, sql, args);
+        update(sql, PreparedStatementSetter.ofSequenced(args));
+    }
+
+    public void update(String sql, PreparedStatementSetter pss) {
+        execute(PreparedStatement::execute, sql, pss);
     }
 
     public <T> T selectOne(RowMapper<T> rowMapper, String sql, Object... args) {
+        return selectOne(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
+    }
+
+    public <T> T selectOne(RowMapper<T> rowMapper, String sql, PreparedStatementSetter pss) {
         StatementExecutor<T> stmtExecutor = pstmt -> {
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
@@ -34,10 +42,14 @@ public class JdbcTemplate {
             return null;
         };
 
-        return execute(stmtExecutor, sql, args);
+        return execute(stmtExecutor, sql, pss);
     }
 
     public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, Object... args) {
+        return selectMulti(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
+    }
+
+    public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, PreparedStatementSetter pss) {
         StatementExecutor<List<T>> stmtExecutor = pstmt -> {
             ResultSet rs = pstmt.executeQuery();
             var list = new ArrayList<T>();
@@ -48,17 +60,17 @@ public class JdbcTemplate {
             return list;
         };
 
-        return execute(stmtExecutor, sql, args);
+        return execute(stmtExecutor, sql, pss);
     }
 
-    private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, Object... args) {
+    private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
         ResultSet rs = null;
         try (var conn = dataSource.getConnection();
              var pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             return stmtExecutor.execute(pstmt);
 
         } catch (SQLException e) {
@@ -67,12 +79,6 @@ public class JdbcTemplate {
 
         } finally {
             closeResultSet(rs);
-        }
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... args) throws SQLException {
-        for (int i = 1; i <= args.length; i++) {
-            pstmt.setObject(i, args[i - 1]);
         }
     }
 
