@@ -72,7 +72,3 @@ public class JdbcTemplate {
         };
     }
 }
-
-interface PreparedStatementSetter {
-    void setValues(final PreparedStatement pstmt) throws SQLException;
-}
