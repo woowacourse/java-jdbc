@@ -1,9 +1,12 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.sql.DataSource;
 
 public class JdbcTemplate {
@@ -15,43 +18,61 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(String sql, Object... params) {
-        try {
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            validationParamLength(params, pstmt);
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)
+        ) {
+            validationParamLength(params, ps);
 
             for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
+                ps.setObject(i + 1, params[i]);
             }
 
-            pstmt.executeUpdate();
+            ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    public ResultSet executeQuery(String sql, Object... params) {
-        try {
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            validationParamLength(params, pstmt);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)
+        ) {
+            validationParamLength(params, ps);
 
             for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
+                ps.setObject(i + 1, params[i]);
             }
 
-            return pstmt.executeQuery();
+            ResultSet resultSet = ps.executeQuery();
+            return rowMapper.mapRow(resultSet);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()
+        ) {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+
+            return results;
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
     private void validationParamLength(Object[] params, PreparedStatement pstmt) throws SQLException {
         int parameterCount = pstmt.getParameterMetaData().getParameterCount();
         if (params.length != parameterCount) {
-            throw new IllegalArgumentException(
+            throw new DataAccessException(
                     String.format("파라미터 개수 불일치: SQL에 %d개 필요, %d개 제공됨",
                             parameterCount,
                             params.length

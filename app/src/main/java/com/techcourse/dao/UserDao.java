@@ -2,9 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -40,54 +37,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-
-        List<User> users = new ArrayList<>();
-
-        try (ResultSet rs = jdbcTemplate.executeQuery(sql)) {
-            while (rs.next()) {
-                User user = new User(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4));
-                users.add(user);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-
-        return users;
+        return jdbcTemplate.queryForList(sql, new UserMapper());
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        try (ResultSet rs = jdbcTemplate.executeQuery(sql, id)) {
-            if (rs.next()) {
-                return buildUser(rs);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        return null;
+        return jdbcTemplate.queryForObject(sql, new UserMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-
-        try (ResultSet rs = jdbcTemplate.executeQuery(sql, account)) {
-            if (rs.next()) {
-                return buildUser(rs);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        return null;
-    }
-
-    private User buildUser(ResultSet rs) throws SQLException {
-        return new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
+        return jdbcTemplate.queryForObject(sql, new UserMapper(), account);
     }
 }
