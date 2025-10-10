@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class TransactionTemplate <T> {
+public class TransactionTemplate<T> {
 
     private final DataSource dataSource;
 
@@ -15,21 +15,21 @@ public class TransactionTemplate <T> {
 
     public T execute(ServiceCallback<T> serviceCallback) {
         Connection connection = null;
-        T result = null;
         try {
             connection = dataSource.getConnection();
             connection.setAutoCommit(false);
             TransactionSynchronizationManager.setConnection(connection);
 
-            result = serviceCallback.execute();
+            T result = serviceCallback.execute();
 
             connection.commit();
+            return result;
         } catch (Exception e) {
             rollback(e, connection);
         } finally {
             closeConnection(connection);
         }
-        return result;
+        return null;
     }
 
     private static void rollback(Exception e, Connection connection) {
