@@ -5,6 +5,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,34 +37,26 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            conn = dataSource.getConnection();
-            conn.setAutoCommit(false);
+            connection.setAutoCommit(false);
             
-            final var user = userDao.findById(conn, id);
+            final var user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             
-            conn.commit();
+            connection.commit();
         } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    log.error("Rollback failed", rollbackEx);
-                }
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                log.error("Rollback failed", rollbackEx);
             }
             throw new DataAccessException(e);
         } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException closeEx) {
-                    log.error("Connection close failed", closeEx);
-                }
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

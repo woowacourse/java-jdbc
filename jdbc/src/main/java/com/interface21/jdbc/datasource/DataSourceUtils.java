@@ -28,6 +28,12 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        Connection syncConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == syncConnection) {
+            // 트랜잭션 동기화 중인 Connection이면 닫지 않음
+            return;
+        }
+        
         try {
             connection.close();
         } catch (SQLException ex) {
