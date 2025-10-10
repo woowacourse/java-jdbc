@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,10 +26,14 @@ public class JdbcTemplate {
     public <T> T select(final String sql, final RowMapper<T> rowMapper, final Object... values) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.call(rs);
+                if (!rs.next()) {
+                    throw new EmptyResultDataAccessException("No data found");
                 }
-                throw new DataAccessException("No data found");
+                T result = rowMapper.call(rs);
+                if (rs.next()) {
+                    throw new IncorrectResultSizeDataAccessException("Data size is incorrect");
+                }
+                return result;
             }
         }, values);
     }
@@ -49,19 +55,27 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, values);
     }
 
-    private <T> T execute(String sql, JdbcCallback<T> callback, Object... values) {
+    public <T> T execute(final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
-
-            for (int i = 0; i < values.length; i++) {
-                pstmt.setObject(i + 1, values[i]);
-            }
+            pss.setValues(pstmt);
             return callback.call(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
+    }
+
+    private <T> T execute(final String sql, final JdbcCallback<T> callback, final Object... values) {
+        return execute(sql, callback, createPreparedStatementSetter(values));
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... values) {
+        return pstmt -> {
+            for (int i = 0; i < values.length; i++) {
+                pstmt.setObject(i + 1, values[i]);
+            }
+        };
     }
 }
