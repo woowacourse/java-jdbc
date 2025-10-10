@@ -17,7 +17,7 @@ public class UserDao {
 
     private final JdbcOperations jdbcOperations;
 
-    public UserDao(final JdbcTemplate jdbcOperations) {
+    public UserDao(final JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
     }
 
