@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.List;
+import java.util.Optional;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ class JdbcTemplateTest {
                 DEFAULT_ACCOUNT
         );
 
-        assertThat(result).isEqualTo(DEFAULT_ACCOUNT);
+        assertThat(result).isNotEmpty().isEqualTo(Optional.of(DEFAULT_ACCOUNT));
     }
 
     @Test
@@ -70,7 +71,7 @@ class JdbcTemplateTest {
                 DEFAULT_ACCOUNT
         );
 
-        assertThat(result).isEqualTo(newPassword);
+        assertThat(result).isNotEmpty().isEqualTo(Optional.of(newPassword));
     }
 
     @Test
@@ -89,10 +90,10 @@ class JdbcTemplateTest {
         );
 
         assertAll(
-                () -> assertThat(result).isNotNull(),
-                () -> assertThat(result.account).isEqualTo(DEFAULT_ACCOUNT),
-                () -> assertThat(result.password).isEqualTo(DEFAULT_PASSWORD),
-                () -> assertThat(result.email).isEqualTo(DEFAULT_EMAIL)
+                () -> assertThat(result).isNotEmpty(),
+                () -> assertThat(result.get().account).isEqualTo(DEFAULT_ACCOUNT),
+                () -> assertThat(result.get().password).isEqualTo(DEFAULT_PASSWORD),
+                () -> assertThat(result.get().email).isEqualTo(DEFAULT_EMAIL)
         );
     }
 
@@ -104,7 +105,7 @@ class JdbcTemplateTest {
                 "nonexistent"
         );
 
-        assertThat(result).isNull();
+        assertThat(result).isEmpty();
     }
 
     @Test
