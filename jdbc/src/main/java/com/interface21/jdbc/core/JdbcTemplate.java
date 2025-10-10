@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -63,26 +64,10 @@ public class JdbcTemplate {
         }
     }
 
-    private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters) {
+    private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             final Object parameter = parameters[i];
-            bindParameter(preparedStatement, parameter, i + 1);
-        }
-    }
-
-    private void bindParameter(final PreparedStatement preparedStatement, final Object parameter, final int index) {
-        final String simpleName = parameter.getClass().getSimpleName();
-
-        try {
-            final Method method = Arrays.stream(preparedStatement.getClass().getMethods())
-                    .filter(m -> m.getName().startsWith("set"))
-                    .filter(m -> m.getName().toLowerCase().contains(simpleName.toLowerCase()))
-                    .findFirst()
-                    .orElse(preparedStatement.getClass().getMethod("setObject", int.class, Object.class));
-
-            method.invoke(preparedStatement, index, parameter);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e.getMessage());
+            preparedStatement.setObject(i + 1, parameter);
         }
     }
 
