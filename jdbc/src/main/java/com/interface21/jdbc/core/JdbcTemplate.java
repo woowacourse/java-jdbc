@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +30,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            rollbackIfManualCommit();
+            rollbackIfManualCommit(dataSource);
             throw new DataAccessException(e);
         }
     }
@@ -48,7 +49,7 @@ public class JdbcTemplate {
             return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            rollbackIfManualCommit();
+            rollbackIfManualCommit(dataSource);
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
@@ -70,7 +71,7 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            rollbackIfManualCommit();
+            rollbackIfManualCommit(dataSource);
             throw new DataAccessException(e);
         } finally {
             closeResultSet(rs);
@@ -82,32 +83,25 @@ public class JdbcTemplate {
     }
 
     private void runWithConnection(Consumer<Connection> consumer) {
-        Transaction transaction = TransactionHolder.getTransaction();
-        if (transaction != null) {
-            Connection conn = transaction.getConnection();
+        if (isTransactionExist(dataSource)) {
+            Connection conn = getTransaction(dataSource).getConnection();
             consumer.accept(conn);
         } else {
-            try (Connection conn = dataSource.getConnection()) {
-                consumer.accept(conn);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
+            Connection conn = DataSourceUtils.createConnection(dataSource);
+            consumer.accept(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
     private <T> T getWithConnection(Function<Connection, T> function) {
-        Transaction transaction = TransactionHolder.getTransaction();
-        if (transaction != null) {
-            Connection conn = transaction.getConnection();
+        if (isTransactionExist(dataSource)) {
+            Connection conn = getTransaction(dataSource).getConnection();
             return function.apply(conn);
         } else {
-            try (Connection conn = dataSource.getConnection()) {
-                return function.apply(conn);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
-            }
+            Connection conn = DataSourceUtils.createConnection(dataSource);
+            T result = function.apply(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            return result;
         }
     }
 
@@ -128,8 +122,20 @@ public class JdbcTemplate {
         }
     }
 
-    private static void rollbackIfManualCommit() {
-        Transaction transaction = TransactionHolder.getTransaction();
-        if (transaction != null) transaction.rollback();
+    private static void rollbackIfManualCommit(DataSource dataSource) {
+        if (isTransactionExist(dataSource)) {
+            Transaction transaction = getTransaction(dataSource);
+            transaction.rollback();
+        }
+    }
+
+    private static boolean isTransactionExist(DataSource dataSource) {
+        TransactionManager transactionManager = TransactionManagerHolder.get(dataSource);
+        if (transactionManager == null) return false;
+        return transactionManager.getTransaction() != null;
+    }
+
+    private static Transaction getTransaction(DataSource dataSource) {
+        return TransactionManagerHolder.get(dataSource).getTransaction();
     }
 }
