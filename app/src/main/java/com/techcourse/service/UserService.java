@@ -15,8 +15,9 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
-        return userDao.findById(id);
+    public User getById(final long id) {
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 사용자가 존재하지 않습니다. id: " + id));
     }
 
     public void insert(final User user) {
@@ -24,7 +25,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        final var user = getById(id);
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
