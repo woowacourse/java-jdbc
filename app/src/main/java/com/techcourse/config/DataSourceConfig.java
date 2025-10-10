@@ -1,10 +1,17 @@
 package com.techcourse.config;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.Properties;
 import org.h2.jdbcx.JdbcDataSource;
 
-import java.util.Objects;
-
 public class DataSourceConfig {
+
+    private static final String PROPERTIES_FILE = "/application.properties";
+    private static final String DATASOURCE_URL_PROPERTY = "datasource.url";
+    private static final String DATASOURCE_USERNAME_PROPERTY = "datasource.username";
+    private static final String DATASOURCE_PASSWORD_PROPERTY = "datasource.password";
 
     private static javax.sql.DataSource INSTANCE;
 
@@ -16,12 +23,23 @@ public class DataSourceConfig {
     }
 
     private static JdbcDataSource createJdbcDataSource() {
-        final var jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
+        try (final InputStream inputStream = DataSourceConfig.class.getResourceAsStream(PROPERTIES_FILE)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("application.properties not found in classpath");
+            }
+            final Properties properties = new Properties();
+            properties.load(inputStream);
+
+            final var jdbcDataSource = new JdbcDataSource();
+            jdbcDataSource.setUrl(properties.getProperty(DATASOURCE_URL_PROPERTY));
+            jdbcDataSource.setUser(properties.getProperty(DATASOURCE_USERNAME_PROPERTY));
+            jdbcDataSource.setPassword(properties.getProperty(DATASOURCE_PASSWORD_PROPERTY));
+            return jdbcDataSource;
+        } catch (final IOException e) {
+            throw new IllegalStateException("Failed to load application.properties", e);
+        }
     }
 
-    private DataSourceConfig() {}
+    private DataSourceConfig() {
+    }
 }
