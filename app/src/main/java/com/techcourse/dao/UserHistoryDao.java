@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.context.stereotype.Component;
 import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +25,6 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         jdbcTemplate.queryForUpdate(INSERT_SQL, getParameters(userHistory));
-    }
-
-    public void log(Connection conn, final UserHistory userHistory) {
-        jdbcTemplate.queryForUpdate(conn, INSERT_SQL, getParameters(userHistory));
     }
 
     private Object[] getParameters(final UserHistory userHistory) {

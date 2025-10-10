@@ -1,11 +1,13 @@
 package com.techcourse.service;
 
+import com.interface21.context.stereotype.Component;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.util.Optional;
 
+@Component
 public class AppUserService implements UserService {
 
     private final UserDao userDao;

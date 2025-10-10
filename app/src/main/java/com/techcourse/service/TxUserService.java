@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.context.stereotype.Component;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
@@ -9,6 +10,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 import javax.sql.DataSource;
 
+@Component
 public class TxUserService implements UserService {
 
     private final UserService userService;  // AppUserService를 감싸서 사용
@@ -39,6 +41,7 @@ public class TxUserService implements UserService {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, conn);
             userService.changePassword(id, newPassword, createdBy);
             conn.commit();
         } catch (Exception e) {
