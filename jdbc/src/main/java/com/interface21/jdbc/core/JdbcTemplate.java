@@ -44,11 +44,12 @@ public class JdbcTemplate {
                 if (resultSet.next()) {
                     T result = mapper.mapRow(resultSet);
                     if (resultSet.next()) {
-                        throw new IllegalStateException("Expected single row, but gone none");
+                        throw new IllegalStateException("Expected single row, but got multiple rows");
+
                     }
                     return result;
                 }
-                throw new IllegalStateException("Expected single row, but got multiple rows");
+                throw new IllegalStateException("Expected single row, but gone none");
             }
         }, params);
     }
