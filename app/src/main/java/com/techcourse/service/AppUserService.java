@@ -1,20 +1,16 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import javax.sql.DataSource;
 
 public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final DataSource dataSource;
 
     public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.dataSource = DataSourceConfig.getInstance();
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
