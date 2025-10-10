@@ -1,62 +1,12 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
+public interface UserService {
 
-public class UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
-
-    private final DataSource dataSource;
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
-
-    public UserService(final DataSource dataSource, final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.dataSource = dataSource;
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-    }
-
-    public User findById(final long id) {
-        return userDao.findById(id);
-    }
-
-    public void insert(final User user) {
-        userDao.insert(user);
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            connection.setAutoCommit(false);
-            
-            final var user = userDao.findById(id);
-            user.changePassword(newPassword);
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
-            
-            connection.commit();
-        } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                log.error("Rollback failed", rollbackEx);
-            }
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
-    }
+    User findById(final long id);
+    
+    void insert(final User user);
+    
+    void changePassword(final long id, final String newPassword, final String createdBy);
 }
