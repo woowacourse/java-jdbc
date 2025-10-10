@@ -16,7 +16,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalStateException("멤버가 존재하지 않습니다."));
     }
 
     public void insert(final User user) {
