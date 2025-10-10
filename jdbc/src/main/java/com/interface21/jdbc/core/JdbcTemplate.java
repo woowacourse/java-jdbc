@@ -25,6 +25,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... args) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             setPreparedStatement(pstmt, args);
             final ResultSet rs = pstmt.executeQuery();
 
@@ -44,6 +45,8 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setPreparedStatement(pstmt, args);
+
             final ResultSet rs = pstmt.executeQuery();
             final List<T> result = new ArrayList<>();
             int rowNum = 1;
@@ -73,6 +76,7 @@ public class JdbcTemplate {
                 throw new IllegalArgumentException(
                         "SQL 파라미터 개수 불일치: expected " + paramCount + ", actual " + args.length);
             }
+
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
