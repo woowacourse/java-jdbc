@@ -39,11 +39,18 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
+        boolean isNewTransaction = false;
+
         try {
-            conn.setAutoCommit(false);
-            TransactionSynchronizationManager.bindResource(dataSource, conn);
+            if (!TransactionSynchronizationManager.hasResource(dataSource)) {
+                conn.setAutoCommit(false);
+                TransactionSynchronizationManager.bindResource(dataSource, conn);
+                isNewTransaction = true;
+            }
             userService.changePassword(id, newPassword, createdBy);
-            conn.commit();
+            if (isNewTransaction) {
+                conn.commit();
+            }
         } catch (Exception e) {
             try {
                 conn.rollback();
