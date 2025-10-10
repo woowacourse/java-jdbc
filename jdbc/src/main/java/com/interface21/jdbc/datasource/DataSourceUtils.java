@@ -20,18 +20,22 @@ public abstract class DataSourceUtils {
 
         try {
             connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return connection; // ⚠️ 트랜잭션 경계(TxUserService)에서만 bindResource 수행
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return;
+        }
         try {
-            connection.close();
+            if (!TransactionSynchronizationManager.hasResource(dataSource)) {
+                connection.close();
+            }
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
         }
     }
 }
