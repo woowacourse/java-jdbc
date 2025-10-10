@@ -1,13 +1,11 @@
 package com.interface21.jdbc.core;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -64,10 +62,21 @@ public class JdbcTemplate {
         }
     }
 
-    private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters) throws SQLException {
+    private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters)
+            throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             final Object parameter = parameters[i];
-            preparedStatement.setObject(i + 1, parameter);
+            final int parameterIndex = i + 1;
+
+            if (parameter == null) {
+                final ParameterMetaData metaData = preparedStatement.getParameterMetaData();
+                final int sqlType = metaData.getParameterType(parameterIndex);
+
+                preparedStatement.setNull(parameterIndex, sqlType);
+                continue;
+            }
+
+            preparedStatement.setObject(parameterIndex, parameter);
         }
     }
 
