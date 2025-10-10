@@ -18,16 +18,23 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, email, password) values (?, ?, ?)";
-        Object[] params = {user.getAccount(), user.getEmail(), user.getPassword()};
 
-        jdbcTemplate.executeUpdate(sql, params);
+        jdbcTemplate.executeUpdate(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setString(3, user.getPassword());
+        });
     }
 
     public void update(final User user) {
         final String sql = "update users set account=?, email=?, password=? where id=?";
-        Object[] params = {user.getAccount(), user.getEmail(), user.getPassword(), user.getId()};
 
-        jdbcTemplate.executeUpdate(sql, params);
+        jdbcTemplate.executeUpdate(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setString(3, user.getPassword());
+            pstmt.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {

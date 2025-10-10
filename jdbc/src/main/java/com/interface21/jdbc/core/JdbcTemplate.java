@@ -23,11 +23,11 @@ public class JdbcTemplate {
         this.mapper = mapper;
     }
 
-    public void executeUpdate(String sql, Object[] params) {
+    public void executeUpdate(String sql, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParams(pstmt, params);
+            pss.setValue(pstmt);
 
             pstmt.executeUpdate();
 
