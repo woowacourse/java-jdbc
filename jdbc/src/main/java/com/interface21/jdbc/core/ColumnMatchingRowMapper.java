@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.core.conversion.TypeConversionService;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
@@ -70,11 +71,16 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         Object[] args = new Object[constructor.getParameterCount()];
         ResultSetMetaData rsmd = rs.getMetaData();
         int columnCount = rsmd.getColumnCount();
+        Class<?>[] parameterTypes = constructor.getParameterTypes();
 
         for (int i = 1; i <= columnCount; i++) {
             String label = rsmd.getColumnLabel(i).toLowerCase();
             Integer index = parameterIndexMap.get(label);
-            if (index != null) args[index] = rs.getObject(i);
+            if (index != null) {
+                Object value = rs.getObject(i);
+                Class<?> parameterType = parameterTypes[index];
+                args[index] = TypeConversionService.convert(value, parameterType);
+            }
         }
         return args;
     }
@@ -103,7 +109,8 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         try {
             Field field = mappedClass.getDeclaredField(fieldName);
             field.setAccessible(true);
-            field.set(target, value);
+            Object convertedValue = TypeConversionService.convert(value, field.getType());
+            field.set(target, convertedValue);
         } catch (NoSuchFieldException ignored) {
         } catch (Exception e) {
             throw new RuntimeException("필드 설정 실패: " + fieldName, e);
