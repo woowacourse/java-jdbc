@@ -58,14 +58,18 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void dirtyReading() throws SQLException {
         setUp(createH2DataSource());
+        // final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+        //     .withLogConsumer(new Slf4jLogConsumer(log));
+        // mysql.start();
+        // setUp(createMySQLDataSource(mysql));
 
         // db에 새로운 연결(사용자A)을 받아와서
         final var connection = dataSource.getConnection();
@@ -81,10 +85,14 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
+            // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
+            // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
+            final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
+            System.out.println("격리 수준: " + subConnection.getTransactionIsolation());
 
             // ❗️gugu 객체는 connection에서 아직 커밋하지 않은 상태다.
             // 격리 레벨에 따라 커밋하지 않은 gugu 객체를 조회할 수 있다.
@@ -111,10 +119,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +138,10 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
+        final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
+        // final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -142,6 +153,7 @@ class Stage1Test {
         new Thread(RunnableWrapper.accept(() -> {
             // 사용자B가 새로 연결하여
             final var subConnection = dataSource.getConnection();
+            // subConnection.setAutoCommit(false); // 사용자 B의 트랜잭션은 자동 커밋
 
             // 사용자A가 조회한 gugu 객체를 사용자B가 다시 조회했다.
             final var anotherUser = userDao.findByAccount(subConnection, "gugu");
@@ -197,7 +209,10 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        // final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
+        // final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -243,6 +258,7 @@ class Stage1Test {
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
+        config.addDataSourceProperty("allowMultiQueries",  Boolean.TRUE.toString());
         return new HikariDataSource(config);
     }
 

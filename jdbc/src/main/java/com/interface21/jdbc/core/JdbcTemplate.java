@@ -27,52 +27,59 @@ public class JdbcTemplate {
         final RowMapper<T> rowMapper,
         final Object... args
     ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatementWithArguments(conn, sql, args);
-             ResultSet resultSet = pstmt.executeQuery();
-        ) {
-            log.debug("query : {}", sql);
+        PreparedStatementFunction<T> pstmtFunction = pstmt -> {
+            return mapSingleResult(rowMapper, pstmt);
+        };
+        return execute(sql, pstmtFunction, args);
+    }
 
+    private <T> T mapSingleResult(RowMapper<T> rowMapper, PreparedStatement pstmt) {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
             if (!resultSet.next()) { // 쿼리 결과 없음
                 return null;
             }
             T returnValue = rowMapper.mapRow(resultSet);
             if (resultSet.next()) { // 결과 1개 초과
-                throw new IllegalArgumentException("query returns more than one row");
+                throw new DataAccessApiException("query returns more than one row");
             }
             return returnValue;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessApiException(e);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatementWithArguments(conn, sql, args);
-             ResultSet resultSet = pstmt.executeQuery();
-        ) {
-            log.debug("query : {}", sql);
+        PreparedStatementFunction<List<T>> pstmtFunction = pstmt -> {
+            return mapResults(rowMapper, pstmt);
+        };
+        return execute(sql, pstmtFunction, args);
+    }
+
+    private <T> List<T> mapResults(RowMapper<T> rowMapper, PreparedStatement pstmt) {
+        try (final ResultSet resultSet = pstmt.executeQuery()) {
             List<T> list = new ArrayList<>();
             while (resultSet.next()) {
                 list.add(rowMapper.mapRow(resultSet));
             }
             return list;
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessApiException(e);
         }
     }
 
     public int update(String sql, Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementFunction<T> pstmtFunction, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = getPreparedStatementWithArguments(conn, sql, args);
         ) {
             log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
+            return pstmtFunction.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessApiException(e);
         }
     }
 
