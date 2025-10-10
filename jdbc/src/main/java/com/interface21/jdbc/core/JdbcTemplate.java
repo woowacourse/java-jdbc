@@ -51,6 +51,10 @@ public class JdbcTemplate {
         return Optional.of(results.get(0));
     }
 
+    public <T> Optional<T> queryForObject(String sql, Class<T> clazz, Object... params) {
+        return queryForObject(sql, new ColumnMatchingRowMapper<>(clazz), params);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -72,5 +76,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL query failed", e);
         }
+    }
+
+    public <T> List<T> query(String sql, Class<T> clazz, Object... params) {
+        return query(sql, new ColumnMatchingRowMapper<>(clazz), params);
     }
 }
