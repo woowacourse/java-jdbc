@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,16 +53,16 @@ public class JdbcTemplate {
         }, params);
     }
 
-    private <R> R execute(String sql, PreparedStatementCallBack<R> action, Object... params) {
+    private <R> R execute(String sql, PreparedStatementSetter<R> action, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bindParams(pstmt, params);
 
-            return action.doInPreparedStatement(pstmt);
+            return action.setValues(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
