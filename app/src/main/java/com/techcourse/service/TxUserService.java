@@ -1,0 +1,50 @@
+package com.techcourse.service;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.techcourse.domain.User;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+
+public class TxUserService implements UserService {
+
+    private final UserService userService;  // AppUserService를 감싸서 사용
+    private final DataSource dataSource;
+
+    public TxUserService(UserService userService, DataSource dataSource) {
+        this.userService = userService;
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    public User findById(long id) {
+        return userService.findById(id);
+    }
+
+    @Override
+    public void save(User user) {
+        userService.save(user);
+    }
+
+    @Override
+    public void changePassword(long id, String newPassword, String createdBy) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            conn.setAutoCommit(false);
+            userService.changePassword(id, newPassword, createdBy);
+            conn.commit();
+        } catch (Exception e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                throw new DataAccessException(ex);
+            }
+            throw new DataAccessException(e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+}
