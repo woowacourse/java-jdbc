@@ -66,7 +66,7 @@ class JdbcTemplateTest {
 
         final var result = jdbcTemplate.queryForObject(
                 "SELECT password FROM users WHERE account = ?",
-                (rs, rowNum) -> rs.getString(DEFAULT_PASSWORD),
+                (rs, rowNum) -> rs.getString("password"),
                 DEFAULT_ACCOUNT
         );
 
