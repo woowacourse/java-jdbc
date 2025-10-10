@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.core.conversion.TypeConversionService;
+import com.interface21.jdbc.core.util.NamingUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
@@ -74,7 +75,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         Class<?>[] parameterTypes = constructor.getParameterTypes();
 
         for (int i = 1; i <= columnCount; i++) {
-            String label = rsmd.getColumnLabel(i).toLowerCase();
+            String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i).toLowerCase());
             Integer index = parameterIndexMap.get(label);
             if (index != null) {
                 Object value = rs.getObject(i);
@@ -100,7 +101,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         int columnCount = rsmd.getColumnCount();
 
         for (int i = 1; i <= columnCount; i++) {
-            String label = rsmd.getColumnLabel(i).toLowerCase();
+            String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i).toLowerCase());
             setFieldIfExists(target, label, rs.getObject(i));
         }
     }
