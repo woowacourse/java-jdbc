@@ -33,7 +33,12 @@ public class UserDao {
 
     public int update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        return jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        return jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {
