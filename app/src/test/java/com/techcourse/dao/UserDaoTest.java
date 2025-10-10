@@ -15,8 +15,11 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        final var jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update("TRUNCATE TABLE users");
+        jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -40,7 +43,6 @@ class UserDaoTest {
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
-        System.out.println("user = " + user);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
