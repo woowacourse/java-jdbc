@@ -34,7 +34,7 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     @Override
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, Object... args) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
     }
 
