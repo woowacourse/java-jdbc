@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.util.Optional;
 
 public class AppUserService implements UserService {
 
@@ -21,7 +22,7 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         return userDao.findByAccount(account);
     }
 

@@ -6,6 +6,7 @@ import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
@@ -24,7 +25,7 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public User findByAccount(String account) {
+    public Optional<User> findByAccount(String account) {
         return userService.findByAccount(account);
     }
 
