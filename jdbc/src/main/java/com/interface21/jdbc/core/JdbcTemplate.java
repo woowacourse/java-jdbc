@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.mapper.Mapper;
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -49,7 +49,7 @@ public class JdbcTemplate {
             return null;
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -66,7 +66,7 @@ public class JdbcTemplate {
             return results;
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
