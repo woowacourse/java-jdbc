@@ -18,11 +18,13 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
     private final Class<T> mappedClass;
     private final Constructor<?> constructor;
     private final Map<String, Integer> parameterIndexMap;
+    private final Map<String, Field> fieldCache;
 
     public ColumnMatchingRowMapper(Class<T> mappedClass) {
         this.mappedClass = mappedClass;
         this.constructor = findWidestConstructor();
         this.parameterIndexMap = buildParameterIndexMap(constructor);
+        this.fieldCache = buildFieldCache();
     }
 
     @Override
@@ -57,6 +59,17 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             indexMap.put(parameters[i].getName(), i);
         }
         return indexMap;
+    }
+
+    private Map<String, Field> buildFieldCache() {
+        Map<String, Field> cache = new HashMap<>();
+        Field[] fields = mappedClass.getDeclaredFields();
+        for (Field field : fields) {
+            String camelCaseName = NamingUtils.snakeToCamel(field.getName().toLowerCase());
+            field.setAccessible(true);
+            cache.put(camelCaseName, field);
+        }
+        return cache;
     }
 
     private T mapUsingParameterizedConstructor(ResultSet rs) throws SQLException {
@@ -108,11 +121,12 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
 
     private void setFieldIfExists(T target, String fieldName, Object value) {
         try {
-            Field field = mappedClass.getDeclaredField(fieldName);
-            field.setAccessible(true);
+            Field field = fieldCache.get(fieldName);
+            if (field == null) {
+                return;
+            }
             Object convertedValue = TypeConversionService.convert(value, field.getType());
             field.set(target, convertedValue);
-        } catch (NoSuchFieldException ignored) {
         } catch (Exception e) {
             throw new RuntimeException("필드 설정 실패: " + fieldName, e);
         }
