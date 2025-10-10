@@ -70,8 +70,8 @@ public class JdbcTemplate {
         }
     }
 
-    private void validationParamLength(Object[] params, PreparedStatement pstmt) throws SQLException {
-        int parameterCount = pstmt.getParameterMetaData().getParameterCount();
+    private void validationParamLength(Object[] params, PreparedStatement ps) throws SQLException {
+        int parameterCount = ps.getParameterMetaData().getParameterCount();
         if (params.length != parameterCount) {
             throw new DataAccessException(
                     String.format("파라미터 개수가 일치하지 않습니다.: SQL에 %d개 필요, %d개 제공됨",
