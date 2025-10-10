@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.InvalidResultSetException;
 import com.interface21.jdbc.QueryResultMapper;
 import com.interface21.jdbc.SqlExecution;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -43,9 +43,8 @@ public class JdbcTemplate {
                     return mapQueryResult((resultSet -> {
                         if (resultSet.next()) {
                             return mapper.map(resultSet);
-                        } else {
-                            throw new IllegalStateException("Query Result Not Found");
                         }
+                        throw new IllegalStateException("Query Result Not Found");
                     }), pstmt);
                 },
                 sql,
@@ -92,7 +91,7 @@ public class JdbcTemplate {
         }
         catch (final IllegalStateException e) {
             log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+            throw new InvalidResultSetException(e.getMessage(), e);
         }
     }
 
