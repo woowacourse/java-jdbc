@@ -56,7 +56,7 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                list.add(rowMapper.mapRow(rs, rs.getRow()));
+                list.add(rowMapper.mapRow(rs));
             }
             return list;
         } catch (SQLException e) {
