@@ -1,12 +1,15 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.BusinessService;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
-public class TxUserService implements UserService {
+public class TxUserService extends BusinessService implements UserService {
 
     private final UserService userService;
 
     public TxUserService(final UserService userService) {
+        super(DataSourceConfig.getInstance());
         this.userService = userService;
     }
 
@@ -23,10 +26,9 @@ public class TxUserService implements UserService {
     // override 대상인 메서드는 userService의 메서드를 그대로 위임(delegate)한다.
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        // 트랜잭션 처리 영역
-
-        userService.changePassword(id, newPassword, createdBy);
-
-        // 트랜잭션 처리 영역
+        transaction(() -> {
+            userService.changePassword(id, newPassword, createdBy);
+            return null;
+        });
     }
 }
