@@ -39,8 +39,9 @@ public class JdbcTemplate {
             validationParamLength(params, ps);
             bindingParams(params, ps);
 
-            ResultSet resultSet = ps.executeQuery();
-            return rowMapper.mapRow(resultSet);
+            try (ResultSet rs = ps.executeQuery()) {
+                return extractObject(rs, rowMapper);
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
@@ -73,11 +74,22 @@ public class JdbcTemplate {
         int parameterCount = pstmt.getParameterMetaData().getParameterCount();
         if (params.length != parameterCount) {
             throw new DataAccessException(
-                    String.format("파라미터 개수 불일치: SQL에 %d개 필요, %d개 제공됨",
+                    String.format("파라미터 개수가 일치하지 않습니다.: SQL에 %d개 필요, %d개 제공됨",
                             parameterCount,
                             params.length
                     )
             );
         }
+    }
+
+    private <T> T extractObject(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        if (rs.next()) {
+            T result = rowMapper.mapRow(rs);
+            if (rs.next()) {
+                throw new DataAccessException("결과가 2개 이상입니다.");
+            }
+            return result;
+        }
+        throw new DataAccessException("결과가 없습니다.");
     }
 }
