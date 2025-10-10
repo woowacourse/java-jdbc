@@ -24,6 +24,11 @@ public class TxUserService implements UserService {
     }
 
     @Override
+    public User findByAccount(String account) {
+        return userService.findByAccount(account);
+    }
+
+    @Override
     public void save(User user) {
         userService.save(user);
     }

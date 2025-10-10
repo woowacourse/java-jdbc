@@ -50,8 +50,9 @@ public class UserDao {
         jdbcTemplate.queryForUpdate(conn, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public Optional<User> findByAccount(final String account) {
+    public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, account);
+        Optional<User> user = jdbcTemplate.queryForResult(sql, UserMapper.USER_ROW_MAPPER, account);
+        return user.orElseThrow(IllegalArgumentException::new);
     }
 }
