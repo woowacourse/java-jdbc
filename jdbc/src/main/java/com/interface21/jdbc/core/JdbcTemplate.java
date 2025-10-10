@@ -37,11 +37,8 @@ public class JdbcTemplate {
     public <T> T executeSelect(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
-
+             ResultSet rs = executeQuery(pss, pstmt);
         ) {
-
-            pss.setValue(pstmt);
-            ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
@@ -58,6 +55,7 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery();
         ) {
+
             List<T> results = new ArrayList<>();
 
             while (rs.next()) {
@@ -68,5 +66,10 @@ public class JdbcTemplate {
         } catch (Exception e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private ResultSet executeQuery(PreparedStatementSetter pss, PreparedStatement pstmt) throws SQLException {
+        pss.setValue(pstmt);
+        return pstmt.executeQuery();
     }
 }
