@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,17 +26,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            createPreparedStatementSetter(parameters).setValues(pstmt);
-
-            return pstmt.executeUpdate();
-
-        } catch (SQLException e) {
-            log.info("Fail update. sql={}, parameters={}", sql, parameters);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> T queryByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -47,20 +38,25 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> list = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()
-        ) {
-
-            createPreparedStatementSetter(parameters).setValues(pstmt);
-
-            while (rs.next()) {
-                list.add(rowMapper.mapRow(rs));
+        return execute(sql, pstmt -> {
+            List<T> list = new ArrayList<>();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) list.add(rowMapper.mapRow(rs));
             }
             return list;
+        }, parameters);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... parameters) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            createPreparedStatementSetter(parameters).setValues(pstmt);
+            return action.doInPreparedStatement(pstmt);
+
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error("Database operation failed. sql={}", sql, e);
+            throw new DataAccessException("Failed to execute SQL", e);
         }
     }
 
