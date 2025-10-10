@@ -172,6 +172,7 @@ class Stage1Test {
     }
 
     /**
+     * ? phantom read : 이전에 조회했을 때 보이지 않았던(or 보였던) 데이터가 이후 조회 단계에서 보이는(or 보이지 않는) 현상
      * phantom read는 h2에서 발생하지 않는다. mysql로 확인해보자.
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
@@ -179,10 +180,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -204,7 +205,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE; // 트랜잭션을 하나씩 순차 수행 - 팬텀 리드 발생할 일 없음
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -230,6 +231,11 @@ class Stage1Test {
 
         // MySQL에서 팬텀 읽기를 시연하려면 update를 실행해야 한다.
         // http://stackoverflow.com/questions/42794425/unable-to-produce-a-phantom-read/42796969#42796969
+        // why? - 추론: update를 실행하면 이전의 스냅샷을 참조하지 않고, 새로운 스냅샷을 참조할 것이다.
+        //        결과: repeatable read 를 위해 트랜잭션에서는 스냅샷을 사용함.
+        //             그런데 update / delete 는 최신 상태를 기준으로 반영해야 하므로,
+        //             update / delete 를 실행한 시점부터는 과거 스냅샷이 아닌 최신 스냅샷을 가져오게 됨.
+        //             = 내 트랜잭션에서 수행한 새로운 스냅샷 = 이후에도 그대로 참조
         userDao.updatePasswordGreaterThan(connection, "qqqq", 1);
 
         // 사용자A가 다시 id로 범위를 조회했다.
