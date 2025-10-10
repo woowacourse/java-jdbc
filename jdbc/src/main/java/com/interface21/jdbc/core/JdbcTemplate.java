@@ -23,10 +23,7 @@ public class JdbcTemplate {
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
             validationParamLength(params, ps);
-
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
+            bindingParams(params, ps);
 
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -40,10 +37,7 @@ public class JdbcTemplate {
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
             validationParamLength(params, ps);
-
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
+            bindingParams(params, ps);
 
             ResultSet resultSet = ps.executeQuery();
             return rowMapper.mapRow(resultSet);
@@ -66,6 +60,12 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private void bindingParams(Object[] params, PreparedStatement ps) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            ps.setObject(i + 1, params[i]);
         }
     }
 
