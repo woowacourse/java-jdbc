@@ -1,12 +1,16 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.mapper.RowMapper;
+import com.interface21.jdbc.mapper.ReflectionResultSetRowMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -15,8 +19,10 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        RowMapper rowMapper = new ReflectionResultSetRowMapper();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource, rowMapper);
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -59,7 +65,6 @@ class UserDaoTest {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
-
         userDao.update(user);
 
         final var actual = userDao.findById(1L);

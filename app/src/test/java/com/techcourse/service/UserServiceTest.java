@@ -1,18 +1,21 @@
 package com.techcourse.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.mapper.RowMapper;
+import com.interface21.jdbc.mapper.ReflectionResultSetRowMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Disabled
 class UserServiceTest {
@@ -22,7 +25,9 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        DataSource dataSource = DataSourceConfig.getInstance();
+        RowMapper rowMapper = new ReflectionResultSetRowMapper();
+        this.jdbcTemplate = new JdbcTemplate(dataSource, rowMapper);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());

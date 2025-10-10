@@ -4,14 +4,14 @@ public class User {
 
     private Long id;
     private final String account;
-    private String password;
     private final String email;
+    private String password;
 
-    public User(long id, String account, String password, String email) {
+    public User(long id, String account, String email, String password) {
         this.id = id;
         this.account = account;
-        this.password = password;
         this.email = email;
+        this.password = password;
     }
 
     public User(String account, String password, String email) {
