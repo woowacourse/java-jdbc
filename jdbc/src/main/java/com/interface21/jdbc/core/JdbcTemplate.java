@@ -22,8 +22,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
-            validationParamLength(params, ps);
-            bindingParams(params, ps);
+            validationParamLength(ps, params);
+            bindingParams(ps, params);
 
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -36,8 +36,8 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
-            validationParamLength(params, ps);
-            bindingParams(params, ps);
+            validationParamLength(ps, params);
+            bindingParams(ps, params);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return extractObject(rs, rowMapper);
@@ -47,15 +47,20 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()
         ) {
+            validationParamLength(ps, params);
+            bindingParams(ps, params);
+
             List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
             }
 
             return results;
@@ -64,13 +69,13 @@ public class JdbcTemplate {
         }
     }
 
-    private void bindingParams(Object[] params, PreparedStatement ps) throws SQLException {
+    private void bindingParams(PreparedStatement ps, Object[] params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             ps.setObject(i + 1, params[i]);
         }
     }
 
-    private void validationParamLength(Object[] params, PreparedStatement ps) throws SQLException {
+    private void validationParamLength(PreparedStatement ps, Object[] params) throws SQLException {
         int parameterCount = ps.getParameterMetaData().getParameterCount();
         if (params.length != parameterCount) {
             throw new DataAccessException(
