@@ -10,6 +10,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,8 +31,9 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final var userHistoryDao = new UserHistoryDao(dataSource);
+        final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -44,9 +46,10 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
+        final DataSource dataSource = DataSourceConfig.getInstance();
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(dataSource);
+        final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
