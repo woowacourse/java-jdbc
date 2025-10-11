@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.exception.ConnectionCloseException;
 import com.interface21.jdbc.exception.ParameterBindingException;
