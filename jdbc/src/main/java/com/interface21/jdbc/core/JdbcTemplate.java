@@ -43,8 +43,7 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bindPreparedStatement(pstmt, parameters);
-            ResultSet resultSet = executeQuery(pstmt);
-            List<T> result = bindQueryResults(resultSet, rowMapper);
+            List<T> result = executeQuery(pstmt, rowMapper);
             validateResultCountIsOne(result.size());
             return result.getFirst();
         } catch (SQLException e) {
@@ -58,8 +57,7 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bindPreparedStatement(pstmt, parameters);
-            ResultSet resultSet = executeQuery(pstmt);
-            return bindQueryResults(resultSet, rowMapper);
+            return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error("SQL 예외 발생: {}", e.getMessage(), e);
             throw new DataAccessException("SQL 예외 발생", e);
@@ -97,9 +95,9 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt) {
-        try {
-            return pstmt.executeQuery();
+    private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) {
+        try (ResultSet resultSet = pstmt.executeQuery()) {
+            return bindQueryResults(resultSet, rowMapper);
         } catch (SQLException e) {
             log.error("데이터 조회 실패: {}", e.getMessage(), e);
             throw new StatementExecuteQueryException("데이터 조회 실패", e);
@@ -113,7 +111,6 @@ public class JdbcTemplate {
                 T result = rowMapper.mapRowToObject(resultSet);
                 results.add(result);
             }
-            resultSet.close();
             return results;
         } catch (SQLException e) {
             log.error("조회 결과 바인딩 실패: {}", e.getMessage(), e);
