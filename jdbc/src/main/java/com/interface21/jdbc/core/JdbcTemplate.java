@@ -21,22 +21,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatementParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("리소스 해제에 실패했습니다.");
-        }
+        execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatementParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
+        return execute(sql, (pstmt) -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> instances = new ArrayList<>();
                 while (rs.next()) {
@@ -44,10 +33,7 @@ public class JdbcTemplate {
                 }
                 return instances;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("리소스 해제에 실패했습니다.");
-        }
+        }, parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -56,6 +42,18 @@ public class JdbcTemplate {
             throw new RuntimeException("쿼리 실행 결과가 기대한 데이터 수와 같지 않습니다.");
         }
         return results.getFirst();
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... parameters) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setStatementParameters(pstmt, parameters);
+            log.debug("query : {}", sql);
+            return executor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException("리소스 해제에 실패했습니다.");
+        }
     }
 
     private void setStatementParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
