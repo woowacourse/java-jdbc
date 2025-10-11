@@ -32,25 +32,24 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
-        try {
-            connection = DataSourceConfig.getInstance().getConnection();
+        try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
-            final var user = userDao.findById(connection, id)
-                    .orElseThrow(() -> new IllegalArgumentException("사용자 정보가 존재하지 않습니다."));
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-            connection.commit();
-        } catch (SQLException e) {
             try {
-                if (connection != null) {
+                final var user = userDao.findById(connection, id)
+                        .orElseThrow(() -> new IllegalArgumentException("사용자 정보가 존재하지 않습니다."));
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                connection.commit();
+            } catch (Exception e) {
+                try {
                     connection.rollback();
+                } catch (SQLException ex) {
+                    log.error("Rollback failed", ex);
                 }
-            } catch (SQLException ex) {
-                log.error("Rollback failed", ex);
-                throw new DataAccessException(ex);
+                throw e;
             }
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
