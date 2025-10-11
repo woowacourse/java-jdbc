@@ -19,7 +19,6 @@ public class UserDao {
                 .value("password", user.getPassword())
                 .value("email", user.getEmail())
                 .execute();
-
     }
 
     public void update(final User user) {
