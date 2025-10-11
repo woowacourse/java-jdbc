@@ -107,7 +107,7 @@ public class JdbcTemplate {
             List<T> results = new ArrayList<>();
             int rowNum = 0;
             while (resultSet.next()) {
-                T result = rowMapper.mapRowToObject(resultSet, rowNum++);
+                T result = rowMapper.mapRowToObject(resultSet);
                 results.add(result);
             }
             return results;
