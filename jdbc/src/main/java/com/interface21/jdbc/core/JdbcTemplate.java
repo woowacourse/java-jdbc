@@ -20,28 +20,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... parameters) {
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
         ) {
-            setParameters(parameters, pstmt);
+            preparedStatementSetter.setValues(preparedStatement);
 
-            pstmt.executeUpdate();
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public <T> T query(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
         ) {
-            setParameters(parameters, pstmt);
+            preparedStatementSetter.setValues(preparedStatement);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = preparedStatement.executeQuery()) {
                 if(rs.next()) {
                     return rowMapper.mapped(rs);
                 }
@@ -53,15 +53,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> queryAll(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> List<T> queryAll(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         try (
                 Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = connection.prepareStatement(sql);
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
         ) {
-            setParameters(parameters, pstmt);
+            preparedStatementSetter.setValues(preparedStatement);
 
             List<T> results = new ArrayList<>();
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = preparedStatement.executeQuery()) {
                 while (rs.next()) {
                     T result = rowMapper.mapped(rs);
                     results.add(result);
@@ -72,12 +72,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setParameters(Object[] parameters, PreparedStatement pstmt) throws SQLException {
-        for (int i = 1; i <= parameters.length; i++) {
-            pstmt.setObject(i, parameters[i - 1]);
         }
     }
 }
