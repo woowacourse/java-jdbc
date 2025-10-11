@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,22 +34,46 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try(Connection connection = dataSource.getConnection()) {
+        doInTransaction(connection -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
+    }
+
+    private void doInTransaction(Consumer<Connection> consumer){
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            try {
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (SQLException e){
-                log.error("Rollback 발생");
-                connection.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
+            consumer.accept(connection);
+            connection.commit();
+        } catch (Exception e) {
             log.error("비밀번호 변경 중 예외 발생");
-            throw new RuntimeException(e);
+            handleTransactionException(e, connection);
+        } finally {
+            closeConnection(connection);
+        }
+    }
+
+    private void handleTransactionException(Exception e, Connection connection) {
+        if(connection != null) {
+            try { // 커넥션이 존재할 경우 롤백 시도
+                connection.rollback();
+                log.info("Rollback 완료");
+            } catch (SQLException ex) { // 롤백 도중 예외 발생
+                log.error("Rollback 실패", ex);
+            }
+        }
+        throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
+    }
+
+    private void closeConnection(Connection connection) {
+        if(connection != null){ // 커넥션이 존재할 경우 close
+            try {
+                connection.close();
+            } catch (SQLException ignored) {}
         }
     }
 }
