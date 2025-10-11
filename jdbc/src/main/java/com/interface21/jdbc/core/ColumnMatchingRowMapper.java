@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataMappingException;
 import com.interface21.jdbc.core.conversion.TypeConversionService;
 import com.interface21.jdbc.core.util.NamingUtils;
 import com.interface21.jdbc.core.util.PrimitiveUtils;
@@ -53,7 +54,9 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
     }
 
     private Map<String, Integer> buildParameterIndexMap(Constructor<?> constructor) {
-        if (constructor == null) return Map.of();
+        if (constructor == null) {
+            return Map.of();
+        }
         Parameter[] parameters = constructor.getParameters();
         Map<String, Integer> indexMap = new HashMap<>();
         for (int i = 0; i < parameters.length; i++) {
@@ -73,12 +76,12 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         return cache;
     }
 
-    private T mapUsingParameterizedConstructor(ResultSet rs) throws SQLException {
+    private T mapUsingParameterizedConstructor(ResultSet rs) {
         try {
             Object[] args = resolveConstructorArguments(rs);
             return (T) constructor.newInstance(args);
         } catch (Exception e) {
-            throw new SQLException("생성자를 통한 객체 매핑 실패", e);
+            throw new DataMappingException("생성자를 통한 객체 매핑 실패: " + mappedClass.getSimpleName(), e);
         }
     }
 
@@ -100,13 +103,13 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         return args;
     }
 
-    private T mapUsingFieldInjection(ResultSet rs) throws SQLException {
+    private T mapUsingFieldInjection(ResultSet rs) {
         try {
             T mappedObject = mappedClass.getDeclaredConstructor().newInstance();
             populateFieldsFromResultSet(mappedObject, rs);
             return mappedObject;
         } catch (Exception e) {
-            throw new SQLException("기본 생성자 기반 객체 매핑 실패", e);
+            throw new DataMappingException("기본 생성자 기반 객체 매핑 실패: " + mappedClass.getSimpleName(), e);
         }
     }
 
@@ -134,7 +137,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             }
             field.set(target, convertedValue);
         } catch (Exception e) {
-            throw new RuntimeException("필드 설정 실패: " + fieldName, e);
+            throw new DataMappingException("필드 설정 실패: " + fieldName, e);
         }
     }
 }
