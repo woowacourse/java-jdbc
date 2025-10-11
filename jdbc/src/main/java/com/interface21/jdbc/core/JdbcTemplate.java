@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.querybuilder.DeleteQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.InsertQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.SelectQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.SqlStep;
 import com.interface21.jdbc.core.querybuilder.UpdateQueryBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -86,7 +87,7 @@ public class JdbcTemplate {
         return query(sql, new ColumnMatchingRowMapper<>(clazz), params);
     }
 
-    public <T> SelectQueryBuilder<T> select(Class<T> clazz) {
+    public <T> SqlStep<T>  select(Class<T> clazz) {
         return new SelectQueryBuilder<>(this, clazz);
     }
 

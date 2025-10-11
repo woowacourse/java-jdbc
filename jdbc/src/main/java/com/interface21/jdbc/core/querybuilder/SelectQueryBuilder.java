@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class SelectQueryBuilder<T> {
+public class SelectQueryBuilder<T> implements SqlStep<T>, SelectExecutableStep<T> {
 
     private final JdbcTemplate jdbcTemplate;
     private final Class<T> mappedClass;
@@ -22,7 +22,7 @@ public class SelectQueryBuilder<T> {
     /**
      * 실행할 SQL 쿼리를 설정합니다.
      */
-    public SelectQueryBuilder<T> sql(String sql) {
+    public SelectExecutableStep<T> sql(String sql) {
         this.sql = sql;
         return this;
     }
@@ -30,7 +30,7 @@ public class SelectQueryBuilder<T> {
     /**
      * SQL의 ?에 순서대로 바인딩될 파라미터를 추가합니다.
      */
-    public SelectQueryBuilder<T> param(Object param) {
+    public SelectExecutableStep<T> param(Object param) {
         this.params.add(param);
         return this;
     }
