@@ -15,6 +15,20 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * {@code ColumnMatchingRowMapper}는 ResultSet의 컬럼명과 자바 객체의 생성자 파라미터 또는 필드명을 자동 매칭하여 객체를 생성하는 RowMapper 구현체입니다.
+ * <p>
+ * 컬럼명이 snake_case일 경우 camelCase로 변환하여 매핑합니다.
+ * <ul>
+ *   <li>파라미터가 많은 생성자를 우선적으로 사용하며, 생성자 파라미터명과 컬럼명이 일치하면 생성자를 통해 객체를 생성합니다.</li>
+ *   <li>생성자 매핑이 어려운 경우(기본 생성자 또는 파라미터명 불일치)에는 필드 주입 방식으로 객체를 생성합니다.</li>
+ * </ul>
+ * <p>
+ * 필드 주입 방식은 기본 생성자가 필요합니다.
+ * 생성자 기반 매핑은 파라미터 이름 정보를 유지하기 위해 컴파일 시 {@code -parameters} 옵션이 활성화되어야 합니다.
+ *
+ * @param <T> 매핑할 객체 타입
+ */
 public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
 
     private final Class<T> mappedClass;
@@ -22,6 +36,11 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
     private final Map<String, Integer> parameterIndexMap;
     private final Map<String, Field> fieldCache;
 
+    /**
+     * 매핑할 클래스 타입을 받아 RowMapper를 생성합니다.
+     *
+     * @param mappedClass ResultSet에서 매핑할 대상 클래스
+     */
     public ColumnMatchingRowMapper(Class<T> mappedClass) {
         this.mappedClass = mappedClass;
         this.constructor = findWidestConstructor();
@@ -29,6 +48,15 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         this.fieldCache = buildFieldCache();
     }
 
+    /**
+     * ResultSet의 현재 행을 객체로 매핑합니다.
+     * <p>
+     * 생성자 주입 또는 필드 주입 전략 중 적합한 방식을 자동 선택하여 객체를 반환합니다.
+     *
+     * @param rs ResultSet 객체
+     * @return 매핑된 객체 인스턴스
+     * @throws SQLException ResultSet 접근 오류 발생 시
+     */
     @Override
     public T mapRow(ResultSet rs) throws SQLException {
         if (isFieldInjectionPreferred()) {
@@ -76,6 +104,14 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         return cache;
     }
 
+    /**
+     * 생성자 파라미터명을 컬럼명과 매칭하여 객체를 생성합니다.
+     * <p>
+     * 컬럼명과 생성자 파라미터명이 일치할 때, 타입 변환을 수행하여 생성자를 호출합니다.
+     *
+     * @param rs ResultSet 객체
+     * @return 생성자 기반으로 매핑된 객체
+     */
     private T mapUsingParameterizedConstructor(ResultSet rs) {
         try {
             Object[] args = resolveConstructorArguments(rs);
@@ -103,6 +139,14 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         return args;
     }
 
+    /**
+     * 기본 생성자로 객체를 생성한 뒤, 컬럼명과 필드명을 매칭하여 직접 값을 주입합니다.
+     * <p>
+     * 컬럼명과 필드명이 일치하면 타입 변환 후 필드에 값을 설정합니다.
+     *
+     * @param rs ResultSet 객체
+     * @return 필드 주입 기반으로 매핑된 객체
+     */
     private T mapUsingFieldInjection(ResultSet rs) {
         try {
             T mappedObject = mappedClass.getDeclaredConstructor().newInstance();
