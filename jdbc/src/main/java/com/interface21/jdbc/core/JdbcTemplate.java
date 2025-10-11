@@ -32,23 +32,6 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatementParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapForObject(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("리소스 해제에 실패했습니다.");
-        }
-    }
-
     public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -65,6 +48,14 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException("리소스 해제에 실패했습니다.");
         }
+    }
+
+    public <T> T executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        final List<T> results = executeQuery(sql, rowMapper, parameters);
+        if (results.size() > 1) {
+            throw new RuntimeException("쿼리 실행 결과가 기대한 데이터 수와 같지 않습니다.");
+        }
+        return results.getFirst();
     }
 
     private void setStatementParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
