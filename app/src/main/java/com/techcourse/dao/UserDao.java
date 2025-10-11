@@ -49,15 +49,12 @@ public class UserDao {
 
     public void update(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        try (var pstmt = connection.prepareStatement(sql)) {
+        jdbcTemplate.update(connection, sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
             pstmt.setLong(4, user.getId());
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public List<User> findAll() {
@@ -74,17 +71,9 @@ public class UserDao {
 
     public User findById(final Connection connection, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        try (var pstmt = connection.prepareStatement(sql)) {
-            pstmt.setLong(1, id);
-            try (var rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return USER_ROW_MAPPER.mapRow(rs);
-                }
-                throw new NoSuchElementException("User not found with id: " + id);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER,
+                        pstmt -> pstmt.setLong(1, id))
+                .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
     }
 
     public User findByAccount(final String account) {
