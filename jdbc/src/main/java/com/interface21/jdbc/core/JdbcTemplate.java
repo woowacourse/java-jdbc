@@ -46,6 +46,17 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(Connection connection, String sql, PreparedStatementSetter setter) {
+        try (final var pstmt = getPreparedStatement(sql, connection)) {
+            log.debug("query : {}", sql);
+            bindParams(sql, pstmt, setter);
+            return executeUpdate(sql, pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new ConnectionCloseException(e, sql);
+        }
+    }
+
     @Deprecated
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return query(sql, (pstmt) -> bindParams(pstmt, params), rowMapper);
