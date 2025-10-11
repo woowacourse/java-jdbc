@@ -37,13 +37,24 @@ public class JdbcTemplate {
         return query(sql, new ArgumentPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, new ArgumentPreparedStatementSetter(args),
-                new RowMapperResultSetExtractor<>(rowMapper));
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        return query(sql, pss, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        final List<T> results = query(
+                sql,
+                pss,
+                new RowMapperResultSetExtractor<>(rowMapper)
+        );
         if (results.isEmpty()) {
             throw new IncorrectResultSizeDataAccessException(1, 0);
         }
         return results.getFirst();
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
     }
 
     public int update(final String sql, final PreparedStatementSetter pss) {
