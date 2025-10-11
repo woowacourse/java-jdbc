@@ -6,7 +6,6 @@ import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -55,20 +54,32 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, values);
     }
 
-    public <T> T execute(final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            pss.setValues(pstmt);
-            return callback.call(pstmt);
-        } catch (SQLException e) {
+    public void update(final Connection conn, final String sql, final Object... values) {
+        execute(conn, sql, PreparedStatement::executeUpdate, values);
+    }
+
+    public <T> T execute(final String sql, final JdbcCallback<T> callback, final Object... values) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, callback, values);
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T execute(final String sql, final JdbcCallback<T> callback, final Object... values) {
-        return execute(sql, callback, createPreparedStatementSetter(values));
+    public <T> T execute(final Connection conn, final String sql, final JdbcCallback<T> callback, final Object... values) {
+        return execute(conn, sql, callback, createPreparedStatementSetter(values));
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            pss.setValues(pstmt);
+            return callback.call(pstmt);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... values) {
