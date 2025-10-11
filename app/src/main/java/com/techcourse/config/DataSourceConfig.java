@@ -25,7 +25,7 @@ public class DataSourceConfig {
     private static JdbcDataSource createJdbcDataSource() {
         try (final InputStream inputStream = DataSourceConfig.class.getResourceAsStream(PROPERTIES_FILE)) {
             if (inputStream == null) {
-                throw new IllegalStateException("application.properties not found in classpath");
+                throw new ConfigurationException("application.properties not found in classpath");
             }
             final Properties properties = new Properties();
             properties.load(inputStream);
@@ -36,7 +36,7 @@ public class DataSourceConfig {
             jdbcDataSource.setPassword(properties.getProperty(DATASOURCE_PASSWORD_PROPERTY));
             return jdbcDataSource;
         } catch (final IOException e) {
-            throw new IllegalStateException("Failed to load application.properties", e);
+            throw new ConfigurationException("Failed to load application.properties");
         }
     }
 
