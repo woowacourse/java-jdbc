@@ -1,16 +1,12 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.domain.User;
 import com.interface21.jdbc.JdbcTemplate;
 import com.interface21.jdbc.RowMapper;
-
-import javax.sql.DataSource;
+import com.techcourse.domain.User;
 import java.util.List;
+import javax.sql.DataSource;
 
 public class UserDao {
-
-    private final JdbcTemplate jdbcTemplate;
 
     private static final RowMapper<User> ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
@@ -18,6 +14,8 @@ public class UserDao {
             rs.getString("password"),
             rs.getString("email")
     );
+
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);

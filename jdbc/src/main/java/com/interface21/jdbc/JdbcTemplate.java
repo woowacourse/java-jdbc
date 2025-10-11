@@ -1,7 +1,9 @@
 package com.interface21.jdbc;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,26 +19,34 @@ public class JdbcTemplate {
 
     public void update(
             final String sql,
-            final Object... args
+            final PreparedStatementSetter pss
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = createPreparedStatement(connection, sql, args)) {
+        execute(sql, pss, preparedStatement -> {
             preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+            return null;
+        });
     }
 
-    public <T> T queryForObject(
+    public void update(
             final String sql,
-            final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.get(0);
+        update(sql, getDefaultPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter pss
+    ) {
+        return execute(sql, pss, preparedStatement -> {
+            final ResultSet resultSet = preparedStatement.executeQuery();
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
+        });
     }
 
     public <T> List<T> query(
@@ -44,30 +54,53 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = createPreparedStatement(connection, sql, args);
-             final var resultSet = preparedStatement.executeQuery()) {
+        return query(sql, rowMapper, getDefaultPreparedStatementSetter(args));
+    }
 
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter pss
+    ) {
+        final List<T> results = query(sql, rowMapper, pss);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.getFirst();
+    }
 
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(args));
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter pss,
+            final PreparedStatementExecutor<T> executor
+    ) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            pss.setValues(preparedStatement);
+            return executor.execute(preparedStatement);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
-    private PreparedStatement createPreparedStatement(
-            final Connection connection,
-            final String sql,
-            final Object[] args
-    ) throws SQLException {
-        final var preparedStatement = connection.prepareStatement(sql);
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
-        }
-        return preparedStatement;
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(final Object[] args) {
+        return preparedStatement -> {
+            for (int i = 0; i < args.length; i++) {
+                preparedStatement.setObject(i + 1, args[i]);
+            }
+        };
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementExecutor<T> {
+        T execute(final PreparedStatement preparedStatement) throws SQLException;
     }
 }
