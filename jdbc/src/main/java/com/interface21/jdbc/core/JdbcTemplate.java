@@ -23,16 +23,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        execute(sql, pstmt -> {
             pss.setValues(pstmt);
             log.debug("query : {}", sql);
-            pstmt.executeUpdate();
-        } catch (final SQLException e) {
-            log.error("JdbcTemplate {} failed. SQL: {}", "update", sql, e);
-            throw new DataAccessException("JdbcTemplate query failed", e);
-        }
+            return pstmt.executeUpdate();
+        });
     }
 
     public void update(final String sql, final Object...args) {
@@ -44,9 +39,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        return execute(sql, pstmt -> {
             pss.setValues(pstmt);
             log.debug("query : {}", sql);
 
@@ -56,11 +49,7 @@ public class JdbcTemplate {
                 }
             }
             return null;
-
-        } catch (final SQLException e) {
-            log.error("JdbcTemplate {} failed. SQL: {}", "queryForObject", sql, e);
-            throw new DataAccessException("JdbcTemplate query failed", e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final Object...args) {
@@ -72,9 +61,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        return execute(sql, pstmt -> {
             pss.setValues(pstmt);
             log.debug("query : {}", sql);
 
@@ -89,11 +76,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-
-        } catch (final SQLException e) {
-            log.error("JdbcTemplate {} failed. SQL: {}", "queryForList", sql, e);
-            throw new DataAccessException("JdbcTemplate query failed", e);
-        }
+        });
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object...args) {
@@ -106,5 +89,15 @@ public class JdbcTemplate {
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
         return queryForList(sql, rowMapper, pstmt -> {});
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            return callBack.processIn(pstmt);
+        } catch (final SQLException e) {
+            log.error("JdbcTemplate execution failed. SQL: {}", sql, e);
+            throw new DataAccessException("dbcTemplate execution failed for SQL: " + sql, e);
+        }
     }
 }
