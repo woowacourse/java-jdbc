@@ -50,6 +50,9 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new IncorrectResultSizeDataAccessException(1, 0);
         }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
         return results.getFirst();
     }
 
