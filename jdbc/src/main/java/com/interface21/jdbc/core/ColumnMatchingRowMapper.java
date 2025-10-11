@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.core.conversion.TypeConversionService;
 import com.interface21.jdbc.core.util.NamingUtils;
+import com.interface21.jdbc.core.util.PrimitiveUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
@@ -125,7 +126,12 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             if (field == null) {
                 return;
             }
-            Object convertedValue = TypeConversionService.convert(value, field.getType());
+            Object convertedValue;
+            if (value == null && field.getType().isPrimitive()) {
+                convertedValue = PrimitiveUtils.getDefaultValue(field.getType());
+            } else {
+                convertedValue = TypeConversionService.convert(value, field.getType());
+            }
             field.set(target, convertedValue);
         } catch (Exception e) {
             throw new RuntimeException("필드 설정 실패: " + fieldName, e);
