@@ -113,6 +113,7 @@ public class JdbcTemplate {
                 T result = rowMapper.mapRowToObject(resultSet);
                 results.add(result);
             }
+            resultSet.close();
             return results;
         } catch (SQLException e) {
             log.error("조회 결과 바인딩 실패: {}", e.getMessage(), e);
