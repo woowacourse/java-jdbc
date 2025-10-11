@@ -25,8 +25,6 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
-            log.debug("query : {}", sql);
-
             setParameters(parameters, pstmt);
 
             pstmt.executeUpdate();
@@ -42,8 +40,6 @@ public class JdbcTemplate {
                 PreparedStatement pstmt = conn.prepareStatement(sql);
         ) {
             setParameters(parameters, pstmt);
-
-            log.debug("query : {}", sql);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if(rs.next()) {
