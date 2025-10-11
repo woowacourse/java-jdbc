@@ -18,7 +18,7 @@ public class UserService {
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        dataSource = DataSourceConfig.getInstance();
+        this.dataSource = DataSourceConfig.getInstance();
     }
 
     public User findById(final long id) {
@@ -31,32 +31,62 @@ public class UserService {
     }
 
     public void changePassword(long id, String newPassword, String createdBy) {
+        inTransaction(conn -> changePasswordTx(conn, id, newPassword, createdBy));
+    }
+
+    private void changePasswordTx(Connection conn, long id, String newPassword, String createdBy) {
+        User user = findUserForUpdate(conn, id);
+        user.changePassword(newPassword);
+        userDao.updateWithConnection(user, conn);
+        userHistoryDao.log(new UserHistory(user, createdBy), conn);
+    }
+
+    private User findUserForUpdate(Connection conn, long id) {
+        return userDao.findByIdWithConnection(id, conn)
+                .orElseThrow(() -> new IllegalStateException("멤버가 존재하지 않습니다."));
+    }
+
+    @FunctionalInterface
+    private interface SqlConsumer<T> {
+        void accept(T t) throws Exception;
+    }
+
+    private void inTransaction(SqlConsumer<Connection> work) {
         try (Connection connection = dataSource.getConnection()) {
-            boolean old = connection.getAutoCommit();
+            final boolean prevAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             try {
-                User user = userDao.findByIdWithConnection(id, connection)
-                        .orElseThrow(() -> new IllegalStateException("멤버가 존재하지 않습니다."));
-
-                user.changePassword(newPassword);
-                userDao.updateWithConnection(user, connection);
-                userHistoryDao.log(new UserHistory(user, createdBy), connection);
-
+                work.accept(connection);
                 connection.commit();
-            } catch (Exception e) {
-                try {
-                    connection.rollback();
-                } catch (Exception ignore) {
-                }
-                throw e;
+            } catch (Exception ex) {
+                rollback(connection);
+                throwUncheckedException(ex);
             } finally {
-                try {
-                    connection.setAutoCommit(old);
-                } catch (Exception ignore) {
-                }
+                restoreAutoCommit(connection, prevAutoCommit);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void rollback(Connection conn) {
+        try {
+            conn.rollback();
+        } catch (Exception ignore) {
+        }
+    }
+
+    private void restoreAutoCommit(Connection conn, boolean state) {
+        try {
+            conn.setAutoCommit(state);
+        } catch (Exception ignore) {
+        }
+    }
+
+    private void throwUncheckedException(Exception ex) {
+        if (ex instanceof RuntimeException re) {
+            throw re;
+        }
+        throw new RuntimeException(ex);
     }
 }
