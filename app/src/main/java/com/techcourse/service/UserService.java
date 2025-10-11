@@ -71,6 +71,7 @@ public class UserService {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new CannotGetJdbcConnectionException(e.getMessage(), e);
         }
     }
