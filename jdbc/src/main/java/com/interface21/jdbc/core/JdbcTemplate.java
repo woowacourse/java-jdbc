@@ -1,10 +1,8 @@
 package com.interface21.jdbc.core;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeException;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -22,111 +20,58 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setArguments(pstmt, args);
+        update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public void update(String sql, PreparedStatementSetter pstmtSetter) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmtSetter.setValues(pstmt);
 
             log.debug("query : {}", sql);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeStatement(pstmt);
-            closeConnection(conn);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setArguments(pstmt, args);
+        return query(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        try (final var conn = dataSource.getConnection();
+             final var pstmt = conn.prepareStatement(sql);
+        ) {
+            pstmtSetter.setValues(pstmt);
 
             log.debug("query : {}", sql);
 
-            resultSet = pstmt.executeQuery();
-            List<T> list = new ArrayList<>();
-            while (resultSet.next()) {
-                list.add(rowMapper.map(resultSet));
+            try (final var resultSet = pstmt.executeQuery()) {
+                List<T> list = new ArrayList<>();
+                while (resultSet.next()) {
+                    list.add(rowMapper.map(resultSet));
+                }
+                return list;
             }
-            return list;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResultSet(resultSet);
-            closeStatement(pstmt);
-            closeConnection(conn);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setArguments(pstmt, args);
-
-            log.debug("query : {}", sql);
-
-            resultSet = pstmt.executeQuery();
-            if (resultSet.next()) {
-                return rowMapper.map(resultSet);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResultSet(resultSet);
-            closeStatement(pstmt);
-            closeConnection(conn);
-        }
+        return queryForObject(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
     }
 
-    private void setArguments(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
+        List<T> resultRows = query(sql, pstmtSetter, rowMapper);
+        if (resultRows.size() != 1) {
+            throw new IncorrectResultSizeException(1, resultRows.size());
         }
-    }
-
-    private void closeResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    private void closeStatement(Statement statement) {
-        try {
-            if (statement != null) {
-                statement.close();
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    private void closeConnection(Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-        }
+        return resultRows.get(0);
     }
 }
