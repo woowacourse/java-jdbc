@@ -36,7 +36,8 @@ public class UserService {
         try {
             connection = DataSourceConfig.getInstance().getConnection();
             connection.setAutoCommit(false);
-            final var user = findById(id);
+            final var user = userDao.findById(connection, id)
+                    .orElseThrow(() -> new IllegalArgumentException("사용자 정보가 존재하지 않습니다."));
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));

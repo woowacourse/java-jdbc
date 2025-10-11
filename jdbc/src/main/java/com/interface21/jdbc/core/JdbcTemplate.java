@@ -23,21 +23,22 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    private static <T> Optional<T> extractSingleResult(List<T> results) {
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeException(1, results.size());
+        }
+        return Optional.ofNullable(results.getFirst());
+    }
+
     public void update(String sql, Object... parameters) {
         execute(PreparedStatement::executeUpdate, sql, parameters);
     }
 
     public void update(Connection connection, String sql, Object... parameters) {
-        try (
-                PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        execute(connection, PreparedStatement::executeUpdate, sql, parameters);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -52,15 +53,27 @@ public class JdbcTemplate {
         }, sql, parameters);
     }
 
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
+        return execute(connection, (preparedStatement) -> {
+            List<T> results = new ArrayList<>();
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
+            }
+        }, sql, parameters);
+    }
+
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         List<T> results = query(sql, rowMapper, parameters);
-        if (results.isEmpty()) {
-            return Optional.empty();
-        }
-        if (results.size() != 1) {
-            throw new IncorrectResultSizeException(1, results.size());
-        }
-        return Optional.ofNullable(results.getFirst());
+        return extractSingleResult(results);
+    }
+
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper,
+                                          Object... parameters) {
+        List<T> results = query(connection, sql, rowMapper, parameters);
+        return extractSingleResult(results);
     }
 
     private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
@@ -68,6 +81,18 @@ public class JdbcTemplate {
                 Connection connection = dataSource.getConnection();
                 PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, PreparedStatementCallback<T> preparedStatementCallback, String sql,
+                          Object... parameters) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(pstmt, parameters);
             return preparedStatementCallback.doInPreparedStatement(pstmt);
