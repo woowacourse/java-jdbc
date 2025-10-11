@@ -25,7 +25,20 @@ public class JdbcTemplate {
     public void update(String sql, Object... params){
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)){
+            log.debug("query : {}", sql);
+            setParameters(pstmt, params);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
 
+    /*
+    Connection 공유 버전 오버로딩
+     */
+    public void update(Connection connection, String sql, Object... params){
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)){
             log.debug("query : {}", sql);
             setParameters(pstmt, params);
             pstmt.executeUpdate();

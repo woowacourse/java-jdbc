@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +35,14 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
     }
 
+    /*
+    Connection 공유 버전 overloading
+     */
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set password = ?, email = ? where id = ?";
+        jdbcTemplate.update(connection, sql, user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
@@ -42,19 +50,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
