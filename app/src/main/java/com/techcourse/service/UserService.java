@@ -5,10 +5,10 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.springframework.util.function.ThrowingConsumer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 
 public class UserService {
@@ -42,13 +42,13 @@ public class UserService {
     }
 
     // TODO. 4단계 - Transaction synchronization 적용하기
-    private void executeInTransaction(final Consumer<Connection> action) {
+    private void executeInTransaction(final ThrowingConsumer<Connection> action) {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             connection.setAutoCommit(false);
 
-            action.accept(connection);
+            action.acceptWithException(connection);
 
             connection.commit();
         } catch (final RuntimeException | Error ex) {
@@ -57,6 +57,12 @@ public class UserService {
         } catch (final SQLException e) {
             rollbackSafely(connection);
             throw new TransactionException("SQL error during transaction", e);
+        } catch (final Exception e) {
+            commitSafely(connection);
+            // NOTE. Checked Exception은 스프링처럼 그대로 전파하는 것이 이상적이지만,
+            // 리플렉션 기반 호출이 아닌 이상 일반 메서드에서는 throws Exception 시그니처가 필요합니다.
+            // 여기서는 트랜잭션 경계를 단순화하기 위해 RuntimeException으로 감싸 전파합니다.
+            throw new RuntimeException(e);
         } finally {
             closeSafely(connection);
         }
@@ -68,6 +74,16 @@ public class UserService {
                 connection.rollback();
             } catch (final SQLException rollbackEx) {
                 throw new TransactionException("Rollback failed after transaction error", rollbackEx);
+            }
+        }
+    }
+
+    private void commitSafely(final Connection connection) {
+        if (connection != null) {
+            try {
+                connection.commit();
+            } catch (final SQLException commitEx) {
+                throw new TransactionException("Commit failed after checked exception", commitEx);
             }
         }
     }
