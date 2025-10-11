@@ -46,8 +46,11 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rowMapper.mapped(rs);
+                if(rs.next()) {
+                    return rowMapper.mapped(rs);
+                }
             }
+            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
