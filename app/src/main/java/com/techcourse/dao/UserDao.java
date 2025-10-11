@@ -14,13 +14,20 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.insertInto("users")
+                .value("account", user.getAccount())
+                .value("password", user.getPassword())
+                .value("email", user.getEmail())
+                .execute();
+
     }
 
     public void update(final User user) {
-        final var sql = "update users set password = ?, email = ? where account = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
+        jdbcTemplate.update("users")
+                .set("password", user.getPassword())
+                .set("email", user.getEmail())
+                .where("account", user.getAccount())
+                .execute();
     }
 
     public List<User> findAll() {
