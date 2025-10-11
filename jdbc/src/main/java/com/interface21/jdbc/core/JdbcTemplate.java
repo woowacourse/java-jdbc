@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,7 +41,7 @@ public class JdbcTemplate {
         final List<T> results = query(sql, new ArgumentPreparedStatementSetter(args),
                 new RowMapperResultSetExtractor<>(rowMapper));
         if (results.isEmpty()) {
-            return null;
+            throw new IncorrectResultSizeDataAccessException(1, 0);
         }
         return results.getFirst();
     }
