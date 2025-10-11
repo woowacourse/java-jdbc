@@ -42,27 +42,23 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return execute((preparedStatement) -> {
-            List<T> results = new ArrayList<>();
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        }, sql, parameters);
+        return execute((preparedStatement) -> executeQuery(preparedStatement, rowMapper), sql, parameters);
     }
 
     public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return execute(connection, (preparedStatement) -> {
-            List<T> results = new ArrayList<>();
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
+        return execute(connection,
+                (preparedStatement) -> executeQuery(preparedStatement, rowMapper), sql, parameters
+        );
+    }
+
+    private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        List<T> results = new ArrayList<>();
+        try (ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
             }
-        }, sql, parameters);
+            return results;
+        }
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -77,13 +73,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, preparedStatementCallback, sql, parameters);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
