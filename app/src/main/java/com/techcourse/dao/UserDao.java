@@ -72,6 +72,21 @@ public class UserDao {
                 .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
     }
 
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        try (var pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, id);
+            try (var rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return USER_ROW_MAPPER.mapRow(rs);
+                }
+                throw new NoSuchElementException("User not found with id: " + id);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER,
