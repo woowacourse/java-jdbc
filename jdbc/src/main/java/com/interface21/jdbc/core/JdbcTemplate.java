@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,41 +24,19 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
-        execute(sql, parameters);
-    }
-
-    private void execute(String sql, Object... parameters) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = connection.prepareStatement(sql);
-        ) {
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(PreparedStatement::executeUpdate, sql, parameters);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
+        return execute((preparedStatement) -> {
+            List<T> results = new ArrayList<>();
+            try (ResultSet rs = preparedStatement.executeQuery()) {
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, sql, parameters);
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
@@ -69,6 +48,20 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeException(1, results.size());
         }
         return Optional.ofNullable(results.getFirst());
+    }
+
+    private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement pstmt = connection.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
