@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.exception.JdbcException;
-import com.interface21.jdbc.exception.MulitpleDataJdbcException;
+import com.interface21.jdbc.exception.MultipleDataJdbcException;
 import com.interface21.jdbc.exception.NoDataJdbcException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -81,7 +81,7 @@ public class JdbcTemplate {
                 throw new NoDataJdbcException("No Data");
             }
             if (results.size() != 1) {
-                throw new MulitpleDataJdbcException("Not Only One Data");
+                throw new MultipleDataJdbcException("Not Only One Data");
             }
             return results.getFirst();
         } catch (SQLException e) {
