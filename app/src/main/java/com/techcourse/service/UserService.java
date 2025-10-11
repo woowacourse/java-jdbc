@@ -33,36 +33,24 @@ public class UserService {
         userDao.insert(user);
     }
 
-    public void changePassword(
-            final long id,
-            final String newPassword,
-            final String createBy
-    ) {
-        final var connection = getConnection();
-        try {
+    public void changePassword(final long id, final String newPassword, final String createBy) {
+        try (final var connection = getConnection()) {
             connection.setAutoCommit(false);
 
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            try {
+                final var user = findById(id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+            } catch (Exception e) {
+                rollback(connection);
+                throw e;
+            }
 
             connection.commit();
-        } catch (Exception e) {
-            try {
-                connection.rollback();
-                throw e;
-            } catch (SQLException sqlException) {
-                log.error(sqlException.getMessage(), sqlException);
-                throw new RuntimeException("failed to rollback transaction");
-            }
-        } finally {
-            try {
-                connection.close();
-            } catch (SQLException sqlException) {
-                log.error(sqlException.getMessage(), sqlException);
-                throw new RuntimeException("failed to close db connection");
-            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -73,6 +61,15 @@ public class UserService {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException sqlException) {
+            log.error(sqlException.getMessage(), sqlException);
+            throw new RuntimeException("failed to rollback transaction");
         }
     }
 }
