@@ -5,14 +5,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-
-public class JdbcTemplate {
+public class JdbcTemplate implements JdbcOperations {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -22,61 +20,64 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            setParameters(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    @Override
+    public int update(final String sql, final Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
-    public <T> T findOne(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    @Override
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
+    }
 
-            log.debug("query : {}", sql);
-            setParameters(pstmt, args);
+    @Override
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
+    }
 
+    @Override
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        return query(sql, pss, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
+
+    @Override
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
+    }
+
+    @Override
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        final List<T> results = query(sql, pss, rowMapper);
+        if (results.isEmpty()) {
+            throw new DataAccessException("Incorrect result size: expected 1, actual 0");
+        }
+        return results.getFirst();
+    }
+
+    @Override
+    public <T> T query(final String sql, final PreparedStatementSetter pss, final ResultSetExtractor<T> rse) {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
             try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
+                return rse.extractData(rs);
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
-    public <T> List<T> findAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
-            setParameters(pstmt, args);
 
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
