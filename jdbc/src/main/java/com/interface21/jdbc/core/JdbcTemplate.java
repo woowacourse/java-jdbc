@@ -50,14 +50,14 @@ public class JdbcTemplate {
         return Optional.ofNullable(results.getFirst());
     }
 
-    public <T> T execute(Callback<T> callback, String sql, Object... parameters) {
+    private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             setParameters(pstmt, parameters);
-            return callback.call(pstmt);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
