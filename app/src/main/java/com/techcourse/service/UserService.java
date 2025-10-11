@@ -44,7 +44,7 @@ public class UserService {
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 connection.rollback();
             } catch (SQLException ignored) {}
