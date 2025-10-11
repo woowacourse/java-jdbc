@@ -41,7 +41,8 @@ public class UserDao {
 
     public void transactionUpdate(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.transactionUpdate(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.transactionUpdate(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(),
+                user.getId());
     }
 
     public List<User> findAll() {
@@ -52,6 +53,11 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+    }
+
+    public User transactionFindById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.transactionQueryForObject(connection, sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {

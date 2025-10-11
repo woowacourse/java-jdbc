@@ -35,10 +35,10 @@ public class UserService {
             connection.setAutoCommit(false);
 
             try {
-                final User user = findById(id);
+                final User user = userDao.transactionFindById(connection, id);
                 user.changePassword(newPassword);
                 userDao.transactionUpdate(connection, user);
-                userHistoryDao.transactionLog(connection, new UserHistory(user, createBy));
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 // 트랜잭션 커밋
                 connection.commit();
