@@ -23,16 +23,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private static <T> Optional<T> extractSingleResult(List<T> results) {
-        if (results.isEmpty()) {
-            return Optional.empty();
-        }
-        if (results.size() != 1) {
-            throw new IncorrectResultSizeException(1, results.size());
-        }
-        return Optional.ofNullable(results.getFirst());
-    }
-
     public void update(String sql, Object... parameters) {
         execute(PreparedStatement::executeUpdate, sql, parameters);
     }
@@ -51,11 +41,11 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> List<T> executeQuery(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+    private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
-        try (ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
             return results;
         }
@@ -83,19 +73,29 @@ public class JdbcTemplate {
 
     private <T> T execute(Connection connection, PreparedStatementCallback<T> preparedStatementCallback, String sql,
                           Object... parameters) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            setParameters(pstmt, parameters);
-            return preparedStatementCallback.doInPreparedStatement(pstmt);
+            setParameters(preparedStatement, parameters);
+            return preparedStatementCallback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
+    private <T> Optional<T> extractSingleResult(List<T> results) {
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeException(1, results.size());
+        }
+        return Optional.ofNullable(results.getFirst());
+    }
+
+    private void setParameters(PreparedStatement preparedStatement, Object... parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
-            pstmt.setObject(i + 1, parameters[i]);
+            preparedStatement.setObject(i + 1, parameters[i]);
         }
     }
 }
