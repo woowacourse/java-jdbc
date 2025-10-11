@@ -6,12 +6,16 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -47,11 +51,18 @@ public class UserService {
         } catch (Exception e) {
             try {
                 connection.rollback();
-            } catch (SQLException ignored) {}
+                throw e;
+            } catch (SQLException sqlException) {
+                log.error(sqlException.getMessage(), sqlException);
+                throw new RuntimeException("failed to rollback transaction");
+            }
         } finally {
             try {
                 connection.close();
-            } catch (SQLException ignored) {}
+            } catch (SQLException sqlException) {
+                log.error(sqlException.getMessage(), sqlException);
+                throw new RuntimeException("failed to close db connection");
+            }
         }
     }
 
