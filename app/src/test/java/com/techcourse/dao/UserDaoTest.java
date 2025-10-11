@@ -1,14 +1,17 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -16,9 +19,11 @@ class UserDaoTest {
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        DataSource dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        TransactionSynchronizationManager.setConnection(dataSource.getConnection());
         userDao = new UserDao(jdbcTemplate);
     }
 

@@ -70,9 +70,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, Callback<T> callback, Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        Connection conn = TransactionSynchronizationManager.getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             bindParameters(parameters, pstmt);
             return callback.call(pstmt);
         } catch (SQLException e) {
