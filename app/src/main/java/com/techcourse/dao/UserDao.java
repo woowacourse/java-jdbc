@@ -33,25 +33,30 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.queryAll(
-                "SELECT id, account, password, email FROM users",
-                getUserRowMapper()
-        );
+        return getUsers("SELECT id, account, password, email FROM users");
     }
 
     public User findById(final Long id) {
-        return jdbcTemplate.query(
-                "select id, account, password, email from users where id = ?",
-                getUserRowMapper(),
-                id
-        );
+        return getUser("SELECT id, account, password, email FROM users WHERE id = ?", id);
     }
 
     public User findByAccount(final String account) {
+        return getUser("SELECT id, account, password, email FROM users WHERE account=?", account);
+    }
+
+    private User getUser(String sql, Object... parameters) {
         return jdbcTemplate.query(
-                "SELECT id, account, password, email FROM users WHERE account=?",
+                sql,
                 getUserRowMapper(),
-                account
+                parameters
+        );
+    }
+
+    private List<User> getUsers(String sql, Object... parameters) {
+        return jdbcTemplate.queryAll(
+                sql,
+                getUserRowMapper(),
+                parameters
         );
     }
 
