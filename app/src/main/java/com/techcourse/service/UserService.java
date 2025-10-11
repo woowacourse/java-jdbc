@@ -5,6 +5,8 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.function.ThrowingConsumer;
 
 import java.sql.Connection;
@@ -12,6 +14,8 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final DataSource dataSource;
     private final UserDao userDao;
@@ -73,7 +77,7 @@ public class UserService {
             try {
                 connection.rollback();
             } catch (final SQLException rollbackEx) {
-                throw new TransactionException("Rollback failed after transaction error", rollbackEx);
+                log.warn("Rollback failed after transaction error", rollbackEx);
             }
         }
     }
@@ -83,7 +87,7 @@ public class UserService {
             try {
                 connection.commit();
             } catch (final SQLException commitEx) {
-                throw new TransactionException("Commit failed after checked exception", commitEx);
+                log.warn("Commit failed after checked exception", commitEx);
             }
         }
     }
@@ -93,7 +97,7 @@ public class UserService {
             try {
                 connection.close();
             } catch (final SQLException closeEx) {
-                throw new TransactionException("Failed to close connection after transaction", closeEx);
+                log.warn("Failed to close connection after transaction", closeEx);
             }
         }
     }
