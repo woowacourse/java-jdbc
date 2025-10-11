@@ -50,6 +50,54 @@ public class JdbcTemplate {
     }
 
     /**
+     * Connection 객체를 받아 트랜잭션을 수행하는 메서드입니다. parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL를 실행합니다.
+     *
+     * @param connection 트랜잭션이 적용된 Connection 객체
+     * @param sql        실행할 SQL
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     */
+    public int transactionUpdate(final Connection connection, final String sql, final Object... parameters) {
+        return transactionUpdate(connection, sql,
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
+    }
+
+    public int transactionUpdate(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return transactionExecute(
+                connection,
+                sql,
+                preparedStatementSetter,
+                preparedStatement -> transactionExecuteUpdate(preparedStatement)
+        );
+    }
+
+    private int transactionExecuteUpdate(
+            final PreparedStatement preparedStatement
+    ) throws SQLException {
+        return preparedStatement.executeUpdate();
+    }
+
+    private <T> T transactionExecute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> preparedStatementCallback
+    ) {
+        log.debug("query : {}", sql);
+        try (
+                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            return doExecute(preparedStatement, preparedStatementSetter, preparedStatementCallback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    /**
      * parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 단일 결과를 RowMapper로 매핑하여 반환합니다.
      *
      * @param sql        실행할 SQL 쿼리
