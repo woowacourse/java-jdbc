@@ -71,6 +71,11 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, getPreparedStatementSetter(id), getRowMapper());
     }
 
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, getPreparedStatementSetter(id), getRowMapper());
+    }
+
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, getPreparedStatementSetter(account), getRowMapper());

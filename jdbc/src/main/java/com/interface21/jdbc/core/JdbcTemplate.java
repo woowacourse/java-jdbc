@@ -88,9 +88,26 @@ public class JdbcTemplate {
         return queryForObject(sql, (pstmt) -> bindParams(pstmt, params), rowMapper);
     }
 
+    public <T> T queryForObject(Connection connection, String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
+        return executeQueryForObject(connection, sql, setter, rowMapper);
+    }
+
     public <T> T queryForObject(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
-        try (final var conn = getConnection();
-             final var pstmt = getPreparedStatement(sql, conn)) {
+        try (final var conn = getConnection()) {
+            return executeQueryForObject(conn, sql, setter, rowMapper);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new ConnectionCloseException(e, sql);
+        }
+    }
+
+    private <T> T executeQueryForObject(
+            final Connection conn,
+            String sql,
+            PreparedStatementSetter setter,
+            RowMapper<T> rowMapper
+    ) {
+        try (final var pstmt = getPreparedStatement(sql, conn)) {
             log.debug("query : {}", sql);
             try (final var rs = executeQuery(sql, pstmt, setter)) {
                 if (rs.next()) {

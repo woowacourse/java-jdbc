@@ -29,6 +29,10 @@ public class UserService {
         return userDao.findById(id);
     }
 
+    public User findById(final Connection connection, final long id) {
+        return userDao.findById(connection, id);
+    }
+
     public void insert(final User user) {
         userDao.insert(user);
     }
@@ -38,7 +42,7 @@ public class UserService {
             connection.setAutoCommit(false);
 
             try {
-                final var user = findById(id);
+                final var user = findById(connection, id);
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
