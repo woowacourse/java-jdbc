@@ -39,8 +39,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final List<T> results = query(sql, rowMapper, parameters);
+        if (results.isEmpty()) {
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 결과가 존재하지 않습니다.", sql));
+        }
         if (results.size() > 1) {
-            throw new JdbcExecutionException("쿼리 실행 결과가 기대한 데이터 수와 같지 않습니다.");
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 결과가 기대한 데이터 수와 같지 않습니다.", sql));
         }
         return results.getFirst();
     }
@@ -53,7 +56,7 @@ public class JdbcTemplate {
             return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new JdbcExecutionException("리소스 해제에 실패했습니다.");
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 중 리소스 반환에 실패했습니다.", sql));
         }
     }
 
