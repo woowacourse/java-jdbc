@@ -1,19 +1,22 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
-    private UserDao userDao;
+    private static UserDao userDao;
 
-    @BeforeEach
-    void setup() {
+    @BeforeAll
+    static void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
@@ -65,5 +68,19 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @DisplayName("단건 조회의 결과가 0개일 경우 예외가 발생한다")
+    @Test
+    void exception() {
+        // given
+        final String account = "nugu";
+
+        // when
+        // then
+        assertThatThrownBy(() -> userDao.findByAccount(account))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessage("Incorrect result size: expected 1, actual 0");
+
     }
 }

@@ -1,10 +1,10 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -20,131 +20,68 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-            setParameters(args, pstmt);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
+    public <T> T query(
+            final String sql,
+            final PreparedStatementSetter pss,
+            final ResultSetExtractor<T> rse
+    ) {
+        return execute(sql, (pstmt) -> {
+            pss.setValues(pstmt);
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return rse.extractData(rs);
             }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setParameters(args, pstmt);
-
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs, 0);
-            }
-            return null;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            setParameters(args, pstmt);
-
-            rs = pstmt.executeQuery();
-
-            log.debug("query : {}", sql);
-
-            final List<T> result = new ArrayList<>();
-            while (rs.next()) {
-                final T object = rowMapper.mapRow(rs, 0);
-                result.add(object);
-            }
-            return result;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
-        }
+        return query(sql, new ArgumentPreparedStatementSetter(args), new RowMapperResultSetExtractor<>(rowMapper));
     }
 
-    private void setParameters(final Object[] args, final PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            final Object arg = args[i];
-            pstmt.setObject(i + 1, arg);
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        return query(sql, pss, new RowMapperResultSetExtractor<>(rowMapper));
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        final List<T> results = query(
+                sql,
+                pss,
+                new RowMapperResultSetExtractor<>(rowMapper)
+        );
+        if (results.isEmpty()) {
+            throw new IncorrectResultSizeDataAccessException(1, 0);
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        return results.getFirst();
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, (pstmt) -> {
+                    pss.setValues(pstmt);
+                    return pstmt.executeUpdate();
+                }
+        );
+    }
+
+    public int update(final String sql, final Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            log.debug("query : {}", sql);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 }
