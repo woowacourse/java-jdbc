@@ -1,7 +1,11 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.exception.CannotGetJdbcConnectionException;
+import com.interface21.exception.DataAccessException;
+import com.interface21.exception.ResultBindingException;
+import com.interface21.exception.StatementExecuteQueryException;
+import com.interface21.exception.StatementExecuteUpdateException;
+import com.interface21.exception.StatementParameterBindingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -80,7 +84,7 @@ public class JdbcTemplate {
             return pstmt;
         } catch (SQLException e) {
             log.error("쿼리의 파라미터 바인딩 실패: {}", e.getMessage(), e);
-            throw new DataAccessException("쿼리의 파라미터 바인딩 실패", e);
+            throw new StatementParameterBindingException("쿼리의 파라미터 바인딩 실패", e);
         }
     }
 
@@ -89,7 +93,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("데이터 추가/수정 실패: {}", e.getMessage(), e);
-            throw new DataAccessException("데이터 추가/수정 실패", e);
+            throw new StatementExecuteUpdateException("데이터 추가/수정 실패", e);
         }
     }
 
@@ -98,14 +102,13 @@ public class JdbcTemplate {
             return pstmt.executeQuery();
         } catch (SQLException e) {
             log.error("데이터 조회 실패: {}", e.getMessage(), e);
-            throw new DataAccessException("데이터 조회 실패", e);
+            throw new StatementExecuteQueryException("데이터 조회 실패", e);
         }
     }
 
     private <T> List<T> bindQueryResults(ResultSet resultSet, RowMapper<T> rowMapper) {
         try {
             List<T> results = new ArrayList<>();
-            int rowNum = 0;
             while (resultSet.next()) {
                 T result = rowMapper.mapRowToObject(resultSet);
                 results.add(result);
@@ -113,14 +116,14 @@ public class JdbcTemplate {
             return results;
         } catch (SQLException e) {
             log.error("조회 결과 바인딩 실패: {}", e.getMessage(), e);
-            throw new DataAccessException("조회 결과 바인딩 실패", e);
+            throw new ResultBindingException("조회 결과 바인딩 실패", e);
         }
     }
 
     private void validateResultCountIsOne(int actualCount) {
         if (actualCount != 1) {
             log.error("조회 결과 바인딩 실패: 조회 결과가 존재하지 않거나 여러개가 존재");
-            throw new DataAccessException("조회 결과 바인딩 실패 : 조회 결과가 존재하지 않거나 여러개가 존재");
+            throw new ResultBindingException("조회 결과 바인딩 실패 : 조회 결과가 존재하지 않거나 여러개가 존재");
         }
     }
 }
