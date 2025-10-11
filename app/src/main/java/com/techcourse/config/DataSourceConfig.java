@@ -8,7 +8,7 @@ import org.h2.jdbcx.JdbcDataSource;
 
 public class DataSourceConfig {
 
-    private static final String PROPERTIES_FILE = "/application.properties";
+    private static final String PROPERTIES_FILE = "application.properties";
     private static final String DATASOURCE_URL_PROPERTY = "datasource.url";
     private static final String DATASOURCE_USERNAME_PROPERTY = "datasource.username";
     private static final String DATASOURCE_PASSWORD_PROPERTY = "datasource.password";
@@ -23,9 +23,11 @@ public class DataSourceConfig {
     }
 
     private static JdbcDataSource createJdbcDataSource() {
-        try (final InputStream inputStream = DataSourceConfig.class.getResourceAsStream(PROPERTIES_FILE)) {
+        try (final InputStream inputStream = DataSourceConfig.class.getResourceAsStream("/" + PROPERTIES_FILE)) {
             if (inputStream == null) {
-                throw new ConfigurationException("application.properties not found in classpath");
+                throw new ConfigurationException(
+                        String.format("%s not found in classpath", PROPERTIES_FILE)
+                );
             }
             final Properties properties = new Properties();
             properties.load(inputStream);
@@ -36,7 +38,9 @@ public class DataSourceConfig {
             jdbcDataSource.setPassword(properties.getProperty(DATASOURCE_PASSWORD_PROPERTY));
             return jdbcDataSource;
         } catch (final IOException e) {
-            throw new ConfigurationException("Failed to load application.properties");
+            throw new ConfigurationException(
+                    String.format("Failed to load %s", PROPERTIES_FILE)
+            );
         }
     }
 
