@@ -67,12 +67,48 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        List<T> results = query(connection, sql, rowMapper, args);
+        if (results.size() != 1) {
+            throw new DataAccessException("Expected 1 result, got " + results.size() + " for query: " + sql);
+        }
+        return results.getFirst();
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         List<T> results = query(sql, rowMapper, args);
         if (results.size() != 1) {
             throw new DataAccessException("Expected 1 result, got " + results.size() + " for query: " + sql);
         }
         return results.getFirst();
+    }
+
+    public <T> List<T> query(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        return execute(
+                connection,
+                sql,
+                Connection::prepareStatement,
+                pstmt -> {
+                    try (var resultSet = pstmt.executeQuery()) {
+                        var results = new ArrayList<T>();
+                        while (resultSet.next()) {
+                            results.add(rowMapper.mapRow(resultSet));
+                        }
+                        return results;
+                    }
+                },
+                args
+        );
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
