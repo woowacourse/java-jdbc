@@ -25,64 +25,41 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> select(final String tableName, final Class<T> entityClass, final Map<String, Object> conditions) {
+    public <T> List<T> select(final String tableName, final Class<T> entityClass,
+        final Map<String, Object> conditions) {
         final var condition = generateCondition(conditions);
         final var sql = generateSelectSql(tableName, entityClass, condition.isEmpty() ? null : condition);
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         List<T> results = new ArrayList<>();
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int paramIndex = 1;
             for (Object value : conditions.values()) {
                 pstmt.setObject(paramIndex++, value);
             }
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                T entity = entityClass.getDeclaredConstructor().newInstance();
-                Field[] fields = entityClass.getDeclaredFields();
-                for (int i = 0; i < fields.length; i++) {
-                    fields[i].setAccessible(true);
-                    fields[i].set(entity, rs.getObject(i + 1));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    T entity = entityClass.getDeclaredConstructor().newInstance();
+                    Field[] fields = entityClass.getDeclaredFields();
+                    for (int i = 0; i < fields.length; i++) {
+                        fields[i].setAccessible(true);
+                        fields[i].set(entity, rs.getObject(i + 1));
+                    }
+                    results.add(entity);
                 }
-                results.add(entity);
             }
             return results;
         } catch (SQLException | IllegalAccessException | NoSuchMethodException | InstantiationException |
                  InvocationTargetException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public void insert(final String tableName, final Object entity) {
         final var sql = generateInsertSql(tableName, entity);
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             Field[] fields = entity.getClass().getDeclaredFields();
             int paramIndex = 1;
             for (Field field : fields) {
@@ -97,18 +74,6 @@ public class JdbcTemplate {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (Exception ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (Exception ignored) {}
         }
     }
 
@@ -116,11 +81,8 @@ public class JdbcTemplate {
         String condition = generateCondition(conditions);
         String sql = generateUpdateSql(tableName, entity, condition.isEmpty() ? null : condition);
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
             Field[] fields = entity.getClass().getDeclaredFields();
             int paramIndex = 1;
             for (Field field : fields) {
@@ -135,18 +97,6 @@ public class JdbcTemplate {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (Exception ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (Exception ignored) {}
         }
     }
 
@@ -154,11 +104,8 @@ public class JdbcTemplate {
         String condition = generateCondition(conditions);
         String sql = generateDeleteSql(tableName, condition.isEmpty() ? null : condition);
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int paramIndex = 1;
             for (Object value : conditions.values()) {
                 pstmt.setObject(paramIndex++, value);
@@ -167,18 +114,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
