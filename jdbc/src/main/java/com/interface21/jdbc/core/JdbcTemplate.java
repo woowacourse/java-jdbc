@@ -2,13 +2,16 @@ package com.interface21.jdbc.core;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -40,10 +43,10 @@ public class JdbcTemplate {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     T entity = entityClass.getDeclaredConstructor().newInstance();
-                    Field[] fields = entityClass.getDeclaredFields();
-                    for (int i = 0; i < fields.length; i++) {
-                        fields[i].setAccessible(true);
-                        fields[i].set(entity, rs.getObject(i + 1));
+                    List<Field> fields = getInstanceFields(entityClass);
+                    for (int i = 0; i < fields.size(); i++) {
+                        fields.get(i).setAccessible(true);
+                        fields.get(i).set(entity, rs.getObject(i + 1));
                     }
                     results.add(entity);
                 }
@@ -56,11 +59,17 @@ public class JdbcTemplate {
         }
     }
 
+    private List<Field> getInstanceFields(Class<?> clazz) {
+        return Arrays.stream(clazz.getDeclaredFields())
+            .filter(field -> !Modifier.isStatic(field.getModifiers()))
+            .collect(Collectors.toList());
+    }
+
     public void insert(final String tableName, final Object entity) {
         final var sql = generateInsertSql(tableName, entity);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            Field[] fields = entity.getClass().getDeclaredFields();
+            List<Field> fields = getInstanceFields(entity.getClass());
             int paramIndex = 1;
             for (Field field : fields) {
                 field.setAccessible(true);
@@ -83,7 +92,7 @@ public class JdbcTemplate {
 
         try (Connection conn = dataSource.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            Field[] fields = entity.getClass().getDeclaredFields();
+            List<Field> fields = getInstanceFields(entity.getClass());
             int paramIndex = 1;
             for (Field field : fields) {
                 field.setAccessible(true);
@@ -118,7 +127,7 @@ public class JdbcTemplate {
     }
 
     private String generateSelectSql(String tableName, Class<?> entityClass, String condition) {
-        Field[] fields = entityClass.getDeclaredFields();
+        List<Field> fields = getInstanceFields(entityClass);
         StringBuilder columns = new StringBuilder();
         for (Field field : fields) {
             columns.append(field.getName()).append(", ");
@@ -130,7 +139,7 @@ public class JdbcTemplate {
     }
 
     private String generateInsertSql(String tableName, Object entity) {
-        Field[] fields = entity.getClass().getDeclaredFields();
+        List<Field> fields = getInstanceFields(entity.getClass());
         StringBuilder columns = new StringBuilder();
         StringBuilder placeholders = new StringBuilder();
         try {
@@ -155,7 +164,7 @@ public class JdbcTemplate {
     }
 
     private String generateUpdateSql(String tableName, Object entity, String condition) {
-        Field[] fields = entity.getClass().getDeclaredFields();
+        List<Field> fields = getInstanceFields(entity.getClass());
         StringBuilder setClause = new StringBuilder();
         for (Field field : fields) {
             setClause.append(field.getName()).append(" = ?, ");
