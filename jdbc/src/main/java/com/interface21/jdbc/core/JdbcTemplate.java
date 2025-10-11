@@ -68,6 +68,14 @@ public class JdbcTemplate {
         return execute(sql, pss, pstmt -> extractResults(pstmt, rowMapper));
     }
 
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(conn, sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(Connection conn, String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(conn, sql, pss, pstmt -> extractResults(pstmt, rowMapper));
+    }
+
     private <T> List<T> extractResults(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             return mapRows(rs, rowMapper);
@@ -85,6 +93,17 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("Result가 여러 개 입니다: " + results.size());
+        }
+        return results.get(0);
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(conn, sql, rowMapper, args);
         if (results.isEmpty()) {
             return null;
         }

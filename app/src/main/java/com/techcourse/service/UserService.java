@@ -33,7 +33,7 @@ public class UserService {
             conn.setAutoCommit(false);
 
             try {
-                final var user = findById(id);
+                final var user = userDao.findById(conn, id);
                 user.changePassword(newPassword);
                 userDao.update(conn, user);
                 userHistoryDao.log(conn, new UserHistory(user, createBy));
