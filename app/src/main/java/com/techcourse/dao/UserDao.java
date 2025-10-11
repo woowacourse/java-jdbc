@@ -38,6 +38,11 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
     }
 
+    public void update(java.sql.Connection conn, User user) {
+        String sql = "update users set password = ?, email = ? where id = ?";
+        jdbcTemplate.update(conn, sql, user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
