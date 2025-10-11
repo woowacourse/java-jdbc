@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.exception.JdbcException;
+import com.interface21.jdbc.exception.MultipleDataJdbcException;
+import com.interface21.jdbc.exception.NoDataJdbcException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,16 +27,7 @@ public class JdbcTemplate {
             final String sql,
             final Object... args
     ) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setParameters(pstmt, args);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        update(sql, getDefaultPreparedStatementSetter(args));
     }
 
     public <T> T queryForObject(
@@ -42,20 +35,7 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setParameters(pstmt, args);
-            final List<T> results = queryForList(rowMapper, pstmt);
-            if (results.isEmpty()) {
-                throw new DataAccessException("No Data");
-            }
-            return results.getFirst();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return queryForObject(sql, rowMapper, getDefaultPreparedStatementSetter(args));
     }
 
     public <T> List<T> query(
@@ -63,15 +43,69 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
+        return query(sql, rowMapper, getDefaultPreparedStatementSetter(args));
+    }
+
+    public void update(
+            final String sql,
+            final PreparedStatementSetter pss
+    ) {
         try (
                 final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
-            setParameters(pstmt, args);
-            return queryForList(rowMapper, pstmt);
-        } catch (Exception e) {
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
+        }
+    }
+
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter pss
+    ) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
+            final List<T> results = queryForList(rowMapper, pstmt);
+            if (results.isEmpty()) {
+                throw new NoDataJdbcException("No Data");
+            }
+            if (results.size() != 1) {
+                throw new MultipleDataJdbcException("Not Only One Data");
+            }
+            return results.getFirst();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new JdbcException(e);
+        }
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter pss
+    ) {
+        try (
+                final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
+            return queryForList(rowMapper, pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new JdbcException(e);
         }
     }
 
@@ -85,18 +119,17 @@ public class JdbcTemplate {
                 results.add(rowMapper.map(resultSet));
             }
             return results;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JdbcException(e);
         }
     }
 
-    private void setParameters(
-            final PreparedStatement pstmt,
-            final Object[] args
-    ) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter getDefaultPreparedStatementSetter(final Object... objects) {
+        return pstmt -> {
+            for (int i = 0; i < objects.length; i++) {
+                pstmt.setObject(i + 1, objects[i]);
+            }
+        };
     }
 }
