@@ -27,6 +27,19 @@ public class JdbcTemplate {
         execute(PreparedStatement::executeUpdate, sql, parameters);
     }
 
+    public void update(Connection connection, String sql, Object... parameters) {
+        try (
+                PreparedStatement pstmt = connection.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return execute((preparedStatement) -> {
             List<T> results = new ArrayList<>();
