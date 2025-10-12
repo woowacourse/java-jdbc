@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
