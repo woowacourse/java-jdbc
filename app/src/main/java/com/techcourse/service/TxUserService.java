@@ -1,24 +1,16 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.TransactionManager;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
+import com.interface21.jdbc.core.TransactionTemplate;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TxUserService implements UserService{
 
-    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
-
     private final UserService userService;
-    private final TransactionManager transactionManager;
+    private final TransactionTemplate transactionTemplate;
 
-    public TxUserService(UserService userService, TransactionManager transactionManager) {
+    public TxUserService(UserService userService, TransactionTemplate transactionTemplate) {
         this.userService = userService;
-        this.transactionManager = transactionManager;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
@@ -28,25 +20,11 @@ public class TxUserService implements UserService{
 
     @Override
     public void insert(final User user) {
-        transactionManager.start();
-        try {
-            userService.insert(user);
-            transactionManager.commit();
-        } catch (Exception e) {
-            transactionManager.rollback();
-            throw new DataAccessException("메서드 실행 중 예외가 발생하여 롤백합니다.", e);
-        }
+        transactionTemplate.execute(() -> userService.insert(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.start();
-        try {
-            userService.changePassword(id, newPassword, createBy);
-            transactionManager.commit();
-        } catch (Exception e) {
-            transactionManager.rollback();
-            throw new DataAccessException("메서드 실행 중 예외가 발생하여 롤백합니다.", e);
-        }
+        transactionTemplate.execute(() -> userService.changePassword(id, newPassword, createBy));
     }
 }
