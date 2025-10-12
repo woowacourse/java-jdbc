@@ -45,20 +45,20 @@ public class UserService {
 
             conn.commit();
         } catch (DataAccessException | SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.close();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    throw new DataAccessException("비밀번호 변경 롤백 실패", rollbackEx);
                 }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
             }
-            throw new DataAccessException(e);
+            throw new DataAccessException("비밀번호 변경 실패", e);
         } finally {
-            try {
-                if (conn != null) {
+            if (conn != null) {
+                try {
                     conn.close();
+                } catch (SQLException ignored) {
                 }
-            } catch (SQLException ignored) {
             }
         }
     }
