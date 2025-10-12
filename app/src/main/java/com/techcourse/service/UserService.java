@@ -50,11 +50,20 @@ public class UserService {
             conn.commit();
         } catch (DataAccessException | SQLException e) {
             try {
-                conn.rollback();
+                if (conn != null) {
+                    conn.close();
+                }
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
             throw new DataAccessException(e);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
