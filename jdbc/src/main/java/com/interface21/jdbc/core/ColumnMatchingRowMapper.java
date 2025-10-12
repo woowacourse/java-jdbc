@@ -3,7 +3,6 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataMappingException;
 import com.interface21.jdbc.core.conversion.TypeConversionService;
 import com.interface21.jdbc.core.util.NamingUtils;
-import com.interface21.jdbc.core.util.PrimitiveUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
@@ -126,17 +125,21 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         ResultSetMetaData rsmd = rs.getMetaData();
         int columnCount = rsmd.getColumnCount();
         Class<?>[] parameterTypes = constructor.getParameterTypes();
-
         for (int i = 1; i <= columnCount; i++) {
             String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i).toLowerCase());
-            Integer index = parameterIndexMap.get(label);
-            if (index != null) {
-                Object value = rs.getObject(i);
-                Class<?> parameterType = parameterTypes[index];
-                args[index] = TypeConversionService.convert(value, parameterType);
-            }
+            assignConstructorArgument(args, rs, i, parameterTypes, label);
         }
         return args;
+    }
+
+    private void assignConstructorArgument(Object[] args, ResultSet rs, int columnIndex,
+                                           Class<?>[] parameterTypes, String label) throws SQLException {
+        Integer index = parameterIndexMap.get(label);
+        if (index != null) {
+            Object value = rs.getObject(columnIndex);
+            Class<?> parameterType = parameterTypes[index];
+            args[index] = TypeConversionService.convert(value, parameterType);
+        }
     }
 
     /**
@@ -173,12 +176,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             if (field == null) {
                 return;
             }
-            Object convertedValue;
-            if (value == null && field.getType().isPrimitive()) {
-                convertedValue = PrimitiveUtils.getDefaultValue(field.getType());
-            } else {
-                convertedValue = TypeConversionService.convert(value, field.getType());
-            }
+            final Object convertedValue = TypeConversionService.convert(value, field.getType());
             field.set(target, convertedValue);
         } catch (Exception e) {
             throw new DataMappingException("필드 설정 실패: " + fieldName, e);
