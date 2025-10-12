@@ -143,6 +143,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i));
             assignConstructorArgument(args, rs, i, parameterTypes, label);
         }
+        validatePrimitiveParameters(args, parameterTypes, constructor.getParameters());
         return args;
     }
 
@@ -153,6 +154,19 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             Object value = rs.getObject(columnIndex);
             Class<?> parameterType = parameterTypes[index];
             args[index] = TypeConversionService.convert(value, parameterType);
+        }
+    }
+
+    private void validatePrimitiveParameters(Object[] args, Class<?>[] parameterTypes, Parameter[] parameters) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] == null && parameterTypes[i].isPrimitive()) {
+                throw new DataMappingException(
+                        "생성자 기본형 파라미터 '" + parameters[i].getName() +
+                        "'(타입: " + parameterTypes[i].getSimpleName() +
+                        ")은(는) null 값을 허용하지 않습니다. " +
+                        mappedClass.getSimpleName() + " 객체를 생성할 수 없습니다."
+                );
+            }
         }
     }
 
