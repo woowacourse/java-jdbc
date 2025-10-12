@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.TransactionManager;
+import com.interface21.jdbc.core.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +19,7 @@ class UserServiceTest {
 
     private UserDao userDao;
     private DataSource dataSource;
+    private TransactionTemplate transactionTemplate;
     private TransactionManager transactionManager;
 
     @BeforeEach
@@ -26,6 +27,7 @@ class UserServiceTest {
         this.dataSource = DataSourceConfig.getInstance();
         this.userDao = new UserDao(dataSource);
         this.transactionManager = new TransactionManager(dataSource);
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         DatabasePopulatorUtils.execute(dataSource);
         userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -51,7 +53,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(dataSource);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService, transactionManager);
+        final var userService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
