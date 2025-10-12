@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,11 +40,12 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, pss, action);
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw e;
         }
     }
 
