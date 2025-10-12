@@ -40,6 +40,7 @@ public class JdbcTemplate {
 
     // INSERT, UPDATE, DELETE
     public int update(String sql, PreparedStatementSetter pss) {
+        pss = ensureSetter(pss);
         return execute(sql, PreparedStatement::executeUpdate, pss);
     }
 
@@ -49,6 +50,7 @@ public class JdbcTemplate {
 
     // SELECT
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        pss = ensureSetter(pss);
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
@@ -64,6 +66,7 @@ public class JdbcTemplate {
 
     // SELECT 단일
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        pss = ensureSetter(pss);
         List<T> results = query(sql, rowMapper, pss);
         validateResultsSize(results, 1);
         return results.getFirst();
@@ -71,6 +74,13 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         return queryForObject(sql, rowMapper, PreparedStatementSetter.of(params));
+    }
+
+    private PreparedStatementSetter ensureSetter(PreparedStatementSetter pss) {
+        if (pss == null) {
+            pss = PreparedStatementSetter.of(null);
+        }
+        return pss;
     }
 
     private <T> void validateResultsSize(List<T> results, int expectedSize) {
