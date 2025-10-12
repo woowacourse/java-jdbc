@@ -1,12 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,16 +36,22 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T executeSelect(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+    public <T> Optional<T> executeSelect(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = executeQuery(pss, pstmt);
         ) {
-
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            if (!rs.next()) {
+                return Optional.empty();
             }
-            return null;
+
+            T result = rowMapper.mapRow(rs);
+
+            if (rs.next()){
+                throw new IncorrectResultSizeDataAccessException("데이터가 2건 이상입니다.");
+
+            }
+            return Optional.of(result);
 
         } catch (Exception e) {
             throw new DataAccessException(e);

@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,13 +52,13 @@ public class UserDao {
         return jdbcTemplate.executeSelectAll(sql, userRowMapper);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, email, password from users where id = ?";
 
         return jdbcTemplate.executeSelect(sql,pstmt -> pstmt.setLong(1, id), userRowMapper);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, email, password from users where account = ?";
 
         return jdbcTemplate.executeSelect(sql, pstmt -> pstmt.setString(1, account), userRowMapper);
