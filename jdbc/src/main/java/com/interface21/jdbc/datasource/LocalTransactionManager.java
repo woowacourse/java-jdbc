@@ -16,9 +16,8 @@ public class LocalTransactionManager {
             connectionHolder.set(connection);
             connection.setAutoCommit(false);
         }catch (SQLException e ){
-            throw new JdbcFailException("커밋에 실패하였습니다");
-        }finally {
             connectionHolder.remove();
+            throw new JdbcFailException("커밋에 실패하였습니다");
         }
     }
 
