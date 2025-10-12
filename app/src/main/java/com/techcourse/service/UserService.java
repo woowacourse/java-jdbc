@@ -22,12 +22,8 @@ public class UserService {
         this.dataSource = DataSourceConfig.getInstance();
     }
 
-    public User findById(final long id) {
-        try (Connection conn = dataSource.getConnection()) {
-            return userDao.findById(conn, id);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public User findById(final Connection conn, final long id) {
+        return userDao.findById(conn, id);
     }
 
     // todo : Connection 리팩토링 이후 주석 삭제 예정
@@ -41,7 +37,7 @@ public class UserService {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
 
-            final var user = findById(id);
+            final var user = findById(conn, id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
 
