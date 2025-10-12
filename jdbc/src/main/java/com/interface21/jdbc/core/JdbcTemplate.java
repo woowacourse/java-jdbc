@@ -28,6 +28,11 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public void update(Connection conn, String sql, Object... args) {
+        SqlParameterValidator.validate(sql, args);
+        executeWithConnection(conn, sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         SqlParameterValidator.validate(sql, args);
         return execute(
@@ -71,6 +76,15 @@ public class JdbcTemplate {
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = prepareStatement(conn, sql, args)
         ) {
+            return action.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeWithConnection(Connection conn, String sql, PrepareStatementCallback<T> action, Object... args) {
+        try (PreparedStatement pstmt = prepareStatement(conn, sql, args)) {
             return action.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
