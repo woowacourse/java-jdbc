@@ -30,9 +30,10 @@ public class UserService {
         }
     }
 
-    public void insert(final Connection conn, final User user) {
-        userDao.insert(conn, user);
-    }
+    // todo : Connection 리팩토링 이후 주석 삭제 예정
+//    public void insert(final User user) {
+//        userDao.insert(user);
+//    }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection conn = null;
