@@ -15,9 +15,26 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private Connection currentConnection;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void setCurrentConnection() {
+        try {
+            this.currentConnection = dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setCurrentConnection(final Connection connection) {
+        if (connection == null) {
+            setCurrentConnection();
+            return;
+        }
+        this.currentConnection = connection;
     }
 
     public void update(final String sql, final Object... parameters) {
@@ -52,8 +69,7 @@ public class JdbcTemplate {
     }
 
     private <T> T executeSql(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = currentConnection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParameters(pstmt, parameters);
