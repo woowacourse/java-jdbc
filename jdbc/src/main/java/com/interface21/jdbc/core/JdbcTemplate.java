@@ -29,11 +29,32 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
+    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
+        final var results = query(sql, connection, rowMapper, args);
+        if (results.size() != 1) {
+            throw new DataAccessException("result size doesn't match");
+        }
+        return results.getFirst();
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         try (
                 var conn = dataSource.getConnection();
                 var pstmt = conn.prepareStatement(sql)
         ) {
+            setPreparedStatementParams(pstmt, args);
+            try (var rs = pstmt.executeQuery()) {
+                log.debug("query : {}", sql);
+                return extractResults(rs, rowMapper);
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> query(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
+        try (var pstmt = connection.prepareStatement(sql)) {
             setPreparedStatementParams(pstmt, args);
             try (var rs = pstmt.executeQuery()) {
                 log.debug("query : {}", sql);
