@@ -35,7 +35,9 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
+        boolean originalAutoCommit = true;
         try {
+            originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
 
             userService.changePassword(id, newPassword, createdBy);
@@ -49,6 +51,11 @@ public class TxUserService implements UserService {
             }
             throw new DataAccessException(e);
         } finally {
+            try {
+                connection.setAutoCommit(originalAutoCommit);
+            } catch (SQLException e) {
+                log.error("Failed to reset autoCommit", e);
+            }
             TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
