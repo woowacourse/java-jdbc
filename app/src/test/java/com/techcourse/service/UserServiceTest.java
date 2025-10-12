@@ -19,12 +19,13 @@ class UserServiceTest {
 
     private UserDao userDao;
     private DataSource dataSource;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.userDao = new UserDao(dataSource);
-        TransactionManager.initialize(dataSource);
+        this.transactionManager = new TransactionManager(dataSource);
         DatabasePopulatorUtils.execute(dataSource);
         userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -34,7 +35,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(dataSource);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -55,7 +56,7 @@ class UserServiceTest {
                 throw new DataAccessException("롤백 테스트를 위한 예외");
             }
         };
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(userDao, userHistoryDao, transactionManager);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

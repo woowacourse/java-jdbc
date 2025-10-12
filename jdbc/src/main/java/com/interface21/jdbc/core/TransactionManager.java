@@ -9,17 +9,17 @@ import org.slf4j.LoggerFactory;
 
 public class TransactionManager {
 
-    private static final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
+    private final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
 
     private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
-    private static DataSource dataSource;
-    
-    public static void initialize(DataSource dataSource) {
-        TransactionManager.dataSource = dataSource;
+    private final DataSource dataSource;
+
+    public TransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public static void start() {
+    public void start() {
         if (connectionHolder.get() != null) {
             throw new IllegalStateException("이미 트랜잭션이 시작되었습니다.");
         }
@@ -33,11 +33,11 @@ public class TransactionManager {
         }
     }
 
-    public static Connection getCurrentConnection() {
+    public Connection getCurrentConnection() {
         return connectionHolder.get();
     }
 
-    public static void commit() {
+    public void commit() {
         try {
             Connection connection = getCurrentConnection();
             if (connection == null) {
@@ -52,7 +52,7 @@ public class TransactionManager {
         }
     }
 
-    public static void rollback() {
+    public void rollback() {
         try {
             Connection connection = getCurrentConnection();
             if (connection == null) {
@@ -67,7 +67,7 @@ public class TransactionManager {
         }
     }
 
-    public static void end() {
+    private void end() {
         Connection connection = connectionHolder.get();
         connectionHolder.remove();
         if (connection != null) {

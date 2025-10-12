@@ -12,12 +12,15 @@ import org.slf4j.LoggerFactory;
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final TransactionManager transactionManager;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.transactionManager = transactionManager;
     }
 
     public User findById(final long id) {
@@ -25,26 +28,26 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        TransactionManager.start();
+        transactionManager.start();
         try {
             userDao.insert(user);
-            TransactionManager.commit();
+            transactionManager.commit();
         } catch (Exception e) {
-            TransactionManager.rollback();
+            transactionManager.rollback();
             throw new DataAccessException("메서드 실행 중 예외가 발생하여 롤백합니다.", e);
         }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        TransactionManager.start();
+        transactionManager.start();
         try {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
-            TransactionManager.commit();
+            transactionManager.commit();
         } catch (Exception e) {
-            TransactionManager.rollback();
+            transactionManager.rollback();
             throw new DataAccessException("메서드 실행 중 예외가 발생하여 롤백합니다.", e);
         }
     }
