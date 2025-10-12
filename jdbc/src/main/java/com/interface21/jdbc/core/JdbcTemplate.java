@@ -49,7 +49,7 @@ public class JdbcTemplate {
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql);
+                PreparedStatement ps = conn.prepareStatement(sql)
         ) {
             validationParamLength(ps, params);
             bindingParams(ps, params);
