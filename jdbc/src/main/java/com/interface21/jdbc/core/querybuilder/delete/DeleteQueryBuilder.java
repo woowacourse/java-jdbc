@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core.querybuilder;// DeleteQueryBuilder.java
+package com.interface21.jdbc.core.querybuilder.delete;// DeleteQueryBuilder.java
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
  * where() 메서드로 WHERE 조건을 추가할 수 있으며,
  * execute()를 호출하면 최종 DELETE 쿼리를 실행합니다.
  */
-public class DeleteQueryBuilder {
+public class DeleteQueryBuilder implements DeleteWhereStep, DeleteExecutableStep {
+
     private final JdbcTemplate jdbcTemplate;
     private final String tableName;
     private final Map<String, Object> whereClauses = new LinkedHashMap<>();
@@ -27,7 +28,8 @@ public class DeleteQueryBuilder {
      * @param value 조건 값
      * @return 메서드 체이닝을 위한 현재 빌더 인스턴스
      */
-    public DeleteQueryBuilder where(String column, Object value) {
+    @Override
+    public DeleteExecutableStep where(String column, Object value) {
         whereClauses.put(column, value);
         return this;
     }
@@ -36,6 +38,7 @@ public class DeleteQueryBuilder {
      * 최종 DELETE SQL을 생성하고 실행합니다.
      * 만약 where절이 하나도 없으면, 안전을 위해 아무 동작도 하지 않습니다.
      */
+    @Override
     public void execute() {
         if (whereClauses.isEmpty()) {
             throw new DataAccessException("WHERE절 없는 DELETE는 허용되지 않습니다.");

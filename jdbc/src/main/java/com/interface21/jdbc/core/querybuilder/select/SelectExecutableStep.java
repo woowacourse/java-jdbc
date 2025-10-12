@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core.querybuilder;
+package com.interface21.jdbc.core.querybuilder.select;
 
 import java.util.List;
 import java.util.Optional;

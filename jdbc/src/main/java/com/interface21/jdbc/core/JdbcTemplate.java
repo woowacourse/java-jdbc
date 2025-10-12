@@ -1,11 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.querybuilder.DeleteQueryBuilder;
-import com.interface21.jdbc.core.querybuilder.InsertQueryBuilder;
-import com.interface21.jdbc.core.querybuilder.SelectQueryBuilder;
-import com.interface21.jdbc.core.querybuilder.SqlStep;
-import com.interface21.jdbc.core.querybuilder.UpdateQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.delete.DeleteQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.delete.DeleteWhereStep;
+import com.interface21.jdbc.core.querybuilder.insert.InsertQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.insert.InsertValueStep;
+import com.interface21.jdbc.core.querybuilder.select.SelectQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.select.SelectSqlStep;
+import com.interface21.jdbc.core.querybuilder.update.UpdateQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.update.UpdateSetStep;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -87,19 +90,19 @@ public class JdbcTemplate {
         return query(sql, new ColumnMatchingRowMapper<>(clazz), params);
     }
 
-    public <T> SqlStep<T>  select(Class<T> clazz) {
+    public <T> SelectSqlStep<T> select(Class<T> clazz) {
         return new SelectQueryBuilder<>(this, clazz);
     }
 
-    public InsertQueryBuilder insertInto(String tableName) {
+    public InsertValueStep insertInto(String tableName) {
         return new InsertQueryBuilder(this, tableName);
     }
 
-    public UpdateQueryBuilder update(String tableName) {
+    public UpdateSetStep update(String tableName) {
         return new UpdateQueryBuilder(this, tableName);
     }
 
-    public DeleteQueryBuilder deleteFrom(String tableName) {
+    public DeleteWhereStep deleteFrom(String tableName) {
         return new DeleteQueryBuilder(this, tableName);
     }
 }

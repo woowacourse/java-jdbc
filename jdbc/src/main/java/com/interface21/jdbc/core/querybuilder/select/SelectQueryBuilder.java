@@ -1,13 +1,13 @@
 // com/interface21/jdbc/core/querybuilder/SelectQueryBuilder.java
 
-package com.interface21.jdbc.core.querybuilder;
+package com.interface21.jdbc.core.querybuilder.select;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class SelectQueryBuilder<T> implements SqlStep<T>, SelectExecutableStep<T> {
+public class SelectQueryBuilder<T> implements SelectSqlStep<T>, SelectExecutableStep<T> {
 
     private final JdbcTemplate jdbcTemplate;
     private final Class<T> mappedClass;
@@ -22,6 +22,7 @@ public class SelectQueryBuilder<T> implements SqlStep<T>, SelectExecutableStep<T
     /**
      * 실행할 SQL 쿼리를 설정합니다.
      */
+    @Override
     public SelectExecutableStep<T> sql(String sql) {
         this.sql = sql;
         return this;
@@ -30,6 +31,7 @@ public class SelectQueryBuilder<T> implements SqlStep<T>, SelectExecutableStep<T
     /**
      * SQL의 ?에 순서대로 바인딩될 파라미터를 추가합니다.
      */
+    @Override
     public SelectExecutableStep<T> param(Object param) {
         this.params.add(param);
         return this;
@@ -38,6 +40,7 @@ public class SelectQueryBuilder<T> implements SqlStep<T>, SelectExecutableStep<T
     /**
      * 쿼리를 실행하고 결과를 List<T> 형태로 반환합니다.
      */
+    @Override
     public List<T> toList() {
         if (sql == null || sql.isBlank()) {
             throw new IllegalStateException("SQL must be provided before executing a query.");
@@ -48,6 +51,7 @@ public class SelectQueryBuilder<T> implements SqlStep<T>, SelectExecutableStep<T
     /**
      * 쿼리를 실행하고 결과를 Optional<T> 형태로 반환합니다.
      */
+    @Override
     public Optional<T> findFirst() {
         if (sql == null || sql.isBlank()) {
             throw new IllegalStateException("SQL must be provided before executing a query.");

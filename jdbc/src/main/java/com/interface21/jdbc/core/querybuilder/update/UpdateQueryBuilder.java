@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core.querybuilder;
+package com.interface21.jdbc.core.querybuilder.update;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.util.ArrayList;
@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
  * set() 메서드로 SET 절을, where() 메서드로 WHERE 조건을 추가할 수 있습니다.
  * execute()를 호출하면 최종 UPDATE 쿼리를 실행합니다.
  */
-public class UpdateQueryBuilder {
+public class UpdateQueryBuilder implements UpdateSetStep, UpdateExecutableStep {
+
     private final JdbcTemplate jdbcTemplate;
     private final String tableName;
     private final Map<String, Object> setValues = new LinkedHashMap<>();
@@ -30,7 +31,8 @@ public class UpdateQueryBuilder {
      * @param value 변경할 값
      * @return 메서드 체이닝을 위한 현재 빌더 인스턴스
      */
-    public UpdateQueryBuilder set(String column, Object value) {
+    @Override
+    public UpdateExecutableStep set(String column, Object value) {
         setValues.put(column, value);
         return this;
     }
@@ -41,7 +43,8 @@ public class UpdateQueryBuilder {
      * @param value 조건 값
      * @return 메서드 체이닝을 위한 현재 빌더 인스턴스
      */
-    public UpdateQueryBuilder where(String column, Object value) {
+    @Override
+    public UpdateExecutableStep where(String column, Object value) {
         whereClauses.put(column, value);
         return this;
     }
@@ -50,6 +53,7 @@ public class UpdateQueryBuilder {
      * SET & WHERE 절을 조립하여 최종 UPDATE 쿼리를 실행합니다.
      * 만약 set값이 하나도 없으면 아무 동작도 하지 않습니다.
      */
+    @Override
     public void execute() {
         if (setValues.isEmpty()) {
             return;

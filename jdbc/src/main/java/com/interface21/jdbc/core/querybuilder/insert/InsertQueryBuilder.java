@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core.querybuilder;
+package com.interface21.jdbc.core.querybuilder.insert;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.util.LinkedHashMap;
@@ -9,7 +9,8 @@ import java.util.Map;
  * value() 메서드로 컬럼과 값을 추가할 수 있으며,
  * execute()를 호출하면 최종 INSERT 쿼리를 실행합니다.
  */
-public class InsertQueryBuilder {
+public class InsertQueryBuilder implements InsertValueStep, InsertExecutableStep {
+
     private final JdbcTemplate jdbcTemplate;
     private final String tableName;
     private final Map<String, Object> values = new LinkedHashMap<>();
@@ -32,7 +33,8 @@ public class InsertQueryBuilder {
      * @param value 추가할 값
      * @return 메서드 체이닝을 위한 현재 빌더 인스턴스
      */
-    public InsertQueryBuilder value(String column, Object value) {
+    @Override
+    public InsertExecutableStep value(String column, Object value) {
         this.values.put(column, value);
         return this;
     }
@@ -41,6 +43,7 @@ public class InsertQueryBuilder {
      * 추가된 컬럼과 값을 기반으로 최종 INSERT 쿼리를 실행합니다.
      * 빌드된 INSERT SQL을 실제로 실행합니다.
      */
+    @Override
     public void execute() {
         if (values.isEmpty()) {
             return; // 값이 없으면 아무것도 하지 않음
