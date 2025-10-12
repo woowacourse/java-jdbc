@@ -1,12 +1,10 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
@@ -19,42 +17,60 @@ public class UserDao {
     public void insert(final User user) {
         jdbcTemplate.update(
                 "insert into users (account, password, email) values (?, ?, ?)",
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail()
+                (preparedStatement) -> {
+                    preparedStatement.setString(1, user.getAccount());
+                    preparedStatement.setString(2, user.getPassword());
+                    preparedStatement.setString(3, user.getEmail());
+                }
         );
     }
 
     public void update(final User user) {
         jdbcTemplate.update(
                 "UPDATE users SET (account, password, email) = (?, ?, ?) WHERE id=?",
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
+                (preparedStatement) -> {
+                    preparedStatement.setString(1, user.getAccount());
+                    preparedStatement.setString(2, user.getPassword());
+                    preparedStatement.setString(3, user.getEmail());
+                    preparedStatement.setLong(4, user.getId());
+                }
         );
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.queryAll(
+        return getUsers(
                 "SELECT id, account, password, email FROM users",
-                getUserRowMapper()
+                (preparedStatement -> {})
         );
     }
 
     public User findById(final Long id) {
-        return jdbcTemplate.query(
-                "select id, account, password, email from users where id = ?",
-                getUserRowMapper(),
-                id
+        return getUser(
+                "SELECT id, account, password, email FROM users WHERE id = ?",
+                (preparedStatement -> preparedStatement.setLong(1, id))
         );
     }
 
     public User findByAccount(final String account) {
-        return jdbcTemplate.query(
+        return getUser(
                 "SELECT id, account, password, email FROM users WHERE account=?",
+                (preparedStatement -> preparedStatement.setString(1, account))
+        );
+    }
+
+    private User getUser(String sql, PreparedStatementSetter preparedStatementSetter) {
+        return jdbcTemplate.query(
+                sql,
                 getUserRowMapper(),
-                account
+                preparedStatementSetter
+        );
+    }
+
+    private List<User> getUsers(String sql, PreparedStatementSetter preparedStatementSetter) {
+        return jdbcTemplate.queryAll(
+                sql,
+                getUserRowMapper(),
+                preparedStatementSetter
         );
     }
 
