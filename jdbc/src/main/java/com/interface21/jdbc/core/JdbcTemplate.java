@@ -30,9 +30,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
         try (
-                Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
             validationParamLength(ps, params);

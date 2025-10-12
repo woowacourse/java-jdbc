@@ -36,7 +36,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(conn, 1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -46,7 +46,7 @@ class UserDaoTest {
         final var account = "gugu2";
         saveUser(account);
 
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(conn, account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -57,7 +57,7 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(conn, user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(conn, 2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -65,12 +65,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(conn, 1L);
         user.changePassword(newPassword);
 
         userDao.update(conn, user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(conn, 1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

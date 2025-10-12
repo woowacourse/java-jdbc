@@ -23,7 +23,11 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        try (Connection conn = dataSource.getConnection()) {
+            return userDao.findById(conn, id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void insert(final Connection conn, final User user) {
