@@ -24,60 +24,59 @@ public class JdbcTemplate {
     }
 
     public void executeUpdate(String sql, PreparedStatementSetter pss) {
+        execute(sql, pstmt -> {
+                pss.setValue(pstmt);
+                pstmt.executeUpdate();
+                return null;
+            }
+        );
+    }
+
+    public <T> Optional<T> executeSelect(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> {
+            pss.setValue(pstmt);
+            try(ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+
+                T result = rowMapper.mapRow(rs);
+
+                if (rs.next()) {
+                    throw new IncorrectResultSizeDataAccessException("데이터가 2건 이상입니다.");
+                }
+
+                return Optional.of(result);
+            }
+        });
+    }
+
+    public <T> List<T> executeSelectAll(String sql, RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> {
+            try(ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+
+                return results;
+            }
+        });
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> psc) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pss.setValue(pstmt);
-
-            pstmt.executeUpdate();
-
+            return psc.action(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> Optional<T> executeSelect(String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(pss, pstmt);
-        ) {
-            if (!rs.next()) {
-                return Optional.empty();
-            }
-
-            T result = rowMapper.mapRow(rs);
-
-            if (rs.next()){
-                throw new IncorrectResultSizeDataAccessException("데이터가 2건 이상입니다.");
-
-            }
-            return Optional.of(result);
-
-        } catch (Exception e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> List<T> executeSelectAll(String sql, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery();
-        ) {
-
-            List<T> results = new ArrayList<>();
-
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-
-        } catch (Exception e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private ResultSet executeQuery(PreparedStatementSetter pss, PreparedStatement pstmt) throws SQLException {
-        pss.setValue(pstmt);
-        return pstmt.executeQuery();
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T action(PreparedStatement pstmt) throws SQLException;
     }
 }
