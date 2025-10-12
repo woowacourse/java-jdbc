@@ -92,15 +92,29 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         return indexMap;
     }
 
+    /**
+     * 필드명을 키로 하는 캐시를 생성합니다. 필드명은 소문자로 변환하여 저장하며, 상위 클래스의 필드도 포함합니다.
+     * 하위 클래스의 필드가 동일 이름의 상위 클래스 필드를 덮어씁니다.
+     *
+     * @return 필드명(소문자)과 Field 객체의 매핑
+     */
     private Map<String, Field> buildFieldCache() {
         Map<String, Field> cache = new HashMap<>();
-        Field[] fields = mappedClass.getDeclaredFields();
-        for (Field field : fields) {
-            String fieldName = field.getName();
-            field.setAccessible(true);
-            cache.put(fieldName.toLowerCase(), field);
+        Class<?> current = mappedClass;
+        while (current != null && current != Object.class) {
+            addDeclaredFields(cache, current);
+            current = current.getSuperclass();
         }
         return cache;
+    }
+
+    private void addDeclaredFields(Map<String, Field> cache, Class<?> current) {
+        Field[] fields = current.getDeclaredFields();
+        for (Field field : fields) {
+            String key = field.getName().toLowerCase();
+            field.setAccessible(true);
+            cache.putIfAbsent(key, field);
+        }
     }
 
     /**
