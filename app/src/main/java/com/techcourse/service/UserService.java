@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.LocalTransactionManager;
 import com.interface21.jdbc.exception.JdbcFailException;
 import com.techcourse.dao.UserDao;
@@ -43,9 +44,12 @@ public class UserService {
             userHistoryDao.log(new UserHistory(user, createBy));
 
             LocalTransactionManager.commit();
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             LocalTransactionManager.rollback();
-        }finally {
+            throw e;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
             LocalTransactionManager.end();
         }
     }

@@ -16,16 +16,19 @@ public class LocalTransactionManager {
             connectionHolder.set(connection);
             connection.setAutoCommit(false);
         }catch (SQLException e ){
-            throw new JdbcFailException("연결에 실패하였습니다");
+            throw new JdbcFailException("커밋에 실패하였습니다");
+        }finally {
+            connectionHolder.remove();
         }
     }
 
     public static void end() {
         try{
             connectionHolder.get().close();
-            connectionHolder.remove();
         }catch (SQLException e ){
             throw new JdbcFailException("종료에 실패하였습니다");
+        }finally {
+            connectionHolder.remove();
         }
     }
 
@@ -34,7 +37,7 @@ public class LocalTransactionManager {
             Connection connection = connectionHolder.get();
             connection.commit();
         }catch (SQLException e ){
-            throw new JdbcFailException("연결에 실패하였습니다");
+            throw new JdbcFailException("커밋에 실패하였습니다");
         }
     }
 
