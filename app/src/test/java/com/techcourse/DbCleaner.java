@@ -30,7 +30,7 @@ public class DbCleaner {
             try {
                 jdbcTemplate.update("TRUNCATE TABLE " + table);
             } catch (JdbcExecutionException e) {
-                System.out.println(e.getMessage());
+                throw e;
             }
         }
 
