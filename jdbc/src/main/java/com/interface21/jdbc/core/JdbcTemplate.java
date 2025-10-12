@@ -34,6 +34,16 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(final Connection connection, final String sql, final Object... params) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            setParams(statement, params);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error("SQL 실행 실패: {} 파라미터: {}", sql, List.of(params), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql);
