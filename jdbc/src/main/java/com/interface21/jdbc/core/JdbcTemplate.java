@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.JdbcExecutionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,40 +21,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(final String sql, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatementParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("리소스 해제에 실패했습니다.");
-        }
+    public void update(final String sql, final Object... parameters) {
+        execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> T executeQueryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatementParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapForObject(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("리소스 해제에 실패했습니다.");
-        }
-    }
-
-    public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setStatementParameters(pstmt, parameters);
-            log.debug("query : {}", sql);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(sql, (pstmt) -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> instances = new ArrayList<>();
                 while (rs.next()) {
@@ -61,9 +34,29 @@ public class JdbcTemplate {
                 }
                 return instances;
             }
+        }, parameters);
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        final List<T> results = query(sql, rowMapper, parameters);
+        if (results.isEmpty()) {
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 결과가 존재하지 않습니다.", sql));
+        }
+        if (results.size() > 1) {
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 결과가 기대한 데이터 수와 같지 않습니다.", sql));
+        }
+        return results.getFirst();
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... parameters) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setStatementParameters(pstmt, parameters);
+            log.debug("query : {}", sql);
+            return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException("리소스 해제에 실패했습니다.");
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 중 오류가 발생했습니다.", sql), e);
         }
     }
 
