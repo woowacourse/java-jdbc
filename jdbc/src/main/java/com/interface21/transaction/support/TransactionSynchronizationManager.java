@@ -25,6 +25,13 @@ public abstract class TransactionSynchronizationManager {
             map = new HashMap<>();
             resources.set(map);
         }
+        
+        if (map.containsKey(key)) {
+            throw new IllegalStateException(
+                "Already value [" + map.get(key) + "] bound to key [" + key + "]"
+            );
+        }
+        
         map.put(key, value);
     }
 
