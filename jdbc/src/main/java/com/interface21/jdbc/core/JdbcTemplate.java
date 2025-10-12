@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.NonUniqueResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -74,14 +75,22 @@ public class JdbcTemplate {
 
     private <T> T executeQueryOne(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
-            if (rs.next()) {
-                return rowMapper.map(rs);
+            if (!rs.next()) {
+                return null;
             }
-            return null;
+            T result = rowMapper.map(rs);
+            validateUniqueResult(rs);
+            return result;
         }
     }
 
-    private static void setParams(final Object[] params, final PreparedStatement pstmt) throws SQLException {
+    private static void validateUniqueResult(final ResultSet rs) throws SQLException {
+        if(rs.next()) {
+            throw new NonUniqueResultException("Multiple results found");
+        }
+    }
+
+    private void setParams(final Object[] params, final PreparedStatement pstmt) throws SQLException {
         for (int i = 1; i <= params.length; i++) {
             pstmt.setObject(i, params[i - 1]);
         }
