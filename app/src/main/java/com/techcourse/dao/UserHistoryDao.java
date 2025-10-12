@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -11,7 +12,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final UserHistory userHistory) {
+    public void log(final Connection connection, final UserHistory userHistory) {
         final String sql = """
             INSERT INTO user_history(user_id, account, password, email, created_at, created_by)
             VALUES(?, ?, ?, ?, ?, ?)
@@ -24,6 +25,6 @@ public class UserHistoryDao {
             userHistory.getCreatedAt(),
             userHistory.getCreateBy()
         };
-        jdbcTemplate.update(sql, params);
+        jdbcTemplate.update(connection, sql, params);
     }
 }
