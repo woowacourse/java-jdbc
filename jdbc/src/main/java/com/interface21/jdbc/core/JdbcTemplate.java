@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T findOne(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> Optional<T> findOne(String sql, RowMapper<T> rowMapper, Object... params) {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -73,14 +74,14 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T executeQueryOne(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+    private <T> Optional<T> executeQueryOne(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             if (!rs.next()) {
-                return null;
+                return Optional.empty();
             }
             T result = rowMapper.map(rs);
             validateUniqueResult(rs);
-            return result;
+            return Optional.of(result);
         }
     }
 

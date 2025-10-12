@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +45,12 @@ public class UserDao {
         return jdbcTemplate.find(sql, rowMapper);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.findOne(sql, rowMapper, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.findOne(sql, rowMapper, account);
     }
