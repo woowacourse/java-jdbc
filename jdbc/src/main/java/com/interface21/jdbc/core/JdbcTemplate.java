@@ -1,13 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CustomizedDataAccessException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.sql.*;
+import java.util.*;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,95 +10,75 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void update(
+    public <T> T execute(
             String sql,
-            Object... args
+            PreparedStatementSetter setter,
+            PreparedStatementCallback<T> action
     ) {
-        try(
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement preparedStatement = conn.prepareStatement(sql)
         ) {
-            setParameters(preparedStatement, args);
-            logQuery(sql);
-
-            preparedStatement.executeUpdate();
+            setter.setValues(preparedStatement);
+            log.info("query : {}", sql);
+            return action.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new CustomizedDataAccessException(sql, e);
         }
     }
 
-    public <T> Optional<T> queryForObject(
-        String sql,
-        RowMapper<T> rowMapper,
-        Object... args
+    public void update(
+            String sql,
+            PreparedStatementSetter setter
     ) {
-        try(
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setParameters(preparedStatement, args);
-            logQuery(sql);
+        execute(sql, setter, preparedStatement -> {
+            preparedStatement.executeUpdate();
+            return Optional.empty();
+        });
+    }
 
-            try(ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return Optional.empty();
-                }
-
-                T wantToFind = rowMapper.mapRow(resultSet);
-
-                if (resultSet.next()) {
-                    throw new CustomizedDataAccessException(
-                            sql,
-                            new IllegalArgumentException("[ERROR] too many rows (Expected 1 but found 2 or more)")
-                    );
-                }
-
-                return Optional.of(wantToFind);
+    public <T> Optional<T> queryForObject(
+            String sql,
+            PreparedStatementSetter setter,
+            RowMapper<T> rowMapper
+    ) {
+        return execute(sql, setter, preparedStatement -> {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (!resultSet.next()) {
+                return Optional.empty();
             }
-        } catch (SQLException e) {
-            throw new CustomizedDataAccessException(sql, e);
-        }
+
+            T wantToFind = rowMapper.mapRow(resultSet);
+
+            if (resultSet.next()) {
+                throw new CustomizedDataAccessException(
+                        sql,
+                        new IllegalArgumentException("[ERROR] too many rows (Expected 1 but found 2 or more)")
+                );
+            }
+            return Optional.of(wantToFind);
+        });
     }
 
     public <T> List<T> queryForObjects(
             String sql,
-            RowMapper<T> rowMapper,
-            Object... args
+            PreparedStatementSetter setter,
+            RowMapper<T> rowMapper
     ) {
-        List<T> objects = new ArrayList<>();
-        try(
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            setParameters(preparedStatement, args);
-            logQuery(sql);
+        return execute(sql, setter, preparedStatement -> {
+            List<T> results = new ArrayList<>();
+            ResultSet resultSet = preparedStatement.executeQuery();
 
-            try(ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    objects.add(rowMapper.mapRow(resultSet));
-                }
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
-
-            return objects;
-        } catch (SQLException e) {
-            throw new CustomizedDataAccessException(sql, e);
-        }
-    }
-
-    private void setParameters(PreparedStatement parameters, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            parameters.setObject(i + 1, args[i]);
-        }
-    }
-
-    private void logQuery(String sql) {
-        log.info("query : {}", sql);
+            return results;
+        });
     }
 }
