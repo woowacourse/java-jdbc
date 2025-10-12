@@ -1,12 +1,16 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.domain.User;
+import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 
 class UserDaoTest {
 
@@ -14,9 +18,10 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DataSource datasource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(datasource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(new JdbcTemplate(datasource));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -65,5 +70,15 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void delete() {
+        final var user = userDao.findById(1L);
+        userDao.delete(user);
+
+        final var actual = userDao.findById(1L);
+
+        assertThat(actual).isNull();
     }
 }
