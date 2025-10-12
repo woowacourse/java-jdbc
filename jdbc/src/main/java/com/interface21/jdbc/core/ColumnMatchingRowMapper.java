@@ -96,9 +96,9 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         Map<String, Field> cache = new HashMap<>();
         Field[] fields = mappedClass.getDeclaredFields();
         for (Field field : fields) {
-            String camelCaseName = NamingUtils.snakeToCamel(field.getName().toLowerCase());
+            String fieldName = field.getName();
             field.setAccessible(true);
-            cache.put(camelCaseName, field);
+            cache.put(fieldName.toLowerCase(), field);
         }
         return cache;
     }
@@ -126,7 +126,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         int columnCount = rsmd.getColumnCount();
         Class<?>[] parameterTypes = constructor.getParameterTypes();
         for (int i = 1; i <= columnCount; i++) {
-            String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i).toLowerCase());
+            String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i));
             assignConstructorArgument(args, rs, i, parameterTypes, label);
         }
         return args;
@@ -165,8 +165,8 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
         int columnCount = rsmd.getColumnCount();
 
         for (int i = 1; i <= columnCount; i++) {
-            String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i).toLowerCase());
-            setFieldIfExists(target, label, rs.getObject(i));
+            String label = NamingUtils.snakeToCamel(rsmd.getColumnLabel(i));
+            setFieldIfExists(target, label.toLowerCase(), rs.getObject(i));
         }
     }
 
