@@ -1,6 +1,6 @@
 package com.techcourse;
 
-import com.interface21.jdbc.CannotExecuteQueryException;
+import com.interface21.jdbc.JdbcExecutionException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import java.util.List;
@@ -14,7 +14,7 @@ public class DbCleaner {
     }
 
     public void cleanH2() {
-        jdbcTemplate.executeUpdate("SET REFERENTIAL_INTEGRITY FALSE");
+        jdbcTemplate.update("SET REFERENTIAL_INTEGRITY FALSE");
 
         String sql = """
             SELECT table_name
@@ -24,19 +24,19 @@ public class DbCleaner {
               AND LOWER(table_name) <> 'flyway_schema_history'
             """;
 
-        List<String> tables = jdbcTemplate.executeQuery(sql, stringMapper());
+        List<String> tables = jdbcTemplate.query(sql, stringMapper());
 
         for (String table : tables) {
             try {
-                jdbcTemplate.executeUpdate("TRUNCATE TABLE " + table);
-            } catch (CannotExecuteQueryException e) {
+                jdbcTemplate.update("TRUNCATE TABLE " + table);
+            } catch (JdbcExecutionException e) {
                 System.out.println(e.getMessage());
             }
         }
 
-        jdbcTemplate.executeUpdate("ALTER TABLE \"USERS\" ALTER COLUMN \"ID\" RESTART WITH 1");
+        jdbcTemplate.update("ALTER TABLE \"USERS\" ALTER COLUMN \"ID\" RESTART WITH 1");
 
-        jdbcTemplate.executeUpdate("SET REFERENTIAL_INTEGRITY TRUE");
+        jdbcTemplate.update("SET REFERENTIAL_INTEGRITY TRUE");
     }
 
     private RowMapper<String> stringMapper() {
