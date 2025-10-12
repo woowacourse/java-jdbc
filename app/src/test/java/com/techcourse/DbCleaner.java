@@ -1,5 +1,6 @@
 package com.techcourse;
 
+import com.interface21.jdbc.CannotExecuteQueryException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import java.util.List;
@@ -12,7 +13,7 @@ public class DbCleaner {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void CleanH2() {
+    public void cleanH2() {
         jdbcTemplate.executeUpdate("SET REFERENTIAL_INTEGRITY FALSE");
 
         String sql = """
@@ -25,11 +26,11 @@ public class DbCleaner {
 
         List<String> tables = jdbcTemplate.executeQuery(sql, stringMapper());
 
-        for (String t : tables) {
+        for (String table : tables) {
             try {
-                jdbcTemplate.executeUpdate("TRUNCATE TABLE " + t);
-            } catch (Exception e) {
-                jdbcTemplate.executeUpdate("DELETE FROM " + t);
+                jdbcTemplate.executeUpdate("TRUNCATE TABLE " + table);
+            } catch (CannotExecuteQueryException e) {
+                System.out.println(e.getMessage());
             }
         }
 

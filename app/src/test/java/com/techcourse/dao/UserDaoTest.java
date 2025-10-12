@@ -31,15 +31,13 @@ class UserDaoTest {
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         DbCleaner dbCleaner = new DbCleaner(jdbcTemplate);
-        dbCleaner.CleanH2();
+        dbCleaner.cleanH2();
     }
 
     @Test
     void findAll() {
         final var users = userDao.findAll();
-        for(User user : users){
-            System.out.println(user.getAccount());
-        }
+
         assertThat(users).isNotEmpty();
     }
 

@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.CannotExecuteQueryException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,7 +33,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error("executeUpdate failed. sql={}, params={}", sql, Arrays.toString(parameters), e);
-            throw new RuntimeException("쿼리 실행 실패", e);
+            throw new CannotExecuteQueryException("쿼리 실행 실패 : " + e.getMessage());
         }
     }
 
@@ -69,16 +70,14 @@ public class JdbcTemplate {
         List<T> results = new ArrayList<>();
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             setStatementParameters(pstmt, parameters);
-
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     results.add(rowMapper.mapForObject(rs));
                 }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("쿼리 실행 실패", e);
         }
