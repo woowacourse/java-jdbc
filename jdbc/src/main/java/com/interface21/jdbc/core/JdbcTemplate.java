@@ -73,7 +73,7 @@ public class JdbcTemplate {
     }
 
     private <T> T executeQueryOne(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        try(ResultSet rs = pstmt.executeQuery()) {
+        try (ResultSet rs = pstmt.executeQuery()) {
             if (rs.next()) {
                 return rowMapper.map(rs);
             }
