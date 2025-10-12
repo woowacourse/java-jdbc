@@ -75,7 +75,6 @@ public class TransactionManager {
                 connection.close();
             } catch (SQLException e) {
                 log.error("Connection 정리 중 오류 발생", e);
-                throw new DataAccessException("Connection 정리 실패", e);
             }
         }
     }
