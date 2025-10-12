@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.transaction.ConnectionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,9 +13,9 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
+    private DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -42,8 +43,25 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback,
                           PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection connection = ConnectionHolder.getConnection();
+
+        if (connection == null) {
+            return handleForWithoutTransaction(sql, preparedStatementCallback, preparedStatementSetter);
+        }
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(pstmt);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T handleForWithoutTransaction(String sql, PreparedStatementCallback<T> preparedStatementCallback,
+                                              PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(pstmt);
             return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
