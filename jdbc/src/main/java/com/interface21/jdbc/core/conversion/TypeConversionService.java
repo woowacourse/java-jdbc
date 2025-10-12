@@ -20,7 +20,7 @@ public final class TypeConversionService {
         }
 
         final var convertedByDefault = DEFAULT_CONVERTER.convert(sourceValue, targetType);
-        if (hasConversionOccurred(convertedByDefault, sourceValue) && targetType.isInstance(convertedByDefault)) {
+        if (hasConversionOccurred(convertedByDefault, sourceValue) && isCompatibleType(targetType, convertedByDefault)) {
             return convertedByDefault;
         }
         return sourceValue;
@@ -36,7 +36,7 @@ public final class TypeConversionService {
     private static Object convertWithRegisteredConverters(final Object sourceValue, final Class<?> targetType) {
         for (final TypeConverter converter : TypeConverterRegistry.getConverters()) {
             final var converted = converter.convert(sourceValue, targetType);
-            if (hasConversionOccurred(converted, sourceValue) && targetType.isInstance(converted)) {
+            if (hasConversionOccurred(converted, sourceValue) && isCompatibleType(targetType, converted)) {
                 return converted;
             }
         }
@@ -55,6 +55,18 @@ public final class TypeConversionService {
      * 소스 값이 이미 대상 타입과 일치하는지 확인합니다.
      */
     private static boolean isAlreadyTargetType(Object sourceValue, Class<?> targetType) {
-        return targetType.isInstance(sourceValue);
+        return isCompatibleType(targetType, sourceValue);
+    }
+
+    /**
+     * 대상 타입과 값이 호환되는지 확인합니다.
+     * 원시 타입과 래퍼 타입(int ↔ Integer 등)을 동등하게 처리하여 호환성을 보장합니다.
+     */
+    private static boolean isCompatibleType(Class<?> targetType, Object value) {
+        if (value == null) {
+            return false;
+        }
+        Class<?> effectiveTargetType = targetType.isPrimitive() ? PrimitiveUtils.getWrapperType(targetType) : targetType;
+        return effectiveTargetType.isInstance(value);
     }
 }
