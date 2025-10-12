@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -14,10 +15,11 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public void insert(final Connection conn, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.executeUpdate(
+                conn,
                 sql,
                 user.getAccount(),
                 user.getPassword(),
@@ -25,10 +27,11 @@ public class UserDao {
         );
     }
 
-    public void update(final User user) {
+    public void update(Connection conn, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.executeUpdate(
+                conn,
                 sql,
                 user.getAccount(),
                 user.getPassword(),

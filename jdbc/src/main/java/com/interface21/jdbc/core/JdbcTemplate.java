@@ -17,9 +17,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(String sql, Object... params) {
+    public void executeUpdate(Connection conn, String sql, Object... params) {
         try (
-                Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
             validationParamLength(ps, params);
