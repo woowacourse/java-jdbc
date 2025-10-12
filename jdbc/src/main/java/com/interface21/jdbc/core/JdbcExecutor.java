@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.core.exception.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -58,17 +59,7 @@ public class JdbcExecutor {
     }
 
     private Connection getConnection() {
-        try {
-            // ThreadLocal에 Connection이 있으면 그것을 사용 (트랜잭션 중)
-            Connection transactionConn = TransactionManager.getCurrentConnection();
-            if (transactionConn != null) {
-                return transactionConn;
-            }
-            // 없으면 새로 생성 (일반 사용)
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException("Connection 획득 중 오류 발생", e);
-        }
+        return DataSourceUtils.getConnection(dataSource);
     }
 }
 

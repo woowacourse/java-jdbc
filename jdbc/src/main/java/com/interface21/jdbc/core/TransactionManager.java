@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -8,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TransactionManager {
-
-    private final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
 
     private static final Logger log = LoggerFactory.getLogger(TransactionManager.class);
 
@@ -20,21 +20,17 @@ public class TransactionManager {
     }
 
     public void start() {
-        if (connectionHolder.get() != null) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
             throw new IllegalStateException("이미 트랜잭션이 시작되었습니다.");
         }
         try {
             Connection connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            connectionHolder.set(connection);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
         } catch (SQLException e) {
             log.error("트랜잭션 시작 중 오류 발생", e);
             throw new DataAccessException("트랜잭션 시작 실패", e);
         }
-    }
-
-    public Connection getCurrentConnection() {
-        return connectionHolder.get();
     }
 
     public void commit() {
@@ -48,7 +44,7 @@ public class TransactionManager {
             log.error("트랜잭션 커밋 중 오류 발생", e);
             throw new DataAccessException("트랜잭션 커밋 실패", e);
         } finally {
-            end();
+            cleanup();
         }
     }
 
@@ -63,19 +59,23 @@ public class TransactionManager {
             log.error("트랜잭션 롤백 중 오류 발생", e);
             throw new DataAccessException("트랜잭션 롤백 실패", e);
         } finally {
-            end();
+            cleanup();
         }
     }
 
-    private void end() {
-        Connection connection = connectionHolder.get();
-        connectionHolder.remove();
+    private Connection getCurrentConnection() {
+        return DataSourceUtils.getConnection(dataSource);
+    }
+
+    private void cleanup() {
+        Connection connection = getCurrentConnection();
         if (connection != null) {
             try {
-                connection.close();
-            } catch (SQLException e) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (Exception e) {
                 log.error("Connection 정리 중 오류 발생", e);
             }
         }
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 }
