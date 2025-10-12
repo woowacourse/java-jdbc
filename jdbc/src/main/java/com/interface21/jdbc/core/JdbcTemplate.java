@@ -30,10 +30,25 @@ public class JdbcTemplate {
         return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
-    public <T> T execute(String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public int update(Connection conn, String sql, Object... args) {
+        return update(conn, sql, createPreparedStatementSetter(args));
+    }
 
+    public int update(Connection conn, String sql, PreparedStatementSetter pss) {
+        return execute(conn, sql, pss, PreparedStatement::executeUpdate);
+    }
+
+    public <T> T execute(String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> action) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, action);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T execute(Connection conn, String sql, PreparedStatementSetter pss, PreparedStatementCallback<T> action) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setValues(pstmt);
@@ -53,6 +68,14 @@ public class JdbcTemplate {
         return execute(sql, pss, pstmt -> extractResults(pstmt, rowMapper));
     }
 
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(conn, sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(Connection conn, String sql, PreparedStatementSetter pss, RowMapper<T> rowMapper) {
+        return execute(conn, sql, pss, pstmt -> extractResults(pstmt, rowMapper));
+    }
+
     private <T> List<T> extractResults(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
             return mapRows(rs, rowMapper);
@@ -70,6 +93,17 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("Result가 여러 개 입니다: " + results.size());
+        }
+        return results.get(0);
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(conn, sql, rowMapper, args);
         if (results.isEmpty()) {
             return null;
         }
