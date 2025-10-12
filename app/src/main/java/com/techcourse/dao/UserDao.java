@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 
 public class UserDao {
 
@@ -58,23 +57,12 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Optional<User> result = jdbcTemplate.queryForObject(sql, userMapper, id);
-        if (result.isEmpty()) {
-            throw new IllegalArgumentException("해당 id의 회원이 존재하지 않습니다");
-        }
-
-        return result.get();
+        return jdbcTemplate.queryForObject(sql, userMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        Optional<User> result = jdbcTemplate.queryForObject(sql, userMapper, account);
-
-        if (result.isEmpty()) {
-            throw new IllegalArgumentException("해당 account의 회원이 존재하지 않습니다");
-        }
-
-        return result.get();
+        return jdbcTemplate.queryForObject(sql, userMapper, account);
     }
 }
