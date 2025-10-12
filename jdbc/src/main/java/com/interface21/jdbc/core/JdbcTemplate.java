@@ -21,11 +21,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <T> T execute(String sql, StatementExecutor<T> executor, Object... params) {
+    private <T> T execute(String sql, StatementExecutor<T> executor, PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParameters(pstmt, params);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             log.debug("query : {}", sql);
 
             return executor.execute(pstmt);
@@ -37,39 +39,54 @@ public class JdbcTemplate {
     }
 
     // INSERT, UPDATE, DELETE
-    //TODO: 별도의 콜백 인터페이스 구현하면 Objcet...처럼 순서에 의존하지 않아도 된다고 함. 다음 스텝에..  (2025-09-27, 토, 17:38)
+    public int update(String sql, PreparedStatementSetter pss) {
+        pss = ensureSetter(pss);
+        return execute(sql, PreparedStatement::executeUpdate, pss);
+    }
+
     public int update(String sql, Object... params) {
-        return execute(sql, PreparedStatement::executeUpdate, params);
+        return update(sql, PreparedStatementSetter.of(params));
     }
 
     // SELECT
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        pss = ensureSetter(pss);
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 addResultSetToResults(rowMapper, rs, results);
                 return results;
             }
-        }, params);
+        }, pss);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return query(sql, rowMapper, PreparedStatementSetter.of(params));
     }
 
     // SELECT 단일
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
+        pss = ensureSetter(pss);
+        List<T> results = query(sql, rowMapper, pss);
         validateResultsSize(results, 1);
         return results.getFirst();
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        return queryForObject(sql, rowMapper, PreparedStatementSetter.of(params));
+    }
+
+    private PreparedStatementSetter ensureSetter(PreparedStatementSetter pss) {
+        if (pss == null) {
+            pss = PreparedStatementSetter.of(null);
+        }
+        return pss;
     }
 
     private <T> void validateResultsSize(List<T> results, int expectedSize) {
         int actualSize = results.size();
         if (actualSize != expectedSize) {
             throw new IncorrectResultSizeDataAccessException(expectedSize, actualSize);
-        }
-    }
-
-    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
         }
     }
 
