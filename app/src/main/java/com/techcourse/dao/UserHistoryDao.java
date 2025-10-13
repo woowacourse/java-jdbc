@@ -16,7 +16,7 @@ public class UserHistoryDao {
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.simpleJpa = new SimpleJpa(jdbcTemplate);
+        this.simpleJpa = new SimpleJpa(jdbcTemplate, "com.techcourse");
     }
 
     public void log(final UserHistory userHistory) {

@@ -18,7 +18,7 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.simpleJpa = new SimpleJpa(jdbcTemplate);
+        this.simpleJpa = new SimpleJpa(jdbcTemplate, "com.techcourse");
     }
 
     public void insert(final User user) {
