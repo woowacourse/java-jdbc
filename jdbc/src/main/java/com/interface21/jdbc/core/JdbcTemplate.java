@@ -63,10 +63,19 @@ public class JdbcTemplate {
                                QueryExecution<T> queryExecution) {
         try (
                 Connection connection = dataSource.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return queryExecution.execute(preparedStatement);
+            try {
+                connection.setAutoCommit(false);
+                preparedStatementSetter.setValues(preparedStatement);
+                T result = queryExecution.execute(preparedStatement);
+                connection.commit();
+                return result;
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+                connection.rollback();
+                throw new DataAccessException(e);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
