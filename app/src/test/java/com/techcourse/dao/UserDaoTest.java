@@ -1,8 +1,10 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,10 @@ class UserDaoTest {
 
     private UserDao userDao;
 
+    private JdbcTemplate jdbcTemplate;
+
+    private User user;
+
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
@@ -19,6 +25,14 @@ class UserDaoTest {
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+        this.user = userDao.findByAccount("gugu");
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        String sql = "DELETE FROM USERS WHERE account=?";
+        jdbcTemplate.update(sql, "gugu");
     }
 
     @Test
@@ -30,7 +44,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(this.user.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -57,12 +71,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(this.user.getId());
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(this.user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,33 +29,28 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (
-                var conn = dataSource.getConnection();
-                var pstmt = conn.prepareStatement(sql)
-        ) {
-            setPreparedStatementParams(pstmt, args);
-            try (var rs = pstmt.executeQuery()) {
-                log.debug("query : {}", sql);
-                return extractResults(rs, rowMapper);
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
+        final var results = query(sql, connection, rowMapper, args);
+        if (results.size() != 1) {
+            throw new DataAccessException("result size doesn't match");
         }
+        return results.getFirst();
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(conn -> queryInternal(conn, sql, rowMapper, args));
+    }
+
+    public <T> List<T> query(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
+        return executeWithConnection(connection, conn -> queryInternal(conn, sql, rowMapper, args));
     }
 
     public int update(String sql, Object... args) {
-        try (
-                var conn = dataSource.getConnection();
-                var pstmt = conn.prepareStatement(sql)
-        ) {
-            setPreparedStatementParams(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(conn -> updateInternal(conn, sql, args));
+    }
+
+    public int update(String sql, Connection connection, Object... args) {
+        return executeWithConnection(connection, conn -> updateInternal(conn, sql, args));
     }
 
     private void setPreparedStatementParams(final PreparedStatement pstmt, final Object... args) throws SQLException {
@@ -67,6 +63,34 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T execute(ConnectionCallback<T> callback) {
+        try (var conn = dataSource.getConnection()) {
+            return callback.doInConnection(conn);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeWithConnection(Connection connection, ConnectionCallback<T> callback) {
+        try {
+            return callback.doInConnection(connection);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> queryInternal(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) throws SQLException {
+        try (var pstmt = conn.prepareStatement(sql)) {
+            setPreparedStatementParams(pstmt, args);
+            try (var rs = pstmt.executeQuery()) {
+                log.debug("query : {}", sql);
+                return extractResults(rs, rowMapper);
+            }
+        }
+    }
+
     private <T> List<T> extractResults(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
         List<T> results = new ArrayList<>();
         int rowNum = 0;
@@ -74,5 +98,12 @@ public class JdbcTemplate {
             results.add(rowMapper.mapRow(rs, rowNum++));
         }
         return results;
+    }
+
+    private int updateInternal(Connection conn, String sql, Object... args) throws SQLException {
+        try (var pstmt = conn.prepareStatement(sql)) {
+            setPreparedStatementParams(pstmt, args);
+            return pstmt.executeUpdate();
+        }
     }
 }
