@@ -1,9 +1,9 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcOperations;
-import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -29,6 +29,11 @@ public class UserDao {
     public int update(final User user) {
         final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         return jdbcOperations.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public int update(final User user, final Connection conn) {
+        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        return jdbcOperations.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
