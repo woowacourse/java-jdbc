@@ -6,6 +6,8 @@ import java.sql.Connection;
 
 public class UserHistoryDao {
 
+    private static final String INSERT_SQL = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
+
     private final JdbcOperations jdbcOperations;
 
     public UserHistoryDao(final JdbcOperations jdbcOperations) {
@@ -13,29 +15,21 @@ public class UserHistoryDao {
     }
 
     public int log(final UserHistory userHistory) {
-        final String sql = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
-        return jdbcOperations.update(
-                sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
+        return jdbcOperations.update(INSERT_SQL, toParams(userHistory));
     }
 
     public int log(final UserHistory userHistory, final Connection conn) {
-        final String sql = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
-        return jdbcOperations.update(
-                conn,
-                sql,
+        return jdbcOperations.update(conn, INSERT_SQL, toParams(userHistory));
+    }
+
+    private Object[] toParams(final UserHistory userHistory) {
+        return new Object[]{
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
                 userHistory.getEmail(),
                 userHistory.getCreatedAt(),
                 userHistory.getCreateBy()
-        );
+        };
     }
 }
