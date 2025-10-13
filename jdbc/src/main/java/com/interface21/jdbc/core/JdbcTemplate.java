@@ -21,14 +21,18 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
+        execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(preparedStatement, args);
-            preparedStatement.executeUpdate();
+            return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("query 실패 {}", sql, e);
-            throw new RuntimeException(e);
+            throw new JdbcFailException(e);
         }
     }
 
@@ -38,29 +42,27 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(String sql, RowMapper rowMapper, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(preparedStatement, args);
+    public <T> List<T> queryForObjects(String sql, RowMapper<T> rowMapper, Object... args) {
+        PreparedStatementCallback<List<T>> callback = preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<Object> results = new ArrayList<>();
+                List<T> results = new ArrayList<>();
                 int rowNum = 0;
                 while (resultSet.next()) {
                     results.add(rowMapper.mapRow(resultSet, rowNum++));
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error("SQL query failed. query: {}", sql, e);
-            throw new RuntimeException(e);
-        }
+        };
+        return execute(sql, callback, args);
     }
 
-    public Object queryForObject(String sql, RowMapper rowMapper, Object... args) {
-        List<Object> results = query(sql, rowMapper, args);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = queryForObjects(sql, rowMapper, args);
         if (results.isEmpty()) {
-            return null;
+            throw new JdbcFailException("일치하는 결과가 없습니다. ");
+        }
+        if (results.size() > 1) {
+            throw new JdbcFailException("일치하는 결과가 1을 초과합니다.");
         }
         return results.get(0);
     }
