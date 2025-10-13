@@ -28,9 +28,31 @@ public class JdbcTemplate {
         );
     }
 
+    public void update(String sql, PreparedStatementSetter preparedStatementSetter, Connection connection) {
+        executeQuery(
+                sql, preparedStatementSetter, connection,
+                (preparedStatement) -> preparedStatement.executeUpdate()
+        );
+    }
+
     public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         return executeQuery(
                 sql, preparedStatementSetter,
+                (preparedStatement) -> {
+                    try (ResultSet rs = preparedStatement.executeQuery()) {
+                        if (rs.next()) {
+                            return rowMapper.mapped(rs);
+                        }
+                    }
+                    return null;
+                }
+        );
+    }
+
+    public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter,
+                       Connection connection) {
+        return executeQuery(
+                sql, preparedStatementSetter, connection,
                 (preparedStatement) -> {
                     try (ResultSet rs = preparedStatement.executeQuery()) {
                         if (rs.next()) {
@@ -59,23 +81,48 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> T executeQuery(String sql, PreparedStatementSetter preparedStatementSetter,
-                               QueryExecution<T> queryExecution) {
+    public <T> List<T> queryAll(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter
+            , Connection connection) {
+        return executeQuery(
+                sql, preparedStatementSetter, connection,
+                (preparedStatement) -> {
+                    List<T> results = new ArrayList<>();
+                    try (ResultSet rs = preparedStatement.executeQuery()) {
+                        while (rs.next()) {
+                            T result = rowMapper.mapped(rs);
+                            results.add(result);
+                        }
+                    }
+
+                    return results;
+                }
+        );
+    }
+
+    private <T> T executeQuery(
+            String sql, PreparedStatementSetter preparedStatementSetter, QueryExecution<T> queryExecution
+    ) {
         try (
                 Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
-            try {
-                connection.setAutoCommit(false);
-                preparedStatementSetter.setValues(preparedStatement);
-                T result = queryExecution.execute(preparedStatement);
-                connection.commit();
-                return result;
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                connection.rollback();
-                throw new DataAccessException(e);
-            }
+            preparedStatementSetter.setValues(preparedStatement);
+            return queryExecution.execute(preparedStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeQuery(
+            String sql, PreparedStatementSetter preparedStatementSetter, Connection connection,
+            QueryExecution<T> queryExecution
+    ) {
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(sql)
+        ) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return queryExecution.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
