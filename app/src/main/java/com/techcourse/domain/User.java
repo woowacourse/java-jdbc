@@ -1,8 +1,8 @@
 package com.techcourse.domain;
 
-import com.interface21.jdbc.core.annotation.Column;
-import com.interface21.jdbc.core.annotation.Id;
-import com.interface21.jdbc.core.annotation.Table;
+import com.interface21.jdbc.core.jpa.annotation.Column;
+import com.interface21.jdbc.core.jpa.annotation.Id;
+import com.interface21.jdbc.core.jpa.annotation.Table;
 
 @Table(name = "users")
 public class User {

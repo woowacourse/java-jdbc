@@ -1,4 +1,4 @@
-package com.interface21.jdbc.core.annotation;
+package com.interface21.jdbc.core.jpa.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

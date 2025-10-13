@@ -1,25 +1,16 @@
 package com.interface21.jdbc.core;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.interface21.jdbc.core.annotation.Column;
-import com.interface21.jdbc.core.annotation.Id;
-import com.interface21.jdbc.core.annotation.Table;
 
 public class JdbcTemplate {
 
@@ -31,204 +22,38 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> select(final Class<T> entityClass, final Map<String, Object> conditions) {
-        String tableName = getTableName(entityClass);
-        final var condition = generateCondition(conditions);
-        final var sql = generateSelectSql(tableName, entityClass, condition.isEmpty() ? null : condition);
-
-        return executeQuery(sql, conditions, entityClass);
-    }
-
-    private boolean isColumnField(Field field) {
-        return !Modifier.isStatic(field.getModifiers()) && (field.isAnnotationPresent(Id.class)
-            || field.isAnnotationPresent(Column.class));
-    }
-
-    public void insert(final Object entity) {
-        String tableName = getTableName(entity.getClass());
-        final var sql = generateInsertSql(tableName, entity);
-        executeUpdate(sql, pstmt -> {
-            try {
-                setEntityParameters(pstmt, entity, true);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    public <T> void update(T entity, Map<String, Object> conditions) {
-        String tableName = getTableName(entity.getClass());
-        String condition = generateCondition(conditions);
-        String sql = generateUpdateSql(tableName, entity, condition.isEmpty() ? null : condition);
-
-        executeUpdate(sql, pstmt -> {
-            try {
-                int paramIndex = setEntityParameters(pstmt, entity, false);
-                setConditionParameters(pstmt, conditions, paramIndex);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    public void delete(final Class<?> entityClass, Map<String, Object> conditions) {
-        String tableName = getTableName(entityClass);
-        String condition = generateCondition(conditions);
-        String sql = generateDeleteSql(tableName, condition.isEmpty() ? null : condition);
-
-        executeUpdate(sql, pstmt -> setConditionParameters(pstmt, conditions, 1));
-    }
-
-    private <T> String getTableName(Class<T> entityClass) {
-        if (!entityClass.isAnnotationPresent(Table.class)) {
-            throw new IllegalArgumentException("Entity class must be annotated with @Table");
-        }
-        Table table = entityClass.getAnnotation(Table.class);
-        return table.name();
-    }
-
-    private String generateSelectSql(String tableName, Class<?> entityClass, String condition) {
-        List<Field> fields = getInstanceFields(entityClass);
-        StringBuilder columns = new StringBuilder();
-        for (Field field : fields) {
-            columns.append(getFieldName(field)).append(", ");
-        }
-        if (!columns.isEmpty()) {
-            columns.setLength(columns.length() - 2);
-        }
-        return "SELECT " + columns + " FROM " + tableName + (condition != null ? " WHERE " + condition : "");
-    }
-
-    private String generateInsertSql(String tableName, Object entity) {
-        List<Field> fields = getInstanceFields(entity.getClass());
-        StringBuilder columns = new StringBuilder();
-        StringBuilder placeholders = new StringBuilder();
-        try {
-            for (Field field : fields) {
-                field.setAccessible(true);
-                Object value = field.get(entity);
-                if (field.isAnnotationPresent(Id.class) && (value == null || value.equals(0L))) {
-                    continue;
-                }
-                columns.append(getFieldName(field)).append(", ");
-                placeholders.append("?, ");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        // 마지막 쉼표와 공백 제거
-        if (!columns.isEmpty()) {
-            columns.setLength(columns.length() - 2);
-            placeholders.setLength(placeholders.length() - 2);
-        }
-        return "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
-    }
-
-    private String generateUpdateSql(String tableName, Object entity, String condition) {
-        List<Field> fields = getInstanceFields(entity.getClass());
-        StringBuilder setClause = new StringBuilder();
-        for (Field field : fields) {
-            setClause.append(getFieldName(field)).append(" = ?, ");
-        }
-        // 마지막 쉼표와 공백 제거
-        if (!setClause.isEmpty()) {
-            setClause.setLength(setClause.length() - 2);
-        }
-        return "UPDATE " + tableName + " SET " + setClause + (condition != null ? " WHERE " + condition : "");
-    }
-
-    private String generateDeleteSql(String tableName, String condition) {
-        return "DELETE FROM " + tableName + (condition != null ? " WHERE " + condition : "");
-    }
-
-    private String getFieldName(Field field) {
-        if (field.isAnnotationPresent(Column.class)) {
-            Column column = field.getAnnotation(Column.class);
-            return column.name();
-        }
-        return field.getName();
-    }
-
-    private String generateCondition(Map<String, Object> conditions) {
-        StringBuilder condition = new StringBuilder();
-        for (String key : conditions.keySet()) {
-            condition.append(key).append(" = ? AND ");
-        }
-        // 마지막 " AND " 제거
-        if (!condition.isEmpty()) {
-            condition.setLength(condition.length() - 5);
-        }
-        return condition.toString();
-    }
-
-    private <T> List<T> executeQuery(String sql, Map<String, Object> conditions, Class<T> entityClass) {
-        List<T> results = new ArrayList<>();
+    public int execute(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setConditionParameters(pstmt, conditions, 1);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    T entity = entityClass.getDeclaredConstructor().newInstance();
-                    List<Field> fields = getInstanceFields(entityClass);
-                    for (int i = 0; i < fields.size(); i++) {
-                        fields.get(i).setAccessible(true);
-                        fields.get(i).set(entity, rs.getObject(i + 1));
-                    }
-                    results.add(entity);
-                }
-            }
-            return results;
-        } catch (SQLException | IllegalAccessException | NoSuchMethodException | InstantiationException |
-                 InvocationTargetException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void executeUpdate(String sql, Consumer<PreparedStatement> parameterSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            parameterSetter.accept(pstmt);
-            pstmt.executeUpdate();
+            setParameters(pstmt, params);
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    private int setEntityParameters(PreparedStatement pstmt, Object entity, boolean skipAutoId) throws Exception {
-        List<Field> fields = getInstanceFields(entity.getClass());
-        int paramIndex = 1;
-        for (Field field : fields) {
-            field.setAccessible(true);
-            Object value = field.get(entity);
-            if (skipAutoId && field.isAnnotationPresent(Id.class) && (value == null || value.equals(0L))) {
-                continue;
-            }
-            pstmt.setObject(paramIndex++, value);
-        }
-        return paramIndex;
-    }
-
-    private List<Field> getInstanceFields(Class<?> clazz) {
-        List<Field> fields = new ArrayList<>();
-        Class<?> current = clazz;
-        while (current != null && current != Object.class) {
-            for (Field field : current.getDeclaredFields()) {
-                if (!fields.contains(field) && isColumnField(field)) {
-                    fields.add(field);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setParameters(pstmt, params);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
                 }
             }
-            current = current.getSuperclass();
+            return results;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
-        return fields;
     }
 
-    private void setConditionParameters(PreparedStatement pstmt, Map<String, Object> conditions, int startIndex) {
+    private void setParameters(PreparedStatement pstmt, Object... params) {
         try {
-            int paramIndex = startIndex;
-            for (Object value : conditions.values()) {
-                pstmt.setObject(paramIndex++, value);
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
