@@ -47,7 +47,7 @@ public class UserService {
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
             } catch (Exception e) {
-                rollback(connection);
+                connection.rollback();
                 throw e;
             }
 
@@ -65,14 +65,6 @@ public class UserService {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new CannotGetJdbcConnectionException(e.getMessage(), e);
-        }
-    }
-
-    private void rollback(Connection connection) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
         }
     }
 }
