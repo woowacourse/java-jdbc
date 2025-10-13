@@ -14,7 +14,10 @@ public class TransactionManager {
         } catch (Exception e) {
             rollback(conn);
             throw new DataAccessException("Transaction error", e);
-        }    }
+        } finally {
+            end(conn);
+        }
+    }
 
     private static void begin(final Connection conn) {
         try {
@@ -37,6 +40,14 @@ public class TransactionManager {
             conn.rollback();
         } catch (Exception e) {
             throw new DataAccessException("Transaction rollback error", e);
+        }
+    }
+
+    private static void end(final Connection conn) {
+        try {
+            conn.setAutoCommit(true);
+        } catch (Exception e) {
+            throw new DataAccessException("Transaction end error", e);
         }
     }
 }
