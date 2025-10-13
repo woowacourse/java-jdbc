@@ -73,15 +73,7 @@ public class UserService {
             connection.rollback();
         } catch (SQLException rollbackEx) {
             log.error(rollbackEx.getMessage(), rollbackEx);
-            final var ex = new RollbackFailureException("failed to rollback", rollbackEx);
-            ex.addSuppressed(appException);
-            throw ex;
-        }
-    }
-
-    public static class RollbackFailureException extends RuntimeException {
-        public RollbackFailureException(String message, Throwable cause) {
-            super(message, cause);
+            appException.addSuppressed(rollbackEx);
         }
     }
 }
