@@ -24,40 +24,40 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            bindParameters(preparedStatement, parameters);
-
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        execute(
+                sql,
+                preparedStatement -> {
+                    preparedStatement.executeUpdate();
+                    return null;
+                },
+                parameters
+        );
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final List<T> result = query(sql, rowMapper, parameters);
-
-        if (result.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(result.getFirst());
+        return query(sql, rowMapper, parameters).stream()
+                .findFirst();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(
+                sql,
+                preparedStatement -> {
+                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                        return extractResults(resultSet, rowMapper);
+                    }
+                },
+                parameters
+        );
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-
             bindParameters(preparedStatement, parameters);
-
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                return extractResults(resultSet, rowMapper);
-            }
+            return callback.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
