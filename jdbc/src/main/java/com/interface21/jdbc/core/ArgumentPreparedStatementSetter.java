@@ -13,8 +13,12 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter 
 
     @Override
     public void setParameters(final PreparedStatement pstmt) throws SQLException {
-        if (params == null) {
+        if (params == null || params.length == 0) {
             return;
+        }
+
+        if (pstmt.getParameterMetaData().getParameterCount() != params.length) {
+            throw new SQLException("파라미터 개수가 일치하지 않습니다.");
         }
 
         for (int i = 0; i < params.length; i++) {
