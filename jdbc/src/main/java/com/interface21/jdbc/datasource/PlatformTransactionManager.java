@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LocalTransactionManager {
+public abstract class PlatformTransactionManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> connectionHolder = new ThreadLocal<>();
 
