@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.datasource.LocalTransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -35,14 +36,14 @@ public class TxUserService implements UserService {
         try{
             LocalTransactionManager.begin(dataSource);
             userService.changePassword(id,newPassword,createBy);
-            LocalTransactionManager.commit();
+            LocalTransactionManager.commit(dataSource);
         } catch (DataAccessException e) {
-            LocalTransactionManager.rollback();
+            LocalTransactionManager.rollback(dataSource);
             throw e;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            LocalTransactionManager.end();
+            LocalTransactionManager.end(dataSource);
         }
     }
 }

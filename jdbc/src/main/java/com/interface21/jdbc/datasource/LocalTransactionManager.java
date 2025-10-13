@@ -1,60 +1,91 @@
 package com.interface21.jdbc.datasource;
 
-import com.interface21.jdbc.exception.JdbcFailException;
+import com.interface21.jdbc.exception.DatabaseConnectionFailException;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LocalTransactionManager {
 
-    private static final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> connectionHolder = new ThreadLocal<>();
 
     public static void begin(DataSource dataSource) throws SQLException {
-        try{
+        try {
+            Map<DataSource, Connection> map = connectionHolder.get();
+            if (map == null) {
+                map = new HashMap<>();
+                connectionHolder.set(map);
+            }
+
+            if (map.containsKey(dataSource)) {
+                return;
+            }
+
             Connection connection = dataSource.getConnection();
-            connectionHolder.set(connection);
             connection.setAutoCommit(false);
-        }catch (SQLException e ){
-            connectionHolder.remove();
-            throw new JdbcFailException("커밋에 실패하였습니다");
+            map.put(dataSource, connection);
+
+        } catch (SQLException e) {
+            removeResource(dataSource);
+            throw new DatabaseConnectionFailException("트랜잭션 시작에 실패하였습니다", e.getMessage());
         }
     }
 
-    public static void end() {
-        try{
-            connectionHolder.get().close();
-        }catch (SQLException e ){
-            throw new JdbcFailException("종료에 실패하였습니다");
-        }finally {
-            connectionHolder.remove();
-        }
-    }
-
-    public static void commit() {
-        try{
-            Connection connection = connectionHolder.get();
+    public static void commit(DataSource dataSource) {
+        Connection connection = getBoundConnection(dataSource);
+        try {
             connection.commit();
-        }catch (SQLException e ){
-            throw new JdbcFailException("커밋에 실패하였습니다");
+        } catch (SQLException e) {
+            throw new DatabaseConnectionFailException("커밋에 실패하였습니다", e.getMessage());
         }
     }
 
-    public static void rollback(){
-        Connection connection = connectionHolder.get();
+    public static void rollback(DataSource dataSource) {
+        Connection connection = getBoundConnection(dataSource);
         try {
             connection.rollback();
         } catch (SQLException e) {
-            throw new JdbcFailException("롤백에 실패하였습니다");
+            throw new DatabaseConnectionFailException("롤백에 실패하였습니다", e.getMessage());
         }
     }
 
-    public static Connection getConnection(DataSource ds) throws SQLException {
-        Connection conn = connectionHolder.get();
-        if (conn != null){
-            return conn;
+    public static void end(DataSource dataSource) {
+        Connection connection = getBoundConnection(dataSource);
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new DatabaseConnectionFailException("Connection 종료에 실패하였습니다", e.getMessage());
+        } finally {
+            removeResource(dataSource);
         }
-        return ds.getConnection();
+    }
+
+    public static Connection getConnection(DataSource dataSource) throws SQLException {
+        Map<DataSource, Connection> map = connectionHolder.get();
+        if (map != null && map.containsKey(dataSource)) {
+            return map.get(dataSource);
+        }
+        return dataSource.getConnection();
+    }
+
+    private static Connection getBoundConnection(DataSource dataSource) {
+        Map<DataSource, Connection> map = connectionHolder.get();
+        if (map == null || !map.containsKey(dataSource)) {
+            throw new DatabaseConnectionFailException("해당 DataSource에 대한 트랜잭션이 없습니다");
+        }
+        return map.get(dataSource);
+    }
+
+    private static void removeResource(DataSource dataSource) {
+        Map<DataSource, Connection> map = connectionHolder.get();
+        if (map != null) {
+            map.remove(dataSource);
+            if (map.isEmpty()) {
+                connectionHolder.remove();
+            }
+        }
     }
 }
-

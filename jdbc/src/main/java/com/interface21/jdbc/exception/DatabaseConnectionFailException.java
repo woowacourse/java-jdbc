@@ -1,16 +1,16 @@
 package com.interface21.jdbc.exception;
 
-public class JdbcFailException extends RuntimeException {
+public class DatabaseConnectionFailException extends RuntimeException {
 
     private String sqlState;
     private String message;
 
-    public JdbcFailException(String sqlState, String message) {
+    public DatabaseConnectionFailException(String sqlState, String message) {
         this.sqlState = sqlState;
         this.message = message;
     }
 
-    public JdbcFailException(String message) {
+    public DatabaseConnectionFailException(String message) {
         this.message=message;
     }
 }
