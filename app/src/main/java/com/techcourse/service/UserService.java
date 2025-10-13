@@ -71,9 +71,8 @@ public class UserService {
     private void rollback(Connection connection) {
         try {
             connection.rollback();
-        } catch (SQLException sqlException) {
-            log.error(sqlException.getMessage(), sqlException);
-            throw new RuntimeException("failed to rollback transaction");
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
     }
 }
