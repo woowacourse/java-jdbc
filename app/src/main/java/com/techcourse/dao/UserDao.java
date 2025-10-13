@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.preparedstatementsetter.PreparedStatementSetter;
 import com.interface21.jdbc.rowmapper.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -41,6 +42,21 @@ public class UserDao {
             user.getId()
         };
         jdbcTemplate.update(sql, params);
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = """
+            UPDATE users
+            SET account = ?, password = ?, email = ?
+            WHERE id = ?
+        """;
+        final Object[] params = new Object[]{
+            user.getAccount(),
+            user.getPassword(),
+            user.getEmail(),
+            user.getId()
+        };
+        jdbcTemplate.update(connection, sql, params);
     }
 
     public List<User> findAll() {

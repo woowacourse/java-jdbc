@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.IncorrectResultSizeException;
 import com.interface21.jdbc.DataAccessException;
+import com.interface21.jdbc.IncorrectResultSizeException;
 import com.interface21.jdbc.ParameterBindingException;
 import com.interface21.jdbc.preparedstatementsetter.PreparedStatementSetter;
 import com.interface21.jdbc.rowmapper.RowMapper;
@@ -51,6 +51,17 @@ public class JdbcTemplate {
             }
         } catch (SQLException exception) {
             throw new ParameterBindingException(exception.getMessage());
+        }
+    }
+
+    public int update(Connection conn, String sql, Object... params) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParametersToPreparedStatement(params, pstmt);
+            return pstmt.executeUpdate();
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception.getMessage());
         }
     }
 
