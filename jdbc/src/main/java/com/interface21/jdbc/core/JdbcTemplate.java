@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,14 +24,21 @@ public class JdbcTemplate {
         this.parameterBinder = ParameterBinder.init();
     }
 
-    public void executeUpdate(
+    public int update(
             final String sql,
             final Object... parameters
     ) {
-        executeSql(sql, PreparedStatement::executeUpdate, parameters);
+        return executeSql(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> List<T> execute(
+    public int update(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return executeSql(sql, PreparedStatement::executeUpdate, preparedStatementSetter);
+    }
+
+    public <T> List<T> query(
             final String sql,
             final RowMapper<T> rowMapper,
             final Object... parameters
@@ -46,22 +54,76 @@ public class JdbcTemplate {
         }, parameters);
     }
 
-    public <T> T executeObject(
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return executeSql(sql, preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final List<T> result = new ArrayList<>();
+                while (resultSet.next()) {
+                    result.add(rowMapper.mapRow(resultSet));
+                }
+                return result;
+            }
+        }, preparedStatementSetter);
+    }
+
+    public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
             final Object... parameters
     ) {
-        return executeSql(sql, preparedStatement -> {
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                return null;
-            }
-        }, parameters);
+        List<T> results = query(sql, rowMapper, parameters);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeException("조회 결과 수가 2개 이상입니다: " + results.size());
+        }
+        return results.getFirst();
     }
 
-    private <T> T executeSql(String sql, JdbcCallback<T> callback, Object... parameters) {
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        List<T> results = query(sql, rowMapper, preparedStatementSetter);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeException("조회 결과 수가 2개 이상입니다: " + results.size());
+        }
+        return results.getFirst();
+    }
+
+    private <T> T executeSql(
+            final String sql,
+            final JdbcCallback<T> callback,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            preparedStatementSetter.setValues(preparedStatement);
+
+            return callback.execute(preparedStatement);
+
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeSql(
+            final String sql,
+            final JdbcCallback<T> callback,
+            final Object... parameters
+    ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -75,7 +137,6 @@ public class JdbcTemplate {
             throw new DataAccessException(e);
         }
     }
-
 
     private void bindParameters(
             final PreparedStatement preparedStatement,

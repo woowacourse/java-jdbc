@@ -61,7 +61,7 @@ class PoolingVsNoPoolingTest {
     }
 
     @Test
-    void noPoling() throws SQLException {
+    void noPooling() throws SQLException {
         final var dataSource = createMysqlDataSource();
 
         long start = ClockSource.currentTime();
