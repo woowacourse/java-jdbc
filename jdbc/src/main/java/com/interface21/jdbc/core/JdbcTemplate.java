@@ -21,12 +21,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
-        execute(sql, PreparedStatement::executeUpdate, params);
+    public void update(final Connection connection, final String sql, final Object... params) {
+        execute(connection, sql, PreparedStatement::executeUpdate, params);
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> mapper, final Object... params) {
-        return execute(sql, ps -> {
+    public <T> List<T> query(final Connection connection, final String sql, RowMapper<T> mapper,
+                             final Object... params) {
+        return execute(connection, sql, ps -> {
             try (ResultSet resultSet = ps.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 while (resultSet.next()) {
@@ -38,8 +39,9 @@ public class JdbcTemplate {
         }, params);
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> mapper, final Object... params) {
-        return execute(sql, ps -> {
+    public <T> T queryForObject(final Connection connection, final String sql, RowMapper<T> mapper,
+                                final Object... params) {
+        return execute(connection, sql, ps -> {
             try (ResultSet resultSet = ps.executeQuery()) {
                 if (resultSet.next()) {
                     T result = mapper.mapRow(resultSet);
@@ -54,9 +56,9 @@ public class JdbcTemplate {
         }, params);
     }
 
-    private <R> R execute(String sql, PreparedStatementSetter<R> action, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private <R> R execute(final Connection connection, String sql, PreparedStatementSetter<R> action,
+                          Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bindParams(pstmt, params);
 
