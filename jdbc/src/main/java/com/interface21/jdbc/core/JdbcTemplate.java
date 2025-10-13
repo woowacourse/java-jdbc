@@ -51,6 +51,18 @@ public class JdbcTemplate {
         );
     }
 
+    public <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... parameters) {
+        return execute(
+                sql,
+                preparedStatement -> {
+                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                        return resultSetExtractor.extractData(resultSet);
+                    }
+                },
+                parameters
+        );
+    }
+
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)

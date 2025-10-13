@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -40,7 +41,20 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(
+                sql,
+                resultSet -> {
+                    List<User> users = new ArrayList<>();
+                    while (resultSet.next()) {
+                        users.add(new User(
+                                resultSet.getLong("id"),
+                                resultSet.getString("account"),
+                                resultSet.getString("password"),
+                                resultSet.getString("email")
+                        ));
+                    }
+                    return users;
+                });
     }
 
     public Optional<User> findById(final Long id) {
