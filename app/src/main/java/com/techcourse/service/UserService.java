@@ -54,7 +54,7 @@ public class UserService {
             connection.commit();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
