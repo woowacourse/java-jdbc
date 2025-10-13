@@ -99,12 +99,21 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void testException() {
+    void testException_notExistsTable() {
         final String invalidSql = "insert into not_exists_table (id) values (?)";
 
-        assertThatThrownBy(() -> {
-            jdbcTemplate.update(invalidSql, 1);
-        }).isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() ->
+                jdbcTemplate.update(invalidSql, 1)
+        ).isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void testException_mismatchParameterCount() {
+        final String sql = "insert into users (id, name) values (?, ?)";
+
+        assertThatThrownBy(() ->
+                jdbcTemplate.update(sql, 1)
+        ).isInstanceOf(DataAccessException.class);
     }
 
     private static class User {
