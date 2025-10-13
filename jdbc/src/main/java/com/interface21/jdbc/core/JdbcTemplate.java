@@ -34,10 +34,17 @@ public class JdbcTemplate {
             bindParameters(params, pstmt);
 
             try (final ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.ofNullable(rowMapper.mapRow(rs));
+                if (!rs.next()) {
+                    return Optional.empty();
                 }
-                return Optional.empty();
+
+                final T mappedRow = rowMapper.mapRow(rs);
+
+                if (rs.next()) {
+                    throw new DataAccessException("queryForObject 실행 시 조회 결과가 1건 이상입니다.");
+                }
+
+                return Optional.ofNullable(mappedRow);
             }
         });
     }
