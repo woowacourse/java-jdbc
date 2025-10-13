@@ -17,6 +17,6 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        jdbcTemplate.insert("user_history", userHistory);
+        jdbcTemplate.insert(userHistory);
     }
 }

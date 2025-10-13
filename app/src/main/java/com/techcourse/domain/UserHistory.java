@@ -2,13 +2,27 @@ package com.techcourse.domain;
 
 import java.time.LocalDateTime;
 
+import com.interface21.jdbc.core.annotation.Column;
+import com.interface21.jdbc.core.annotation.Id;
+import com.interface21.jdbc.core.annotation.Table;
+
+@Table(name = "user_history")
 public class UserHistory {
 
+    @Id
+    @Column(name = "id")
     private Long id;
 
+    @Column(name = "user_id")
     private final long userId;
+
+    @Column(name = "account")
     private final String account;
+
+    @Column(name = "password")
     private final String password;
+
+    @Column(name = "email")
     private final String email;
 
     private final LocalDateTime createdAt;

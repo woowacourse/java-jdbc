@@ -8,15 +8,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.interface21.jdbc.core.annotation.Column;
+import com.interface21.jdbc.core.annotation.Id;
+import com.interface21.jdbc.core.annotation.Table;
 
 public class JdbcTemplate {
 
@@ -28,8 +30,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> select(final String tableName, final Class<T> entityClass,
-        final Map<String, Object> conditions) {
+    public <T> List<T> select(final Class<T> entityClass, final Map<String, Object> conditions) {
+        String tableName = getTableName(entityClass);
         final var condition = generateCondition(conditions);
         final var sql = generateSelectSql(tableName, entityClass, condition.isEmpty() ? null : condition);
 
@@ -59,13 +61,13 @@ public class JdbcTemplate {
         }
     }
 
-    private List<Field> getInstanceFields(Class<?> clazz) {
-        return Arrays.stream(clazz.getDeclaredFields())
-            .filter(field -> !Modifier.isStatic(field.getModifiers()))
-            .collect(Collectors.toList());
+    private boolean isColumnField(Field field) {
+        return !Modifier.isStatic(field.getModifiers()) && (field.isAnnotationPresent(Id.class)
+            || field.isAnnotationPresent(Column.class));
     }
 
-    public void insert(final String tableName, final Object entity) {
+    public void insert(final Object entity) {
+        String tableName = getTableName(entity.getClass());
         final var sql = generateInsertSql(tableName, entity);
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -86,12 +88,13 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> void update(String tableName, T entity, Map<String, Object> conditions) {
+    public <T> void update(T entity, Map<String, Object> conditions) {
+        String tableName = getTableName(entity.getClass());
         String condition = generateCondition(conditions);
         String sql = generateUpdateSql(tableName, entity, condition.isEmpty() ? null : condition);
 
         try (Connection conn = dataSource.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             List<Field> fields = getInstanceFields(entity.getClass());
             int paramIndex = 1;
             for (Field field : fields) {
@@ -109,7 +112,8 @@ public class JdbcTemplate {
         }
     }
 
-    public void delete(String tableName, Map<String, Object> conditions) {
+    public void delete(final Class<?> entityClass, Map<String, Object> conditions) {
+        String tableName = getTableName(entityClass);
         String condition = generateCondition(conditions);
         String sql = generateDeleteSql(tableName, condition.isEmpty() ? null : condition);
 
@@ -126,11 +130,33 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> String getTableName(Class<T> entityClass) {
+        if (!entityClass.isAnnotationPresent(Table.class)) {
+            throw new IllegalArgumentException("Entity class must be annotated with @Table");
+        }
+        Table table = entityClass.getAnnotation(Table.class);
+        return table.name();
+    }
+
+    private List<Field> getInstanceFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!fields.contains(field) && isColumnField(field)) {
+                    fields.add(field);
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return fields;
+    }
+
     private String generateSelectSql(String tableName, Class<?> entityClass, String condition) {
         List<Field> fields = getInstanceFields(entityClass);
         StringBuilder columns = new StringBuilder();
         for (Field field : fields) {
-            columns.append(field.getName()).append(", ");
+            columns.append(getFieldName(field)).append(", ");
         }
         if (!columns.isEmpty()) {
             columns.setLength(columns.length() - 2);
@@ -146,10 +172,10 @@ public class JdbcTemplate {
             for (Field field : fields) {
                 field.setAccessible(true);
                 Object value = field.get(entity);
-                if (field.getName().equals("id") && (value == null || value.equals(0L))) {
+                if (field.isAnnotationPresent(Id.class) && (value == null || value.equals(0L))) {
                     continue;
                 }
-                columns.append(field.getName()).append(", ");
+                columns.append(getFieldName(field)).append(", ");
                 placeholders.append("?, ");
             }
         } catch (Exception e) {
@@ -167,7 +193,7 @@ public class JdbcTemplate {
         List<Field> fields = getInstanceFields(entity.getClass());
         StringBuilder setClause = new StringBuilder();
         for (Field field : fields) {
-            setClause.append(field.getName()).append(" = ?, ");
+            setClause.append(getFieldName(field)).append(" = ?, ");
         }
         // 마지막 쉼표와 공백 제거
         if (!setClause.isEmpty()) {
@@ -178,6 +204,14 @@ public class JdbcTemplate {
 
     private String generateDeleteSql(String tableName, String condition) {
         return "DELETE FROM " + tableName + (condition != null ? " WHERE " + condition : "");
+    }
+
+    private String getFieldName(Field field) {
+        if (field.isAnnotationPresent(Column.class)) {
+            Column column = field.getAnnotation(Column.class);
+            return column.name();
+        }
+        return field.getName();
     }
 
     private String generateCondition(Map<String, Object> conditions) {
