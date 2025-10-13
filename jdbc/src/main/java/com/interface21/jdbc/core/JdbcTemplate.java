@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.DataAccessException;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -33,7 +34,7 @@ public class JdbcTemplate {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -59,36 +60,45 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
-    private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters)
-            throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            final Object parameter = parameters[i];
-            final int parameterIndex = i + 1;
+    private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters) {
+        try {
+            for (int i = 0; i < parameters.length; i++) {
+                final Object parameter = parameters[i];
+                final int parameterIndex = i + 1;
 
-            if (parameter == null) {
-                final ParameterMetaData metaData = preparedStatement.getParameterMetaData();
-                final int sqlType = metaData.getParameterType(parameterIndex);
+                if (parameter == null) {
+                    final ParameterMetaData metaData = preparedStatement.getParameterMetaData();
+                    final int sqlType = metaData.getParameterType(parameterIndex);
 
-                preparedStatement.setNull(parameterIndex, sqlType);
-                continue;
+                    preparedStatement.setNull(parameterIndex, sqlType);
+                    continue;
+                }
+
+                preparedStatement.setObject(parameterIndex, parameter);
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> extractResults(final ResultSet resultSet, final RowMapper<T> rowMapper) {
+        try {
+            final List<T> results = new ArrayList<>();
+
+            int rowNumber = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNumber++));
             }
 
-            preparedStatement.setObject(parameterIndex, parameter);
+            return results;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
-    }
-
-    private <T> List<T> extractResults(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
-        final List<T> results = new ArrayList<>();
-
-        int rowNumber = 0;
-        while (resultSet.next()) {
-            results.add(rowMapper.mapRow(resultSet, rowNumber++));
-        }
-
-        return results;
     }
 }
