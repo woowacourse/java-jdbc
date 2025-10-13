@@ -1,4 +1,4 @@
-package com.interface21.dao;
+package com.interface21.exception;
 
 public class DataAccessException extends RuntimeException {
 
