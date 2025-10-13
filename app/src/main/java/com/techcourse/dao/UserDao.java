@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.jpa.SimpleJpa;
+import com.techcourse.config.JpaConfig;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -18,7 +19,7 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.simpleJpa = new SimpleJpa(jdbcTemplate, "com.techcourse");
+        this.simpleJpa = new SimpleJpa(jdbcTemplate, JpaConfig.BASE_PACKAGE);
     }
 
     public void insert(final User user) {

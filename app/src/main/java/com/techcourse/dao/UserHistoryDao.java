@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.jpa.SimpleJpa;
+import com.techcourse.config.JpaConfig;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -16,7 +17,7 @@ public class UserHistoryDao {
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.simpleJpa = new SimpleJpa(jdbcTemplate, "com.techcourse");
+        this.simpleJpa = new SimpleJpa(jdbcTemplate, JpaConfig.BASE_PACKAGE);
     }
 
     public void log(final UserHistory userHistory) {
