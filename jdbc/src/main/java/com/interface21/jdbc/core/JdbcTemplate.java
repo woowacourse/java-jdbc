@@ -51,7 +51,7 @@ public class JdbcTemplate {
                     }
                     return result;
                 }
-                throw new IllegalStateException("Expected single row, but gone none");
+                throw new IllegalStateException("Expected single row, but got none");
             }
         }, params);
     }
@@ -62,7 +62,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             bindParams(pstmt, params);
 
-            return action.setValues(pstmt);
+            return action.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
