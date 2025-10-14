@@ -52,16 +52,17 @@ class Stage1Test {
     }
 
     /**
+     * ? dirty read = 커밋되지 않은 내역을 읽어오는 것. 롤백될 가능성이 있는 데이터를 읽어오므로 dirty read 라고 함
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | -
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -81,7 +82,7 @@ class Stage1Test {
             final var subConnection = dataSource.getConnection();
 
             // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
+            final int isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED; // -> Dirty Read 발생
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -105,16 +106,17 @@ class Stage1Test {
     }
 
     /**
+     * ? non-repeatable read : 데이터를 조회하는 시점에 따라서 데이터가 변경되기 때문에, 일관된 데이터 조회 결과를 얻지 못하는 현상.
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
      * - : 발생하지 않음
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +132,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_REPEATABLE_READ; // 하나의 트랜잭션 내부에서 반복 조회를 하더라도 일관성을 보장
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -160,12 +162,17 @@ class Stage1Test {
         // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
         // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
         log.info("isolation level : {}, user : {}", isolationLevel, actual);
+        // READ UNCOMMITTED - FAILED
+        // READ COMMITTED - FAILED
+        // REPEATABLE READ - SUCCESS
+        // SERIALIZABLE - SUCCESS
         assertThat(actual.getPassword()).isEqualTo("password");
 
         connection.rollback();
     }
 
     /**
+     * ? phantom read : 이전에 조회했을 때 보이지 않았던(or 보였던) 데이터가 이후 조회 단계에서 보이는(or 보이지 않는) 현상
      * phantom read는 h2에서 발생하지 않는다. mysql로 확인해보자.
      * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
      * + : 발생
@@ -173,16 +180,17 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
     @Test
     void phantomReading() throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+                .withUrlParam("allowMultiQueries", "true")
                 .withLogConsumer(new Slf4jLogConsumer(log));
         mysql.start();
         setUp(createMySQLDataSource(mysql));
@@ -197,7 +205,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE; // 트랜잭션을 하나씩 순차 수행 - 팬텀 리드 발생할 일 없음
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -223,6 +231,11 @@ class Stage1Test {
 
         // MySQL에서 팬텀 읽기를 시연하려면 update를 실행해야 한다.
         // http://stackoverflow.com/questions/42794425/unable-to-produce-a-phantom-read/42796969#42796969
+        // why? - 추론: update를 실행하면 이전의 스냅샷을 참조하지 않고, 새로운 스냅샷을 참조할 것이다.
+        //        결과: repeatable read 를 위해 트랜잭션에서는 스냅샷을 사용함.
+        //             그런데 update / delete 는 최신 상태를 기준으로 반영해야 하므로,
+        //             update / delete 를 실행한 시점부터는 과거 스냅샷이 아닌 최신 스냅샷을 가져오게 됨.
+        //             = 내 트랜잭션에서 수행한 새로운 스냅샷 = 이후에도 그대로 참조
         userDao.updatePasswordGreaterThan(connection, "qqqq", 1);
 
         // 사용자A가 다시 id로 범위를 조회했다.

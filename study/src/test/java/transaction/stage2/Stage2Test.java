@@ -37,7 +37,7 @@ class Stage2Test {
 
     /**
      * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 왜 그런 결과가 나왔을까? - 트랜잭션 전파가 적용되어 secondUserService 는 자신을 호출한 firstUserService 의 트랜잭션을 그대로 사용함
      */
     @Test
     void testRequired() {
@@ -45,13 +45,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
      * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 왜 그런 결과가 나왔을까? - secondUserService 는 호출부의 트랜잭션을 사용하지 않고, 새로운 트랜잭션을 생성/사용함
      */
     @Test
     void testRequiredNew() {
@@ -59,8 +59,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,17 +69,18 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1); // required new 로 실행된 secondUserService 는 정상 실행됨 -> 커밋 성공
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * 결과: Support - 이미 트랜잭션이 존재하면 해당 트랜잭션을 그대로 사용 / 존재하지 않는다면 비 트랜잭션
      */
     @Test
     void testSupports() {
@@ -87,14 +88,18 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                // 객체 명은 포함되지만, 실제로는 물리 트랜잭션이 활성화되는 것은 아님
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
+     * ? Mandatory: 필수적인
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * 결과 - firstUserService 에 트랜잭션이 "존재하지 않는 경우 예외 발생"
+     *     - firstUserService 에 트랜잭션이 존재하는 경우 해당 트랜잭션을 그대로 사용 (= Support 와 유사하게 동작)
      */
     @Test
     void testMandatory() {
@@ -102,16 +107,19 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
-     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
+     * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까? - 1개
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
-     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
+     * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까? - 0개
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     *      - 물리적 트랜잭션: 실제 DB에서 인식하는 트랜잭션 (ex. BEGIN COMMIT)
+     *      - 논리적 트랜잭션: 스프링에서의 트랜잭션 (주로 메서드 단위로 존재)
+     * 결과 - 외부 트랜잭션 존재 유무와 무관하게 항상 비 트랜잭션으로 실행된다.
      */
     @Test
     void testNotSupported() {
@@ -119,13 +127,15 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported", "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported");
     }
 
     /**
-     * 아래 테스트는 왜 실패할까?
-     * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * 아래 테스트는 왜 실패할까? - JPA 트랜잭션 매니저는 Nested 의 save point 를 지원하지 않기 때문.
+     *                      - NESTED: 외부 트랜잭션이 존재하는 경우, save point 를 만들어서 중첩 트랜잭션을 시도함
+     * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까? - 성공
+     *                      - NESTED: 외부 트랜잭션이 존재하지 않으면 save point / 중첩 없이 단순히 새로운 트랜잭션을 시작함
      */
     @Test
     void testNested() {
@@ -133,12 +143,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
      * 마찬가지로 @Transactional을 주석처리하면서 관찰해보자.
+     * 결과 - NEVER 는 비 트랜잭션 환경을 강제하는 옵션. 외부 트랜잭션이 존재하는 경우 예외가 발생함
      */
     @Test
     void testNever() {

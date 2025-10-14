@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -47,6 +48,19 @@ public class UserDao {
                 ));
     }
 
+    public void update(final Connection connection, final User user) {
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(
+                connection,
+                sql,
+                getPreparedStatementSetter(
+                        user.getAccount(),
+                        user.getPassword(),
+                        user.getEmail(),
+                        user.getId()
+                ));
+    }
+
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, getPreparedStatementSetter(), getRowMapper());
@@ -55,6 +69,11 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, getPreparedStatementSetter(id), getRowMapper());
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, getPreparedStatementSetter(id), getRowMapper());
     }
 
     public User findByAccount(final String account) {
