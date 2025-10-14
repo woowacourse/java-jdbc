@@ -18,8 +18,13 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public User findById(final long id) {
+    public User findById(final Long id) {
         return delegate.findById(id);
+    }
+
+    @Override
+    public User findByAccount(final String account) {
+        return delegate.findByAccount(account);
     }
 
     @Override
@@ -28,7 +33,7 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public void changePassword(final long id, final String newPassword, final String createdBy) {
+    public void changePassword(final Long id, final String newPassword, final String createdBy) {
         txManager.begin();
         try {
             delegate.changePassword(id, newPassword, createdBy);

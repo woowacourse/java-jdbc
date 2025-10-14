@@ -16,8 +16,13 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public User findById(final long id) {
+    public User findById(final Long id) {
         return userDao.findById(id);
+    }
+
+    @Override
+    public User findByAccount(final String account) {
+        return userDao.findByAccount(account);
     }
 
     @Override
@@ -26,7 +31,7 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public void changePassword(final long id, final String newPassword, final String createdBy) {
+    public void changePassword(final Long id, final String newPassword, final String createdBy) {
         final var user = userDao.findById(id);
         user.changePassword(newPassword);
         userDao.update(user);

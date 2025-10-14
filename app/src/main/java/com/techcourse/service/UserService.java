@@ -4,9 +4,11 @@ import com.techcourse.domain.User;
 
 public interface UserService {
 
-    User findById(final long id);
+    User findById(final Long id);
+
+    User findByAccount(String account);
 
     void save(final User user);
 
-    void changePassword(final long id, final String newPassword, final String createdBy);
+    void changePassword(final Long id, final String newPassword, final String createdBy);
 }
