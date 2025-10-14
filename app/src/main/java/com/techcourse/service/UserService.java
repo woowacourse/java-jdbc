@@ -5,16 +5,15 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 
 public class UserService {
 
-    private final Connection conn;
+    private final TransactionManager transactionManager;
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final Connection conn, final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.conn = conn;
+    public UserService(final TransactionManager transactionManager, final UserDao userDao, final UserHistoryDao userHistoryDao) {
+        this.transactionManager = transactionManager;
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
@@ -35,7 +34,7 @@ public class UserService {
     }
 
     public void changePasswordInTransaction(final long id, final String newPassword, final String createBy) {
-        TransactionManager.execute(conn, () -> {
+        transactionManager.execute(conn -> {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(user, conn);
