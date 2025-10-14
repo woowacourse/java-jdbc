@@ -35,14 +35,19 @@ public class JdbcTemplate {
 
     public <T> T selectOne(RowMapper<T> rowMapper, String sql, PreparedStatementSetter pss) {
         StatementExecutor<T> stmtExecutor = pstmt -> {
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapSingleRow(rowMapper, rs);
             }
-            return null;
         };
 
         return execute(stmtExecutor, sql, pss);
+    }
+
+    private <T> T mapSingleRow(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        if (rs.next()) {
+            return rowMapper.mapRow(rs);
+        }
+        return null;
     }
 
     public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, Object... args) {
@@ -51,16 +56,21 @@ public class JdbcTemplate {
 
     public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, PreparedStatementSetter pss) {
         StatementExecutor<List<T>> stmtExecutor = pstmt -> {
-            ResultSet rs = pstmt.executeQuery();
-            var list = new ArrayList<T>();
-            while (rs.next()) {
-                var mappedRow = rowMapper.mapRow(rs);
-                list.add(mappedRow);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapMultipleRows(rowMapper, rs);
             }
-            return list;
         };
 
         return execute(stmtExecutor, sql, pss);
+    }
+
+    private <T> List<T> mapMultipleRows(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+        var list = new ArrayList<T>();
+        while (rs.next()) {
+            var mappedRow = rowMapper.mapRow(rs);
+            list.add(mappedRow);
+        }
+        return list;
     }
 
     private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
