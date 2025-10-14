@@ -36,10 +36,10 @@ public class UserService {
         Connection conn = null;
         try {
             conn = DataSourceConfig.getInstance().getConnection();
+            conn.setAutoCommit(false);
+
             final var user = findById(id);
             user.changePassword(newPassword);
-
-            conn.setAutoCommit(false);
 
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
