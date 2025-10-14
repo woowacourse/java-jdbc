@@ -15,7 +15,7 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> userRowMapper = new UserRowMapper();
+    private static final RowMapper<User> userRowMapper = new UserRowMapper();
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -50,7 +50,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 
-    static class UserRowMapper implements RowMapper<User> {
+    private static class UserRowMapper implements RowMapper<User> {
 
         @Override
         public User mapRow(final ResultSet resultSet) throws SQLException {
