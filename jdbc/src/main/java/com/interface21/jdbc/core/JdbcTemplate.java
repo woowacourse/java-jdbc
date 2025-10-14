@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,15 +33,17 @@ public class JdbcTemplate {
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> action
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
-
-            preparedStatementSetter.execute(preparedStatement);
-
-            return action.doInPreparedStatement(preparedStatement);
-
-        } catch (SQLException e) {
+        Connection connection = null;
+        try {
+            connection = TransactionSynchronizationManager.getConnection(dataSource);
+            try (final var preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatementSetter.execute(preparedStatement);
+                return action.doInPreparedStatement(preparedStatement);
+            }
+        } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            TransactionSynchronizationManager.releaseConnection(connection, dataSource);
         }
     }
 
