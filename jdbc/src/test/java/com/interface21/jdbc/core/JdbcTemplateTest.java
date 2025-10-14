@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,13 @@ class JdbcTemplateTest {
         final DataSource dataSource = Mockito.mock(DataSource.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
         when(dataSource.getConnection()).thenReturn(connection);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        connection.close();
+        preparedStatement.close();
+        resultSet.close();
     }
 
     @DisplayName("update는 PreparedStatement에 파라미터를 설정하고 업데이트를 실행한다.")
@@ -122,35 +130,7 @@ class JdbcTemplateTest {
         );
     }
 
-    @DisplayName("findById는 단일 객체를 정확히 매핑하여 반환한다.")
-    @Test
-    void findById() throws SQLException {
-        // given
-        final String sql = """
-                SELECT account, password, email
-                FROM users
-                WHERE account = ?
-                """;
-        final TestUser user = new TestUser("gugu", "password", "gugu@email.com");
-        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
-        when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getString("account")).thenReturn(user.account);
-        when(resultSet.getString("password")).thenReturn(user.password);
-        when(resultSet.getString("email")).thenReturn(user.email);
-
-        // when
-        final TestUser foundUser = jdbcTemplate.findById(sql, userRowMapper, user.account);
-
-        // then
-        assertAll(
-                () -> verify(preparedStatement).setObject(1, user.account),
-                () -> assertThat(foundUser).isNotNull(),
-                () -> assertThat(foundUser.account).isEqualTo(user.account)
-        );
-    }
-
-    @DisplayName("queryForObject는 단일 값을 반환한다.")
+    @DisplayName("queryForObject는 단일 객체를 반환한다.")
     @Test
     void queryForObject() throws SQLException {
         // given
@@ -168,6 +148,69 @@ class JdbcTemplateTest {
 
         // then
         assertThat(count).isEqualTo(1L);
+    }
+
+    @DisplayName("queryForObject는 단일 유저 객체를 매핑하여 반환한다.")
+    @Test
+    void queryForObjectWithUser() throws SQLException {
+        // given
+        final String sql = """
+                SELECT account, password, email
+                FROM users
+                WHERE account = ?
+                """;
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+        when(resultSet.getString("password")).thenReturn("pw1");
+        when(resultSet.getString("email")).thenReturn("gugu@email.com");
+
+        // when
+        final TestUser user = jdbcTemplate.queryForObject(sql, userRowMapper, "gugu");
+
+        // then
+        assertThat(user.account).isEqualTo("gugu");
+    }
+
+    @DisplayName("queryForObject는 결과가 없으면 예외를 던진다.")
+    @Test
+    void queryForObjectWithNoResult() throws SQLException {
+        // given
+        final String sql = """
+                SELECT account, password, email
+                FROM users
+                WHERE account = ?
+                """;
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, userRowMapper, "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("쿼리 결과가 없습니다.");
+    }
+
+    @DisplayName("queryForObject는 결과가 2개 이상이면 예외를 던진다.")
+    @Test
+    void queryForObjectWithMultipleResults() throws SQLException {
+        // given
+        final String sql = """
+                SELECT account, password, email
+                FROM users
+                """;
+        when(connection.prepareStatement(sql)).thenReturn(preparedStatement);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+        when(resultSet.getString("password")).thenReturn("pw1");
+        when(resultSet.getString("email")).thenReturn("gugu@email.com");
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, userRowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("쿼리 결과가 2개 이상입니다.");
     }
 
     @DisplayName("SQLException 발생 시 DataAccessException으로 전환하여 던진다.")
