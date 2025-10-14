@@ -26,8 +26,21 @@ public class JdbcTemplate implements JdbcOperations {
     }
 
     @Override
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return update(conn, sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    @Override
     public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
+    }
+
+    @Override
+    public int update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
+        return execute(conn, sql, pstmt -> {
             pss.setValues(pstmt);
             return pstmt.executeUpdate();
         });
@@ -71,9 +84,17 @@ public class JdbcTemplate implements JdbcOperations {
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallback<T> callback) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);

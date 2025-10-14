@@ -1,12 +1,14 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcOperations;
-import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
+
+    private final String UPDATE_SQL = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
     private final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
             rs.getLong("id"),
@@ -27,8 +29,11 @@ public class UserDao {
     }
 
     public int update(final User user) {
-        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        return jdbcOperations.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        return jdbcOperations.update(UPDATE_SQL, toParams(user));
+    }
+
+    public int update(final User user, final Connection conn) {
+        return jdbcOperations.update(conn, UPDATE_SQL, toParams(user));
     }
 
     public List<User> findAll() {
@@ -44,5 +49,14 @@ public class UserDao {
     public User findByAccount(final String account) {
         final String sql = "SELECT id, account, password, email FROM users WHERE account = ?";
         return jdbcOperations.queryForObject(sql, USER_ROW_MAPPER, account);
+    }
+
+    private Object[] toParams(final User user) {
+        return new Object[]{
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        };
     }
 }
