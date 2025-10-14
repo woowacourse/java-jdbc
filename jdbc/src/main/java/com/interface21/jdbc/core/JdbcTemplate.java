@@ -46,8 +46,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, preStmt -> {
-            try (ResultSet rs = preStmt.executeQuery()
-            ) {
+            try (ResultSet rs = preStmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
@@ -61,6 +60,9 @@ public class JdbcTemplate {
         List<T> results = query(sql, rowMapper, params);
         if (results.isEmpty()) {
             return null;
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("한 개의 결과만을 반환해야 합니다: " + results.size());
         }
         return results.getFirst();
     }
