@@ -64,21 +64,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
-        ResultSet rs = null;
         try (var conn = dataSource.getConnection();
              var pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-
             pss.setValues(pstmt);
             return stmtExecutor.execute(pstmt);
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-
-        } finally {
-            closeResultSet(rs);
         }
     }
 
@@ -93,18 +88,6 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e.getCause());
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void closeResultSet(ResultSet rs) {
-        if (rs == null) {
-            return;
-        }
-
-        try {
-            rs.close();
-        } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
