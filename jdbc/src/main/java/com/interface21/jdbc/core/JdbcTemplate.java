@@ -46,8 +46,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, preStmt -> {
-            try (ResultSet rs = preStmt.executeQuery()
-            ) {
+            try (ResultSet rs = preStmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
