@@ -27,6 +27,7 @@ public class JdbcTemplate {
         validateQuery(sql);
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+            validateParameterCount(preparedStatement, parameters, sql);
             setStatementParameters(preparedStatement, parameters);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -43,6 +44,7 @@ public class JdbcTemplate {
         }
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+            validateParameterCount(preparedStatement, parameters, sql);
             setStatementParameters(preparedStatement, parameters);
             log.debug("query : {}", sql);
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -67,6 +69,7 @@ public class JdbcTemplate {
         }
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+            validateParameterCount(preparedStatement, parameters, sql);
             setStatementParameters(preparedStatement, parameters);
             log.debug("query : {}", sql);
             try (final ResultSet rs = preparedStatement.executeQuery()) {
@@ -87,6 +90,18 @@ public class JdbcTemplate {
             for (int i = 0; i < parameters.length; i++) {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
+        }
+    }
+
+    private void validateParameterCount(PreparedStatement preparedStatement, Object[] params, String sql)
+            throws SQLException {
+        int expectedParameterCount = preparedStatement.getParameterMetaData().getParameterCount();
+        int actualParameterCount = (params == null) ? 0 : params.length;
+        if (expectedParameterCount != actualParameterCount) {
+            throw new DataAccessException(
+                    String.format("SQL 파라미터 개수 불일치 (expected=%d, actual=%d) sql=%s",
+                            expectedParameterCount, actualParameterCount, sql)
+            );
         }
     }
 
