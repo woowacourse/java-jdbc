@@ -51,12 +51,7 @@ public class JdbcTemplate {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
 
-                    for (int i = 0; i < columnCount; i++) {
-                        String columnName = metaData.getColumnName(i + 1);
-                        Object value = rs.getObject(columnName);
-
-                        result.put(columnName, value);
-                    }
+                    mapRowToResult(columnCount, metaData, rs, result);
                 }
                 return result;
             }
@@ -79,12 +74,7 @@ public class JdbcTemplate {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
 
-                    for (int i = 0; i < columnCount; i++) {
-                        String columnName = metaData.getColumnName(i + 1);
-                        Object object = rs.getObject(columnName);
-
-                        result.put(columnName, object);
-                    }
+                    mapRowToResult(columnCount, metaData, rs, result);
                     resultList.add(result);
                 }
                 return resultList;
@@ -98,6 +88,20 @@ public class JdbcTemplate {
     private void setParameter(final Object[] args, final PreparedStatement pstmt) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private void mapRowToResult(
+            final int columnCount,
+            final ResultSetMetaData metaData,
+            final ResultSet rs,
+            final Map<String, Object> result
+    ) throws SQLException {
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = metaData.getColumnName(i + 1);
+            Object value = rs.getObject(columnName);
+
+            result.put(columnName, value);
         }
     }
 }
