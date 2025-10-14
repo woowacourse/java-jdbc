@@ -24,9 +24,7 @@ public class JdbcTemplate {
     }
 
     public int executeUpdate(final String sql, final Object... parameters) {
-        if (sql == null || sql.trim().isEmpty()) {
-            throw new IllegalArgumentException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
-        }
+        validateQuery(sql);
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
             setStatementParameters(preparedStatement, parameters);
@@ -39,9 +37,7 @@ public class JdbcTemplate {
 
     public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper,
                                                  final Object... parameters) {
-        if (sql == null || sql.trim().isEmpty()) {
-            throw new IllegalArgumentException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
-        }
+        validateQuery(sql);
         if (rowMapper == null) {
             throw new IllegalArgumentException("RowMapper는 null일 수 없습니다.");
         }
@@ -65,9 +61,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        if (sql == null || sql.trim().isEmpty()) {
-            throw new IllegalArgumentException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
-        }
+        validateQuery(sql);
         if (rowMapper == null) {
             throw new IllegalArgumentException("RowMapper는 null일 수 없습니다.");
         }
@@ -100,5 +94,11 @@ public class JdbcTemplate {
         String paramsStr = (params != null) ? Arrays.toString(params) : "null";
         log.error("{} | sql={} | params={}", msg, sql, paramsStr, e);
         return new DataAccessException(msg + " : " + sql, e);
+    }
+
+    private static void validateQuery(String sql) {
+        if (sql == null || sql.trim().isEmpty()) {
+            throw new IllegalArgumentException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
+        }
     }
 }
