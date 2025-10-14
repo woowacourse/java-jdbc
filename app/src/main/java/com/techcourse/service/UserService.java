@@ -8,6 +8,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +38,21 @@ public class UserService {
             final String newPassword,
             final String createBy
     ) {
+        transaction((connection -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        }));
+    }
+
+    private void transaction(final Consumer<Connection> businessLogic) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection conn = null;
         try {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            businessLogic.accept(conn);
             conn.commit();
         } catch (SQLException e) {
             connectionRollback(conn);
