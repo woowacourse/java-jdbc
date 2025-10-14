@@ -22,49 +22,39 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preStmt = connection.prepareStatement(sql)
+        execute(sql, PreparedStatement::executeUpdate, params);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preStmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
-            initParameters(params, preStmt);
-            preStmt.executeUpdate();
-
+            setParameters(params, preStmt);
+            return callback.doInPreparedStatement(preStmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void initParameters(Object[] params, PreparedStatement preStmt) throws SQLException {
+    private void setParameters(Object[] params, PreparedStatement preStmt) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             preStmt.setObject(i + 1, params[i]);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement preStmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            initParameters(params, preStmt);
-            return executeQuery(rowMapper, preStmt);
-
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> executeQuery(RowMapper<T> rowMapper, PreparedStatement preStmt) throws SQLException {
-        try (ResultSet rs = preStmt.executeQuery()) {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+        return execute(sql, preStmt -> {
+            try (ResultSet rs = preStmt.executeQuery()
+            ) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
             }
-            return results;
-        }
+        }, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
