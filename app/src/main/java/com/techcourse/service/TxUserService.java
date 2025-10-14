@@ -19,6 +19,11 @@ public class TxUserService extends BusinessService implements UserService {
     }
 
     @Override
+    public User findByAccount(final String account) {
+        return userService.findByAccount(account);
+    }
+
+    @Override
     public void save(final User user) {
         userService.save(user);
     }

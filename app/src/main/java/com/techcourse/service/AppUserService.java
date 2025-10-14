@@ -21,6 +21,11 @@ public class AppUserService implements UserService {
     }
 
     @Override
+    public User findByAccount(final String account) {
+        return userDao.findByAccount(account);
+    }
+
+    @Override
     public void save(final User user) {
         userDao.insert(user);
     }
