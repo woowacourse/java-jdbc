@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +58,23 @@ public class JdbcTemplate {
                 }
                 return list;
             }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    public void update(Connection connection, String sql, Object... args) {
+        update(connection, sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public void update(Connection conn, String sql, PreparedStatementSetter pstmtSetter) {
+        try (final var pstmt = conn.prepareStatement(sql)) {
+            pstmtSetter.setValues(pstmt);
+
+            log.debug("query : {}", sql);
+
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
