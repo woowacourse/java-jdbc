@@ -30,24 +30,21 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final DataSource dataSource = DataSourceConfig.getInstance();
 
-        Connection conn = null;
-        try {
-            conn = dataSource.getConnection();
-            conn.setAutoCommit(false);
+        try (final Connection conn = dataSource.getConnection()) {
+            try {
+                conn.setAutoCommit(false);
 
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+                final User user = findById(id);
+                user.changePassword(newPassword);
+                userDao.update(conn, user);
+                userHistoryDao.log(conn, new UserHistory(user, createdBy));
 
-            conn.commit();
-        } catch (final SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (final SQLException ignored) {
-                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw new RuntimeException(e);
             }
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
