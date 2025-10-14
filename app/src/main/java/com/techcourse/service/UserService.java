@@ -32,34 +32,23 @@ public class UserService {
 //    }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = null;
-        try {
-            conn = dataSource.getConnection();
+
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
-            final var user = findById(conn, id);
-            user.changePassword(newPassword);
-            userDao.update(conn, user);
+            try {
+                final var user = findById(conn, id);
+                user.changePassword(newPassword);
+                userDao.update(conn, user);
 
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
-
-            conn.commit();
+                userHistoryDao.log(conn, new UserHistory(user, createBy));
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (DataAccessException | SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackEx) {
-                    throw new DataAccessException("비밀번호 변경 롤백 실패", rollbackEx);
-                }
-            }
             throw new DataAccessException("비밀번호 변경 실패", e);
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException ignored) {
-                }
-            }
         }
     }
 }
