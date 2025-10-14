@@ -6,11 +6,15 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
+
+    private static final Log log = LogFactory.getLog(UserDaoTest.class);
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -31,7 +35,8 @@ class UserDaoTest {
         jdbcTemplate.update("DELETE FROM users");
         try {
             jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
     }
 
