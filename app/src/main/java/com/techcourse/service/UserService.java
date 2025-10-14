@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -43,12 +42,13 @@ public class UserService {
 
             conn.commit();
         } catch (final SQLException e) {
-            try {
-                conn.rollback();
-            } catch (final SQLException ignored) {
-                throw new DataAccessException(e);
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (final SQLException ignored) {
+                }
             }
-            throw new DataAccessException(e);
+            throw new RuntimeException(e);
         }
     }
 }
