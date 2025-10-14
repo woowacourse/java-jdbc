@@ -72,6 +72,16 @@ public class JdbcTemplate {
         return update(sql, new ArgumentPreparedStatementSetter(args));
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            new ArgumentPreparedStatementSetter(args).setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
         try (
                 final Connection conn = dataSource.getConnection();
@@ -83,5 +93,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }

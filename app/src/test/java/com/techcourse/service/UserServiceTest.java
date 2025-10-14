@@ -11,10 +11,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -23,6 +21,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.userDao = new UserDao(DataSourceConfig.getInstance());
+        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
