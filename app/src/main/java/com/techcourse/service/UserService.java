@@ -32,7 +32,11 @@ public class UserService {
         userDao.insert(user);
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    public void changePassword(
+            final long id,
+            final String newPassword,
+            final String createBy
+    ) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection conn = null;
         try {
@@ -43,17 +47,32 @@ public class UserService {
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
             conn.commit();
+        } catch (SQLException e) {
+            connectionRollback(conn);
+            throw new JdbcException(e);
         } catch (Exception e) {
+            connectionRollback(conn);
+            throw e;
+        } finally {
+            connectionClose(conn);
+        }
+    }
+
+    private void connectionClose(final Connection conn) {
+        if (conn != null) {
             try {
-                log.warn("rollback");
-                conn.rollback();
-                throw e;
+                conn.close();
             } catch (SQLException exception) {
                 throw new JdbcException(exception);
             }
-        } finally {
+        }
+    }
+
+    private void connectionRollback(final Connection conn) {
+        if (conn != null) {
             try {
-                conn.close();
+                log.warn("rollback");
+                conn.rollback();
             } catch (SQLException exception) {
                 throw new JdbcException(exception);
             }
