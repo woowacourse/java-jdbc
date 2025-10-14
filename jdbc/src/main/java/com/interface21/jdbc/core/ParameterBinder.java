@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class ParameterBinder {
 
-    private final Map<Class<?>, TypeBinder> bindCommand;
+    private final Map<Class<?>, TypeBinder> typeBinders;
 
     public static ParameterBinder init() {
         return new ParameterBinder(
@@ -55,8 +55,8 @@ public class ParameterBinder {
         );
     }
 
-    private ParameterBinder(Map<Class<?>, TypeBinder> bindCommand) {
-        this.bindCommand = bindCommand;
+    private ParameterBinder(Map<Class<?>, TypeBinder> typeBinders) {
+        this.typeBinders = typeBinders;
     }
 
     public void bindParameter(
@@ -69,7 +69,7 @@ public class ParameterBinder {
             return;
         }
 
-        final TypeBinder typeBinder = bindCommand.get(parameter.getClass());
+        final TypeBinder typeBinder = typeBinders.get(parameter.getClass());
         if (typeBinder == null) {
             throw new DataAccessException("지원하지 않는 자료형입니다.: " + parameter.getClass());
         }
