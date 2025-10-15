@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -37,7 +38,7 @@ class JdbcTemplateTest {
         resultSet = mock(ResultSet.class);
 
         given(dataSource.getConnection()).willReturn(connection);
-        given(connection.prepareStatement(org.mockito.ArgumentMatchers.anyString())).willReturn(preparedStatement);
+        given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
@@ -439,5 +440,84 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("Connection으로 update 성공")
+    void update_withConnection() throws Exception {
+        // given
+        final String sql = "INSERT INTO users (name) VALUES (?)";
+
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeUpdate()).willReturn(1);
+
+        // when
+        jdbcTemplate.update(connection, sql, "test1");
+
+        // then
+        verify(preparedStatement).setString(1, "test1");
+        verify(preparedStatement).executeUpdate();
+        verify(preparedStatement).close();
+    }
+
+    @Test
+    @DisplayName("Connection으로 여러 파라미터 update 성공")
+    void update_withConnection_multipleParameters() throws Exception {
+        // given
+        final String sql = "INSERT INTO users (name, age, is_alive) VALUES (?, ?, ?)";
+
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeUpdate()).willReturn(1);
+
+        // when
+        jdbcTemplate.update(connection, sql, "test1", 20, true);
+
+        // then
+        verify(preparedStatement).setString(1, "test1");
+        verify(preparedStatement).setInt(2, 20);
+        verify(preparedStatement).setBoolean(3, true);
+        verify(preparedStatement).executeUpdate();
+        verify(preparedStatement).close();
+    }
+
+    @Test
+    @DisplayName("Connection으로 PreparedStatementSetter update 성공")
+    void update_withConnection_preparedStatementSetter() throws Exception {
+        // given
+        final String sql = "INSERT INTO users (name, age) VALUES (?, ?)";
+        final PreparedStatementSetter setter = ps -> {
+            ps.setString(1, "test1");
+            ps.setInt(2, 20);
+        };
+
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeUpdate()).willReturn(1);
+
+        // when
+        jdbcTemplate.update(connection, sql, setter);
+
+        // then
+        verify(preparedStatement).setString(1, "test1");
+        verify(preparedStatement).setInt(2, 20);
+        verify(preparedStatement).executeUpdate();
+        verify(preparedStatement).close();
+    }
+
+    @Test
+    @DisplayName("Connection으로 update SQLException 발생 시 DataAccessException으로 변환")
+    void update_withConnection_sqlException() throws Exception {
+        // given
+        final String sql = "INSERT INTO users (name) VALUES (?)";
+
+        given(connection.prepareStatement(sql)).willReturn(preparedStatement);
+        given(preparedStatement.executeUpdate()).willThrow(new SQLException("SQL Error"));
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, sql, "test"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLException.class);
+
+        verify(preparedStatement).setString(1, "test");
+        verify(preparedStatement).close();
     }
 }
