@@ -23,15 +23,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
-        execute(
-                sql,
-                preparedStatement -> {
-                    preparedStatement.executeUpdate();
-                    return null;
-                },
-                parameters
-        );
+    public int update(final String sql, final Object... parameters) {
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
