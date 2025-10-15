@@ -11,7 +11,7 @@ import javax.sql.DataSource;
  * 따라서, DataSourceTransactionManager를 직접 구현.
  * @see <a href="https://github.com/spring-projects/spring-framework/blob/main/spring-jdbc/src/main/java/org/springframework/jdbc/datasource/DataSourceTransactionManager.java">Spring DataSourceTransactionManager</a>
  */
-public class DataSourceTransactionManager {
+public class DataSourceTransactionManager implements TransactionManager {
 
     private final DataSource dataSource;
 
