@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -52,34 +54,20 @@ public class UserService {
     }
 
     private void inTransaction(SqlConsumer<Connection> work) {
-        try (Connection connection = dataSource.getConnection()) {
-            final boolean prevAutoCommit = connection.getAutoCommit();
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             connection.setAutoCommit(false);
             try {
                 work.accept(connection);
                 connection.commit();
             } catch (Exception ex) {
-                rollback(connection);
+                connection.rollback();
                 throwUncheckedException(ex);
             } finally {
-                restoreAutoCommit(connection, prevAutoCommit);
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private void rollback(Connection conn) {
-        try {
-            conn.rollback();
-        } catch (Exception ignore) {
-        }
-    }
-
-    private void restoreAutoCommit(Connection conn, boolean state) {
-        try {
-            conn.setAutoCommit(state);
-        } catch (Exception ignore) {
         }
     }
 
