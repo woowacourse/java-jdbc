@@ -11,7 +11,7 @@ import org.reflections.Reflections;
 import com.interface21.jdbc.core.RowMapper;
 import com.interface21.jdbc.core.jpa.annotation.Table;
 
-public class JpaCache {
+class JpaCache {
 
     private final SqlGenerator sqlGenerator;
     private final Map<Class<?>, RowMapper<?>> rowMapperCache = new ConcurrentHashMap<>();
