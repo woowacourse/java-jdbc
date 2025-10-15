@@ -96,6 +96,28 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(Connection coconnection, String sql, RowMapper<T> rowMapper, Object... params) {
+        try (PreparedStatement pstmt = coconnection.prepareStatement(sql)) {
+
+            bindParameters(pstmt, params);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                int rowNum = 0;
+                if (rs.next()) {
+                    T result = rowMapper.mapRow(rs, rowNum++);
+                    log.debug("Executed SQL: {}", sql);
+                    return result;
+                }
+                log.debug("Executed SQL: {}", sql);
+                return null;
+            }
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public DataSource getDataSource() {
         return dataSource;
     }

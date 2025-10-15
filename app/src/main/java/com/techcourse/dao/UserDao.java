@@ -66,6 +66,20 @@ public class UserDao {
         return Optional.ofNullable(user);
     }
 
+    public Optional<User> findById(Connection connection, long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        User user = jdbcTemplate.queryForObject(connection, sql, (rs, rowNum) -> {
+            Long foundId = rs.getLong("id");
+            String account = rs.getString("account");
+            String password = rs.getString("password");
+            String email = rs.getString("email");
+
+            return new User(foundId, account, password, email);
+        }, id);
+
+        return Optional.ofNullable(user);
+    }
+
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         User user = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
