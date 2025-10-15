@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -54,7 +53,7 @@ public class UserService {
             connection.commit();
         } catch (final Exception e) {
             rollback(connection);
-            throw new DataAccessException("sql 실행 중 오류 발생: rollback 완료", e);
+            log.warn("sql 실행 중 오류 발생: rollback 완료", e);
         } finally {
             closeConnection(connection);
         }
@@ -66,13 +65,14 @@ public class UserService {
                 connection.rollback();
             }
         } catch (final SQLException e) {
-            throw new DataAccessException("sql 실행 중 오류 발생: rollback 실패", e);
+            log.error("sql 실행 중 오류 발생: rollback 실패", e);
         }
     }
 
     private void closeConnection(final Connection connection) {
         try {
             if (connection != null) {
+                connection.setAutoCommit(true);
                 connection.close();
             }
         } catch (final SQLException e) {
