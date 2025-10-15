@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public User findById(Connection connection, final long id) {
-        return userDao.findById(id);
+        return userDao.findById(connection, id);
     }
 
     public void insert(final User user) {
