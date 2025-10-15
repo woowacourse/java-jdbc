@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.h2.jdbcx.JdbcDataSource;
@@ -133,6 +134,81 @@ class JdbcTemplateTest {
         );
 
         assertThat(results).isEmpty();
+    }
+
+    @Test
+    void query_withResultSetExtractor_multipleResults() {
+        final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, DEFAULT_ACCOUNT, DEFAULT_PASSWORD, DEFAULT_EMAIL);
+        jdbcTemplate.update(sql, "pobi", DEFAULT_PASSWORD, "pobi@woowahan.com");
+        jdbcTemplate.update(sql, "neo", DEFAULT_PASSWORD, "neo@woowahan.com");
+
+        final List<TestUser> results = jdbcTemplate.query(
+                "SELECT account, password, email FROM users",
+                rs -> {
+                    final List<TestUser> users = new ArrayList<>();
+                    while (rs.next()) {
+                        users.add(new TestUser(
+                                rs.getString("account"),
+                                rs.getString("password"),
+                                rs.getString("email")
+                        ));
+                    }
+                    return users;
+                }
+        );
+
+        assertThat(results).hasSize(3);
+        assertAll(
+                () -> assertThat(results.get(0).account).isEqualTo(DEFAULT_ACCOUNT),
+                () -> assertThat(results.get(1).account).isEqualTo("pobi"),
+                () -> assertThat(results.get(2).account).isEqualTo("neo")
+        );
+    }
+
+    @Test
+    void query_withResultSetExtractor_emptyResult() {
+        final List<String> results = jdbcTemplate.query(
+                "SELECT account FROM users WHERE account = ?",
+                rs -> {
+                    final List<String> accounts = new java.util.ArrayList<>();
+                    while (rs.next()) {
+                        accounts.add(rs.getString("account"));
+                    }
+                    return accounts;
+                },
+                "nonexistent"
+        );
+
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    void query_withResultSetExtractor_singleObject() {
+        final var sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, DEFAULT_ACCOUNT, DEFAULT_PASSWORD, DEFAULT_EMAIL);
+
+        final Optional<TestUser> result = jdbcTemplate.query(
+                "SELECT account, password, email FROM users WHERE account = ?",
+                rs -> {
+                    if (rs.next()) {
+                        return Optional.of(new TestUser(
+                                rs.getString("account"),
+                                rs.getString("password"),
+                                rs.getString("email")
+                        ));
+                    }
+                    return Optional.empty();
+                },
+                DEFAULT_ACCOUNT
+        );
+
+        assertAll(
+                () -> assertThat(result).isNotEmpty(),
+                () -> assertThat(result.get().account).isEqualTo(DEFAULT_ACCOUNT),
+                () -> assertThat(result.get().password).isEqualTo(DEFAULT_PASSWORD),
+                () -> assertThat(result.get().email).isEqualTo(DEFAULT_EMAIL)
+        );
     }
 
     @Test
