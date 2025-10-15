@@ -52,7 +52,7 @@ public class UserService {
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             connection.commit();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             rollback(connection);
             throw new DataAccessException("sql 실행 중 오류 발생: rollback 완료", e);
         } finally {
@@ -65,8 +65,8 @@ public class UserService {
             if (connection != null) {
                 connection.rollback();
             }
-        } catch (SQLException ex) {
-            throw new DataAccessException("sql 실행 중 오류 발생: rollback 실패", ex);
+        } catch (final SQLException e) {
+            throw new DataAccessException("sql 실행 중 오류 발생: rollback 실패", e);
         }
     }
 
