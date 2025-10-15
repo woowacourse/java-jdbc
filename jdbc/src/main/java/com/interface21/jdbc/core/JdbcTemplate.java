@@ -77,6 +77,9 @@ public class JdbcTemplate {
     }
 
     private void setStatementParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+        if (parameters == null) {
+            throw new JdbcExecutionException(String.format("쿼리에 필요한 파라미터가 전달되지 않았습니다."));
+        }
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
         }
