@@ -7,6 +7,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 import javax.sql.DataSource;
 
 public class UserService {
@@ -26,39 +27,30 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-
+        executeInTransaction(connection -> {
             userDao.insert(connection, user);
-
-            connection.commit();
-        } catch (SQLException e) {
-
-            try {
-                connection.rollback();
-            } catch (NullPointerException | SQLException ex) {
-                throw new DataAccessException(ex);
-            }
-            throw new DataAccessException();
-        }
+        });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-
+        executeInTransaction(connection -> {
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
+    }
+
+    private void executeInTransaction(Consumer<Connection> execution) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
+
+            execution.accept(connection);
 
             connection.commit();
         } catch (SQLException e) {
-
             try {
                 connection.rollback();
             } catch (NullPointerException | SQLException ex) {
