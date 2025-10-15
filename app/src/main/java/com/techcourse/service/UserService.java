@@ -46,6 +46,7 @@ public class UserService {
             connection.commit();
         } catch (SQLException | DataAccessException e) {
             rollbackTransaction(connection);
+            throw new DataAccessException("DB 작업에 실패했습니다.", e);
         } finally {
             closeConnection(connection);
         }
@@ -55,19 +56,18 @@ public class UserService {
         if (connection != null) {
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException("트랜잭션을 롤백할 수 없습니다!");
+            } catch (SQLException e) {
+                throw new DataAccessException("트랜잭션을 롤백할 수 없습니다!", e);
             }
         }
-        throw new DataAccessException("DB 작업중에 오류가 발생했습니다!");
     }
 
     private void closeConnection(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ex) {
-                throw new DataAccessException("트랜잭션을 닫을 수 없습니다!");
+            } catch (SQLException e) {
+                throw new DataAccessException("DB 커넥션을 닫는데 실패했습니다.", e);
             }
         }
     }
