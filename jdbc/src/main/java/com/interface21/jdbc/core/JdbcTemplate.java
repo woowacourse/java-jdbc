@@ -116,6 +116,7 @@ public final class JdbcTemplate {
             final String sql,
             final Object[] args
     ) throws SQLException {
+        validateParameterCount(sql, args);
         final PreparedStatement ps = con.prepareStatement(sql);
         log.debug("query : {}", sql);
         log.trace("parameters : {}", Arrays.toString(args));
@@ -123,5 +124,17 @@ public final class JdbcTemplate {
             ps.setObject(i + 1, args[i]);
         }
         return ps;
+    }
+
+    private void validateParameterCount(
+            final String sql,
+            final Object[] args
+    ) {
+        final long placeholderCount = sql.chars()
+                .filter(ch -> ch == '?')
+                .count();
+        if (placeholderCount != args.length) {
+            throw new DataAccessException("SQL 파라미터 개수 불일치: ? %d개, 인자 %d개".formatted(placeholderCount, args.length));
+        }
     }
 }
