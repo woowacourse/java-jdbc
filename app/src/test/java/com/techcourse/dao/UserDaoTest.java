@@ -22,7 +22,7 @@ class UserDaoTest {
         userDao = new UserDao(jdbcTemplate);
 
         try {
-            jdbcTemplate.executeUpdate("DELETE FROM users");
+            jdbcTemplate.update("DELETE FROM users");
         } catch (Exception e) {
         }
     }
