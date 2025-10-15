@@ -22,48 +22,50 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object...args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setValues(pstmt, args);
+    public void update(final String sql, final PreparedStatementSetter pss) {
+        execute(sql, pstmt -> {
+            pss.setValues(pstmt);
             log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error("JdbcTemplate {} failed. SQL: {}, args: {}", "update", sql, args, e);
-            throw new DataAccessException("JdbcTemplate query failed", e);
-        }
+            return pstmt.executeUpdate();
+        });
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final Object...args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setValues(pstmt, args);
+    public void update(final String sql, final Object...args) {
+        update(sql, pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        });
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
             log.debug("query : {}", sql);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (final ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
                 }
             }
             return null;
-
-        } catch (SQLException e) {
-            log.error("JdbcTemplate {} failed. SQL: {}, args: {}", "queryForObject", sql, args, e);
-            throw new DataAccessException("JdbcTemplate query failed", e);
-        }
+        });
     }
 
-    public <T> List<T> queryForList(final String sql, RowMapper<T> rowMapper) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setValues(pstmt);
+    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, final Object...args) {
+        return queryForObject(sql, rowMapper, pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        });
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pstmt -> {
+            pss.setValues(pstmt);
             log.debug("query : {}", sql);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
@@ -74,16 +76,28 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-
-        } catch (SQLException e) {
-            log.error("JdbcTemplate {} failed. SQL: {}", "queryForList", sql, e);
-            throw new DataAccessException("JdbcTemplate query failed", e);
-        }
+        });
     }
 
-    private void setValues(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper, final Object...args) {
+        return queryForList(sql, rowMapper, pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        });
+    }
+
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
+        return queryForList(sql, rowMapper, pstmt -> {});
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            return callBack.processIn(pstmt);
+        } catch (final SQLException e) {
+            log.error("JdbcTemplate execution failed. SQL: {}", sql, e);
+            throw new DataAccessException("dbcTemplate execution failed for SQL: " + sql, e);
         }
     }
 }
