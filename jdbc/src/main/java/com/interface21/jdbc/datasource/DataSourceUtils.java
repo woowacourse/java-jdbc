@@ -33,6 +33,7 @@ public abstract class DataSourceUtils {
             return;
         }
 
+        // 트랜잭션이 아닌 커넥션은 즉시 close
         try {
             connection.close();
         } catch (SQLException ex) {
