@@ -1,12 +1,13 @@
 package com.techcourse.dao;
 
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.jpa.SimpleJpa;
+import com.techcourse.config.JpaConfig;
 import com.techcourse.domain.User;
 
 public class UserDao {
@@ -14,25 +15,27 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private final SimpleJpa simpleJpa;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.simpleJpa = new SimpleJpa(jdbcTemplate, JpaConfig.BASE_PACKAGE);
     }
 
     public void insert(final User user) {
-        jdbcTemplate.insert("users", user);
+        simpleJpa.insert(user);
     }
 
     public void update(final User user) {
-        jdbcTemplate.update("users", user, Map.of("id", user.getId()));
+        simpleJpa.update(user);
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.select("users", User.class, Map.of());
+        return simpleJpa.selectAll(User.class);
     }
 
     public User findById(final Long id) {
-        List<User> users = jdbcTemplate.select("users", User.class, Map.of("id", id));
+        List<User> users = simpleJpa.selectById(User.class, id);
         if (users.size() > 1) {
             throw new IllegalStateException("Multiple users found with id: " + id);
         }
@@ -40,7 +43,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        List<User> users = jdbcTemplate.select("users", User.class, Map.of("account", account));
+        List<User> users = simpleJpa.selectByColumn(User.class, "account", account);
         if (users.size() > 1) {
             throw new IllegalStateException("Multiple users found with account: " + account);
         }
@@ -48,6 +51,6 @@ public class UserDao {
     }
 
     public void delete(User user) {
-        jdbcTemplate.delete("users", Map.of("id", user.getId()));
+        simpleJpa.deleteById(user.getClass(), user.getId());
     }
 }
