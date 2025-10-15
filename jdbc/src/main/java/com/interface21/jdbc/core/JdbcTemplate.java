@@ -22,6 +22,21 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public Long updateAndReturnKey(final String sql, final Object... params) {
+        return execute(sql, pstmt -> {
+            pstmt = pstmt.getConnection().prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+            bindParameters(params, pstmt);
+            pstmt.executeUpdate();
+
+            try (final ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getLong("id");
+                }
+                throw new DataAccessException("Failed to find return generated key, " + sql);
+            }
+        });
+    }
+
     public int update(final String sql, final Object... params) {
         return execute(sql, pstmt -> {
             bindParameters(params, pstmt);

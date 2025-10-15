@@ -14,10 +14,10 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public Long insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.updateAndReturnKey(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
