@@ -29,6 +29,13 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(final Connection conn, final String sql, final Object... params) {
+        return execute(conn, sql, pstmt -> {
+            bindParameters(params, pstmt);
+            return pstmt.executeUpdate();
+        });
+    }
+
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return execute(sql, pstmt -> {
             bindParameters(params, pstmt);
@@ -69,6 +76,18 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementCallBack<T> action) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            return action.doInPreparedStatement(pstmt);
+
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallBack<T> action) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             return action.doInPreparedStatement(pstmt);
