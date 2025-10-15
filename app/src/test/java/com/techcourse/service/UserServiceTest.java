@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.datasource.DataSourceTransactionManager;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -54,7 +55,8 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(transactionManager, appUserService);
+        final var transactionTemplate = new TransactionTemplate(transactionManager);
+        final var userService = new TxUserService(transactionTemplate, appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

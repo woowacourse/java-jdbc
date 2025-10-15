@@ -1,6 +1,7 @@
 package com.interface21.transaction.support;
 
 import com.interface21.jdbc.datasource.TransactionManager;
+import java.util.function.Supplier;
 
 /**
  * action을 하나의 트랜잭션으로 관리
@@ -19,6 +20,18 @@ public class TransactionTemplate {
         try {
             action.run();
             transactionManager.commit();
+        } catch (Exception e) {
+            transactionManager.rollback();
+            throw e;
+        }
+    }
+
+    public <T> T executeWithResult(Supplier<T> action) {
+        transactionManager.begin();
+        try {
+            T result = action.get();
+            transactionManager.commit();
+            return result;
         } catch (Exception e) {
             transactionManager.rollback();
             throw e;
