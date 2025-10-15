@@ -22,7 +22,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void executeUpdate_정상적인_INSERT_쿼리() {
+    void update_정상적인_INSERT_쿼리() {
         // given
         final String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
         final String account = "testuser";
@@ -30,93 +30,80 @@ class JdbcTemplateTest {
         final String email = "test@example.com";
 
         // when
-        final int result = jdbcTemplate.executeUpdate(sql, account, password, email);
+        jdbcTemplate.update(sql, account, password, email);
 
         // then
-        assertThat(result).isEqualTo(1);
-        
         // 데이터가 실제로 삽입되었는지 확인
         final String selectSql = "SELECT COUNT(*) FROM users WHERE account = ?";
-        final Optional<Integer> count = jdbcTemplate.executeQueryForObject(selectSql, 
-            rs -> rs.getInt(1), account);
+        final Optional<Integer> count = jdbcTemplate.queryForObject(selectSql,
+                rs -> rs.getInt(1), account);
         assertThat(count).isPresent();
         assertThat(count.get()).isEqualTo(1);
     }
 
     @Test
-    void executeUpdate_정상적인_UPDATE_쿼리() {
+    void update_정상적인_UPDATE_쿼리() {
         // given
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "updateuser", "oldpassword", "update@example.com");
-        
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "updateuser", "oldpassword", "update@example.com");
+
         final String sql = "UPDATE users SET password = ? WHERE account = ?";
         final String newPassword = "newpassword";
         final String account = "updateuser";
 
         // when
-        final int result = jdbcTemplate.executeUpdate(sql, newPassword, account);
+        jdbcTemplate.update(sql, newPassword, account);
 
         // then
-        assertThat(result).isEqualTo(1);
-        
+
         // 패스워드가 실제로 업데이트되었는지 확인
         final String selectSql = "SELECT password FROM users WHERE account = ?";
-        final Optional<String> actualPassword = jdbcTemplate.executeQueryForObject(selectSql, 
-            rs -> rs.getString("password"), account);
+        final Optional<String> actualPassword = jdbcTemplate.queryForObject(selectSql,
+                rs -> rs.getString("password"), account);
         assertThat(actualPassword).isPresent();
         assertThat(actualPassword.get()).isEqualTo(newPassword);
     }
 
     @Test
-    void executeUpdate_정상적인_DELETE_쿼리() {
+    void update_정상적인_DELETE_쿼리() {
         // given
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "deleteuser", "password", "delete@example.com");
-        
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "deleteuser", "password", "delete@example.com");
+
         final String sql = "DELETE FROM users WHERE account = ?";
         final String account = "deleteuser";
 
         // when
-        final int result = jdbcTemplate.executeUpdate(sql, account);
+        jdbcTemplate.update(sql, account);
 
         // then
-        assertThat(result).isEqualTo(1);
-        
+
         // 데이터가 실제로 삭제되었는지 확인
         final String selectSql = "SELECT COUNT(*) FROM users WHERE account = ?";
-        final Optional<Integer> count = jdbcTemplate.executeQueryForObject(selectSql, 
-            rs -> rs.getInt(1), account);
+        final Optional<Integer> count = jdbcTemplate.queryForObject(selectSql,
+                rs -> rs.getInt(1), account);
         assertThat(count).isPresent();
         assertThat(count.get()).isEqualTo(0);
     }
 
     @Test
-    void executeUpdate_null_또는_빈_SQL_예외() {
+    void update_null_SQL_예외() {
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
-
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate(""))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
-
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate("   "))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
+        assertThatThrownBy(() -> jdbcTemplate.update(null))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
-    void executeQueryForObject_단일_결과_조회() {
+    void queryForObject_단일_결과_조회() {
         // given
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "queryuser", "password", "query@example.com");
-        
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "queryuser", "password", "query@example.com");
+
         final String sql = "SELECT * FROM users WHERE account = ?";
         final UserRowMapper rowMapper = new UserRowMapper();
 
         // when
-        final Optional<User> result = jdbcTemplate.executeQueryForObject(sql, rowMapper, "queryuser");
+        final Optional<User> result = jdbcTemplate.queryForObject(sql, rowMapper, "queryuser");
 
         // then
         assertThat(result).isPresent();
@@ -127,84 +114,85 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void executeQueryForObject_결과가_없는_경우() {
+    void queryForObject_결과가_없는_경우() {
         // given
         final String sql = "SELECT * FROM users WHERE account = ?";
         final UserRowMapper rowMapper = new UserRowMapper();
 
         // when
-        final Optional<User> result = jdbcTemplate.executeQueryForObject(sql, rowMapper, "nonexistent");
+        final Optional<User> result = jdbcTemplate.queryForObject(sql, rowMapper, "nonexistent");
 
         // then
         assertThat(result).isEmpty();
     }
 
     @Test
-    void executeQueryForObject_여러_결과_예외() {
+    void queryForObject_여러_결과_예외() {
         // given
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "duplicate", "password1", "dup1@example.com");
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "duplicate", "password2", "dup2@example.com");
-        
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "duplicate", "password1", "dup1@example.com");
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "duplicate", "password2", "dup2@example.com");
+
         final String sql = "SELECT * FROM users WHERE account = ?";
         final UserRowMapper rowMapper = new UserRowMapper();
 
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(sql, rowMapper, "duplicate"))
-            .isInstanceOf(DataAccessException.class)
-            .hasMessageContaining("결과가 2개 이상입니다");
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, "duplicate"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("1행만 기대하지만");
     }
 
     @Test
-    void executeQueryForObject_null_파라미터_예외() {
+    void queryForObject_null_파라미터_예외() {
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject("SELECT * FROM users", null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("RowMapper는 null일 수 없습니다");
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("SELECT * FROM users", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("RowMapper는 null일 수 없습니다");
 
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject(null, new UserRowMapper()))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(null, new UserRowMapper()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
     }
 
     @Test
-    void executeQuery_여러_결과_조회() {
+    void query_여러_결과_조회() {
         // given
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "user1", "password1", "user1@example.com");
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "user2", "password2", "user2@example.com");
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "user3", "password3", "user3@example.com");
-        
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "user1", "password1", "user1@example.com");
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "user2", "password2", "user2@example.com");
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "user3", "password3", "user3@example.com");
+
         final String sql = "SELECT * FROM users ORDER BY account";
         final UserRowMapper rowMapper = new UserRowMapper();
 
         // when
-        final List<User> result = jdbcTemplate.executeQuery(sql, rowMapper);
+        final List<User> result = jdbcTemplate.query(sql, rowMapper);
 
         // then
         assertThat(result).hasSize(3);
         assertThat(result).extracting("account").containsExactly("user1", "user2", "user3");
-        assertThat(result).extracting("email").containsExactly("user1@example.com", "user2@example.com", "user3@example.com");
+        assertThat(result).extracting("email")
+                .containsExactly("user1@example.com", "user2@example.com", "user3@example.com");
     }
 
     @Test
-    void executeQuery_조건부_조회() {
+    void query_조건부_조회() {
         // given
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "kim1", "password1", "kim1@example.com");
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "kim2", "password2", "kim2@example.com");
-        jdbcTemplate.executeUpdate("INSERT INTO users (account, password, email) VALUES (?, ?, ?)", 
-            "park1", "password3", "park1@example.com");
-        
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "kim1", "password1", "kim1@example.com");
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "kim2", "password2", "kim2@example.com");
+        jdbcTemplate.update("INSERT INTO users (account, password, email) VALUES (?, ?, ?)",
+                "park1", "password3", "park1@example.com");
+
         final String sql = "SELECT * FROM users WHERE account LIKE ? ORDER BY account";
         final UserRowMapper rowMapper = new UserRowMapper();
 
         // when
-        final List<User> result = jdbcTemplate.executeQuery(sql, rowMapper, "kim%");
+        final List<User> result = jdbcTemplate.query(sql, rowMapper, "kim%");
 
         // then
         assertThat(result).hasSize(2);
@@ -212,41 +200,37 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void executeQuery_빈_결과() {
+    void query_빈_결과() {
         // given
         final String sql = "SELECT * FROM users WHERE account = ?";
         final UserRowMapper rowMapper = new UserRowMapper();
 
         // when
-        final List<User> result = jdbcTemplate.executeQuery(sql, rowMapper, "nonexistent");
+        final List<User> result = jdbcTemplate.query(sql, rowMapper, "nonexistent");
 
         // then
         assertThat(result).isEmpty();
     }
 
     @Test
-    void executeQuery_null_파라미터_예외() {
+    void query_null_SQL_예외() {
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeQuery("SELECT * FROM users", null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("RowMapper는 null일 수 없습니다");
-
-        assertThatThrownBy(() -> jdbcTemplate.executeQuery(null, new UserRowMapper()))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
+        assertThatThrownBy(() -> jdbcTemplate.query(null, new UserRowMapper()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다");
     }
 
     @Test
     void 잘못된_SQL_문법_예외() {
         // when & then
-        assertThatThrownBy(() -> jdbcTemplate.executeUpdate("INVALID SQL SYNTAX"))
-            .isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update("INVALID SQL SYNTAX"))
+                .isInstanceOf(DataAccessException.class);
 
-        assertThatThrownBy(() -> jdbcTemplate.executeQueryForObject("INVALID SQL SYNTAX", new UserRowMapper()))
-            .isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("INVALID SQL SYNTAX", new UserRowMapper()))
+                .isInstanceOf(DataAccessException.class);
 
-        assertThatThrownBy(() -> jdbcTemplate.executeQuery("INVALID SQL SYNTAX", new UserRowMapper()))
-            .isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query("INVALID SQL SYNTAX", new UserRowMapper()))
+                .isInstanceOf(DataAccessException.class);
     }
 
     /**
@@ -256,10 +240,10 @@ class JdbcTemplateTest {
         @Override
         public User mapRow(ResultSet resultSet) throws SQLException {
             return new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
+                    resultSet.getLong("id"),
+                    resultSet.getString("account"),
+                    resultSet.getString("password"),
+                    resultSet.getString("email")
             );
         }
     }

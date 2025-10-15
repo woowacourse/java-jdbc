@@ -23,55 +23,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(final String sql, final Object... parameters) {
-        validateQuery(sql);
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            validateParameterCount(preparedStatement, parameters, sql);
-            setStatementParameters(preparedStatement, parameters);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw dataAccessException("executeUpdate(conn) 실패", sql, parameters, e);
-        }
+    public void update(final String sql, final Object... parameters) {
+        execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public <T> Optional<T> executeQueryForObject(final String sql, final RowMapper<T> rowMapper,
-                                                 final Object... parameters) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         validateQuery(sql);
-        if (rowMapper == null) {
-            throw new IllegalArgumentException("RowMapper는 null일 수 없습니다.");
-        }
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            validateParameterCount(preparedStatement, parameters, sql);
-            setStatementParameters(preparedStatement, parameters);
-            log.debug("query : {}", sql);
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    T result = rowMapper.mapRow(resultSet);
-                    if (resultSet.next()) {
-                        throw new DataAccessException("결과가 2개 이상입니다. 단일 결과만 가능합니다.");
-                    }
-                    return Optional.of(result);
-                }
-                return Optional.empty();
-            }
-        } catch (SQLException e) {
-            throw dataAccessException("executeQueryForObject 실패", sql, parameters, e);
-        }
-    }
-
-    public <T> List<T> executeQuery(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        validateQuery(sql);
-        if (rowMapper == null) {
-            throw new IllegalArgumentException("RowMapper는 null일 수 없습니다.");
-        }
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            validateParameterCount(preparedStatement, parameters, sql);
-            setStatementParameters(preparedStatement, parameters);
-            log.debug("query : {}", sql);
+        return execute(sql, (preparedStatement) -> {
             try (final ResultSet rs = preparedStatement.executeQuery()) {
                 final List<T> instances = new ArrayList<>();
                 while (rs.next()) {
@@ -79,8 +37,35 @@ public class JdbcTemplate {
                 }
                 return instances;
             }
+        }, parameters);
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                          final Object... parameters) {
+        if (rowMapper == null) {
+            throw new IllegalArgumentException("RowMapper는 null일 수 없습니다.");
+        }
+        final List<T> results = query(sql, rowMapper, parameters);
+
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("executeQueryForObject는 1행만 기대하지만 " + results.size() + "행을 반환했습니다.");
+        }
+        return Optional.ofNullable(results.getFirst());
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... parameters) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement prepareStatement = conn.prepareStatement(sql)) {
+            validateParameterCount(prepareStatement, parameters, sql);
+            setStatementParameters(prepareStatement, parameters);
+            log.debug("query : {}", sql);
+            return executor.execute(prepareStatement);
         } catch (SQLException e) {
-            throw dataAccessException("executeQuery 실패", sql, parameters, e);
+            log.error(e.getMessage(), e);
+            throw dataAccessException("실패", sql, parameters, e);
         }
     }
 
