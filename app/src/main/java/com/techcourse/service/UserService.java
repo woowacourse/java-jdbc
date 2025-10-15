@@ -48,21 +48,29 @@ public class UserService {
 
             conn.commit();
         } catch (final Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (final SQLException ex) {
-                    log.error("Rollback failed", ex);
-                }
-            }
+            rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (final SQLException e) {
-                    log.error("Closing resources failed", e);
-                }
+            closeConnection(conn);
+        }
+    }
+
+    private void rollback(final Connection conn) {
+        if (conn != null) {
+            try {
+                conn.rollback();
+            } catch (final SQLException ex) {
+                log.error("Rollback failed", ex);
+            }
+        }
+    }
+
+    private void closeConnection(final Connection conn) {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (final SQLException e) {
+                log.error("Closing resources failed", e);
             }
         }
     }
