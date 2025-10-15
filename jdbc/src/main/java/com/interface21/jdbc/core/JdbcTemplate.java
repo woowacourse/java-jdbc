@@ -42,10 +42,10 @@ public class JdbcTemplate {
      * @return 제네릭 타입 결과값 (쿼리 결과나 update 결과 등)
      */
     public <R> R execute(String sql, Object[] args, StatementExecutor<R> executor) {
-        final Connection conn = getConnection();
-        final PreparedStatement pstmt = getPreparedStatement(sql, conn);
-
-        try (conn; pstmt) {
+        try (
+                Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
 
@@ -129,22 +129,6 @@ public class JdbcTemplate {
                 result.add(object);
             }
             return result;
-        }
-    }
-
-    /**
-     * PreparedStatement 객체 생성
-     *
-     * @param sql  쿼리 실행에 사용할 SQL 문자열
-     * @param conn 쿼리를 실행할 데이터베이스 Connection 객체
-     * @return 준비된 PreparedStatement 객체
-     * @throws DataAccessException PreparedStatement 생성 중 SQL 오류가 발생한 경우
-     */
-    private PreparedStatement getPreparedStatement(String sql, Connection conn) {
-        try {
-            return conn.prepareStatement(sql);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
         }
     }
 
