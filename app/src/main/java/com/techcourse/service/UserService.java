@@ -55,7 +55,7 @@ public class UserService {
                 throw new DataAccessException("트랜잭션을 롤백할 수 없습니다!");
             }
         }
-        throw new DataAccessException("데이터를 조회할 수 없습니다.");
+        throw new DataAccessException("DB 작업중에 오류가 발생했습니다!");
     }
 
     private void closeConnection(Connection connection) {
