@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,6 +28,14 @@ public class JdbcTemplate {
 
     public void update(String sql, PreparedStatementSetter pss) {
         execute(PreparedStatement::execute, sql, pss);
+    }
+
+    public void update(Connection conn, String sql, Object... args) {
+        update(conn, sql, PreparedStatementSetter.ofSequenced(args));
+    }
+
+    public void update(Connection conn, String sql, PreparedStatementSetter pss) {
+        execute(conn, PreparedStatement::execute, sql, pss);
     }
 
     public <T> T selectOne(RowMapper<T> rowMapper, String sql, Object... args) {
@@ -74,9 +83,17 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)
-        ) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, stmtExecutor, sql, pss);
+
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
+        try (var pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
             return stmtExecutor.execute(pstmt);
