@@ -1,6 +1,5 @@
 package com.interface21.transaction.support;
 
-import com.interface21.jdbc.datasource.TransactionManager;
 import java.util.function.Supplier;
 
 /**

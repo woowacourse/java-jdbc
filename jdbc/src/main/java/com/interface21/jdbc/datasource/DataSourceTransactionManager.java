@@ -1,5 +1,6 @@
 package com.interface21.jdbc.datasource;
 
+import com.interface21.transaction.support.TransactionManager;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;

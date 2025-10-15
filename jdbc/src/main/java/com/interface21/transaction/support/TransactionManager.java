@@ -1,4 +1,4 @@
-package com.interface21.jdbc.datasource;
+package com.interface21.transaction.support;
 
 public interface TransactionManager {
 
