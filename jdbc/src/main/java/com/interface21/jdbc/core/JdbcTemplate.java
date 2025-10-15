@@ -33,7 +33,6 @@ public class JdbcTemplate {
         Connection conn = null;
         try {
             conn = DataSourceUtils.getConnection(dataSource);
-            System.out.println("[DEBUG] JdbcTemplate connection=" + conn.hashCode() + ", closed=" + conn.isClosed());
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 setParameters(pstmt, params);
                 pstmt.executeUpdate();

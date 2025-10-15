@@ -42,10 +42,9 @@ public class TxUserService implements UserService {
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindResource(dataSource, connection);
-            System.out.println(
-                    "[DEBUG] TxUserService connection=" + connection.hashCode() + ", closed=" + connection.isClosed());
+            connection.setAutoCommit(false);
+
             try {
                 work.accept(connection);
                 connection.commit();
