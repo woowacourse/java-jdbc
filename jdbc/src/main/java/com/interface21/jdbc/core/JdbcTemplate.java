@@ -28,8 +28,16 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return query(sql, rowMapper, parameters).stream()
-                .findFirst();
+        final List<T> result = query(sql, rowMapper, parameters);
+
+        if (result.size() > 1) {
+            throw new DataAccessException("Expected single result, but found " + result.size());
+        }
+
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(result.getFirst());
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
