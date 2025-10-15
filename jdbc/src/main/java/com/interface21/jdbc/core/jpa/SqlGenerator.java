@@ -11,8 +11,26 @@ import com.interface21.jdbc.core.jpa.annotation.Table;
 
 public class SqlGenerator {
 
-    public String generateSelectSql(String tableName, Class<?> entityClass) {
-        List<Field> fields = getInstanceFields(entityClass);
+    public List<Field> getInstanceFields(Class<?> clazz) {
+        List<Field> fields = new ArrayList<>();
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                if (!fields.contains(field) && isColumnField(field)) {
+                    fields.add(field);
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return fields;
+    }
+
+    private boolean isColumnField(Field field) {
+        return !Modifier.isStatic(field.getModifiers()) && (field.isAnnotationPresent(Id.class)
+            || field.isAnnotationPresent(Column.class));
+    }
+
+    public String generateSelectSql(String tableName, List<Field> fields) {
         StringBuilder columns = new StringBuilder();
         for (Field field : fields) {
             columns.append(getFieldName(field)).append(", ");
@@ -23,8 +41,7 @@ public class SqlGenerator {
         return "SELECT " + columns + " FROM " + tableName;
     }
 
-    public String generateInsertSql(String tableName, Class<?> entityClass) {
-        List<Field> fields = getInstanceFields(entityClass);
+    public String generateInsertSql(String tableName, List<Field> fields) {
         StringBuilder columns = new StringBuilder();
         StringBuilder placeholders = new StringBuilder();
         
@@ -43,8 +60,7 @@ public class SqlGenerator {
         return "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
     }
 
-    public String generateUpdateSql(String tableName, Class<?> entityClass) {
-        List<Field> fields = getInstanceFields(entityClass);
+    public String generateUpdateSql(String tableName, List<Field> fields) {
         StringBuilder setClause = new StringBuilder();
         for (Field field : fields) {
             setClause.append(getFieldName(field)).append(" = ?, ");
@@ -70,20 +86,6 @@ public class SqlGenerator {
         return baseSql + whereClause.toString();
     }
 
-    public List<Field> getInstanceFields(Class<?> clazz) {
-        List<Field> fields = new ArrayList<>();
-        Class<?> current = clazz;
-        while (current != null && current != Object.class) {
-            for (Field field : current.getDeclaredFields()) {
-                if (!fields.contains(field) && isColumnField(field)) {
-                    fields.add(field);
-                }
-            }
-            current = current.getSuperclass();
-        }
-        return fields;
-    }
-
     public String getTableName(Class<?> entityClass) {
         if (!entityClass.isAnnotationPresent(Table.class)) {
             throw new IllegalArgumentException("Entity class must be annotated with @Table");
@@ -98,10 +100,5 @@ public class SqlGenerator {
             return column.name();
         }
         return field.getName();
-    }
-
-    private boolean isColumnField(Field field) {
-        return !Modifier.isStatic(field.getModifiers()) && (field.isAnnotationPresent(Id.class)
-            || field.isAnnotationPresent(Column.class));
     }
 }

@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.reflections.Reflections;
 
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.core.jpa.annotation.Id;
 import com.interface21.jdbc.core.jpa.annotation.Table;
 
 class JpaCache {
@@ -69,23 +70,34 @@ class JpaCache {
 
     private void cacheSqlStatements(Class<?> entityClass) {
         String tableName = sqlGenerator.getTableName(entityClass);
-        
+        List<Field> fields = sqlGenerator.getInstanceFields(entityClass);
+        Field idField = extractIdField(entityClass, fields);
+
         // SELECT SQL들 캐싱
-        String selectSql = sqlGenerator.generateSelectSql(tableName, entityClass);
-        String selectByIdSql = sqlGenerator.addWhereClause(selectSql, "id");
+        String selectSql = sqlGenerator.generateSelectSql(tableName, fields);
+        String selectByIdSql = sqlGenerator.addWhereClause(selectSql, idField.getName());
         selectSqlCache.put(entityClass, selectSql);
         selectByIdSqlCache.put(entityClass, selectByIdSql);
         
         // INSERT/UPDATE/DELETE SQL들 캐싱
-        String insertSql = sqlGenerator.generateInsertSql(tableName, entityClass);
-        String updateSql = sqlGenerator.generateUpdateSql(tableName, entityClass);
-        String updateByIdSql = sqlGenerator.addWhereClause(updateSql, "id");
+        String insertSql = sqlGenerator.generateInsertSql(tableName, fields);
+        String updateSql = sqlGenerator.generateUpdateSql(tableName, fields);
+        String updateByIdSql = sqlGenerator.addWhereClause(updateSql, idField.getName());
         String deleteSql = sqlGenerator.generateDeleteSql(tableName);
-        String deleteByIdSql = sqlGenerator.addWhereClause(deleteSql, "id");
+        String deleteByIdSql = sqlGenerator.addWhereClause(deleteSql, idField.getName());
         
         insertSqlCache.put(entityClass, insertSql);
         updateByIdSqlCache.put(entityClass, updateByIdSql);
         deleteByIdSqlCache.put(entityClass, deleteByIdSql);
+    }
+
+    private Field extractIdField(Class<?> entityClass, List<Field> fields) {
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Id.class)) {
+                return field;
+            }
+        }
+        throw new IllegalArgumentException("No field annotated with @Id in class: " + entityClass.getName());
     }
 
     @SuppressWarnings("unchecked")
