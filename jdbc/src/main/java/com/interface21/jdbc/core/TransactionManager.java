@@ -1,8 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class TransactionManager {
@@ -14,18 +14,17 @@ public class TransactionManager {
     }
 
     public <T> T execute(final TransactionCallback<T> callback) {
-        try (final Connection conn = dataSource.getConnection()) {
-            try {
-                begin(conn);
-                final T result = callback.doInTransaction(conn);
-                commit(conn);
-                return result;
-            } catch (Exception e) {
-                rollback(conn);
-                throw new DataAccessException("Transaction failed and rolled back", e);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Connection error", e);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            begin(conn);
+            final T result = callback.doInTransaction(conn);
+            commit(conn);
+            return result;
+        } catch (Exception e) {
+            rollback(conn);
+            throw new DataAccessException("Transaction failed and rolled back", e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 

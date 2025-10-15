@@ -8,16 +8,42 @@ public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
-    private TransactionSynchronizationManager() {}
-
-    public static Connection getResource(DataSource key) {
-        return null;
+    private TransactionSynchronizationManager() {
     }
 
-    public static void bindResource(DataSource key, Connection value) {
+    public static Connection getResource(final DataSource key) {
+        final Map<DataSource, Connection> resourceMap = getResourceMap();
+        if (!resourceMap.containsKey(key)) {
+            throw new IllegalStateException("No resource found for key: " + key);
+        }
+        return resourceMap.get(key);
     }
 
-    public static Connection unbindResource(DataSource key) {
-        return null;
+    public static void bindResource(final DataSource key, final Connection value) {
+        final Map<DataSource, Connection> resourceMap = getResourceMap();
+        if (resourceMap.containsKey(key)) {
+            throw new IllegalStateException("Already a resource for key: " + key);
+        }
+        resourceMap.put(key, value);
+    }
+
+    public static Connection unbindResource(final DataSource key) {
+        final Map<DataSource, Connection> resourceMap = getResourceMap();
+        if (!resourceMap.containsKey(key)) {
+            throw new IllegalStateException("No resource found for key: " + key);
+        }
+        return resourceMap.remove(key);
+    }
+
+    private static Map<DataSource, Connection> getResourceMap() {
+        final Map<DataSource, Connection> resourceMap = resources.get();
+        validateResourceMap(resourceMap);
+        return resourceMap;
+    }
+
+    private static void validateResourceMap(final Map<DataSource, Connection> resourceMap) {
+        if (resourceMap == null) {
+            throw new IllegalStateException("No thread-bound resources");
+        }
     }
 }
