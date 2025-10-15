@@ -55,7 +55,7 @@ public class JdbcTemplate {
             return Optional.empty();
         }
         if (results.size() > 1) {
-            throw new DataAccessException("executeQueryForObject는 1행만 기대하지만 " + results.size() + "행을 반환했습니다.");
+            throw new DataAccessException("queryForObject는 1행만 기대하지만 " + results.size() + "행을 반환했습니다.");
         }
         return Optional.ofNullable(results.getFirst());
     }
