@@ -49,7 +49,7 @@ public class SimpleJpa {
 
     public <T> void update(T entity) {
         String sql = cache.getUpdateByIdSql(entity.getClass());
-        Object[] entityParams = extractEntityParameters(entity, false);
+        Object[] entityParams = extractEntityParameters(entity, true);
         Object idValue = extractIdValue(entity);
         Object[] allParams = combineArrays(entityParams, new Object[] {idValue});
         jdbcTemplate.execute(sql, allParams);
