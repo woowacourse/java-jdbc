@@ -78,6 +78,10 @@ public class JdbcTemplate {
     }
 
     private void bindParameters(final PreparedStatement preparedStatement, final Object[] parameters) {
+        if (parameters == null) {
+            return;
+        }
+
         try {
             for (int i = 0; i < parameters.length; i++) {
                 final Object parameter = parameters[i];
