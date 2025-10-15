@@ -24,6 +24,7 @@ public class TxUserService implements UserService {
         return userService.findById(id);
     }
 
+    @Override
     public User findByAccount(final String account) {
         return userService.findByAccount(account);
     }
@@ -44,13 +45,18 @@ public class TxUserService implements UserService {
 
             connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException e2) {
-                throw new CannotGetJdbcConnectionException("Failed to rollback");
-            }
+            handleRollback(connection);
+            throw new RuntimeException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void handleRollback(final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("Failed to rollback");
         }
     }
 }
