@@ -23,6 +23,7 @@ public class LoginController {
 
     public LoginController() {
         this.userService = new UserService(
+                DataSourceConfig.getInstance(),
                 new UserDao(DataSourceConfig.getInstance()),
                 new UserHistoryDao(DataSourceConfig.getInstance())
         );

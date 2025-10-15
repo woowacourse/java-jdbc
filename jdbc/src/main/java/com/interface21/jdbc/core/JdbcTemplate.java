@@ -38,6 +38,22 @@ public class JdbcTemplate {
         return update(sql, ps -> bindParameters(ps, parameters));
     }
 
+    public int update(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return executeSql(connection, sql, PreparedStatement::executeUpdate, preparedStatementSetter);
+    }
+
+    public int update(
+            final Connection connection,
+            final String sql,
+            Object... parameters
+    ) {
+        return update(connection, sql, ps -> bindParameters(ps, parameters));
+    }
+
     public <T> List<T> query(
             final String sql,
             final RowMapper<T> rowMapper,
@@ -92,6 +108,25 @@ public class JdbcTemplate {
     ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            preparedStatementSetter.setValues(preparedStatement);
+
+            return callback.execute(preparedStatement);
+
+        } catch (final SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeSql(
+            final Connection connection,
+            final String sql,
+            final JdbcCallback<T> callback,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             preparedStatementSetter.setValues(preparedStatement);
