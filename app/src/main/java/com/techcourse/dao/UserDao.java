@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -34,6 +35,18 @@ public class UserDao {
                     preparedStatement.setString(3, user.getEmail());
                     preparedStatement.setLong(4, user.getId());
                 }
+        );
+    }
+
+    public void update(Connection connection, final User user) {
+        jdbcTemplate.update(
+                "UPDATE users SET (account, password, email) = (?, ?, ?) WHERE id=?",
+                (preparedStatement) -> {
+                    preparedStatement.setString(1, user.getAccount());
+                    preparedStatement.setString(2, user.getPassword());
+                    preparedStatement.setString(3, user.getEmail());
+                    preparedStatement.setLong(4, user.getId());
+                }, connection
         );
     }
 
