@@ -36,6 +36,18 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(Connection connection, String sql, Object... params) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
+            bindParameters(pstmt, params);
+            pstmt.executeUpdate();
+
+            log.debug("Executed SQL: {}", sql);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = new ArrayList<>();
 
@@ -82,6 +94,10 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 
     private void bindParameters(PreparedStatement pstmt, Object... params) throws SQLException {
