@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -35,6 +36,7 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
             connection.setAutoCommit(false);
 

@@ -58,7 +58,13 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             setParameters(pstmt, parameters);
-            return queryExecutor.run(pstmt);
+            T result = queryExecutor.run(pstmt);
+
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
