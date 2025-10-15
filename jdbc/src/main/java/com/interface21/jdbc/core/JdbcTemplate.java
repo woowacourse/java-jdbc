@@ -30,6 +30,9 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         validateQuery(sql);
+        if (rowMapper == null) {
+            throw new IllegalArgumentException("RowMapper는 null일 수 없습니다.");
+        }
         return execute(sql, (preparedStatement) -> {
             try (final ResultSet rs = preparedStatement.executeQuery()) {
                 final List<T> instances = new ArrayList<>();
