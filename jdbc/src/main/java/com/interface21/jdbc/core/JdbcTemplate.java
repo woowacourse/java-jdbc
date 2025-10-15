@@ -24,6 +24,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
+        validateQuery(sql);
         execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
