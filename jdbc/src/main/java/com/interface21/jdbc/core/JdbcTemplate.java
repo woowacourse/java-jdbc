@@ -24,7 +24,9 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        validateQuery(sql);
+        if (sql == null || sql.trim().isEmpty()) {
+            throw new DataAccessException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
+        }
         execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
