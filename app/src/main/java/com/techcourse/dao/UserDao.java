@@ -30,19 +30,19 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        CommandSpecification specification = createCommandSpecification(
+        CommandSpecification specification = new CommandSpecification(createPreparedStatementSpecification(
                 "insert into users (account, password, email) values (?, ?, ?)",
                 List.of(
                         new PreparedStatementParameter(1, user.getAccount()),
                         new PreparedStatementParameter(2, user.getPassword()),
                         new PreparedStatementParameter(3, user.getEmail())
                 )
-        );
+        ));
         jdbcTemplate.insert(specification);
     }
 
     public void update(final User user) {
-        CommandSpecification specification = createCommandSpecification(
+        CommandSpecification specification = new CommandSpecification(createPreparedStatementSpecification(
                 "update users set account = ?, password = ?, email = ? where id = ?",
                 List.of(
                         new PreparedStatementParameter(1, user.getAccount()),
@@ -50,24 +50,28 @@ public class UserDao {
                         new PreparedStatementParameter(3, user.getEmail()),
                         new PreparedStatementParameter(4, user.getId())
                 )
-        );
+        ));
         jdbcTemplate.update(specification);
     }
 
     public List<User> findAll() {
-        QuerySpecification<User> specification = createQuerySpecification(
-                "select id, account, password, email from users",
-                List.of(),
-                USER_ROW_MAPPER
+        QuerySpecification<User> specification = new QuerySpecification<>(
+                USER_ROW_MAPPER,
+                createPreparedStatementSpecification(
+                        "select id, account, password, email from users",
+                        List.of()
+                )
         );
         return jdbcTemplate.findAll(specification);
     }
 
     public User findById(final Long id) {
-        QuerySpecification<User> specification = createQuerySpecification(
-                "select id, account, password, email from users where id = ?",
-                List.of(new PreparedStatementParameter(1, id)),
-                USER_ROW_MAPPER
+        QuerySpecification<User> specification = new QuerySpecification<>(
+                USER_ROW_MAPPER,
+                createPreparedStatementSpecification(
+                        "select id, account, password, email from users where id = ?",
+                        List.of(new PreparedStatementParameter(1, id))
+                )
         );
         return jdbcTemplate.findOne(specification)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
@@ -75,31 +79,15 @@ public class UserDao {
 
     public User findByAccount(final String account) {
 
-        QuerySpecification<User> specification = createQuerySpecification(
-                "select id, account, password, email from users where account = ?",
-                List.of(new PreparedStatementParameter(1, account)),
-                USER_ROW_MAPPER
+        QuerySpecification<User> specification = new QuerySpecification<>(
+                USER_ROW_MAPPER,
+                createPreparedStatementSpecification(
+                        "select id, account, password, email from users where account = ?",
+                        List.of(new PreparedStatementParameter(1, account))
+                )
         );
         return jdbcTemplate.findOne(specification)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
-    }
-
-    private CommandSpecification createCommandSpecification(
-            String sql,
-            List<PreparedStatementParameter> preparedStatementParameters
-    ) {
-        return new CommandSpecification(createPreparedStatementSpecification(sql, preparedStatementParameters));
-    }
-
-    private <T> QuerySpecification<T> createQuerySpecification(
-            String sql,
-            List<PreparedStatementParameter> preparedStatementParameters,
-            RowMapper<T> rowMapper
-    ) {
-        return new QuerySpecification<T>(
-                rowMapper,
-                createPreparedStatementSpecification(sql, preparedStatementParameters)
-        );
     }
 
     private PreparedStatementSpecification createPreparedStatementSpecification(
