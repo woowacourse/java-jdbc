@@ -16,13 +16,21 @@ import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
 
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
+
     private UserDao userDao;
+    private UserHistoryDao userHistoryDao;
+    private UserService userService;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+
         this.userDao = new UserDao(jdbcTemplate);
+        this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        this.userService = new UserService(dataSource, userDao, userHistoryDao);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -31,10 +39,6 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final DataSource dataSource = DataSourceConfig.getInstance();
-        final var userHistoryDao = new UserHistoryDao(dataSource);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
-
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -46,7 +50,6 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final DataSource dataSource = DataSourceConfig.getInstance();
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(dataSource);
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
