@@ -63,6 +63,9 @@ public class SqlGenerator {
     public String generateUpdateSql(String tableName, List<Field> fields) {
         StringBuilder setClause = new StringBuilder();
         for (Field field : fields) {
+            if (field.isAnnotationPresent(Id.class)) {
+                continue;
+            }
             setClause.append(getFieldName(field)).append(" = ?, ");
         }
         if (!setClause.isEmpty()) {

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core.jpa;
 
 import java.lang.reflect.Field;
+import java.sql.Connection;
 import java.util.List;
 
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -17,47 +18,49 @@ public class SimpleJpa {
         this.cache = new JpaCache(basePackage);
     }
 
-    public <T> List<T> selectAll(final Class<T> entityClass) {
+    public <T> List<T> selectAll(final Connection connection, final Class<T> entityClass) {
         String sql = cache.getSelectSql(entityClass);
         RowMapper<T> rowMapper = cache.getRowMapper(entityClass);
-        return jdbcTemplate.query(sql, rowMapper);
+        return jdbcTemplate.query(connection, sql, rowMapper);
     }
 
-    public <T> List<T> selectById(final Class<T> entityClass, Object id) {
+    public <T> List<T> selectById(final Connection connection, final Class<T> entityClass, Object id) {
         String sql = cache.getSelectByIdSql(entityClass);
         RowMapper<T> rowMapper = cache.getRowMapper(entityClass);
-        return jdbcTemplate.query(sql, rowMapper, id);
+        return jdbcTemplate.query(connection, sql, rowMapper, id);
     }
 
-    public <T> List<T> selectByColumn(final Class<T> entityClass, String columnName, Object value) {
+    public <T> List<T> selectByColumn(final Connection connection, final Class<T> entityClass, String columnName,
+        Object value) {
         String sql = cache.getSelectByColumnsSql(entityClass, columnName);
         RowMapper<T> rowMapper = cache.getRowMapper(entityClass);
-        return jdbcTemplate.query(sql, rowMapper, value);
+        return jdbcTemplate.query(connection, sql, rowMapper, value);
     }
 
-    public <T> List<T> selectByColumns(final Class<T> entityClass, String[] columnNames, Object... values) {
+    public <T> List<T> selectByColumns(final Connection connection, final Class<T> entityClass, String[] columnNames,
+        Object... values) {
         String sql = cache.getSelectByColumnsSql(entityClass, columnNames);
         RowMapper<T> rowMapper = cache.getRowMapper(entityClass);
-        return jdbcTemplate.query(sql, rowMapper, values);
+        return jdbcTemplate.query(connection, sql, rowMapper, values);
     }
 
-    public void insert(final Object entity) {
+    public void insert(final Connection connection, final Object entity) {
         String sql = cache.getInsertSql(entity.getClass());
         Object[] params = extractEntityParameters(entity, true);
-        jdbcTemplate.execute(sql, params);
+        jdbcTemplate.execute(connection, sql, params);
     }
 
-    public <T> void update(T entity) {
+    public <T> void update(final Connection connection, T entity) {
         String sql = cache.getUpdateByIdSql(entity.getClass());
         Object[] entityParams = extractEntityParameters(entity, true);
         Object idValue = extractIdValue(entity);
         Object[] allParams = combineArrays(entityParams, new Object[] {idValue});
-        jdbcTemplate.execute(sql, allParams);
+        jdbcTemplate.execute(connection, sql, allParams);
     }
 
-    public void deleteById(final Class<?> entityClass, Object id) {
+    public void deleteById(final Connection connection, final Class<?> entityClass, Object id) {
         String sql = cache.getDeleteByIdSql(entityClass);
-        jdbcTemplate.execute(sql, id);
+        jdbcTemplate.execute(connection, sql, id);
     }
 
     private Object[] extractEntityParameters(Object entity, boolean skipAutoId) {

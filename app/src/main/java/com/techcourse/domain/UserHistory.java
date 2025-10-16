@@ -25,8 +25,10 @@ public class UserHistory {
     @Column(name = "email")
     private final String email;
 
+    @Column(name = "created_at")
     private final LocalDateTime createdAt;
 
+    @Column(name = "created_by")
     private final String createBy;
 
     public UserHistory(final User user, final String createBy) {

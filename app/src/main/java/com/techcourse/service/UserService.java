@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.techcourse.config.TransactionManagerConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -16,17 +17,23 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return TransactionManagerConfig.executeInTransaction(connection -> {
+            return userDao.findById(connection, id);
+        });
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        TransactionManagerConfig.executeInTransaction(connection -> {
+            userDao.insert(connection, user);
+        });
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        TransactionManagerConfig.executeInTransaction(connection -> {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        });
     }
 }

@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -22,35 +23,35 @@ public class UserDao {
         this.simpleJpa = new SimpleJpa(jdbcTemplate, JpaConfig.BASE_PACKAGE);
     }
 
-    public void insert(final User user) {
-        simpleJpa.insert(user);
+    public void insert(Connection connection, final User user) {
+        simpleJpa.insert(connection, user);
     }
 
-    public void update(final User user) {
-        simpleJpa.update(user);
+    public void update(Connection connection, final User user) {
+        simpleJpa.update(connection, user);
     }
 
-    public List<User> findAll() {
-        return simpleJpa.selectAll(User.class);
+    public List<User> findAll(Connection connection) {
+        return simpleJpa.selectAll(connection, User.class);
     }
 
-    public User findById(final Long id) {
-        List<User> users = simpleJpa.selectById(User.class, id);
+    public User findById(Connection connection, final Long id) {
+        List<User> users = simpleJpa.selectById(connection, User.class, id);
         if (users.size() > 1) {
             throw new IllegalStateException("Multiple users found with id: " + id);
         }
         return users.isEmpty() ? null : users.getFirst();
     }
 
-    public User findByAccount(final String account) {
-        List<User> users = simpleJpa.selectByColumn(User.class, "account", account);
+    public User findByAccount(Connection connection, final String account) {
+        List<User> users = simpleJpa.selectByColumn(connection, User.class, "account", account);
         if (users.size() > 1) {
             throw new IllegalStateException("Multiple users found with account: " + account);
         }
         return users.isEmpty() ? null : users.get(0);
     }
 
-    public void delete(User user) {
-        simpleJpa.deleteById(user.getClass(), user.getId());
+    public void delete(Connection connection, User user) {
+        simpleJpa.deleteById(connection, user.getClass(), user.getId());
     }
 }

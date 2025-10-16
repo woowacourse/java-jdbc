@@ -22,9 +22,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int execute(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public int execute(Connection conn, String sql, Object... params) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, params);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -33,10 +32,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = new ArrayList<>();
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, params);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {

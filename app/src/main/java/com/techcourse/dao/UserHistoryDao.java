@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +22,7 @@ public class UserHistoryDao {
         this.simpleJpa = new SimpleJpa(jdbcTemplate, JpaConfig.BASE_PACKAGE);
     }
 
-    public void log(final UserHistory userHistory) {
-        simpleJpa.insert(userHistory);
+    public void log(Connection connection, final UserHistory userHistory) {
+        simpleJpa.insert(connection, userHistory);
     }
 }
