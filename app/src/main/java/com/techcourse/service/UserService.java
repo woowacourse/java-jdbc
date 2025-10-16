@@ -31,19 +31,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
         try(Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
             try {
+                final var user = findById(id);
+                user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
+
                 connection.commit();
             } catch (Exception e) {
                 connection.rollback();
                 throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.");
             }
+
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
