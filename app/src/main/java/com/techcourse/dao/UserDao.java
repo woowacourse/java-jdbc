@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -32,6 +33,11 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
+    public void update(Connection connection, User user) {
+        final var sql = "update users set password = ?, email = ? where account = ?";
+        jdbcTemplate.update(connection,sql, user.getPassword(), user.getEmail(), user.getAccount());
+    }
+
     public List<User> findAll() {
         final var sql = "select * from users";
         List<User> users = jdbcTemplate.query(sql, ((rs, rowNum) -> {
@@ -49,6 +55,20 @@ public class UserDao {
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         User user = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+            Long foundId = rs.getLong("id");
+            String account = rs.getString("account");
+            String password = rs.getString("password");
+            String email = rs.getString("email");
+
+            return new User(foundId, account, password, email);
+        }, id);
+
+        return Optional.ofNullable(user);
+    }
+
+    public Optional<User> findById(Connection connection, long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        User user = jdbcTemplate.queryForObject(connection, sql, (rs, rowNum) -> {
             Long foundId = rs.getLong("id");
             String account = rs.getString("account");
             String password = rs.getString("password");
