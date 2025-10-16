@@ -30,16 +30,16 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final Transaction transaction = Transaction.init(dataSource);
-        transaction.doBegin();
+        transaction.begin();
         try {
             final Connection conn = transaction.getConnection();
             final var user = findById(id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
-            transaction.doCommit();
+            transaction.commit();
         } catch (final Exception e) {
-            transaction.doRollback();
+            transaction.rollback();
             throw e;
         }
     }

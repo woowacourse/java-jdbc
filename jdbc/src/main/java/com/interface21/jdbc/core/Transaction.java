@@ -20,7 +20,7 @@ public class Transaction {
         return new Transaction(dataSource);
     }
 
-    public void doBegin() {
+    public void begin() {
         try {
             Connection conn = dataSource.getConnection();
             conn.setAutoCommit(false);
@@ -30,7 +30,7 @@ public class Transaction {
         }
     }
 
-    public void doCommit() {
+    public void commit() {
         try {
             connection.commit();
         } catch (SQLException e) {
@@ -40,7 +40,7 @@ public class Transaction {
         }
     }
 
-    public void doRollback() {
+    public void rollback() {
         try {
             connection.rollback();
         } catch (SQLException e) {
