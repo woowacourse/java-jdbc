@@ -59,8 +59,10 @@ public class TxUserService implements UserService {
             }
             throw new DataAccessException(e);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            if (isNewTransaction) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 }
