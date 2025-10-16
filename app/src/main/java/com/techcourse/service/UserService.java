@@ -30,7 +30,7 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         TransactionManagerConfig.executeInTransaction(connection -> {
-            final var user = findById(id);
+            final var user = userDao.findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
