@@ -34,25 +34,27 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, userRowMapper());
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper(), id);
+        return queryOne(sql, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, userRowMapper(), account);
+        return queryOne(sql, account);
     }
 
-    private RowMapper<User> userRowMapper() {
-        return rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)
-        );
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
+            rs.getLong(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4)
+    );
+
+    private User queryOne(final String sql, final Object... params) {
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, params);
     }
 }
