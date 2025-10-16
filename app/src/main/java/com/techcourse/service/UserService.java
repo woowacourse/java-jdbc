@@ -1,12 +1,11 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.Transaction;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class UserService {
@@ -30,20 +29,18 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
-                conn.commit();
-            } catch (final Exception e) {
-                conn.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to change password for user id: " + id, e);
+        final Transaction transaction = Transaction.init(dataSource);
+        transaction.doBegin();
+        try {
+            final Connection conn = transaction.getConnection();
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(conn, user);
+            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            transaction.doCommit();
+        } catch (final Exception e) {
+            transaction.doRollback();
+            throw e;
         }
     }
 }
