@@ -16,10 +16,12 @@ public abstract class AbstractTransactionManager implements PlatformTransactionM
 
     @Override
     public void init() {
+        Connection conn = null;
         try {
-            final Connection conn = DataSourceUtils.getConnection(dataSource);
+            conn = DataSourceUtils.getConnection(dataSource);
             conn.setAutoCommit(false);
         } catch (SQLException e) {
+            cleanup(conn);
             throw new DataAccessException("Transaction init error", e);
         }
     }
@@ -29,11 +31,10 @@ public abstract class AbstractTransactionManager implements PlatformTransactionM
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.commit();
-            conn.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException("Transaction commit error", e);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            cleanup(conn);
         }
     }
 
@@ -42,9 +43,18 @@ public abstract class AbstractTransactionManager implements PlatformTransactionM
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.rollback();
-            conn.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException("Transaction rollback error", e);
+        } finally {
+            cleanup(conn);
+        }
+    }
+
+    private void cleanup(final Connection conn) {
+        try {
+            conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DataAccessException("Could not reset auto-commit after transaction", e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
         }

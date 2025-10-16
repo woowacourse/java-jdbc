@@ -1,9 +1,9 @@
 package com.interface21.transaction.support;
 
-import java.util.HashMap;
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
@@ -13,8 +13,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection getResource(final DataSource key) {
-        final Map<DataSource, Connection> resourceMap = getResourceMap();
-        return resourceMap.get(key);
+        return getResourceMap().get(key);
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
@@ -33,15 +32,11 @@ public abstract class TransactionSynchronizationManager {
         return resourceMap.remove(key);
     }
 
-    private static Map<DataSource, Connection> getResourceMap() {
-        final Map<DataSource, Connection> resourceMap = resources.get();
-        validateResourceMap(resourceMap);
-        return resourceMap;
+    public static void clear() {
+        resources.remove();
     }
 
-    private static void validateResourceMap(final Map<DataSource, Connection> resourceMap) {
-        if (resourceMap == null) {
-            throw new IllegalStateException("No thread-bound resources");
-        }
+    private static Map<DataSource, Connection> getResourceMap() {
+        return resources.get();
     }
 }
