@@ -102,7 +102,7 @@ public class JdbcTemplate {
         return new DataAccessException(msg + " : " + sql, e);
     }
 
-    private static void validateQuery(String sql) {
+    private void validateQuery(String sql) {
         if (sql == null || sql.trim().isEmpty()) {
             throw new IllegalArgumentException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
         }
