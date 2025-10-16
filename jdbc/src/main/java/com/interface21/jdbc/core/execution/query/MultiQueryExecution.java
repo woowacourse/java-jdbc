@@ -3,11 +3,12 @@ package com.interface21.jdbc.core.execution.query;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
 
-public abstract class MultiQueryExecution<T> {
+public abstract class MultiQueryExecution<T> extends QueryExecution<T, List<T>> {
 
-    public final Collection<T> execute(
+    @Override
+    public final List<T> execute(
             PreparedStatement preparedStatement,
             QuerySpecification<T> specification
     ) throws SQLException {
@@ -16,7 +17,7 @@ public abstract class MultiQueryExecution<T> {
         }
     }
 
-    protected abstract Collection<T> executeInternal(
+    protected abstract List<T> executeInternal(
             ResultSet resultSet,
             QuerySpecification<T> specification
     ) throws SQLException;

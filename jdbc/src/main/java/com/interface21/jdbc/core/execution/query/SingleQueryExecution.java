@@ -5,8 +5,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
-public abstract class SingleQueryExecution<T> {
+public abstract class SingleQueryExecution<T> extends QueryExecution<T, Optional<T>> {
 
+    @Override
     public final Optional<T> execute(
             PreparedStatement preparedStatement,
             QuerySpecification<T> specification

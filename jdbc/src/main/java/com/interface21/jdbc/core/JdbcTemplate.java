@@ -4,7 +4,10 @@ import com.interface21.jdbc.core.execution.command.CommandExecution;
 import com.interface21.jdbc.core.execution.command.CommandSpecification;
 import com.interface21.jdbc.core.execution.command.CreateExecution;
 import com.interface21.jdbc.core.execution.command.UpdateExecution;
-import com.interface21.jdbc.core.execution.query.*;
+import com.interface21.jdbc.core.execution.query.FindAllQueryExecution;
+import com.interface21.jdbc.core.execution.query.FindOneQueryExecution;
+import com.interface21.jdbc.core.execution.query.QueryExecution;
+import com.interface21.jdbc.core.execution.query.QuerySpecification;
 import com.interface21.jdbc.core.preparedstatement.PreparedStatementFactory;
 import com.interface21.jdbc.core.preparedstatement.PreparedStatementSpecification;
 import org.slf4j.Logger;
@@ -38,12 +41,12 @@ public record JdbcTemplate(DataSource dataSource) {
         }
     }
 
-    private void command(final CommandExecution execution, final CommandSpecification specification) {
-        execute(specification.preparedStatementSpecification(), PreparedStatementExecutor.commandExecutor(execution));
+    private int command(final CommandExecution execution, final CommandSpecification specification) {
+        return execute(specification.preparedStatementSpecification(), execution::execute);
     }
 
-    private <T> Optional<T> singleQuery(
-            final SingleQueryExecution<T> execution,
+    private <T, R> R query(
+            final QueryExecution<T, R> execution,
             final QuerySpecification<T> specification
     ) {
         return execute(
@@ -52,40 +55,23 @@ public record JdbcTemplate(DataSource dataSource) {
         );
     }
 
-    private <T> List<T> multiQuery(
-            final MultiQueryExecution<T> execution,
-            final QuerySpecification<T> specification
-    ) {
-        return execute(
-                specification.preparedStatementSpecification(),
-                preparedStatement -> execution.execute(preparedStatement, specification).stream().toList()
-        );
+    public int insert(final CommandSpecification specification) {
+        return command(new CreateExecution(), specification);
     }
 
-    public void insert(final CommandSpecification specification) {
-        command(new CreateExecution(), specification);
-    }
-
-    public void update(final CommandSpecification specification) {
-        command(new UpdateExecution(), specification);
+    public int update(final CommandSpecification specification) {
+        return command(new UpdateExecution(), specification);
     }
 
     public <T> Optional<T> findOne(final QuerySpecification<T> specification) {
-        return singleQuery(new FindOneQueryExecution<>(), specification);
+        return query(new FindOneQueryExecution<>(), specification);
     }
 
     public <T> List<T> findAll(final QuerySpecification<T> specification) {
-        return multiQuery(new FindAllQueryExecution<>(), specification);
+        return query(new FindAllQueryExecution<>(), specification);
     }
 
     private interface PreparedStatementExecutor<T> {
-
-        static <T> PreparedStatementExecutor<T> commandExecutor(CommandExecution execution) {
-            return preparedStatement -> {
-                execution.execute(preparedStatement);
-                return null;
-            };
-        }
 
         T process(PreparedStatement preparedStatement) throws SQLException;
     }

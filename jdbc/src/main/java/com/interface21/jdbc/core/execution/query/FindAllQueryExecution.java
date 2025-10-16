@@ -3,13 +3,12 @@ package com.interface21.jdbc.core.execution.query;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class FindAllQueryExecution<T> extends MultiQueryExecution<T> {
 
     @Override
-    public Collection<T> executeInternal(
+    public List<T> executeInternal(
             ResultSet resultSet,
             QuerySpecification<T> specification
     ) throws SQLException {

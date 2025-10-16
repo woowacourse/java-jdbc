@@ -5,5 +5,5 @@ import java.sql.SQLException;
 
 public interface CommandExecution {
 
-    void execute(PreparedStatement preparedStatement) throws SQLException;
+    int execute(PreparedStatement preparedStatement) throws SQLException;
 }

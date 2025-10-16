@@ -6,10 +6,11 @@ import java.sql.SQLException;
 public class CreateExecution implements CommandExecution {
 
     @Override
-    public void execute(PreparedStatement preparedStatement) throws SQLException {
+    public int execute(PreparedStatement preparedStatement) throws SQLException {
         int rowCount = preparedStatement.executeUpdate();
         if (rowCount != 1) {
             throw new SQLException("Insert operation failed, affected rows: " + rowCount);
         }
+        return rowCount;
     }
 }

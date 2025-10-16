@@ -6,7 +6,7 @@ import java.sql.SQLException;
 public class UpdateExecution implements CommandExecution {
 
     @Override
-    public void execute(PreparedStatement preparedStatement) throws SQLException {
-        preparedStatement.executeUpdate();
+    public int execute(PreparedStatement preparedStatement) throws SQLException {
+        return preparedStatement.executeUpdate();
     }
 }
