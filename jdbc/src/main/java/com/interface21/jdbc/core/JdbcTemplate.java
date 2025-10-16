@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -25,13 +24,18 @@ public class JdbcTemplate {
         execute(sql, preparedStatement -> preparedStatement.executeUpdate(), params);
     }
 
+    public void update(Connection connection, String sql, Object... params) {
+        execute(connection, sql, pstmt -> {
+            pstmt.executeUpdate();
+            return null;
+        }, params);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, preparedStatement -> {
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 log.debug("Executed SQL: {}", sql);
-
                 List<T> results = new ArrayList<>();
-
                 int rowNum = 0;
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs, rowNum++));
@@ -45,9 +49,7 @@ public class JdbcTemplate {
         return execute(sql, preparedStatement -> {
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 log.debug("Executed SQL: {}", sql);
-
                 int rowNum = 0;
-
                 if (rs.next()) {
                     T result = rowMapper.mapRow(rs, rowNum++);
                     if (rs.next()) {
@@ -56,27 +58,56 @@ public class JdbcTemplate {
                     }
                     return result;
                 }
-
                 throw new IllegalStateException("Expected one result (1 row), but query returned none.");
             }
         }, params);
     }
 
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(connection, sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                int rowNum = 0;
+                if (rs.next()) {
+                    T result = rowMapper.mapRow(rs, rowNum++);
+                    log.debug("Executed SQL: {}", sql);
+                    return result;
+                }
+                log.debug("Executed SQL: {}", sql);
+                return null;
+            }
+        }, params);
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(
-                sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             bindParameters(preparedStatement, params);
-            return action.doInPreparedStatement(preparedStatement);
+            T result = action.doInPreparedStatement(preparedStatement);
+            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> action, Object... params) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            bindParameters(preparedStatement, params);
+            T result = action.doInPreparedStatement(preparedStatement);
+            log.debug("Executed SQL: {}", sql);
+            return result;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
     private void bindParameters(PreparedStatement pstmt, Object... params) throws SQLException {
         validateParameterCount(pstmt, params);
-
         for (int i = 1; i <= params.length; i++) {
             pstmt.setObject(i, params[i - 1]);
         }
@@ -86,12 +117,10 @@ public class JdbcTemplate {
         try {
             int expected = pstmt.getParameterMetaData().getParameterCount();
             int actual = (params == null) ? 0 : params.length;
-
             if (expected != actual) {
                 throw new IllegalArgumentException(
                         String.format("SQL parameter count mismatch: expected %d but got %d", expected, actual));
             }
-
         } catch (SQLException e) {
             throw new DataAccessException("Failed to read PreparedStatement parameter metadata", e);
         }
