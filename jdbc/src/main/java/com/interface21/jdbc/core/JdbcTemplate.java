@@ -6,6 +6,7 @@ import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -76,7 +77,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
             return callback.call(pstmt);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
