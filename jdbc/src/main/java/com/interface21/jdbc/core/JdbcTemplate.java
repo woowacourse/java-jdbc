@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,11 +23,19 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
+    public void update(Connection connection, final String sql, final Object... args) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, args);
             final var result = pstmt.executeUpdate();
             log.debug("query : {}, result : {}", sql, result);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute update", e);
+        }
+    }
+
+    public void update(final String sql, final Object... args) {
+        try (final var connection = dataSource.getConnection()) {
+            update(connection, sql, args);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute update", e);
         }
