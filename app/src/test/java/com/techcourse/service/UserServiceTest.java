@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.mapper.RowMapper;
-import com.interface21.jdbc.mapper.ReflectionResultSetRowMapper;
+import com.interface21.jdbc.mapper.Mapper;
+import com.interface21.jdbc.mapper.ReflectionResultSetMapper;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -26,8 +26,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         DataSource dataSource = DataSourceConfig.getInstance();
-        RowMapper rowMapper = new ReflectionResultSetRowMapper();
-        this.jdbcTemplate = new JdbcTemplate(dataSource, rowMapper);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());

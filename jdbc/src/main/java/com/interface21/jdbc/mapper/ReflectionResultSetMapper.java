@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.util.Arrays;
 
-public class ReflectionResultSetRowMapper implements RowMapper {
+public class ReflectionResultSetMapper implements Mapper {
 
     // Reflection을 활용한 객체 매핑.
     // 클래스의 필드 순서와 생성자의 파라미터 순서가 다르면 작동 안함.
