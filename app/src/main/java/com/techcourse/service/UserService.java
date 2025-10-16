@@ -31,10 +31,10 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try(Connection connection = dataSource.getConnection()) {
+        try(Connection connection = dataSource.getConnection()) { // 외부 try - catch: connection 연결 과정 에러 관리
             connection.setAutoCommit(false);
 
-            try {
+            try { // 내부 try - catch 트랜잭션 관리 보장.
                 final var user = findById(id);
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
@@ -46,8 +46,8 @@ public class UserService {
                 throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.");
             }
 
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } catch (Exception e) {
+            throw new DataAccessException("커넥션을 얻지 못했습니다.");
         }
     }
 }
