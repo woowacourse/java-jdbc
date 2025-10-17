@@ -41,7 +41,7 @@ public class UserDao {
 
     public void transactionUpdate(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.transactionUpdate(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(),
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(),
                 user.getId());
     }
 
