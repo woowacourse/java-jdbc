@@ -25,7 +25,7 @@ public class RegisterController {
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        userService.insert(user);
+        userService.save(user);
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }

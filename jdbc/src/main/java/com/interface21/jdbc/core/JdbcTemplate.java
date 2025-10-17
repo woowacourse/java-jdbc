@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,10 +9,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -43,31 +43,12 @@ public class JdbcTemplate {
     }
 
     public void queryForUpdate(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             queryForUpdate(conn, sql, args);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
-    }
-
-    public <T> List<T> queryForResultList(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(conn, sql, rs -> {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
-            }
-            return results;
-        }, args);
-    }
-
-    public <T> Optional<T> queryForResult(Connection conn, String sql, RowMapper<T> rowMapper, Object... args) {
-        return query(conn, sql, rs -> {
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
-            }
-            return Optional.empty();
-        }, args);
     }
 
     public void queryForUpdate(Connection conn, final String sql, final Object... args) {
@@ -82,11 +63,11 @@ public class JdbcTemplate {
     }
 
     private <T> T query(String sql, ResultProcessor<T> extractor, Object... args) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return query(conn, sql, extractor, args);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
