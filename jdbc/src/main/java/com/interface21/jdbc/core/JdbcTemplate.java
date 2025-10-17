@@ -110,9 +110,9 @@ public class JdbcTemplate {
      * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      * @param <T>        매핑된 결과 객체의 타입
      */
-    public <T> T transactionQueryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                           final Object... parameters) throws DataAccessException {
-        return transactionQueryForObject(connection, sql, rowMapper,
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... parameters) throws DataAccessException {
+        return queryForObject(connection, sql, rowMapper,
                 DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
@@ -126,8 +126,8 @@ public class JdbcTemplate {
      * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
      * @param <T>                     매핑된 결과 객체의 타입
      */
-    public <T> T transactionQueryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                           final PreparedStatementSetter preparedStatementSetter)
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter preparedStatementSetter)
             throws DataAccessException {
         return execute(connection, sql, preparedStatementSetter,
                 preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper));
@@ -188,9 +188,9 @@ public class JdbcTemplate {
      * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      * @param <T>        매핑된 결과 객체의 타입
      */
-    public <T> List<T> transactionQuery(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                        final Object... parameters) throws DataAccessException {
-        return transactionQuery(connection, sql, rowMapper,
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final Object... parameters) throws DataAccessException {
+        return query(connection, sql, rowMapper,
                 DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
@@ -204,8 +204,8 @@ public class JdbcTemplate {
      * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
      * @param <T>                     매핑된 결과 객체의 타입
      */
-    public <T> List<T> transactionQuery(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                        final PreparedStatementSetter preparedStatementSetter)
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final PreparedStatementSetter preparedStatementSetter)
             throws DataAccessException {
         return execute(connection, sql, preparedStatementSetter,
                 preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper));
