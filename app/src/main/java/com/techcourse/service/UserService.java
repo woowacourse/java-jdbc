@@ -31,7 +31,6 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (final Connection connection = dataSource.getConnection()) {
-            // 트랜잭션 시작
             connection.setAutoCommit(false);
 
             try {
@@ -40,12 +39,10 @@ public class UserService {
                 userDao.transactionUpdate(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
 
-                // 트랜잭션 커밋
                 connection.commit();
             } catch (Exception e) {
-                // 트랜잭션 롤백
                 connection.rollback();
-                throw new DataAccessException(e);
+                throw e;
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
