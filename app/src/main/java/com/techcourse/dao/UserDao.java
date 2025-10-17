@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.core.execution.command.CommandSpecification;
+import com.interface21.jdbc.core.execution.query.QuerySpecification;
 import com.interface21.jdbc.core.preparedstatement.PreparedStatementParameter;
 import com.interface21.jdbc.core.preparedstatement.PreparedStatementSpecification;
 import com.techcourse.domain.User;
@@ -28,19 +30,19 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        PreparedStatementSpecification specification = createPreparedStatementSpecification(
+        CommandSpecification specification = new CommandSpecification(createPreparedStatementSpecification(
                 "insert into users (account, password, email) values (?, ?, ?)",
                 List.of(
                         new PreparedStatementParameter(1, user.getAccount()),
                         new PreparedStatementParameter(2, user.getPassword()),
                         new PreparedStatementParameter(3, user.getEmail())
                 )
-        );
-        jdbcTemplate.execute(specification);
+        ));
+        jdbcTemplate.insert(specification);
     }
 
     public void update(final User user) {
-        PreparedStatementSpecification specification = createPreparedStatementSpecification(
+        CommandSpecification specification = new CommandSpecification(createPreparedStatementSpecification(
                 "update users set account = ?, password = ?, email = ? where id = ?",
                 List.of(
                         new PreparedStatementParameter(1, user.getAccount()),
@@ -48,32 +50,43 @@ public class UserDao {
                         new PreparedStatementParameter(3, user.getEmail()),
                         new PreparedStatementParameter(4, user.getId())
                 )
-        );
-        jdbcTemplate.execute(specification);
+        ));
+        jdbcTemplate.update(specification);
     }
 
     public List<User> findAll() {
-        return jdbcTemplate.findAll(
-                createPreparedStatementSpecification("select id, account, password, email from users", List.of()),
-                USER_ROW_MAPPER
+        QuerySpecification<User> specification = new QuerySpecification<>(
+                USER_ROW_MAPPER,
+                createPreparedStatementSpecification(
+                        "select id, account, password, email from users",
+                        List.of()
+                )
         );
+        return jdbcTemplate.findAll(specification);
     }
 
     public User findById(final Long id) {
-        PreparedStatementSpecification specification = createPreparedStatementSpecification(
-                "select id, account, password, email from users where id = ?",
-                List.of(new PreparedStatementParameter(1, id))
+        QuerySpecification<User> specification = new QuerySpecification<>(
+                USER_ROW_MAPPER,
+                createPreparedStatementSpecification(
+                        "select id, account, password, email from users where id = ?",
+                        List.of(new PreparedStatementParameter(1, id))
+                )
         );
-        return jdbcTemplate.findOne(specification, USER_ROW_MAPPER)
+        return jdbcTemplate.findOne(specification)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
     }
 
     public User findByAccount(final String account) {
-        PreparedStatementSpecification specification = createPreparedStatementSpecification(
-                "select id, account, password, email from users where account = ?",
-                List.of(new PreparedStatementParameter(1, account))
+
+        QuerySpecification<User> specification = new QuerySpecification<>(
+                USER_ROW_MAPPER,
+                createPreparedStatementSpecification(
+                        "select id, account, password, email from users where account = ?",
+                        List.of(new PreparedStatementParameter(1, account))
+                )
         );
-        return jdbcTemplate.findOne(specification, USER_ROW_MAPPER)
+        return jdbcTemplate.findOne(specification)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
     }
 
