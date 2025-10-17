@@ -21,13 +21,10 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter pss) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            pss.setParameters(pstmt);
+        execute(sql, pss, pstmt -> {
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+            return null;
+        });
     }
 
     public void update(final String sql, final Object... parameters) {
@@ -35,13 +32,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            pss.setParameters(pstmt);
-            return mapResultSet(rm, pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, pss, pstmt -> mapResultSet(rm, pstmt));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rm, final Object... parameters) {
@@ -63,6 +54,17 @@ public class JdbcTemplate {
                 list.add(rm.mapRow(rs));
             }
             return list;
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter pss,
+                          final PreparedStatementCallback<T> action) {
+        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            pss.setParameters(pstmt);
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
