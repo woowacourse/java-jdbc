@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,20 +56,25 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, values);
     }
 
-    public <T> T execute(final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T execute(final String sql, final JdbcCallback<T> callback, final Object... values) {
+        return execute(sql, callback, createPreparedStatementSetter(values));
+    }
+
+    private <T> T execute(final String sql, final JdbcCallback<T> callback, final PreparedStatementSetter pss) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = getConnection();
+            pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
             return callback.call(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            releaseResources(pstmt, conn);
         }
-    }
-
-    private <T> T execute(final String sql, final JdbcCallback<T> callback, final Object... values) {
-        return execute(sql, callback, createPreparedStatementSetter(values));
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... values) {
@@ -77,5 +83,29 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, values[i]);
             }
         };
+    }
+
+    private Connection getConnection() throws SQLException {
+        if (TransactionSynchronizationManager.hasConnection()) {
+            return TransactionSynchronizationManager.getConnection();
+        }
+        return dataSource.getConnection();
+    }
+
+    private void releaseResources(PreparedStatement pstmt, Connection conn) {
+        if (pstmt != null) {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+        if (conn != null && !TransactionSynchronizationManager.hasConnection()) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 }
