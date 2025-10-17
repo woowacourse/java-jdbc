@@ -46,7 +46,7 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public User findById(final long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
@@ -62,7 +62,7 @@ public class UserDao {
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public User findById(final Connection conn, final Long id) throws SQLException {
+    public User findById(final Connection conn, final long id) throws SQLException {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id);
     }
