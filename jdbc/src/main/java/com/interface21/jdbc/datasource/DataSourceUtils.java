@@ -28,6 +28,17 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return;
+        }
+
+        // 트랜잭션 컨텍스트에서 관리되는 Connection인 경우 닫지 않음
+        Connection boundConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (boundConnection == connection) {
+            return;
+        }
+
+        // 트랜잭션 컨텍스트에 없는 Connection만 닫음
         try {
             connection.close();
         } catch (SQLException ex) {
