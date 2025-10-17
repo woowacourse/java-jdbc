@@ -21,16 +21,15 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        return executeWithPreparedStatement(sql, (pstmt -> {
-            settingPrepareStatement(params, pstmt);
-
-            return pstmt.executeUpdate();
-        }));
+        return executeWithPreparedStatement(
+                sql,
+                new SimplePreparedStatementSetter(params),
+                PreparedStatement::executeUpdate
+        );
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return executeWithPreparedStatement(sql, (pstmt -> {
-            settingPrepareStatement(params, pstmt);
+        return executeWithPreparedStatement(sql, new SimplePreparedStatementSetter(params), (pstmt -> {
 
             try (ResultSet rs = pstmt.executeQuery()) {
 
@@ -43,35 +42,35 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return executeWithPreparedStatement(sql, (pstmt -> {
-            settingPrepareStatement(params, pstmt);
+        return executeWithPreparedStatement(
+                sql,
+                new SimplePreparedStatementSetter(params),
+                pstmt -> {
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        List<T> results = new ArrayList<>();
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
+                        while (rs.next()) {
+                            results.add(rowMapper.map(rs));
+                        }
 
-                while (rs.next()) {
-                    results.add(rowMapper.map(rs));
+                        return results;
+                    }
                 }
-
-                return results;
-            }
-        }));
+        );
     }
 
-    private <T> T executeWithPreparedStatement(final String sql, final PreparedStatementAction<T> action) {
+    private <T> T executeWithPreparedStatement(final String sql,
+                                               final PreparedStatementSetter pstmtSetter,
+                                               final PreparedStatementAction<T> action) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
+            pstmtSetter.setValues(pstmt);
+
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void settingPrepareStatement(final Object[] params, final PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
         }
     }
 }
