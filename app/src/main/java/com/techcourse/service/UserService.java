@@ -34,14 +34,23 @@ public class UserService {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            final var user = userDao.findById(connection, id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            try {
+                final var user = userDao.findById(connection, id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
 
-            connection.commit();
+                connection.commit();
+            } catch (Exception e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
+                throw new DataAccessException("Failed to change password for user id: " + id, e);
+            }
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to change password for user id: " + id, e);
+            throw new DataAccessException("Failed to get connection", e);
         }
     }
 }
