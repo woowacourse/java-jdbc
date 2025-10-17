@@ -1,23 +1,26 @@
 package com.interface21.transaction.support;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
-import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Connection> resource = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {}
 
-    public static Connection getResource(DataSource key) {
-        return null;
+    public static Connection getConnection() {
+        return resource.get();
     }
 
-    public static void bindResource(DataSource key, Connection value) {
+    public static void bindConnection(final Connection connection) {
+        resource.set(connection);
     }
 
-    public static Connection unbindResource(DataSource key) {
-        return null;
+    public static void unbindConnection() {
+        resource.remove();
+    }
+
+    public static boolean hasConnection() {
+        return resource.get() != null;
     }
 }
