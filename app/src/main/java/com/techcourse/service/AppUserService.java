@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.Transactional;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -26,6 +27,7 @@ public class AppUserService implements UserService {
     }
 
     @Override
+    @Transactional
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         final var user = userDao.findById(id);
         user.changePassword(newPassword);
