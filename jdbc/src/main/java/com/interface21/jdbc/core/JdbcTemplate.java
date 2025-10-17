@@ -73,20 +73,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-            if (conn != null && !TransactionSynchronizationManager.hasConnection()) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
+            releaseResources(pstmt, conn);
         }
     }
 
@@ -103,5 +90,22 @@ public class JdbcTemplate {
             return TransactionSynchronizationManager.getConnection();
         }
         return dataSource.getConnection();
+    }
+
+    private void releaseResources(PreparedStatement pstmt, Connection conn) {
+        if (pstmt != null) {
+            try {
+                pstmt.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+        if (conn != null && !TransactionSynchronizationManager.hasConnection()) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 }
