@@ -38,7 +38,7 @@ public class JdbcTemplate {
         );
     }
 
-    public void update(
+    public void update(  // UserServiceTest에서 userDao.insert(User)를 정상실행하기 위한 코드
             final String sql,
             final Object... params
     ) {
