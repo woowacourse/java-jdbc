@@ -17,3 +17,10 @@
 ## 학습 테스트
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
+
+
+# 3️⃣ step3
+- [ ] 트랜잭션 적용
+  - 원자성(Atomic) 보장
+  - 트랜잭션 경계 설정
+  - 비즈니스 로직이 끝나면 트랜잭션 커밋 or 롤백 실행
