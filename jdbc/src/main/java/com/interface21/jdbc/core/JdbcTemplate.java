@@ -23,10 +23,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... args) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            validateParameterCount(preparedStatement, args.length);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
+            setParameters(preparedStatement, args);
             preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
@@ -36,10 +33,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            validateParameterCount(preparedStatement, args.length);
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
+            setParameters(preparedStatement, args);
             try (final var resultSet = preparedStatement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -58,6 +52,13 @@ public class JdbcTemplate {
             return null;
         }
         return results.getFirst();
+    }
+
+    private void setParameters(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
+        validateParameterCount(preparedStatement, args.length);
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
+        }
     }
 
     private void validateParameterCount(final PreparedStatement preparedStatement, final int actualCount) {
