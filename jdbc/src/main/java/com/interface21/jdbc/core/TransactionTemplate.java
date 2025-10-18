@@ -2,7 +2,6 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -19,12 +18,6 @@ public class TransactionTemplate<T> {
     }
 
     public T execute(ServiceCallback<T> serviceCallback) {
-        boolean isExistingTransaction = TransactionSynchronizationManager.getResource(dataSource) != null;
-
-        if (isExistingTransaction) {
-            return serviceCallback.execute();
-        }
-
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
