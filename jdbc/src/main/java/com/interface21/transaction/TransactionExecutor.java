@@ -10,11 +10,11 @@ public class TransactionExecutor {
 
     private final DataSource dataSource;
 
-    public TransactionExecutor(DataSource dataSource) {
+    public TransactionExecutor(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void execute(Consumer<Connection> execution) {
+    public void execute(final Consumer<Connection> execution) {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
@@ -26,7 +26,7 @@ public class TransactionExecutor {
             execution.accept(connection);
             connection.commit();
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             rollback(connection);
 
         } finally {
@@ -34,20 +34,20 @@ public class TransactionExecutor {
         }
     }
 
-    private void close(Connection connection) {
+    private void close(final Connection connection) {
         try {
             if (connection != null) {
                 connection.close();
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             rollback(connection);
         }
     }
 
-    private void rollback(Connection connection) {
+    private void rollback(final Connection connection) {
         try {
             connection.rollback();
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             throw new DataAccessException(ex);
         }
 

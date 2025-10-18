@@ -22,27 +22,27 @@ public class JdbcTemplate {
         testConnection(dataSource);
     }
 
-    public void update(String sql, Object... args) {
+    public void update(final String sql, final Object... args) {
         update(sql, PreparedStatementSetter.ofSequenced(args));
     }
 
-    public void update(String sql, PreparedStatementSetter pss) {
+    public void update(final String sql, final PreparedStatementSetter pss) {
         execute(PreparedStatement::execute, sql, pss);
     }
 
-    public void update(Connection conn, String sql, Object... args) {
+    public void update(final Connection conn, final String sql, final Object... args) {
         update(conn, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
-    public void update(Connection conn, String sql, PreparedStatementSetter pss) {
+    public void update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
         execute(conn, PreparedStatement::execute, sql, pss);
     }
 
-    public <T> T selectOne(RowMapper<T> rowMapper, String sql, Object... args) {
+    public <T> T selectOne(final RowMapper<T> rowMapper, final String sql, final Object... args) {
         return selectOne(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
-    public <T> T selectOne(RowMapper<T> rowMapper, String sql, PreparedStatementSetter pss) {
+    public <T> T selectOne(final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
         StatementExecutor<T> stmtExecutor = pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 return mapSingleRow(rowMapper, rs);
@@ -52,20 +52,20 @@ public class JdbcTemplate {
         return execute(stmtExecutor, sql, pss);
     }
 
-    private <T> T mapSingleRow(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> T mapSingleRow(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         if (rs.next()) {
             return rowMapper.mapRow(rs);
         }
         return null;
     }
 
-    public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, Object... args) {
+    public <T> List<T> selectMulti(final RowMapper<T> rowMapper, final String sql, final Object... args) {
         return selectMulti(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
-    public <T> List<T> selectMulti(RowMapper<T> rowMapper, String sql, PreparedStatementSetter pss) {
+    public <T> List<T> selectMulti(final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
         StatementExecutor<List<T>> stmtExecutor = pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
+            try (final ResultSet rs = pstmt.executeQuery()) {
                 return mapMultipleRows(rowMapper, rs);
             }
         };
@@ -73,7 +73,7 @@ public class JdbcTemplate {
         return execute(stmtExecutor, sql, pss);
     }
 
-    private <T> List<T> mapMultipleRows(RowMapper<T> rowMapper, ResultSet rs) throws SQLException {
+    private <T> List<T> mapMultipleRows(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
         var list = new ArrayList<T>();
         while (rs.next()) {
             var mappedRow = rowMapper.mapRow(rs);
@@ -82,18 +82,18 @@ public class JdbcTemplate {
         return list;
     }
 
-    private <T> T execute(StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
-        try (Connection connection = dataSource.getConnection()) {
+    private <T> T execute(final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
+        try (final Connection connection = dataSource.getConnection()) {
             return execute(connection, stmtExecutor, sql, pss);
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T execute(Connection connection, StatementExecutor<T> stmtExecutor, String sql, PreparedStatementSetter pss) {
-        try (var pstmt = connection.prepareStatement(sql)) {
+    private <T> T execute(final Connection connection, final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pss.setValues(pstmt);
             return stmtExecutor.execute(pstmt);
@@ -104,16 +104,16 @@ public class JdbcTemplate {
         }
     }
 
-    private void testConnection(DataSource dataSource) {
-        try (var connection = dataSource.getConnection()) {
+    private void testConnection(final DataSource dataSource) {
+        try (final Connection connection = dataSource.getConnection()) {
             var databaseProductName = connection.getMetaData().getDatabaseProductName();
             log.info("Connection established to database : {}", databaseProductName);
 
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             log.error("Connection is null on dataSource {}", dataSource);
             throw new DataAccessException(e);
 
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             log.error(e.getMessage(), e.getCause());
             throw new DataAccessException(e);
         }
