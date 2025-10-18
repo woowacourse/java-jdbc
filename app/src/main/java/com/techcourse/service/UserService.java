@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -24,9 +25,22 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            try {
+                final var user = findById(id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (Exception e) {
+            throw new BusinessException("비밀번호 변경에 실패했습니다.", e);
+        }
     }
 }

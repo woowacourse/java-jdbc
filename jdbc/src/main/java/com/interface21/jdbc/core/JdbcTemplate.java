@@ -28,6 +28,10 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return executeUsingExtractor(sql, resultSet -> {
             if (!resultSet.next()) {
@@ -64,6 +68,23 @@ public class JdbcTemplate {
         }, parameters);
     }
 
+    private <T> T execute(
+        final Connection conn,
+        final String sql,
+        final PreparedStatementCallback<T> callback,
+        final Object... parameters
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -77,7 +98,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
+    private void setParameters(final PreparedStatement pstmt, final Object... parameters) throws SQLException {
         if (parameters == null || parameters.length == 0) {
             return;
         }
