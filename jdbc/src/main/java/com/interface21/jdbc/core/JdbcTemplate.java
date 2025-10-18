@@ -74,6 +74,22 @@ public class JdbcTemplate {
         }, parameters);
     }
 
+    public <T> List<T> queryForList(
+        final Connection conn,
+        final String sql,
+        final RowMapper<T> rowMapper,
+        final Object... parameters
+    ) {
+        return executeUsingExtractor(conn, sql, resultSet -> {
+            List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+            return results;
+        }, parameters);
+    }
+
     private <T> T executeUsingExtractor(
         final String sql,
         final ResultSetExtractor<T> extractor,
