@@ -2,7 +2,6 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,12 +12,12 @@ public class TxUserService implements UserService{
     private final UserService userService;
     private final DataSource dataSource;
 
-    public TxUserService(UserService userService) {
+    public TxUserService(UserService userService, DataSource dataSource) {
         if(userService instanceof TxUserService) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("잘못된 구현체입니다.");
         }
         this.userService = userService;
-        this.dataSource = DataSourceConfig.getInstance();
+        this.dataSource = dataSource;
     }
 
     @Override
