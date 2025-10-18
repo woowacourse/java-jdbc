@@ -24,13 +24,13 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        transactionExecutor.execute(connection -> {
-            userDao.insert(connection, user);
-        });
+        transactionExecutor.executeVoid(connection ->
+            userDao.insert(connection, user)
+        );
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionExecutor.execute(connection -> {
+        transactionExecutor.executeVoid(connection -> {
             final var user = userDao.findById(connection, id);
             user.changePassword(newPassword);
             userDao.update(connection, user);
