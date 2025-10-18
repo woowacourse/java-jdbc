@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +57,10 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            PreparedStatement pstmt = conn.prepareStatement(sql);
 
             log.debug("Executing SQL: {}", sql);
 
@@ -66,6 +69,10 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL execution failed: {}", sql, e);
             throw new DataAccessException("SQL execution failed: " + sql, e);
+        } finally {
+            if (conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionProxyFactory;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -31,8 +32,11 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var dataSource = DataSourceConfig.getInstance();
-        final var userHistoryDao = new UserHistoryDao(dataSource);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        
+        final var proxyFactory = new TransactionProxyFactory(dataSource);
+        final var userService = proxyFactory.createProxy(appUserService, UserService.class);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,7 +52,11 @@ class UserServiceTest {
         final var dataSource = DataSourceConfig.getInstance();
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 프록시 생성
+        final var proxyFactory = new TransactionProxyFactory(dataSource);
+        final var userService = proxyFactory.createProxy(appUserService, UserService.class);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
