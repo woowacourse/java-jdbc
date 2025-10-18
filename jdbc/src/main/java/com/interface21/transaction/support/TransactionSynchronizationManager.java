@@ -1,8 +1,6 @@
 package com.interface21.transaction.support;
 
-import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -16,17 +14,7 @@ public abstract class TransactionSynchronizationManager {
     public static Connection getResource(DataSource key) {
         setIfNotContainsResources();
         Map<DataSource, Connection> dataSourceConnectionMapInThread = resources.get();
-        if (dataSourceConnectionMapInThread.containsKey(key)) {
-            return dataSourceConnectionMapInThread.get(key);
-        }
-
-        return dataSourceConnectionMapInThread.computeIfAbsent(key, dataSource -> {
-            try {
-                return dataSource.getConnection();
-            } catch (SQLException e) {
-                throw new DataAccessException(e);
-            }
-        });
+        return dataSourceConnectionMapInThread.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
