@@ -18,11 +18,14 @@ public class TransactionExecutor {
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
+            if (connection == null) {
+                throw new DataAccessException("Connection is null on dataSource " + dataSource);
+            }
+
             connection.setAutoCommit(false);
-
             execution.accept(connection);
-
             connection.commit();
+
         } catch (SQLException e) {
             rollback(connection);
 
@@ -44,7 +47,7 @@ public class TransactionExecutor {
     private void rollback(Connection connection) {
         try {
             connection.rollback();
-        } catch (NullPointerException | SQLException ex) {
+        } catch (SQLException ex) {
             throw new DataAccessException(ex);
         }
 
