@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,30 +25,50 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql);
-        ) {
-            setParams(statement, params);
-            statement.executeUpdate();
+        try {
+            update(getConnection(), sql, params);
         } catch (SQLException e) {
-            log.error("SQL 실행 실패: {} 파라미터: {}", sql, List.of(params), e);
             throw new RuntimeException(e);
         }
     }
 
-    public void update(final Connection connection, final String sql, final Object... params) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try {
+            return query(getConnection(), sql, rowMapper, params);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        try {
+            return queryForObject(getConnection(), sql, rowMapper, params);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void update(final Connection connection, final String sql, final Object... params) throws SQLException {
         try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(statement, params);
             statement.executeUpdate();
         } catch (SQLException e) {
             log.error("SQL 실행 실패: {} 파라미터: {}", sql, List.of(params), e);
             throw new RuntimeException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.hasConnection(dataSource)) {
+                connection.close();
+            }
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql);
+    public <T> List<T> query(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) throws SQLException {
+        try (final PreparedStatement statement = connection.prepareStatement(sql);
              final ResultSet resultSet = executeQuery(statement, params);
         ) {
             final List<T> result = new ArrayList<>();
@@ -57,12 +79,20 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL 실행 실패: {} 파라미터: {}", sql, List.of(params), e);
             throw new RuntimeException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.hasConnection(dataSource)) {
+                connection.close();
+            }
         }
     }
 
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql);
+    public <T> Optional<T> queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) throws SQLException {
+        try (final PreparedStatement statement = connection.prepareStatement(sql);
              final ResultSet resultSet = executeQuery(statement, params);
         ) {
             if (resultSet.next()) {
@@ -72,6 +102,10 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("SQL 실행 실패: {} 파라미터: {}", sql, List.of(params), e);
             throw new RuntimeException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.hasConnection(dataSource)) {
+                connection.close();
+            }
         }
     }
 
@@ -84,5 +118,12 @@ public class JdbcTemplate {
     private ResultSet executeQuery(final PreparedStatement statement, final Object... params) throws SQLException {
         setParams(statement, params);
         return statement.executeQuery();
+    }
+
+    private Connection getConnection() throws SQLException {
+        if (TransactionSynchronizationManager.hasConnection(dataSource)) {
+            return DataSourceUtils.getConnection(dataSource);
+        }
+        return dataSource.getConnection();
     }
 }
