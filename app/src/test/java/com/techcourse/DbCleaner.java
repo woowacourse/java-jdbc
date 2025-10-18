@@ -12,30 +12,26 @@ public class DbCleaner {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void CleanH2() {
-        jdbcTemplate.executeUpdate("SET REFERENTIAL_INTEGRITY FALSE");
+    public void cleanH2() {
+        jdbcTemplate.update("SET REFERENTIAL_INTEGRITY FALSE");
 
         String sql = """
-            SELECT table_name
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE table_schema = SCHEMA()
-              AND (table_type = 'BASE TABLE' OR table_type = 'TABLE')
-              AND LOWER(table_name) <> 'flyway_schema_history'
-            """;
+                SELECT table_name
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE table_schema = SCHEMA()
+                  AND (table_type = 'BASE TABLE' OR table_type = 'TABLE')
+                  AND LOWER(table_name) <> 'flyway_schema_history'
+                """;
 
-        List<String> tables = jdbcTemplate.executeQuery(sql, stringMapper());
+        List<String> tables = jdbcTemplate.query(sql, stringMapper());
 
-        for (String t : tables) {
-            try {
-                jdbcTemplate.executeUpdate("TRUNCATE TABLE " + t);
-            } catch (Exception e) {
-                jdbcTemplate.executeUpdate("DELETE FROM " + t);
-            }
+        for (String table : tables) {
+            jdbcTemplate.update("TRUNCATE TABLE " + table);
         }
 
-        jdbcTemplate.executeUpdate("ALTER TABLE \"USERS\" ALTER COLUMN \"ID\" RESTART WITH 1");
+        jdbcTemplate.update("ALTER TABLE \"USERS\" ALTER COLUMN \"ID\" RESTART WITH 1");
 
-        jdbcTemplate.executeUpdate("SET REFERENTIAL_INTEGRITY TRUE");
+        jdbcTemplate.update("SET REFERENTIAL_INTEGRITY TRUE");
     }
 
     private RowMapper<String> stringMapper() {
