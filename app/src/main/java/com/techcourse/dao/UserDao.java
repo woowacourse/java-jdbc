@@ -5,6 +5,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -46,6 +47,16 @@ public class UserDao {
         });
     }
 
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(connection, sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        });
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.queryForObjects(sql, USER_ROW_MAPPER);
@@ -54,6 +65,13 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER,
+                        pstmt -> pstmt.setLong(1, id))
+                .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER,
                         pstmt -> pstmt.setLong(1, id))
                 .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
     }

@@ -31,6 +31,10 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, setter);
     }
 
+    public void update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
+        execute(connection, sql, PreparedStatement::executeUpdate, setter);
+    }
+
     public <T> List<T> queryForObjects(final String sql, final RowMapper<T> rowMapper) {
         return queryForObjects(sql, rowMapper, null);
     }
@@ -48,7 +52,16 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
-        return execute(sql, pstmt -> {
+        try (Connection conn = dataSource.getConnection()) {
+            return queryForObject(conn, sql, rowMapper, setter);
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        return execute(connection, sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) {
                     return Optional.empty();
@@ -66,8 +79,16 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, callback, setter);
+        } catch (SQLException e) {
+            log.error("SQL execution failed: {}", sql, e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
