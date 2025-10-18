@@ -91,13 +91,13 @@ public class JdbcTemplate {
         return queryForList(sql, rowMapper, pstmt -> {});
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callBack) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return callBack.processIn(pstmt);
         } catch (final SQLException e) {
             log.error("JdbcTemplate execution failed. SQL: {}", sql, e);
-            throw new DataAccessException("dbcTemplate execution failed for SQL: " + sql, e);
+            throw new DataAccessException("JdbcTemplate execution failed for SQL: " + sql, e);
         }
     }
 }
