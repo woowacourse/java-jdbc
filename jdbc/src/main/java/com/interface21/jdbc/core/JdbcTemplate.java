@@ -38,6 +38,23 @@ public class JdbcTemplate {
         );
     }
 
+    public void update(
+            final String sql,
+            final Object... params
+    ) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+        } catch (final SQLException ignored) {}
+
+        execute(
+                connection,
+                PreparedStatement::executeUpdate,
+                sql,
+                params
+        );
+    }
+
     public <T> T queryForObject(
             final Connection connection,
             final String sql,

@@ -9,7 +9,6 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.dao.UserDao;
 
-import javax.sql.DataSource;
 import java.util.NoSuchElementException;
 
 public class UserService {
@@ -20,12 +19,11 @@ public class UserService {
 
     public UserService(
             final UserDao userDao,
-            final UserHistoryDao userHistoryDao,
-            final TransactionTemplate transactionTemplate
+            final UserHistoryDao userHistoryDao
     ) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionTemplate = transactionTemplate;
+        this.transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
     }
 
     public User findById(final long id) {

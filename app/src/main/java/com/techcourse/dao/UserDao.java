@@ -38,6 +38,17 @@ public class UserDao {
         );
     }
 
+    public void insert(final User user) { // UserServiceTest에서 userDao.insert(User)를 정상실행하기 위한 코드
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        jdbcTemplate.update(
+                sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
+    }
+
     public void update(final User user, final Connection connection) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
