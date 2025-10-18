@@ -1,14 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -20,20 +20,24 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
+    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, args);
+            preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public void update(final String sql, final Object... args) {
+        update(sql, ps -> setParameters(ps, args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            setParameters(preparedStatement, args);
+            preparedStatementSetter.setValues(preparedStatement);
             try (final var resultSet = preparedStatement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -44,6 +48,10 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, ps -> setParameters(ps, args));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
