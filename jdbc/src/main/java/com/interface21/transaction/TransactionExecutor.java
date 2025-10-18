@@ -15,32 +15,26 @@ public class TransactionExecutor {
     }
 
     public void execute(final Consumer<Connection> execution) {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             if (connection == null) {
                 throw new DataAccessException("Connection is null on dataSource " + dataSource);
             }
+            executeInTransaction(connection, execution);
 
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void executeInTransaction(final Connection connection, final Consumer<Connection> execution) {
+        try {
             connection.setAutoCommit(false);
             execution.accept(connection);
             connection.commit();
 
         } catch (final SQLException e) {
             rollback(connection);
-
-        } finally {
-            close(connection);
-        }
-    }
-
-    private void close(final Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (final SQLException e) {
-            rollback(connection);
+            throw new DataAccessException(e);
         }
     }
 
@@ -50,7 +44,5 @@ public class TransactionExecutor {
         } catch (final SQLException ex) {
             throw new DataAccessException(ex);
         }
-
-        throw new DataAccessException();
     }
 }
