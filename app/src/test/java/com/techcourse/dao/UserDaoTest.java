@@ -1,24 +1,43 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 class UserDaoTest {
 
+    private static final Log log = LogFactory.getLog(UserDaoTest.class);
+
+    private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        userDao = new UserDao(jdbcTemplate);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void cleanup() {
+        jdbcTemplate.update("DELETE FROM users");
+        try {
+            jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 
     @Test
