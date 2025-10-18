@@ -25,7 +25,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        boolean originalAutoCommit;
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
 
             try {
@@ -38,6 +40,8 @@ public class UserService {
             } catch (Exception e) {
                 connection.rollback();
                 throw e;
+            } finally {
+                connection.setAutoCommit(originalAutoCommit);
             }
         } catch (Exception e) {
             throw new BusinessException("비밀번호 변경에 실패했습니다.", e);
