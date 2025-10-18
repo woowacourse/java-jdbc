@@ -38,14 +38,18 @@ public class TxUserService implements UserService{
             userService.changePassword(id, newPassword, createBy);
             connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new DataAccessException(e);
-            }
+            rollback(connection);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
