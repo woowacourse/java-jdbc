@@ -61,16 +61,12 @@ public class JdbcTemplate {
         }
     }
 
-    private void validateParameterCount(final PreparedStatement preparedStatement, final int actualCount) {
-        try {
-            final int expectedCount = preparedStatement.getParameterMetaData().getParameterCount();
-            if (expectedCount != actualCount) {
-                throw new IllegalArgumentException(
-                        String.format("SQL parameter count mismatch: expected %d but was %d", expectedCount, actualCount)
-                );
-            }
-        } catch (final SQLException e) {
-            log.warn("Failed to validate parameter count", e);
+    private void validateParameterCount(final PreparedStatement preparedStatement, final int actualCount) throws SQLException {
+        final int expectedCount = preparedStatement.getParameterMetaData().getParameterCount();
+        if (expectedCount != actualCount) {
+            throw new IllegalArgumentException(
+                    String.format("SQL parameter count mismatch: expected %d but was %d", expectedCount, actualCount)
+            );
         }
     }
 }
