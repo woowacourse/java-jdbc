@@ -3,10 +3,13 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +18,7 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> userRowMapper = new UserRowMapper();
+    private static final RowMapper<User> userRowMapper = new UserRowMapper();
 
     public UserDao(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
@@ -35,6 +38,11 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
+    public void update(final Connection conn, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?;";
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.queryForList(sql, userRowMapper);
@@ -50,7 +58,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 
-    static class UserRowMapper implements RowMapper<User> {
+    private static class UserRowMapper implements RowMapper<User> {
 
         @Override
         public User mapRow(final ResultSet resultSet) throws SQLException {
