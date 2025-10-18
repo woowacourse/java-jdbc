@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,31 +29,9 @@ public class JdbcTemplate {
         );
     }
 
-    public void update(String sql, PreparedStatementSetter preparedStatementSetter, Connection connection) {
-        executeQuery(
-                sql, preparedStatementSetter, connection,
-                (preparedStatement) -> preparedStatement.executeUpdate()
-        );
-    }
-
     public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
         return executeQuery(
                 sql, preparedStatementSetter,
-                (preparedStatement) -> {
-                    try (ResultSet rs = preparedStatement.executeQuery()) {
-                        if (rs.next()) {
-                            return rowMapper.mapped(rs);
-                        }
-                    }
-                    return null;
-                }
-        );
-    }
-
-    public <T> T query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter,
-                       Connection connection) {
-        return executeQuery(
-                sql, preparedStatementSetter, connection,
                 (preparedStatement) -> {
                     try (ResultSet rs = preparedStatement.executeQuery()) {
                         if (rs.next()) {
@@ -81,29 +60,11 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> queryAll(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter
-            , Connection connection) {
-        return executeQuery(
-                sql, preparedStatementSetter, connection,
-                (preparedStatement) -> {
-                    List<T> results = new ArrayList<>();
-                    try (ResultSet rs = preparedStatement.executeQuery()) {
-                        while (rs.next()) {
-                            T result = rowMapper.mapped(rs);
-                            results.add(result);
-                        }
-                    }
-
-                    return results;
-                }
-        );
-    }
-
     private <T> T executeQuery(
             String sql, PreparedStatementSetter preparedStatementSetter, QueryExecution<T> queryExecution
     ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
             preparedStatementSetter.setValues(preparedStatement);
@@ -111,18 +72,16 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            closeIfAutoCommit(connection);
         }
     }
 
-    private <T> T executeQuery(
-            String sql, PreparedStatementSetter preparedStatementSetter, Connection connection,
-            QueryExecution<T> queryExecution
-    ) {
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return queryExecution.execute(preparedStatement);
+    private void closeIfAutoCommit(Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
