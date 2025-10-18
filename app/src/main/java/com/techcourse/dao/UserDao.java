@@ -57,7 +57,7 @@ public class UserDao {
 
     public List<User> findAll(final Connection conn) {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.selectMulti(USER_ROW_MAPPER, sql);
+        return jdbcTemplate.selectMulti(conn, USER_ROW_MAPPER, sql);
     }
 
     public User findById(final Long id) {
@@ -67,7 +67,7 @@ public class UserDao {
 
     public User findById(final Connection conn, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.selectOne(USER_ROW_MAPPER, sql, id);
+        return jdbcTemplate.selectOne(conn, USER_ROW_MAPPER, sql, id);
     }
 
     public User findByAccount(final String account) {

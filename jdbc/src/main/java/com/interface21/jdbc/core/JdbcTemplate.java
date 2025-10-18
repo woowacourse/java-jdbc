@@ -42,6 +42,10 @@ public class JdbcTemplate {
         return selectOne(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
+    public <T> T selectOne(final Connection conn, final RowMapper<T> rowMapper, final String sql, final Object... args) {
+        return selectOne(conn, rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
+    }
+
     public <T> T selectOne(final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
         StatementExecutor<T> stmtExecutor = pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -50,6 +54,16 @@ public class JdbcTemplate {
         };
 
         return execute(stmtExecutor, sql, pss);
+    }
+
+    public <T> T selectOne(final Connection conn, final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
+        StatementExecutor<T> stmtExecutor = pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return mapSingleRow(rowMapper, rs);
+            }
+        };
+
+        return execute(conn, stmtExecutor, sql, pss);
     }
 
     private <T> T mapSingleRow(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
@@ -63,6 +77,10 @@ public class JdbcTemplate {
         return selectMulti(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
+    public <T> List<T> selectMulti(final Connection conn, final RowMapper<T> rowMapper, final String sql, final Object... args) {
+        return selectMulti(conn, rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
+    }
+
     public <T> List<T> selectMulti(final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
         StatementExecutor<List<T>> stmtExecutor = pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
@@ -71,6 +89,16 @@ public class JdbcTemplate {
         };
 
         return execute(stmtExecutor, sql, pss);
+    }
+
+    public <T> List<T> selectMulti(final Connection conn, final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
+        StatementExecutor<List<T>> stmtExecutor = pstmt -> {
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                return mapMultipleRows(rowMapper, rs);
+            }
+        };
+
+        return execute(conn, stmtExecutor, sql, pss);
     }
 
     private <T> List<T> mapMultipleRows(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
