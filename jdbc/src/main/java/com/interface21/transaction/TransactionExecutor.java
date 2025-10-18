@@ -41,7 +41,7 @@ public class TransactionExecutor {
             connection.commit();
             return result;
 
-        } catch (final SQLException e) {
+        } catch (final Exception e) {
             rollback(connection);
             throw new DataAccessException(e);
         }
