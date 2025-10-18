@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... args) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
+            validateParameterCount(preparedStatement, args.length);
             for (int i = 0; i < args.length; i++) {
                 preparedStatement.setObject(i + 1, args[i]);
             }
@@ -34,6 +36,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
+            validateParameterCount(preparedStatement, args.length);
             for (int i = 0; i < args.length; i++) {
                 preparedStatement.setObject(i + 1, args[i]);
             }
@@ -55,5 +58,18 @@ public class JdbcTemplate {
             return null;
         }
         return results.getFirst();
+    }
+
+    private void validateParameterCount(final PreparedStatement preparedStatement, final int actualCount) {
+        try {
+            final int expectedCount = preparedStatement.getParameterMetaData().getParameterCount();
+            if (expectedCount != actualCount) {
+                throw new IllegalArgumentException(
+                        String.format("SQL parameter count mismatch: expected %d but was %d", expectedCount, actualCount)
+                );
+            }
+        } catch (final SQLException e) {
+            log.warn("Failed to validate parameter count", e);
+        }
     }
 }
