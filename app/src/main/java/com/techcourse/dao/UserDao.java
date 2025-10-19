@@ -5,6 +5,7 @@ import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,15 @@ public class UserDao {
         final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
 
         final var updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        if (updatedRows == 0) {
+            throw new EmptyResultDataAccessException("User with id " + user.getId() + " does not exist");
+        }
+    }
+
+    public void update(final Connection connection, final User user) {
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+
+        final var updatedRows = jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         if (updatedRows == 0) {
             throw new EmptyResultDataAccessException("User with id " + user.getId() + " does not exist");
         }
