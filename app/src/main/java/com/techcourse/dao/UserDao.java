@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import java.sql.Connection;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -35,6 +36,17 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void update(final Connection connection, final User user) {
+        final var sql = """
+            update users
+            set account = ?,
+                password = ?,
+                email = ?
+            where id = ?
+            """;
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public void update(final User user) {
         final var sql = """
             update users
@@ -54,13 +66,22 @@ public class UserDao {
         return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public User findById(final long id) {
         final var sql = """
             select id, account, password, email
             from users
             where id = ?
             """;
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+    }
+
+    public User findById(final Connection connection, final long id) {
+        final var sql = """
+            select id, account, password, email
+            from users
+            where id = ?
+            """;
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {

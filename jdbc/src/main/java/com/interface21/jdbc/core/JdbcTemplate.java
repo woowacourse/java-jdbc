@@ -28,8 +28,30 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
+    public int update(final Connection conn, final String sql, final Object... parameters) {
+        return execute(conn, sql, PreparedStatement::executeUpdate, parameters);
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return executeUsingExtractor(sql, resultSet -> {
+            if (!resultSet.next()) {
+                throw new DataAccessException("조회 결과가 존재하지 않습니다.");
+            }
+            T result = rowMapper.mapRow(resultSet, 0);
+            if (resultSet.next()) {
+                throw new DataAccessException("조회 결과가 2개 이상입니다.");
+            }
+            return result;
+        }, parameters);
+    }
+
+    public <T> T queryForObject(
+        final Connection conn,
+        final String sql,
+        final RowMapper<T> rowMapper,
+        final Object parameters
+    ) {
+        return executeUsingExtractor(conn, sql, resultSet -> {
             if (!resultSet.next()) {
                 throw new DataAccessException("조회 결과가 존재하지 않습니다.");
             }
@@ -52,6 +74,22 @@ public class JdbcTemplate {
         }, parameters);
     }
 
+    public <T> List<T> queryForList(
+        final Connection conn,
+        final String sql,
+        final RowMapper<T> rowMapper,
+        final Object... parameters
+    ) {
+        return executeUsingExtractor(conn, sql, resultSet -> {
+            List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, rowNum++));
+            }
+            return results;
+        }, parameters);
+    }
+
     private <T> T executeUsingExtractor(
         final String sql,
         final ResultSetExtractor<T> extractor,
@@ -62,6 +100,36 @@ public class JdbcTemplate {
                 return extractor.extractData(resultSet);
             }
         }, parameters);
+    }
+
+    private <T> T executeUsingExtractor(
+        final Connection conn,
+        final String sql,
+        final ResultSetExtractor<T> extractor,
+        final Object... parameters
+    ) {
+        return execute(conn, sql, pstmt -> {
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                return extractor.extractData(resultSet);
+            }
+        }, parameters);
+    }
+
+    private <T> T execute(
+        final Connection conn,
+        final String sql,
+        final PreparedStatementCallback<T> callback,
+        final Object... parameters
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            setParameters(pstmt, parameters);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
@@ -77,7 +145,7 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
+    private void setParameters(final PreparedStatement pstmt, final Object... parameters) throws SQLException {
         if (parameters == null || parameters.length == 0) {
             return;
         }
