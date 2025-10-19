@@ -26,7 +26,7 @@ public class TransactionAspect {
             platformTransactionManager.commit(status);
 
             return result;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             platformTransactionManager.rollback(status);
 
             throw e;
