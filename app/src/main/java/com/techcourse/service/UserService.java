@@ -46,16 +46,16 @@ public class UserService {
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 connection.commit();
-            } catch (SQLException exceptionWhenCommit) {
+            } catch (Exception exceptionWhenCommit) {
+                log.error("커밋 실패, 롤백 시도", exceptionWhenCommit);
 
                 try { // 롤백 try - catch
-                connection.rollback();
+                    connection.rollback();
                 } catch (SQLException exceptionWhenRollback) {
                     log.error("트랜잭션 롤벡 실패", exceptionWhenRollback);
-                    throw new DataAccessException("롤백 중 에러가 발생했습니다.", exceptionWhenRollback);
                 }
 
-                log.error("커밋 실패", exceptionWhenCommit);
+                // 롤백 성공, 실패와 상관 없이 원본 예외를 다시 던진다.
                 throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.", exceptionWhenCommit);
             }
 
