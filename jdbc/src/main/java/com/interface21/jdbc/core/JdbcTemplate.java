@@ -63,7 +63,13 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            try {
+                if (connection.getAutoCommit()) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
