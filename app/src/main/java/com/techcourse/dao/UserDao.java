@@ -51,6 +51,17 @@ public class UserDao {
         );
     }
 
+    public Optional<User> findById(final Connection conn, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryForObject(
+                conn,
+                sql,
+                rs -> new User(rs.getLong("id"), rs.getString("account"), rs.getString("password"), rs.getString("email")),
+                id
+        );
+    }
+
     public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 

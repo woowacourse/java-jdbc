@@ -31,6 +31,11 @@ public class UserService {
                 .orElseThrow(() -> new NoSuchElementException("해당하는 User를 찾을 수 없습니다: id = " + id));
     }
 
+    public User findById(final Connection conn, final long id) {
+        return userDao.findById(conn, id)
+                .orElseThrow(() -> new NoSuchElementException("해당하는 User를 찾을 수 없습니다: id = " + id));
+    }
+
     public void insert(final User user) {
         userDao.insert(user);
     }
@@ -41,7 +46,7 @@ public class UserService {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
 
-            final var user = findById(id);
+            final var user = findById(conn, id);
             user.changePassword(newPassword);
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
