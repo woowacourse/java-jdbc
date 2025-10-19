@@ -7,8 +7,4 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class AopConfig {
 
-    @Bean
-    public TransactionAspect transactionAdvice(PlatformTransactionManager platformTransactionManager) {
-        return new TransactionAspect(platformTransactionManager);
-    }
 }
