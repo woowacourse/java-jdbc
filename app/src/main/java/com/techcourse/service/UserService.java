@@ -8,8 +8,13 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -41,13 +46,22 @@ public class UserService {
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 connection.commit();
-            } catch (Exception e) {
+            } catch (SQLException exceptionWhenCommit) {
+
+                try { // 롤백 try - catch
                 connection.rollback();
-                throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.");
+                } catch (SQLException exceptionWhenRollback) {
+                    log.error("트랜잭션 롤벡 실패", exceptionWhenRollback);
+                    throw new DataAccessException("롤백 중 에러가 발생했습니다.", exceptionWhenRollback);
+                }
+
+                log.error("커밋 실패", exceptionWhenCommit);
+                throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.", exceptionWhenCommit);
             }
 
-        } catch (Exception e) {
-            throw new DataAccessException("커넥션을 얻지 못했습니다.");
+        } catch (SQLException exceptionWhenConnect) {
+            log.error("DB 커넥션 획득 실패.", exceptionWhenConnect);
+            throw new DataAccessException("커넥션을 얻지 못했습니다.", exceptionWhenConnect);
         }
     }
 }
