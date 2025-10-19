@@ -1,0 +1,89 @@
+package com.interface21.jdbc.core;
+
+import java.sql.Connection;
+
+import javax.sql.DataSource;
+
+public class GeneralTransactionManager implements TransactionManager {
+
+    private final DataSource dataSource;
+    private final ThreadLocal<Connection> connection = new ThreadLocal<>();
+    private final ThreadLocal<Integer> transactionCount = new ThreadLocal<>();
+
+    public GeneralTransactionManager(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public void begin() {
+        try {
+            // propagation level: REQUIRED
+            if (connection.get() == null) {
+                Connection connection1 = dataSource.getConnection();
+                connection1.setAutoCommit(false);
+                connection.set(connection1);
+                transactionCount.set(1);
+            } else {
+                // 중첩 트랜잭션인 경우 카운트 증가
+                transactionCount.set(transactionCount.get() + 1);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to begin transaction", e);
+        }
+    }
+
+    public Connection getCurrentConnection() {
+        Connection conn = connection.get();
+        if (conn == null) {
+            throw new IllegalStateException("No transaction started for this thread.");
+        }
+        return conn;
+    }
+
+    public void commit() {
+        Connection conn = connection.get();
+        if (conn == null) {
+            throw new IllegalStateException("No transaction started for this thread.");
+        }
+
+        int count = transactionCount.get();
+        transactionCount.set(count - 1);
+
+        if (count == 1) {
+            // 최상위 트랜잭션에서만 실제 commit
+            try {
+                conn.commit();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to commit transaction", e);
+            } finally {
+                cleanupConnection(conn);
+            }
+        }
+    }
+
+    public void rollback() {
+        Connection conn = connection.get();
+        if (conn == null) {
+            throw new IllegalStateException("No transaction started for this thread.");
+        }
+
+        // rollback은 즉시 실행하고 트랜잭션 종료
+        try {
+            conn.rollback();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to rollback transaction", e);
+        } finally {
+            cleanupConnection(conn);
+        }
+    }
+
+    private void cleanupConnection(Connection conn) {
+        try {
+            conn.setAutoCommit(true);
+            conn.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to close connection", e);
+        }
+        connection.remove();
+        transactionCount.remove();
+    }
+}

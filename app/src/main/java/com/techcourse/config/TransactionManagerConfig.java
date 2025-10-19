@@ -6,6 +6,7 @@ import java.util.Objects;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.GeneralTransactionManager;
 import com.interface21.jdbc.core.TransactionManager;
 
 public class TransactionManagerConfig {
@@ -15,7 +16,7 @@ public class TransactionManagerConfig {
     public static TransactionManager getInstance() {
         if (Objects.isNull(INSTANCE)) {
             DataSource dataSource = DataSourceConfig.getInstance();
-            INSTANCE = new TransactionManager(dataSource);
+            INSTANCE = new GeneralTransactionManager(dataSource);
         }
         return INSTANCE;
     }
