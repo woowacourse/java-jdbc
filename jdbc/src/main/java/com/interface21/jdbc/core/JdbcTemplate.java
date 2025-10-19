@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,72 +29,40 @@ public class JdbcTemplate {
         return Optional.of(list.getFirst());
     }
 
-    public <T> Optional<T> queryForObjectWithConnection(String sql, Connection connection, RowMapper<T> mapper,
-                                                        Object... params) {
-        List<T> list = queryWithConnection(sql, connection, mapper, params);
-        if (list.isEmpty()) {
-            return Optional.empty();
-        }
-        if (list.size() > 1) {
-            throw new IllegalStateException("로우가 2개 이상");
-        }
-        return Optional.of(list.getFirst());
-    }
-
     public void update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, params);
-            pstmt.executeUpdate();
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                setParameters(pstmt, params);
+                pstmt.executeUpdate();
+            }
         } catch (SQLException e) {
             throw new RuntimeException("SQL 에러: " + e.getMessage(), e);
-        }
-    }
-
-    public void updateWithConnection(String sql, Connection connection, Object... params) {
-        try (
-                PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            setParameters(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("SQL 에러: " + e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
     public <T> List<T> query(String sql, RowMapper<T> mapper, Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            setParameters(pstmt, params);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    results.add(mapper.mapRow(rs, rowNum++));
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                setParameters(pstmt, params);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    List<T> results = new ArrayList<>();
+                    int rowNum = 0;
+                    while (rs.next()) {
+                        results.add(mapper.mapRow(rs, rowNum++));
+                    }
+                    return results;
                 }
-                return results;
             }
         } catch (SQLException e) {
             throw new RuntimeException("SQL 에러: " + e.getMessage(), e);
-        }
-    }
-
-    public <T> List<T> queryWithConnection(String sql, Connection connection, RowMapper<T> mapper, Object... params) {
-        try (
-                PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            setParameters(pstmt, params);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    results.add(mapper.mapRow(rs, rowNum++));
-                }
-                return results;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("SQL 에러: " + e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
