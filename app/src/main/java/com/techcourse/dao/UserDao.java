@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -34,9 +35,19 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
+    public void insert(final Connection conn, final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection conn, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -44,9 +55,19 @@ public class UserDao {
         return jdbcTemplate.selectMulti(USER_ROW_MAPPER, sql);
     }
 
+    public List<User> findAll(final Connection conn) {
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.selectMulti(conn, USER_ROW_MAPPER, sql);
+    }
+
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.selectOne(USER_ROW_MAPPER, sql, id);
+    }
+
+    public User findById(final Connection conn, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.selectOne(conn, USER_ROW_MAPPER, sql, id);
     }
 
     public User findByAccount(final String account) {
