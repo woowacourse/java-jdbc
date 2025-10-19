@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -63,7 +64,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             return execute(connection, preparedStatementCallback, sql, parameters);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
