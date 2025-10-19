@@ -9,6 +9,7 @@ public class GeneralTransactionManager implements TransactionManager {
     private final DataSource dataSource;
     private final ThreadLocal<Connection> connection = new ThreadLocal<>();
     private final ThreadLocal<Integer> transactionCount = new ThreadLocal<>();
+    private final ThreadLocal<Boolean> rollbackOnly = new ThreadLocal<>();
 
     public GeneralTransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -22,6 +23,7 @@ public class GeneralTransactionManager implements TransactionManager {
                 connection1.setAutoCommit(false);
                 connection.set(connection1);
                 transactionCount.set(1);
+                rollbackOnly.set(false);
             } else {
                 // 중첩 트랜잭션인 경우 카운트 증가
                 transactionCount.set(transactionCount.get() + 1);
@@ -51,7 +53,11 @@ public class GeneralTransactionManager implements TransactionManager {
         if (count == 1) {
             // 최상위 트랜잭션에서만 실제 commit
             try {
-                conn.commit();
+                if (rollbackOnly.get()) {
+                    conn.rollback();
+                } else {
+                    conn.commit();
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to commit transaction", e);
             } finally {
@@ -66,13 +72,20 @@ public class GeneralTransactionManager implements TransactionManager {
             throw new IllegalStateException("No transaction started for this thread.");
         }
 
-        // rollback은 즉시 실행하고 트랜잭션 종료
-        try {
-            conn.rollback();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to rollback transaction", e);
-        } finally {
-            cleanupConnection(conn);
+        int count = transactionCount.get();
+        transactionCount.set(count - 1);
+        if (count == 1) {
+            // 최상위 트랜잭션에서만 실제 rollback
+            try {
+                conn.rollback();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to rollback transaction", e);
+            } finally {
+                cleanupConnection(conn);
+            }
+        } else {
+            // 중첩 트랜잭션인 경우 롤백 표시
+            rollbackOnly.set(true);
         }
     }
 
