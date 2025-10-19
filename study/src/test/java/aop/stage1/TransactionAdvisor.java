@@ -10,18 +10,26 @@ import org.springframework.aop.PointcutAdvisor;
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
+    private final Pointcut pointcut;
+    private final Advice advice;
+
+    public TransactionAdvisor(Pointcut pointcut, Advice advice) {
+        this.pointcut = pointcut;
+        this.advice = advice;
+    }
+
     @Override
     public Pointcut getPointcut() {
-        return null;
+        return pointcut;
     }
 
     @Override
     public Advice getAdvice() {
-        return null;
+        return advice;
     }
 
     @Override
-    public boolean isPerInstance() {
+    public boolean isPerInstance() { // 인스턴스별로 공유여부 -> 현재는 공유할 변수나 데이터가 없으므로 false
         return false;
     }
 }
