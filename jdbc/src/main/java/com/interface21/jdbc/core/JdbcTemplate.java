@@ -51,10 +51,27 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> actions, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setPreparedStatement(pstmt, params);
-            return actions.doInPreparedStatement(pstmt);
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                // 트랜잭션 시작
+                conn.setAutoCommit(false);
+
+                // 비즈니스 로직 처리
+                setPreparedStatement(pstmt, params);
+                T result = actions.doInPreparedStatement(pstmt);
+
+                // 성공 시 커밋
+                conn.commit();
+                return result;
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                    throw new DataAccessException(e);
+                } catch (SQLException sqlException) {
+                    log.error(e.getMessage(), sqlException);
+                    throw new DataAccessException(sqlException);
+                }
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
