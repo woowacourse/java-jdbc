@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -22,16 +23,15 @@ public class Transaction {
 
     public void begin() {
         try {
-            Connection conn = dataSource.getConnection();
+            final Connection conn = DataSourceUtils.getConnection(dataSource);
             conn.setAutoCommit(false);
-            TransactionSynchronizationManager.bindConnection(dataSource, conn);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to begin transaction", e);
         }
     }
 
     public void commit() {
-        final Connection connection = TransactionSynchronizationManager.getConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.commit();
         } catch (SQLException e) {
@@ -42,7 +42,7 @@ public class Transaction {
     }
 
     public void rollback() {
-        final Connection connection = TransactionSynchronizationManager.getConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.rollback();
         } catch (SQLException e) {
@@ -54,10 +54,6 @@ public class Transaction {
 
     private void releaseConnection(final Connection connection) {
         TransactionSynchronizationManager.unbindConnection(dataSource);
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to close connection", e);
-        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
