@@ -71,7 +71,7 @@ class Stage1Test {
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 
-    private @NotNull ProxyFactoryBean getProxyFactoryBean(UserHistoryDao userHistoryDao) {
+    private ProxyFactoryBean getProxyFactoryBean(UserHistoryDao userHistoryDao) {
         ProxyFactoryBean proxyFactoryBean = new ProxyFactoryBean();
         proxyFactoryBean.setTarget(new UserService(userDao, userHistoryDao));
         proxyFactoryBean.setProxyTargetClass(true);
