@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.jdbc.exception.JdbcException;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -19,10 +18,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -47,7 +48,6 @@ public class UserService {
     }
 
     private void transaction(final Consumer<Connection> businessLogic) {
-        DataSource dataSource = DataSourceConfig.getInstance();
         Connection conn = null;
         try {
             conn = dataSource.getConnection();
