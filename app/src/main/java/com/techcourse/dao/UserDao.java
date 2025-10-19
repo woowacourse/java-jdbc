@@ -6,7 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -26,19 +25,7 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user, final Connection connection) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        jdbcTemplate.update(
-                connection,
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail()
-        );
-    }
-
-    public void insert(final User user) { // UserServiceTest에서 userDao.insert(User)를 정상실행하기 위한 코드
+    public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(
@@ -49,11 +36,10 @@ public class UserDao {
         );
     }
 
-    public void update(final User user, final Connection connection) {
+    public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(
-                connection,
                 sql,
                 user.getAccount(),
                 user.getPassword(),
@@ -62,23 +48,23 @@ public class UserDao {
         );
     }
 
-    public List<User> findAll(final Connection connection) {
+    public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.queryForList(connection, sql, userMapper).stream()
+        return jdbcTemplate.queryForList(sql, userMapper).stream()
                 .map(result -> (User) result)
                 .toList();
     }
 
-    public User findById(final Long id, final Connection connection) {
+    public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(connection, sql, userMapper, id);
+        return jdbcTemplate.queryForObject(sql, userMapper, id);
     }
 
-    public User findByAccount(final String account, final Connection connection) {
+    public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(connection, sql, userMapper, account);
+        return jdbcTemplate.queryForObject(sql, userMapper, account);
     }
 }

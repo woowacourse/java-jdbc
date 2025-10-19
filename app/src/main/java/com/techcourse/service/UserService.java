@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.jdbc.InvalidResultSetException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserHistoryDao;
@@ -27,16 +26,15 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return transactionTemplate.returnInTransaction(
-                connection -> userDao.findById(id, connection)
+        return transactionTemplate.returnInTransaction(() ->
+                userDao.findById(id)
         );
     }
 
     public User findByAccount(final String account) {
-        return transactionTemplate.returnInTransaction(
-                connection -> {
+        return transactionTemplate.returnInTransaction(() -> {
                     try {
-                        return userDao.findByAccount(account, connection);
+                        return userDao.findByAccount(account);
                     } catch (final InvalidResultSetException e) {
                         throw new NoSuchElementException("해당하는 계정의 회원을 찾을 수 없습니다");
                     }
@@ -45,18 +43,17 @@ public class UserService {
     }
 
     public void insert(final User user) {
-        transactionTemplate.doInTransaction(
-                connection -> userDao.insert(user, connection)
+        transactionTemplate.doInTransaction(() ->
+                userDao.insert(user)
         );
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.doInTransaction(
-                connection -> {
+        transactionTemplate.doInTransaction(() -> {
                     final var user = findById(id);
                     user.changePassword(newPassword);
-                    userDao.update(user, connection);
-                    userHistoryDao.log(new UserHistory(user, createBy), connection);
+                    userDao.update(user);
+                    userHistoryDao.log(new UserHistory(user, createBy));
                 }
         );
     }

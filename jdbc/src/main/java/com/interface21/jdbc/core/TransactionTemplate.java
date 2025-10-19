@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class TransactionTemplate {
 
@@ -21,27 +24,27 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void doInTransaction(final Consumer<Connection> execution) {
-        final Connection connection = getConnection();
+    public void doInTransaction(final Runnable execution) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
 
-            execution.accept(connection);
+            execution.run();
 
             connection.commit();
         } catch (final SQLException | RuntimeException e) {
             throw rollbackAndThrow(e, connection);
         } finally {
-            close(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    public <T> T returnInTransaction(final Function<Connection, T> execution) {
+    public <T> T returnInTransaction(final Supplier<T> execution) {
         final Connection connection = getConnection();
         try {
             connection.setAutoCommit(false);
 
-            T result = execution.apply(connection);
+            T result = execution.get();
 
             connection.commit();
 
