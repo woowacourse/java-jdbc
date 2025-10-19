@@ -7,14 +7,11 @@ import java.lang.reflect.Proxy;
 
 public class TransactionProxyFactoryBean {
 
-    private Object target;
-    private DataSource dataSource;
+    private final Object target;
+    private final DataSource dataSource;
 
-    public void setTarget(Object target) {
+    public TransactionProxyFactoryBean(Object target, DataSource dataSource) {
         this.target = target;
-    }
-
-    public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 

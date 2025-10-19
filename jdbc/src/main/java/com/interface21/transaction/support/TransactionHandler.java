@@ -42,14 +42,18 @@ public class TransactionHandler implements InvocationHandler {
             return result;
         } catch (InvocationTargetException e) {
             Throwable cause = e.getTargetException();
-            try {
-                connection.rollback();
-            } catch (SQLException sqlE) {
-                cause.addSuppressed(sqlE);
-            }
+            rollback(connection, cause);
             throw cause;
         } finally {
             JdbcTemplate.clearCurrentConnection();
+        }
+    }
+
+    private void rollback(Connection connection, Throwable cause) {
+        try {
+            connection.rollback();
+        } catch (SQLException sqlE) {
+            cause.addSuppressed(sqlE);
         }
     }
 }
