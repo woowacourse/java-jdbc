@@ -78,12 +78,17 @@ public class GeneralTransactionManager implements TransactionManager {
 
     private void cleanupConnection(Connection conn) {
         try {
-            conn.setAutoCommit(true);
-            conn.close();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to close connection", e);
+            try {
+                conn.setAutoCommit(true);
+            } catch (Exception ignored) {
+            }
+            try {
+                conn.close();
+            } catch (Exception ignored) {
+            }
+        } finally {
+            connection.remove();
+            transactionCount.remove();
         }
-        connection.remove();
-        transactionCount.remove();
     }
 }
