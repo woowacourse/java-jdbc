@@ -24,14 +24,14 @@ public class Transaction {
         try {
             Connection conn = dataSource.getConnection();
             conn.setAutoCommit(false);
-            TransactionSynchronizationManager.bindConnection(conn);
+            TransactionSynchronizationManager.bindConnection(dataSource, conn);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to begin transaction", e);
         }
     }
 
     public void commit() {
-        final Connection connection = TransactionSynchronizationManager.getConnection();
+        final Connection connection = TransactionSynchronizationManager.getConnection(dataSource);
         try {
             connection.commit();
         } catch (SQLException e) {
@@ -42,7 +42,7 @@ public class Transaction {
     }
 
     public void rollback() {
-        final Connection connection = TransactionSynchronizationManager.getConnection();
+        final Connection connection = TransactionSynchronizationManager.getConnection(dataSource);
         try {
             connection.rollback();
         } catch (SQLException e) {
@@ -53,7 +53,7 @@ public class Transaction {
     }
 
     private void releaseConnection(final Connection connection) {
-        TransactionSynchronizationManager.unbindConnection();
+        TransactionSynchronizationManager.unbindConnection(dataSource);
         try {
             connection.close();
         } catch (SQLException e) {

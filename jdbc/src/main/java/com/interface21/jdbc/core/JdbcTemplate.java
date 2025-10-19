@@ -86,8 +86,8 @@ public class JdbcTemplate {
     }
 
     private Connection getConnection() throws SQLException {
-        if (TransactionSynchronizationManager.hasConnection()) {
-            return TransactionSynchronizationManager.getConnection();
+        if (TransactionSynchronizationManager.hasConnection(dataSource)) {
+            return TransactionSynchronizationManager.getConnection(dataSource);
         }
         return dataSource.getConnection();
     }
@@ -100,7 +100,7 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
             }
         }
-        if (conn != null && !TransactionSynchronizationManager.hasConnection()) {
+        if (conn != null && !TransactionSynchronizationManager.hasConnection(dataSource)) {
             try {
                 conn.close();
             } catch (SQLException e) {
