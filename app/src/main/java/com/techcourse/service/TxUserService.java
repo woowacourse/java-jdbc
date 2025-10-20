@@ -8,8 +8,11 @@ import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
 
 public class TxUserService implements UserService {
+
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(TxUserService.class);
 
     private final UserService userService;
 
@@ -49,7 +52,7 @@ public class TxUserService implements UserService {
         try {
             conn.rollback();
         } catch (final SQLException e) {
-            System.err.println("Failed to rollback transaction: " + e.getMessage());
+            log.error("Failed to rollback transaction: {}", e.getMessage());
         }
     }
 }
