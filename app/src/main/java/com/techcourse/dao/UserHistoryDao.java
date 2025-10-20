@@ -36,10 +36,6 @@ public class UserHistoryDao {
     }
 
     public void log(final Connection connection, final UserHistory userHistory) {
-        if (connection == null) {
-            log(userHistory);
-            return;
-        }
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.update(
