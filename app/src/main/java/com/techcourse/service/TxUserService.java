@@ -1,6 +1,6 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.core.Transactional;
+import com.interface21.transaction.Transactional;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {

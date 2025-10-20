@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.Transaction;
-import com.interface21.jdbc.core.TransactionHandler;
+import com.interface21.transaction.support.Transaction;
+import com.interface21.transaction.handler.TransactionHandler;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;

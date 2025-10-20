@@ -1,5 +1,7 @@
-package com.interface21.jdbc.core;
+package com.interface21.transaction.handler;
 
+import com.interface21.transaction.Transactional;
+import com.interface21.transaction.support.Transaction;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
