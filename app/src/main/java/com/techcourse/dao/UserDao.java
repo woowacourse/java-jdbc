@@ -12,6 +12,12 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> userRowMapper = (resultSet) -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -22,13 +28,6 @@ public class UserDao {
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-
-    private static final RowMapper<User> userRowMapper = (resultSet) -> new User(
-            resultSet.getLong("id"),
-            resultSet.getString("account"),
-            resultSet.getString("password"),
-            resultSet.getString("email")
-    );
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
