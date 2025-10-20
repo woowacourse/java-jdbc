@@ -12,7 +12,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class UserServiceTest {
+class UserAppliationServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -30,7 +30,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserAppliationService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -45,15 +45,17 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new UserAppliationService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new UserTxService(appUserService);
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
-
+        final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThatThrownBy(() -> userService.changePassword(1L, newPassword, createBy))
+        assertThatThrownBy(() -> userService.changePassword(1L, newPassword, createdBy))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("비번변경실패");
+                .hasMessageContaining("비밀번호 변경 실패");
 
         final var actual = userService.findById(1L);
 
