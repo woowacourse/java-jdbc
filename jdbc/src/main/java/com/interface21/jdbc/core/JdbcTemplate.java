@@ -56,7 +56,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = query(sql, rowMapper, params);
         if (results.isEmpty()) {
-            throw new DataAccessException("데이터가 존재하지 않습니다: " + results.size());
+            throw new DataAccessException("데이터가 존재하지 않습니다");
         }
         if (results.size() > 1) {
             throw new DataAccessException("한 개의 결과만을 반환해야 합니다: " + results.size());
@@ -67,7 +67,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
         List<T> results = query(connection, sql, rowMapper, params);
         if (results.isEmpty()) {
-            throw new DataAccessException("데이터가 존재하지 않습니다: " + results.size());
+            throw new DataAccessException("데이터가 존재하지 않습니다");
         }
         if (results.size() > 1) {
             throw new DataAccessException("한 개의 결과만을 반환해야 합니다: " + results.size());
