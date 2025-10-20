@@ -1,5 +1,6 @@
 package com.interface21.jdbc.datasource;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
@@ -20,6 +21,7 @@ public abstract class DataSourceUtils {
 
         try {
             connection = dataSource.getConnection();
+            checkAutoCommitStatus(connection);
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             return connection;
         } catch (SQLException ex) {
@@ -29,15 +31,21 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            final Connection unbindResource = TransactionSynchronizationManager.unbindResource(dataSource);
-            if (unbindResource != null) {
-                unbindResource.close();
-                return;
-            }
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.setAutoCommit(true);
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        }
+    }
+
+    private static void checkAutoCommitStatus(final Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                connection.setAutoCommit(false);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }
