@@ -1,13 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -20,23 +21,35 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
+        update(sql, ps -> setParameters(ps, args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, ps -> setParameters(ps, args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.getFirst();
+    }
+
+    private void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
+            preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                preparedStatement.setObject(i + 1, args[i]);
-            }
+            preparedStatementSetter.setValues(preparedStatement);
             try (final var resultSet = preparedStatement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -49,11 +62,19 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
+    private void setParameters(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
+        validateParameterCount(preparedStatement, args.length);
+        for (int i = 0; i < args.length; i++) {
+            preparedStatement.setObject(i + 1, args[i]);
         }
-        return results.getFirst();
+    }
+
+    private void validateParameterCount(final PreparedStatement preparedStatement, final int actualCount) throws SQLException {
+        final int expectedCount = preparedStatement.getParameterMetaData().getParameterCount();
+        if (expectedCount != actualCount) {
+            throw new IllegalArgumentException(
+                    String.format("SQL parameter count mismatch: expected %d but was %d", expectedCount, actualCount)
+            );
+        }
     }
 }
