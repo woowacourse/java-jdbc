@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -39,6 +40,17 @@ public class UserDao {
         final String sql = "update users set account=?, email=?, password=? where id=?";
 
         jdbcTemplate.executeUpdate(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setString(3, user.getPassword());
+            pstmt.setLong(4, user.getId());
+        });
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "update users set account=?, email=?, password=? where id=?";
+
+        jdbcTemplate.executeUpdate(connection, sql, pstmt -> {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getEmail());
             pstmt.setString(3, user.getPassword());
