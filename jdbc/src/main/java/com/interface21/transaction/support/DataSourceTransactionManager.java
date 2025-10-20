@@ -8,18 +8,19 @@ import javax.sql.DataSource;
 import lombok.Getter;
 
 @Getter
-public class Transaction {
+public class DataSourceTransactionManager implements TransactionManager {
 
     private final DataSource dataSource;
 
-    private Transaction(DataSource dataSource) {
+    private DataSourceTransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public static Transaction init(DataSource dataSource) {
-        return new Transaction(dataSource);
+    public static DataSourceTransactionManager init(DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
     }
 
+    @Override
     public void begin() {
         try {
             final Connection conn = DataSourceUtils.getConnection(dataSource);
@@ -29,6 +30,7 @@ public class Transaction {
         }
     }
 
+    @Override
     public void commit() {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
@@ -40,6 +42,7 @@ public class Transaction {
         }
     }
 
+    @Override
     public void rollback() {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {

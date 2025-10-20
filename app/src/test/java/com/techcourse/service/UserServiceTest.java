@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.transaction.support.Transaction;
+import com.interface21.transaction.support.DataSourceTransactionManager;
 import com.interface21.transaction.handler.TransactionHandler;
+import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -21,7 +22,7 @@ class UserServiceTest {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
-    private Transaction transaction;
+    private TransactionManager transactionManager;
 
     private UserDao userDao;
     private UserHistoryDao userHistoryDao;
@@ -31,7 +32,7 @@ class UserServiceTest {
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.transaction = Transaction.init(dataSource);
+        this.transactionManager = DataSourceTransactionManager.init(dataSource);
 
         this.userDao = new UserDao(jdbcTemplate);
         this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
@@ -47,7 +48,7 @@ class UserServiceTest {
         userService = (UserService) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
                 new Class[] { UserService.class },
-                new TransactionHandler(transaction, new AppUserService(userDao, userHistoryDao))
+                new TransactionHandler(transactionManager, new AppUserService(userDao, userHistoryDao))
         );
 
         final var newPassword = "qqqqq";
@@ -69,7 +70,7 @@ class UserServiceTest {
         userService = (UserService) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
                 new Class[] { UserService.class },
-                new TransactionHandler(transaction, new TxUserService(appUserService))
+                new TransactionHandler(transactionManager, new TxUserService(appUserService))
         );
 
         final var newPassword = "newPassword";

@@ -1,18 +1,19 @@
 package com.interface21.transaction.handler;
 
 import com.interface21.transaction.Transactional;
-import com.interface21.transaction.support.Transaction;
+import com.interface21.transaction.support.DataSourceTransactionManager;
+import com.interface21.transaction.support.TransactionManager;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class TransactionHandler implements InvocationHandler {
 
-    private final Transaction transaction;
+    private final TransactionManager transactionManager;
     private final Object target;
 
-    public TransactionHandler(Transaction transaction, Object target) {
-        this.transaction = transaction;
+    public TransactionHandler(TransactionManager transactionManager, Object target) {
+        this.transactionManager = transactionManager;
         this.target = target;
     }
 
@@ -26,16 +27,16 @@ public class TransactionHandler implements InvocationHandler {
     }
 
     private Object invokeWithTransaction(Method method, Object[] args) throws Throwable {
-        transaction.begin();
+        transactionManager.begin();
         try {
             final Object invoke = method.invoke(target, args);
-            transaction.commit();
+            transactionManager.commit();
             return invoke;
         } catch (InvocationTargetException e) {
-            transaction.rollback();
+            transactionManager.rollback();
             throw e.getTargetException();
         } catch (Throwable e) {
-            transaction.rollback();
+            transactionManager.rollback();
             throw e;
         }
     }
