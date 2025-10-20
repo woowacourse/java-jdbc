@@ -20,7 +20,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+    public void update(final String sql, final Object... args) {
+        update(sql, ps -> setParameters(ps, args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, ps -> setParameters(ps, args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.getFirst();
+    }
+
+    private void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
@@ -30,11 +46,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final Object... args) {
-        update(sql, ps -> setParameters(ps, args));
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
+    private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
@@ -48,18 +60,6 @@ public class JdbcTemplate {
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, rowMapper, ps -> setParameters(ps, args));
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.getFirst();
     }
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
