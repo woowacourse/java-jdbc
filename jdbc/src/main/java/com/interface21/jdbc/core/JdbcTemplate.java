@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,22 +38,6 @@ public class JdbcTemplate {
             final Object... parameters
     ) {
         return update(sql, ps -> bindParameters(ps, parameters));
-    }
-
-    public int update(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter
-    ) {
-        return executeSql(connection, sql, PreparedStatement::executeUpdate, preparedStatementSetter);
-    }
-
-    public int update(
-            final Connection connection,
-            final String sql,
-            Object... parameters
-    ) {
-        return update(connection, sql, ps -> bindParameters(ps, parameters));
     }
 
     public <T> List<T> query(
@@ -106,26 +92,7 @@ public class JdbcTemplate {
             final JdbcCallback<T> callback,
             final PreparedStatementSetter preparedStatementSetter
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            preparedStatementSetter.setValues(preparedStatement);
-
-            return callback.execute(preparedStatement);
-
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T executeSql(
-            final Connection connection,
-            final String sql,
-            final JdbcCallback<T> callback,
-            final PreparedStatementSetter preparedStatementSetter
-    ) {
+        final Connection connection = getConnection();
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
@@ -134,8 +101,11 @@ public class JdbcTemplate {
             return callback.execute(preparedStatement);
 
         } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            if (!TransactionSynchronizationManager.hasConnection(dataSource)) {
+                closeConnection(connection);
+            }
         }
     }
 
@@ -145,6 +115,25 @@ public class JdbcTemplate {
     ) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             parameterBinder.bindParameter(preparedStatement, i + 1, parameters[i]);
+        }
+    }
+
+    private void closeConnection(final Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            log.warn("connection close 실패", e);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            if (TransactionSynchronizationManager.hasConnection(dataSource)) {
+                return DataSourceUtils.getConnection(dataSource);
+            }
+            return dataSource.getConnection();
+        } catch (final SQLException e) {
+            throw new DataAccessException("connection 획득 실패", e);
         }
     }
 }
