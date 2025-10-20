@@ -5,9 +5,12 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class TransactionSynchronizationManager {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionSynchronizationManager.class);
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {
@@ -35,12 +38,9 @@ public abstract class TransactionSynchronizationManager {
     public static Connection unbindResource(DataSource key) throws SQLException {
         final Map<DataSource, Connection> dataSourceToConnection = resources.get();
         if (dataSourceToConnection == null) {
-            throw new IllegalStateException("unbind 대상 resource 부재");
+            log.warn("unbind 대상 resource 부재");
         }
         final Connection connection = dataSourceToConnection.remove(key);
-        if (connection != null) {
-            connection.setAutoCommit(true);
-        }
         return connection;
     }
 
