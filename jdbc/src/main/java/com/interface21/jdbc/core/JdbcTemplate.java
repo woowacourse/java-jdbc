@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
@@ -79,7 +80,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -90,7 +91,7 @@ public class JdbcTemplate {
             return callback.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
