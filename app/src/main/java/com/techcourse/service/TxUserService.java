@@ -46,7 +46,6 @@ public class TxUserService implements UserService {
     private <T> T processTransaction(Callable<T> transactionCallback) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
 
             final T result = transactionCallback.call();
 
@@ -62,20 +61,10 @@ public class TxUserService implements UserService {
     }
 
     private void processTransaction(Runnable transactionCallback) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            connection.setAutoCommit(false);
-
+        processTransaction(() -> {
             transactionCallback.run();
-
-            connection.commit();
-        } catch (final Exception e) {
-            rollback(connection);
-            log.warn("sql 실행 중 오류 발생: rollback 완료", e);
-            throw new DataAccessException(e);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+            return null;
+        });
     }
 
     private void rollback(final Connection connection) {
@@ -87,7 +76,6 @@ public class TxUserService implements UserService {
             log.warn("connection 없음");
         } catch (final SQLException e) {
             log.error("sql 실행 중 오류 발생: rollback 실패", e);
-            throw new DataAccessException(e);
         }
     }
 }
