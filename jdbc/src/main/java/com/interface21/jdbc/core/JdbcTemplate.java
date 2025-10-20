@@ -127,13 +127,6 @@ public class JdbcTemplate {
     }
 
     private Connection getConnection() {
-        try {
-            if (TransactionSynchronizationManager.hasConnection(dataSource)) {
-                return DataSourceUtils.getConnection(dataSource);
-            }
-            return dataSource.getConnection();
-        } catch (final SQLException e) {
-            throw new DataAccessException("connection 획득 실패", e);
-        }
+        return DataSourceUtils.getConnection(dataSource);
     }
 }
