@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,11 +16,11 @@ public class TxUserService implements UserService {
     private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final UserService userService;
-    private final DataSource dataSource;
+    private final TransactionTemplate transactionTemplate;
 
     public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
-        this.dataSource = dataSource;
+        this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
     @Override
@@ -34,27 +35,6 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-
-        try { // 트랜잭션 보장 try - catch
-            connection.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createdBy);
-            connection.commit();
-
-        } catch (Exception exceptionWhenCommit) {
-            log.error("커밋 실패. 롤백합니다.", exceptionWhenCommit);
-
-            try { // 롤백 try - catch
-                connection.rollback();
-            } catch (SQLException exceptionWhenRollback) {
-                log.error("롤백 실패", exceptionWhenRollback);
-            }
-
-            throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.", exceptionWhenCommit);
-
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
+        transactionTemplate.execute(() -> userService.changePassword(id, newPassword, createdBy));
     }
 }
