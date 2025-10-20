@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.Transaction;
+import com.interface21.jdbc.core.TransactionHandler;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.lang.reflect.Proxy;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +21,7 @@ class UserServiceTest {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
+    private Transaction transaction;
 
     private UserDao userDao;
     private UserHistoryDao userHistoryDao;
@@ -27,6 +31,7 @@ class UserServiceTest {
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.transaction = Transaction.init(dataSource);
 
         this.userDao = new UserDao(jdbcTemplate);
         this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
@@ -39,6 +44,12 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
+        userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[] { UserService.class },
+                new TransactionHandler(transaction, new AppUserService(userDao, userHistoryDao))
+        );
+
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -55,7 +66,11 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService, dataSource);
+        userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[] { UserService.class },
+                new TransactionHandler(transaction, new TxUserService(appUserService))
+        );
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
