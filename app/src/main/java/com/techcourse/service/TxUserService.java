@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
@@ -35,8 +36,9 @@ public class TxUserService implements UserService {
             conn.setAutoCommit(false);
             userService.changePassword(id, newPassword, createBy);
             conn.commit();
-        } catch (final SQLException e) {
+        } catch (final Exception e) {
             rollback(conn);
+            throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
