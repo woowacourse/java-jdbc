@@ -26,6 +26,7 @@ public class DataSourceTransactionManager implements TransactionManager {
             final Connection conn = DataSourceUtils.getConnection(dataSource);
             conn.setAutoCommit(false);
         } catch (SQLException e) {
+            releaseConnection();
             throw new DataAccessException("Failed to begin transaction", e);
         }
     }
