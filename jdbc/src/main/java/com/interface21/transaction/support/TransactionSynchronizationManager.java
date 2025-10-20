@@ -39,8 +39,15 @@ public abstract class TransactionSynchronizationManager {
         final Map<DataSource, Connection> dataSourceToConnection = resources.get();
         if (dataSourceToConnection == null) {
             log.warn("unbind 대상 resource 부재");
+            return null;
         }
+
         final Connection connection = dataSourceToConnection.remove(key);
+
+        if (dataSourceToConnection.isEmpty()) {
+            resources.remove();
+        }
+
         return connection;
     }
 
