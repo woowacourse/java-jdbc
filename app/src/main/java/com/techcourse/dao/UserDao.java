@@ -47,17 +47,6 @@ public class UserDao {
         });
     }
 
-    public void update(final Connection connection, final User user) {
-        final String sql = "update users set account=?, email=?, password=? where id=?";
-
-        jdbcTemplate.executeUpdate(connection, sql, pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getEmail());
-            pstmt.setString(3, user.getPassword());
-            pstmt.setLong(4, user.getId());
-        });
-    }
-
     public List<User> findAll() {
         final var sql = "select id, account, email, password from users";
 
