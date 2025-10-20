@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.techcourse.NotFoundException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -16,7 +17,8 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     public void insert(final User user) {
