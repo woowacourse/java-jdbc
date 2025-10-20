@@ -7,12 +7,8 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -47,7 +43,6 @@ public class UserService {
                 try {
                     connection.rollback();
                 } catch (SQLException ex) {
-                    log.error("Rollback failed", ex);
                 }
             }
             throw new DataAccessException(e);
@@ -56,7 +51,6 @@ public class UserService {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    log.error("Connection close failed", e);
                 }
             }
         }
