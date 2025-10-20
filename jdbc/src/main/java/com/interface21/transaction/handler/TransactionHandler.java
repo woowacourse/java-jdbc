@@ -1,7 +1,6 @@
 package com.interface21.transaction.handler;
 
 import com.interface21.transaction.Transactional;
-import com.interface21.transaction.support.DataSourceTransactionManager;
 import com.interface21.transaction.support.TransactionManager;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;

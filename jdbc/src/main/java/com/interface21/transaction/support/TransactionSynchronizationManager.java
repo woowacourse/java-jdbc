@@ -1,9 +1,9 @@
 package com.interface21.transaction.support;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
