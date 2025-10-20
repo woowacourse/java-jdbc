@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -36,7 +37,7 @@ public class Transaction {
         } catch (SQLException e) {
             throw new DataAccessException("Failed to commit transaction", e);
         } finally {
-            releaseConnection(connection);
+            releaseConnection();
         }
     }
 
@@ -47,11 +48,12 @@ public class Transaction {
         } catch (SQLException e) {
             throw new DataAccessException("Failed to rollback transaction", e);
         } finally {
-            releaseConnection(connection);
+            releaseConnection();
         }
     }
 
-    private void releaseConnection(final Connection connection) {
+    private void releaseConnection() {
+        final Connection connection = TransactionSynchronizationManager.unbindConnection(dataSource);
         DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
