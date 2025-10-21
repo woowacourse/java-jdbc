@@ -25,6 +25,67 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public void update(Connection connection, String sql, Object... params) {
+        execute(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, preStmt -> {
+            try (ResultSet rs = preStmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
+            }
+        }, params);
+    }
+
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(connection, sql, preStmt -> {
+            try (ResultSet rs = preStmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
+            }
+        }, params);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = query(sql, rowMapper, params);
+        if (results.isEmpty()) {
+            throw new DataAccessException("데이터가 존재하지 않습니다");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("한 개의 결과만을 반환해야 합니다: " + results.size());
+        }
+        return results.getFirst();
+    }
+
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = query(connection, sql, rowMapper, params);
+        if (results.isEmpty()) {
+            throw new DataAccessException("데이터가 존재하지 않습니다");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("한 개의 결과만을 반환해야 합니다: " + results.size());
+        }
+        return results.getFirst();
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> callback, Object... params) {
+        try (PreparedStatement preStmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParameters(params, preStmt);
+            return callback.doInPreparedStatement(preStmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preStmt = connection.prepareStatement(sql)
@@ -42,28 +103,5 @@ public class JdbcTemplate {
         for (int i = 0; i < params.length; i++) {
             preStmt.setObject(i + 1, params[i]);
         }
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, preStmt -> {
-            try (ResultSet rs = preStmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        }, params);
-    }
-
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
-        if (results.isEmpty()) {
-            throw new DataAccessException("데이터가 존재하지 않습니다: " + results.size());
-        }
-        if (results.size() > 1) {
-            throw new DataAccessException("한 개의 결과만을 반환해야 합니다: " + results.size());
-        }
-        return results.getFirst();
     }
 }
