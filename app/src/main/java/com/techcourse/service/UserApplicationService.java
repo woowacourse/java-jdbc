@@ -7,7 +7,7 @@ import com.techcourse.domain.UserHistory;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class UserAppliationService implements UserService {
+public class UserApplicationService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
