@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.InvalidResultSetException;
 import com.interface21.jdbc.QueryResultMapper;
 import com.interface21.jdbc.SqlExecution;
@@ -21,12 +21,34 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
+    public void update(
+            final Connection connection,
+            final String sql,
+            final Object... params
+    ) {
         execute(
+                connection,
+                PreparedStatement::executeUpdate,
+                sql,
+                params
+        );
+    }
+
+    public void update(  // UserServiceTest에서 userDao.insert(User)를 정상실행하기 위한 코드
+            final String sql,
+            final Object... params
+    ) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+        } catch (final SQLException ignored) {}
+
+        execute(
+                connection,
                 PreparedStatement::executeUpdate,
                 sql,
                 params
@@ -34,11 +56,13 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(
+            final Connection connection,
             final String sql,
             final QueryResultMapper<T> mapper,
             final Object... params
     ) {
         return execute(
+                connection,
                 (pstmt) -> {
                     return mapQueryResult((resultSet -> {
                         if (resultSet.next()) {
@@ -53,11 +77,13 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(
+            final Connection connection,
             final String sql,
             final QueryResultMapper<T> mapper,
             final Object... params
     ) {
         return execute(
+                connection,
                 (pstmt) -> {
                     return mapQueryResult((resultSet -> {
                         List<T> results = new ArrayList<>();
@@ -73,13 +99,12 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(
+            final Connection connection,
             final SqlExecution<T> execution,
             final String sql,
             final Object ... params
     ) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParameters(params, pstmt);
@@ -87,9 +112,8 @@ public class JdbcTemplate {
             return execution.apply(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
-        }
-        catch (final IllegalStateException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        } catch (final IllegalStateException e) {
             log.error(e.getMessage(), e);
             throw new InvalidResultSetException(e.getMessage(), e);
         }
