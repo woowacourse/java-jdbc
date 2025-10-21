@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,7 +37,7 @@ public class JdbcTemplate {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("query 실패 {}", sql, e);
-            throw new JdbcFailException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -47,7 +48,7 @@ public class JdbcTemplate {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error("query 실패 {}", sql, e);
-            throw new JdbcFailException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -88,10 +89,10 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = queryForObjects(sql, rowMapper, args);
         if (results.isEmpty()) {
-            throw new JdbcFailException("일치하는 결과가 없습니다. ");
+            throw new DataAccessException("일치하는 결과가 없습니다. ");
         }
         if (results.size() > 1) {
-            throw new JdbcFailException("일치하는 결과가 1을 초과합니다.");
+            throw new DataAccessException("일치하는 결과가 1을 초과합니다.");
         }
         return results.get(0);
     }
@@ -99,10 +100,10 @@ public class JdbcTemplate {
     public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = queryForObjects(connection, sql, rowMapper, args);
         if (results.isEmpty()) {
-            throw new JdbcFailException("일치하는 결과가 없습니다. ");
+            throw new DataAccessException("일치하는 결과가 없습니다. ");
         }
         if (results.size() > 1) {
-            throw new JdbcFailException("일치하는 결과가 1을 초과합니다.");
+            throw new DataAccessException("일치하는 결과가 1을 초과합니다.");
         }
         return results.get(0);
     }
