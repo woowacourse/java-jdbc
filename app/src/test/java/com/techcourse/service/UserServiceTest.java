@@ -11,7 +11,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
@@ -43,7 +42,6 @@ class UserServiceTest {
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
-    @Disabled
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체

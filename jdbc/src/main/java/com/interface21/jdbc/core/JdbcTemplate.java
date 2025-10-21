@@ -38,9 +38,34 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(Connection conn, String sql, Object... parameters) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            bindPreparedStatement(pstmt, parameters);
+            executeUpdateQuery(pstmt);
+        } catch (SQLException e) {
+            log.error("SQL 예외 발생: {}", e.getMessage(), e);
+            throw new DataAccessException("SQL 예외 발생", e);
+        }
+    }
+
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            bindPreparedStatement(pstmt, parameters);
+            List<T> result = executeQuery(pstmt, rowMapper);
+            validateResultCountIsOne(result.size());
+            return result.getFirst();
+        } catch (SQLException e) {
+            log.error("SQL 예외 발생: {}", e.getMessage(), e);
+            throw new DataAccessException("SQL 예외 발생", e);
+        }
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper,
+            Object... parameters) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bindPreparedStatement(pstmt, parameters);
             List<T> result = executeQuery(pstmt, rowMapper);
@@ -64,6 +89,17 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper,
+            Object... parameters) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            bindPreparedStatement(pstmt, parameters);
+            return executeQuery(pstmt, rowMapper);
+        } catch (SQLException e) {
+            log.error("SQL 예외 발생: {}", e.getMessage(), e);
+            throw new DataAccessException("SQL 예외 발생", e);
+        }
+    }
 
     private Connection getConnection() {
         try {
