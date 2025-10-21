@@ -14,12 +14,6 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-        this.dataSource = null;
-    }
-
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
@@ -35,20 +29,6 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        if (dataSource == null) {
-            // 기존 방식 (트랜잭션 없음) - 호환성을 위해 유지
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(user);
-            userHistoryDao.log(new UserHistory(user, createBy));
-            return;
-        }
-
-        // 트랜잭션 적용
-        applyTransaction(id, newPassword, createBy);
-    }
-
-    private void applyTransaction(long id, String newPassword, String createBy) {
         try (final var connection = dataSource.getConnection()) {
             // 트랜잭션 시작
             connection.setAutoCommit(false);
