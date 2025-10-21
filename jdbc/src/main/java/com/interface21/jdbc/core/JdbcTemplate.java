@@ -22,9 +22,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> mapper,
+                                final Object... args) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setPreparedStatement(pstmt, args);
             final ResultSet rs = pstmt.executeQuery();
@@ -42,9 +42,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> mapper, final Object... args) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatement(pstmt, args);
 
             final ResultSet rs = pstmt.executeQuery();
@@ -59,9 +58,8 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void update(final Connection conn, final String sql, final Object... args) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatement(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -83,9 +81,5 @@ public class JdbcTemplate {
         } catch (SQLException ex) {
             throw new DataAccessException("SQL 파라미터 설정 실패: " + ex.getMessage(), ex);
         }
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
     }
 }
