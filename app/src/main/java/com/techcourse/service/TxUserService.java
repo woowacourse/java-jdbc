@@ -1,6 +1,6 @@
 package com.techcourse.service;
 
-import com.interface21.transaction.core.TransactionTemplate;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {

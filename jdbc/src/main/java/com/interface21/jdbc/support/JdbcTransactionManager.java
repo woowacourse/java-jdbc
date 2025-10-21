@@ -1,6 +1,6 @@
-package com.interface21.jdbc.transaction;
+package com.interface21.jdbc.support;
 
-import com.interface21.transaction.core.AbstractTransactionManager;
+import com.interface21.transaction.support.AbstractTransactionManager;
 import javax.sql.DataSource;
 
 public class JdbcTransactionManager extends AbstractTransactionManager {

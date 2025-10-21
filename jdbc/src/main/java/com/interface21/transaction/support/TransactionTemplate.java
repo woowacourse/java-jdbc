@@ -1,6 +1,7 @@
-package com.interface21.transaction.core;
+package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.PlatformTransactionManager;
 
 public class TransactionTemplate {
 

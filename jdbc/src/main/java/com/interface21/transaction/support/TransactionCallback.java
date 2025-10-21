@@ -1,4 +1,4 @@
-package com.interface21.transaction.core;
+package com.interface21.transaction.support;
 
 import javax.annotation.Nullable;
 
