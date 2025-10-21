@@ -32,11 +32,20 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final ThreadLocal<Connection> currentConnection = new ThreadLocal<>();
 
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public static void setCurrentConnection(Connection connection) {
+        currentConnection.set(connection);
+    }
+
+    public static void clearCurrentConnection() {
+        currentConnection.remove();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
@@ -119,12 +128,36 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action) throws DataAccessException {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            return action.doInPreparedStatement(pstmt);
+        Connection connection = null;
+        boolean isExternalConnection = isTransactionActive();
+
+        try {
+            connection = getConnectionForTransaction();
+            try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                return action.doInPreparedStatement(pstmt);
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (!isExternalConnection && connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    log.error("Failed to close connection", e);
+                }
+            }
         }
+    }
+
+    private Connection getConnectionForTransaction() throws SQLException {
+        Connection conn = currentConnection.get();
+        if (conn != null) {
+            return conn;
+        }
+        return dataSource.getConnection();
+    }
+
+    private boolean isTransactionActive() {
+        return currentConnection.get() != null;
     }
 }
