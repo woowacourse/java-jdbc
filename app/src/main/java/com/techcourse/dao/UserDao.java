@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,16 +14,22 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public Long insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.updateAndReturnKey(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection conn, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -38,6 +45,17 @@ public class UserDao {
         final var sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(
+                sql,
+                rs -> new User(rs.getLong("id"), rs.getString("account"), rs.getString("password"), rs.getString("email")),
+                id
+        );
+    }
+
+    public Optional<User> findById(final Connection conn, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryForObject(
+                conn,
                 sql,
                 rs -> new User(rs.getLong("id"), rs.getString("account"), rs.getString("password"), rs.getString("email")),
                 id

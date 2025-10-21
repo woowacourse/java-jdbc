@@ -5,8 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
@@ -23,7 +27,9 @@ class JdbcTemplateTest {
         jdbcDatasource.setUser("sa");
         jdbcDatasource.setPassword("");
 
-        jdbcTemplate = new JdbcTemplate(jdbcDatasource);
+        this.dataSource = jdbcDatasource;
+        this.jdbcTemplate = new JdbcTemplate(jdbcDatasource);
+
         createDefaultTable(jdbcTemplate);
         insertDefaultValue(jdbcTemplate);
     }
@@ -47,12 +53,12 @@ class JdbcTemplateTest {
     @Test
     void testInsert() {
         final String sql = "insert into users (id, name) values (?, ?)";
-        jdbcTemplate.update(sql, 2, "듀2");
+        final Long returnKey = jdbcTemplate.updateAndReturnKey(sql, 2, "듀2");
 
-        final User user = findUserById(2L).get();
+        final User user = findUserById(returnKey).get();
 
         assertAll(
-                () -> assertThat(user.getId()).isEqualTo(2),
+                () -> assertThat(user.getId()).isEqualTo(returnKey),
                 () -> assertThat(user.getName()).isEqualTo("듀2")
         );
     }
@@ -71,6 +77,26 @@ class JdbcTemplateTest {
     }
 
     @Test
+   void testUpdate_withConnection() throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            final String sql = "insert into users (id, name) values (?, ?)";
+            jdbcTemplate.update(connection, sql, 2, "트랜잭션");
+
+            final Optional<User> userBeforeCommit = findUserById(2L);
+            assertThat(userBeforeCommit).isEmpty();
+            connection.commit();
+
+            final Optional<User> userAfterCommit = findUserById(2L);
+            assertAll(
+                    () -> assertThat(userAfterCommit).isNotEmpty(),
+                    () -> assertThat(userAfterCommit.get().getName()).isEqualTo("트랜잭션")
+            );
+        }
+   }
+
+    @Test
     void testQueryForObject() {
         final User user = findUserById(1L).get();
 
@@ -79,6 +105,14 @@ class JdbcTemplateTest {
                 () -> assertThat(user.getId()).isEqualTo(1),
                 () -> assertThat(user.getName()).isEqualTo("듀이")
         );
+    }
+
+    @Test
+    void testQueryForObject_isEmpty() {
+        final Long notExistsId = 999L;
+        final Optional<User> user = findUserById(notExistsId);
+
+        assertThat(user).isEmpty();
     }
 
     private Optional<User> findUserById(final Long id) {
@@ -99,6 +133,18 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void testQueryForList_isEmpty() {
+        jdbcTemplate.update("delete from users");
+
+        final String sql = "select * from users";
+        final List<User> users = jdbcTemplate.query(sql,
+                rs -> new User(rs.getLong("id"), rs.getString("name"))
+        );
+
+        assertThat(users).hasSize(0);
+    }
+
+    @Test
     void testException_notExistsTable() {
         final String invalidSql = "insert into not_exists_table (id) values (?)";
 
@@ -114,6 +160,22 @@ class JdbcTemplateTest {
         assertThatThrownBy(() ->
                 jdbcTemplate.update(sql, 1)
         ).isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void testException_queryForObject_resultIsGreaterThanOne() {
+        final String duplicateName = "듀이";
+        final String insertSql = "insert into users (id, name) values (?, ?)";
+        jdbcTemplate.updateAndReturnKey(insertSql, 2, duplicateName);
+
+        final String selectSql = "select * from users where name = ?";
+
+        assertThatThrownBy(() ->
+                jdbcTemplate.queryForObject(
+                        selectSql,
+                        rs -> new User(rs.getLong("id"), rs.getString("name")),
+                        duplicateName
+        )).isInstanceOf(DataAccessException.class);
     }
 
     private static class User {
