@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,12 +25,28 @@ public class JdbcTemplate {
         update(sql, ps -> setParameters(ps, args));
     }
 
+    public void update(final Connection connection, final String sql, final Object... args) {
+        update(connection, sql, ps -> setParameters(ps, args));
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, ps -> setParameters(ps, args));
     }
 
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(connection, sql, rowMapper, ps -> setParameters(ps, args));
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.getFirst();
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(connection, sql, rowMapper, args);
         if (results.isEmpty()) {
             return null;
         }
@@ -46,19 +63,40 @@ public class JdbcTemplate {
         }
     }
 
+    private void update(final Connection connection, final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            preparedStatement.executeUpdate();
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
     private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
         try (final var connection = dataSource.getConnection();
              final var preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            try (final var resultSet = preparedStatement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
+            return executeQuery(preparedStatement, rowMapper, preparedStatementSetter);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
+            return executeQuery(preparedStatement, rowMapper, preparedStatementSetter);
+        } catch (final SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> executeQuery(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) throws SQLException {
+        preparedStatementSetter.setValues(preparedStatement);
+        try (final var resultSet = preparedStatement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
         }
     }
 
