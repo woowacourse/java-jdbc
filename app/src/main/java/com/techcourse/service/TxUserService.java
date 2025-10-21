@@ -9,10 +9,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TxUserService implements UserService {
 
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(TxUserService.class);
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final UserService userService;
 
