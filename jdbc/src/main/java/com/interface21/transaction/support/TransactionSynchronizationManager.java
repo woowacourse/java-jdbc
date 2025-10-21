@@ -10,11 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.NONE)
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
-
-    static {
-        resources.set(new HashMap<>());
-    }
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
     public static boolean hasResource(final DataSource dataSource) {
         return resources.get().containsKey(dataSource);
@@ -26,7 +22,7 @@ public abstract class TransactionSynchronizationManager {
 
     public static void bindResource(final DataSource key, final Connection value) {
         try {
-            getResource(key).setAutoCommit(false);
+            value.setAutoCommit(false);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -35,14 +31,15 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection unbindResource(final DataSource key) {
+        final var connection = resources.get().remove(key);
+
         try {
-            final var connection = getResource(key);
             connection.setAutoCommit(true);
             connection.close();
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
 
-        return resources.get().remove(key);
+        return connection;
     }
 }
