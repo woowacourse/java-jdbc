@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.bind.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -25,12 +26,21 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private <R> R execute(Function<Connection, R> executor, Connection connection) {
-        return executor.apply(connection);
+    private <R> R execute(Function<Connection, R> executor) {
+        boolean hasConnection = DataSourceUtils.hasConnectionInThread(dataSource);
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            return executor.apply(connection);
+        } finally {
+            if (!hasConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+        }
     }
 
-    public int update(final Connection connection, final String sql, final Object... params) {
-        return execute(conn -> {
+    public int update(String sql, Object... params) {
+        return execute(connection -> {
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 log.debug("query : {}", sql);
 
@@ -40,24 +50,11 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
             }
-        }, connection);
+        });
     }
 
-    public int update(String sql, Object... params) {
-        try (Connection connection = dataSource.getConnection()) {
-           return update(connection, sql, params);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> List<T> find(final Connection connection,
-                            final String sql,
-                            final RowMapper<T> rowMapper,
-                            final Object... params
-    ) {
-        return execute(conn -> {
+    public <T> List<T> find(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(connection -> {
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 setParameters(pstmt, params);
 
@@ -75,24 +72,11 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
             }
-        }, connection);
+        });
     }
 
-    public <T> List<T> find(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (Connection connection = dataSource.getConnection()) {
-            return find(connection, sql, rowMapper, params);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public <T> T findOne(final Connection connection,
-                         final String sql,
-                         final RowMapper<T> rowMapper,
-                         final Object... params
-    ) {
-        return execute(conn -> {
+    public <T> T findOne(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(connection -> {
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 setParameters(pstmt, params);
 
@@ -109,16 +93,7 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
                 throw new DataAccessException(e);
             }
-        }, connection);
-    }
-
-    public <T> T findOne(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        try (Connection connection = dataSource.getConnection()) {
-            return findOne(connection, sql, rowMapper, params);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
