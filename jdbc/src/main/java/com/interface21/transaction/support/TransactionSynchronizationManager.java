@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
 
-public final class TransactionSynchronizationManager{
+public final class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
