@@ -1,6 +1,5 @@
 package com.interface21.transaction.support;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.Transactional;
 import java.lang.reflect.InvocationHandler;
@@ -9,8 +8,13 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionHandler implements InvocationHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionHandler.class);
+
 
     private final DataSource dataSource;
     private final Object target;
@@ -42,10 +46,15 @@ public class TransactionHandler implements InvocationHandler {
 
     }
 
-    private void finalizeTransaction(boolean originalAutoCommit, Connection connection) throws SQLException {
-        if (originalAutoCommit) {
-            connection.setAutoCommit(true);
+    private void finalizeTransaction(boolean originalAutoCommit, Connection connection) {
+        try {
+            if (originalAutoCommit) {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            log.error("Failed to reset auto-commit to original value.", e);
         }
+
         TransactionSynchronizationManager.unbindResource(dataSource);
         DataSourceUtils.releaseConnection(connection, dataSource);
     }
