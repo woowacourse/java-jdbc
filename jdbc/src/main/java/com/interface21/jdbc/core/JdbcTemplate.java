@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,20 +33,11 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-    private static final ThreadLocal<Connection> currentConnection = new ThreadLocal<>();
 
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public static void setCurrentConnection(Connection connection) {
-        currentConnection.set(connection);
-    }
-
-    public static void clearCurrentConnection() {
-        currentConnection.remove();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) throws DataAccessException {
@@ -128,36 +120,14 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action) throws DataAccessException {
-        Connection connection = null;
-        boolean isExternalConnection = isTransactionActive();
+        Connection con = DataSourceUtils.getConnection(dataSource);
 
-        try {
-            connection = getConnectionForTransaction();
-            try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-                return action.doInPreparedStatement(pstmt);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException ex) {
+            throw new DataAccessException(ex);
         } finally {
-            if (!isExternalConnection && connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    log.error("Failed to close connection", e);
-                }
-            }
+            DataSourceUtils.releaseConnection(con, dataSource);
         }
-    }
-
-    private Connection getConnectionForTransaction() throws SQLException {
-        Connection conn = currentConnection.get();
-        if (conn != null) {
-            return conn;
-        }
-        return dataSource.getConnection();
-    }
-
-    private boolean isTransactionActive() {
-        return currentConnection.get() != null;
     }
 }
