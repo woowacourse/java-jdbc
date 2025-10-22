@@ -13,14 +13,31 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection getResource(DataSource key) {
-        return resources.get().get(key);
+        Map<DataSource, Connection> connections = resources.get();
+        if (connections == null) {
+            return null;
+        }
+        return connections.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
+        Map<DataSource, Connection> connections = resources.get();
+        if (connections == null) {
+            connections = new HashMap<>();
+            resources.set(connections);
+        }
+        connections.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        return resources.get().remove(key);
+        Map<DataSource, Connection> connections = resources.get();
+        if (connections == null) {
+            return null;
+        }
+        Connection removedConnection = connections.remove(key);
+        if (connections.isEmpty()) {
+            resources.remove();
+        }
+        return removedConnection;
     }
 }
