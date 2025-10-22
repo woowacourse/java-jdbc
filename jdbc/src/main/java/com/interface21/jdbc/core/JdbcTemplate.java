@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,17 +26,17 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter pstmtSetter) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final var pstmt = conn.prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
-
             log.debug("query : {}", sql);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -44,9 +45,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter, RowMapper<T> rowMapper) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql);
-        ) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final var pstmt = conn.prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
 
             log.debug("query : {}", sql);
@@ -61,23 +61,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    public void update(Connection connection, String sql, Object... args) {
-        update(connection, sql, new ArgumentPreparedStatementSetter(args));
-    }
-
-    public void update(Connection conn, String sql, PreparedStatementSetter pstmtSetter) {
-        try (final var pstmt = conn.prepareStatement(sql)) {
-            pstmtSetter.setValues(pstmt);
-
-            log.debug("query : {}", sql);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
