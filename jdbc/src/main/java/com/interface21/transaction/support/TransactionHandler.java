@@ -36,10 +36,14 @@ public class TransactionHandler implements InvocationHandler {
         boolean originalAutoCommit = connection.getAutoCommit();
 
         try {
-            connection.setAutoCommit(false);
+            if (originalAutoCommit) {
+                connection.setAutoCommit(false);
+            }
             return getObject(args, method, connection);
         } finally {
-            connection.setAutoCommit(originalAutoCommit);
+            if (originalAutoCommit) {
+                connection.setAutoCommit(true);
+            }
             TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
