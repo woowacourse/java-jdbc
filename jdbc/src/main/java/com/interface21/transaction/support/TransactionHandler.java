@@ -29,10 +29,6 @@ public class TransactionHandler implements InvocationHandler {
         }
 
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        if (connection == null) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection");
-        }
-
         boolean originalAutoCommit = connection.getAutoCommit();
 
         try {
@@ -41,13 +37,17 @@ public class TransactionHandler implements InvocationHandler {
             }
             return getObject(args, method, connection);
         } finally {
-            if (originalAutoCommit) {
-                connection.setAutoCommit(true);
-            }
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            finalizeTransaction(originalAutoCommit, connection);
         }
 
+    }
+
+    private void finalizeTransaction(boolean originalAutoCommit, Connection connection) throws SQLException {
+        if (originalAutoCommit) {
+            connection.setAutoCommit(true);
+        }
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     private Object getObject(Object[] args, Method targetMethod, Connection connection) throws Throwable {
