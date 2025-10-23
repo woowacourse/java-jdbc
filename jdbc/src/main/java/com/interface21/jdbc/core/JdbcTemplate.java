@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.CustomizedDataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,7 +44,7 @@ public class JdbcTemplate {
             conn = DataSourceUtils.getConnection(dataSource);
             return execute(conn, sql, setter, action);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
