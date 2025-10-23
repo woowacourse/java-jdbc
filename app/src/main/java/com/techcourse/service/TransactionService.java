@@ -21,6 +21,7 @@ public class TransactionService {
             connection.setAutoCommit(false);
             return new Transaction(dataSource, connection);
         } catch (SQLException e) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             throw new CustomizedDataAccessException("connection failed", e);
         }
     }
