@@ -34,14 +34,14 @@ public class UserService {
             try {
                 connection.setAutoCommit(false);
 
-                userDao.update(connection,user);
+                userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 connection.commit();
-            } catch (DataAccessException daoException) {
+            } catch (RuntimeException exception) {
                 try {
                     connection.rollback();
-                    throw daoException;
+                    throw exception;
                 } catch (SQLException rollbackException) {
                     throw new DataAccessException(rollbackException.getMessage());
                 }
