@@ -1,5 +1,9 @@
 package transaction.stage2;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,12 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class FirstUserService {
@@ -24,7 +22,7 @@ public class FirstUserService {
 
     @Autowired
     public FirstUserService(final UserRepository userRepository,
-                            final SecondUserService secondUserService) {
+            final SecondUserService secondUserService) {
         this.userRepository = userRepository;
         this.secondUserService = secondUserService;
     }
@@ -35,7 +33,7 @@ public class FirstUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithRequired() {
+    public List<String> saveFirstTransactionWithRequired() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -46,7 +44,7 @@ public class FirstUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithRequiredNew() {
+    public List<String> saveFirstTransactionWithRequiredNew() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -57,7 +55,7 @@ public class FirstUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveAndExceptionWithRequiredNew() {
+    public List<String> saveAndExceptionWithRequiredNew() {
         secondUserService.saveSecondTransactionWithRequiresNew();
 
         userRepository.save(User.createTest());
@@ -66,8 +64,8 @@ public class FirstUserService {
         throw new RuntimeException();
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithSupports() {
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<String> saveFirstTransactionWithSupports() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -77,8 +75,8 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-//    @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithMandatory() {
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<String> saveFirstTransactionWithMandatory() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -89,7 +87,7 @@ public class FirstUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithNotSupported() {
+    public List<String> saveFirstTransactionWithNotSupported() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -100,7 +98,7 @@ public class FirstUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithNested() {
+    public List<String> saveFirstTransactionWithNested() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -111,7 +109,7 @@ public class FirstUserService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public Set<String> saveFirstTransactionWithNever() {
+    public List<String> saveFirstTransactionWithNever() {
         final var firstTransactionName = TransactionSynchronizationManager.getCurrentTransactionName();
         userRepository.save(User.createTest());
         logActualTransactionActive();
@@ -121,10 +119,11 @@ public class FirstUserService {
         return of(firstTransactionName, secondTransactionName);
     }
 
-    private Set<String> of(final String firstTransactionName, final String secondTransactionName) {
+    private List<String> of(final String firstTransactionName, final String secondTransactionName) {
         return Stream.of(firstTransactionName, secondTransactionName)
                 .filter(transactionName -> !Objects.isNull(transactionName))
-                .collect(Collectors.toSet());
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private void logActualTransactionActive() {
