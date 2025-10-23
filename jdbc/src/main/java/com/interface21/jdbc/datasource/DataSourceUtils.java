@@ -28,6 +28,15 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return;
+        }
+
+        Connection currentConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == currentConnection) {
+            return;
+        }
+
         try {
             connection.close();
         } catch (SQLException ex) {

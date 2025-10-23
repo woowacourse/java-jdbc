@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.jdbc.CustomizedDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -15,9 +17,9 @@ public class TransactionService {
 
     public Transaction begin() {
         try {
-            Connection connection = dataSource.getConnection();
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            return new Transaction(connection);
+            return new Transaction(dataSource, connection);
         } catch (SQLException e) {
             throw new CustomizedDataAccessException("connection failed", e);
         }
@@ -25,15 +27,13 @@ public class TransactionService {
 
     public static class Transaction implements AutoCloseable {
 
+        private final DataSource dataSource;
         private final Connection connection;
         private boolean isComplete = false;
 
-        public Transaction(Connection connection) {
+        public Transaction(DataSource dataSource, Connection connection) {
+            this.dataSource = dataSource;
             this.connection = connection;
-        }
-
-        public Connection getConnection() {
-            return connection;
         }
 
         public void commit() {
@@ -61,11 +61,7 @@ public class TransactionService {
                     rollback();
                 }
             } finally {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException("close connection fail", e);
-                }
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         }
     }

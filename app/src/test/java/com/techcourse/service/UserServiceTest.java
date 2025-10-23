@@ -31,7 +31,7 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         try(Transaction transaction = transactionService.begin()) {
-            userDao.insert(transaction.getConnection(), user);
+            userDao.insert(user);
             transaction.commit();
         }
     }
