@@ -25,6 +25,10 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public void update(Connection conn, String sql, Object... params) {
+        execute(conn, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> T query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql,
                 pstmt -> executeQuery(sql,
@@ -34,25 +38,37 @@ public class JdbcTemplate {
                                 return rowMapper.mapRow(rs);
                             }
                             return null;
-                }), params);
+                        }), params);
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql,
                 pstmt -> executeQuery(sql,
-                            pstmt,
-                            rs -> {
-                                List<T> results = new ArrayList<>();
-                                while (rs.next()) {
-                                    results.add(rowMapper.mapRow(rs));
-                                }
-                                return results;
-                }), params);
+                        pstmt,
+                        rs -> {
+                            List<T> results = new ArrayList<>();
+                            while (rs.next()) {
+                                results.add(rowMapper.mapRow(rs));
+                            }
+                            return results;
+                        }), params);
+    }
+
+    public Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> actions, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, actions, params);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection conn, String sql, PreparedStatementCallback<T> actions, Object... params) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatement(pstmt, params);
             return actions.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
