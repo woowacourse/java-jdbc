@@ -3,7 +3,7 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.TransactionSynchronizationManager;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -23,7 +23,7 @@ class UserDaoTest {
         DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
         jdbcTemplate = new JdbcTemplate(dataSource);
-        TransactionSynchronizationManager.setConnection(dataSource.getConnection());
+        TransactionSynchronizationManager.bindResource(dataSource, dataSource.getConnection());
         userDao = new UserDao(jdbcTemplate);
     }
 

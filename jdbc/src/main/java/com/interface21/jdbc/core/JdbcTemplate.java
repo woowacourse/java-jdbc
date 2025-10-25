@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.EmptyResultDataAccessException;
 import com.interface21.jdbc.IncorrectResultSizeException;
 import com.interface21.jdbc.rowmapper.RowMapper;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -70,7 +71,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, Callback<T> callback, Object... parameters) {
-        Connection conn = TransactionSynchronizationManager.getConnection();
+        Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             bindParameters(parameters, pstmt);
             return callback.call(pstmt);

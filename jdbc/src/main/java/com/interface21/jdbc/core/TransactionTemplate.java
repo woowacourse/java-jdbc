@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -19,9 +20,8 @@ public class TransactionTemplate<T> {
     public T execute(ServiceCallback<T> serviceCallback) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            TransactionSynchronizationManager.setConnection(connection);
 
             T result = serviceCallback.execute();
 
@@ -35,7 +35,7 @@ public class TransactionTemplate<T> {
         return null;
     }
 
-    private static void rollback(Exception e, Connection connection) {
+    private void rollback(Exception e, Connection connection) {
         if (connection != null) {
             try {
                 connection.rollback();
@@ -46,15 +46,16 @@ public class TransactionTemplate<T> {
         throw new DataAccessException(e);
     }
 
-    private static void closeConnection(Connection connection) {
-        TransactionSynchronizationManager.closeConnection();
+    private void closeConnection(Connection connection) {
+        DataSourceUtils.releaseConnection(connection, dataSource);
+
         if (connection != null) {
             try {
                 connection.setAutoCommit(true);
                 connection.close();
             } catch (SQLException e) {
-                throw new DataAccessException(e);
+                log.error("Failed to close JDBC Connection", e);
             }
-        }
+        }                                   
     }
 }
