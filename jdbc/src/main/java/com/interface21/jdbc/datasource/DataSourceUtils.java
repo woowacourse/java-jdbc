@@ -6,31 +6,32 @@ import com.interface21.transaction.support.TransactionSynchronizationManager;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
-// 4단계 미션에서 사용할 것
+@NoArgsConstructor(access = AccessLevel.NONE)
 public abstract class DataSourceUtils {
 
-    private DataSourceUtils() {}
-
-    public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
-        if (connection != null) {
-            return connection;
+    public static Connection getConnection(final DataSource dataSource) throws CannotGetJdbcConnectionException {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return TransactionSynchronizationManager.getResource(dataSource);
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
-        } catch (SQLException ex) {
+            return dataSource.getConnection();
+        } catch (final SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(final Connection connection, final DataSource dataSource) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return;
+        }
+
         try {
             connection.close();
-        } catch (SQLException ex) {
+        } catch (final SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
