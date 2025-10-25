@@ -2,8 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,14 +30,6 @@ public class UserDao {
         log.debug("query : {}", sql);
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
-    public void update(Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        log.debug("query : {}", sql);
-
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -76,9 +66,5 @@ public class UserDao {
                                 rs.getString(3),
                                 rs.getString(4))
                 , account);
-    }
-
-    public Connection getConnection() throws SQLException {
-        return jdbcTemplate.getConnection();
     }
 }
