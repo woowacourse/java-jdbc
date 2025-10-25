@@ -1,4 +1,4 @@
-package com.interface21.jdbc;
+package com.interface21.jdbc.mapper;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
