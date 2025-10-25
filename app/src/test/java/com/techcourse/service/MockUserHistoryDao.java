@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 public class MockUserHistoryDao extends UserHistoryDao {
 
     public MockUserHistoryDao(final DataSource dataSource) {
-        super(dataSource, null);
+        super(dataSource);
     }
 
     @Override

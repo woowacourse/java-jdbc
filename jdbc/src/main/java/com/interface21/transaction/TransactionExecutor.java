@@ -2,7 +2,6 @@ package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
@@ -29,14 +28,12 @@ public class TransactionExecutor {
 
     private <T> T executeInSynchronizedTx(final Supplier<T> execution) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         try {
             return executeLogic(execution, connection);
 
         } finally {
             if (connection != null) {
-                TransactionSynchronizationManager.unbindResource(dataSource);
                 DataSourceUtils.releaseConnection(connection);
             }
         }

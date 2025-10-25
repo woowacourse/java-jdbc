@@ -111,7 +111,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
-        try (final Connection connection = dataSource.getConnection()) {
+        try {
+            final Connection connection = dataSource.getConnection();
             return execute(connection, stmtExecutor, sql, pss);
 
         } catch (final SQLException e) {

@@ -1,31 +1,27 @@
 package com.techcourse.service;
 
-import com.interface21.transaction.support.TxSyncConnectionProvider;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 class UserServiceTest {
 
     private DataSource dataSource;
-    private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(dataSource, new TxSyncConnectionProvider(dataSource));
+        this.userDao = new UserDao(dataSource);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -34,7 +30,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(dataSource, new TxSyncConnectionProvider(dataSource));
+        final var userHistoryDao = new UserHistoryDao(dataSource);
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";

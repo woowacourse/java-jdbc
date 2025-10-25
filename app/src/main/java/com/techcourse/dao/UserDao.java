@@ -2,7 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.transaction.ConnectionProvider;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
@@ -19,36 +19,36 @@ public class UserDao {
             rs.getString(4)
     );
 
+    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
-    private final ConnectionProvider connectionProvider;
 
-    public UserDao(final DataSource dataSource, final ConnectionProvider connectionProvider) {
+    public UserDao(final DataSource dataSource) {
+        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.connectionProvider = connectionProvider;
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connectionProvider.getConnection(), sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(DataSourceUtils.getConnection(dataSource), sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(connectionProvider.getConnection(), sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(DataSourceUtils.getConnection(dataSource), sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.selectMulti(connectionProvider.getConnection(), USER_ROW_MAPPER, sql);
+        return jdbcTemplate.selectMulti(DataSourceUtils.getConnection(dataSource), USER_ROW_MAPPER, sql);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.selectOne(connectionProvider.getConnection(), USER_ROW_MAPPER, sql, id);
+        return jdbcTemplate.selectOne(DataSourceUtils.getConnection(dataSource), USER_ROW_MAPPER, sql, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.selectOne(connectionProvider.getConnection(), USER_ROW_MAPPER, sql, account);
+        return jdbcTemplate.selectOne(DataSourceUtils.getConnection(dataSource), USER_ROW_MAPPER, sql, account);
     }
 }
