@@ -45,14 +45,15 @@ public class JdbcTemplate {
 
             setParameter(args, pstmt);
 
+            Map<String, Object> result = new HashMap<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                Map<String, Object> result = new HashMap<>();
                 if (rs.next()) {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
 
-                    mapRowToResult(columnCount, metaData, rs, result);
+                    result = mapRowToResult(columnCount, metaData, rs);
                 }
+
                 return result;
             }
         } catch (SQLException e) {
@@ -70,11 +71,10 @@ public class JdbcTemplate {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<Map<String, Object>> resultList = new ArrayList<>();
                 while (rs.next()) {
-                    Map<String, Object> result = new HashMap<>();
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
 
-                    mapRowToResult(columnCount, metaData, rs, result);
+                    Map<String, Object> result = mapRowToResult(columnCount, metaData, rs);
                     resultList.add(result);
                 }
                 return resultList;
@@ -91,17 +91,18 @@ public class JdbcTemplate {
         }
     }
 
-    private void mapRowToResult(
+    private Map<String, Object> mapRowToResult(
             final int columnCount,
             final ResultSetMetaData metaData,
-            final ResultSet rs,
-            final Map<String, Object> result
+            final ResultSet rs
     ) throws SQLException {
+        Map<String, Object> result = new HashMap<>();
         for (int i = 0; i < columnCount; i++) {
             String columnName = metaData.getColumnName(i + 1);
             Object value = rs.getObject(columnName);
 
             result.put(columnName, value);
         }
+        return result;
     }
 }
