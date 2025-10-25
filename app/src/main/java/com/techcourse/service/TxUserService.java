@@ -9,10 +9,13 @@ public class TxUserService implements UserService {
 
     private final AppUserService appUserService;
     private final TransactionTemplate transactionTemplate;
+    private final DataSource dataSource;
 
-    public TxUserService(AppUserService appUserService, TransactionTemplate transactionTemplate) {
+    public TxUserService(AppUserService appUserService, TransactionTemplate transactionTemplate,
+                         DataSource dataSource) {
         this.appUserService = appUserService;
         this.transactionTemplate = transactionTemplate;
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -27,8 +30,6 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
-
         transactionTemplate.execute(() -> {
             appUserService.changePassword(id, newPassword, createdBy);
         }, dataSource);
