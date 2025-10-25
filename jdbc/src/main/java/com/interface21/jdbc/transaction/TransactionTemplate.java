@@ -1,6 +1,7 @@
 package com.interface21.jdbc.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -10,17 +11,11 @@ import org.slf4j.LoggerFactory;
 public class TransactionTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
-    private final DataSource dataSource;
 
-    public TransactionTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void execute(final TransactionCallback callback) {
+    public void execute(final TransactionCallback callback, final DataSource dataSource) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
-            ConnectionHolder.setConnection(connection);
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             callback.execute();
@@ -47,7 +42,6 @@ public class TransactionTemplate {
     }
 
     private void closeConnection(Connection connectionToClose) {
-        ConnectionHolder.clear();
         if (connectionToClose != null) {
             try {
                 connectionToClose.close();
