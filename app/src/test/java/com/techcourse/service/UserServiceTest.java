@@ -9,7 +9,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +24,7 @@ class UserServiceTest {
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDao(dataSource);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -34,7 +33,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(dataSource);
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
@@ -49,7 +48,7 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var userHistoryDao = new MockUserHistoryDao(dataSource);
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
