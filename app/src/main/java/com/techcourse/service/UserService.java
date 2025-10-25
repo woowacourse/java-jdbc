@@ -36,48 +36,31 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection = null;
-
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            final var user = findById(connection, id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            try {
+                final var user = findById(connection, id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
 
-            connection.commit();
-        } catch (Exception e) {
-            rollback(connection);
-            throw new DataAccessException(e);
-        } finally {
-            closeConnection(connection);
+                connection.commit();
+            } catch (Exception e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    e.addSuppressed(rollbackEx);
+                }
+                throw new DataAccessException("비밀번호 변경 실패", e);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("비밀번호 변경 실패", e);
         }
     }
 
     private User findById(final Connection connection, final long id) {
         return userDao.findById(connection, id)
                 .orElseThrow(NoSuchElementException::new);
-    }
-
-    private void rollback(final Connection connection) {
-        if (connection != null) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                log.error("Failed to rollback transaction", e);
-            }
-        }
-    }
-
-    private void closeConnection(final Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                log.error("Failed to close connection", e);
-            }
-        }
     }
 }
