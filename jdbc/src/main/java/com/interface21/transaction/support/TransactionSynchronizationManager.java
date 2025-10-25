@@ -9,19 +9,23 @@ public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
-    static {
-        resources.set(new HashMap<>());
-    }
-
     private TransactionSynchronizationManager() {
     }
 
     public static Connection getResource(DataSource key) {
+        if (resources.get() == null) {
+            resources.set(new HashMap<>());
+        }
+
         Map<DataSource, Connection> map = resources.get();
         return map.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        if (resources.get() == null) {
+            resources.set(new HashMap<>());
+        }
+
         Map<DataSource, Connection> map = resources.get();
         map.put(key, value);
     }
