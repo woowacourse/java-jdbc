@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,7 +52,7 @@ public class JdbcTemplate {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
 
-                    result = mapRowToResult(columnCount, metaData, rs);
+                    result = RowMapper.mapRowToResult(columnCount, metaData, rs);
                 }
 
                 return result;
@@ -74,7 +75,7 @@ public class JdbcTemplate {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
 
-                    Map<String, Object> result = mapRowToResult(columnCount, metaData, rs);
+                    Map<String, Object> result = RowMapper.mapRowToResult(columnCount, metaData, rs);
                     resultList.add(result);
                 }
                 return resultList;
@@ -89,20 +90,5 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
-    }
-
-    private Map<String, Object> mapRowToResult(
-            final int columnCount,
-            final ResultSetMetaData metaData,
-            final ResultSet rs
-    ) throws SQLException {
-        Map<String, Object> result = new HashMap<>();
-        for (int i = 0; i < columnCount; i++) {
-            String columnName = metaData.getColumnName(i + 1);
-            Object value = rs.getObject(columnName);
-
-            result.put(columnName, value);
-        }
-        return result;
     }
 }
