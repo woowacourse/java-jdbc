@@ -1,15 +1,12 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.RowMapper;
+import com.interface21.jdbc.mapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +35,7 @@ public class JdbcTemplate {
         }
     }
 
-    public Map<String, Object> queryForObject(final String sql, final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -46,16 +43,11 @@ public class JdbcTemplate {
 
             setParameter(args, pstmt);
 
-            Map<String, Object> result = new HashMap<>();
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    ResultSetMetaData metaData = rs.getMetaData();
-                    int columnCount = metaData.getColumnCount();
-
-                    result = RowMapper.mapRowToResult(columnCount, metaData, rs);
+                    return rowMapper.mapRowToResult(rs);
                 }
-
-                return result;
+                return null;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -63,19 +55,16 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Map<String, Object>> queryForList(final String sql, final Object... args) {
+    public <T> List<T> queryForList(final String sql, final RowMapper rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
+            List<T> resultList = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<Map<String, Object>> resultList = new ArrayList<>();
                 while (rs.next()) {
-                    ResultSetMetaData metaData = rs.getMetaData();
-                    int columnCount = metaData.getColumnCount();
-
-                    Map<String, Object> result = RowMapper.mapRowToResult(columnCount, metaData, rs);
+                    T result = rowMapper.mapRowToResult(rs);
                     resultList.add(result);
                 }
                 return resultList;
