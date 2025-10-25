@@ -38,14 +38,4 @@ public class TransactionTemplate {
             }
         }
     }
-
-    private void closeConnection(Connection connectionToClose) {
-        if (connectionToClose != null) {
-            try {
-                connectionToClose.close();
-            } catch (SQLException closeException) {
-                log.error("Failed to close connection", closeException);
-            }
-        }
-    }
 }
