@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.TxSyncConnectionProvider;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -24,7 +25,7 @@ class UserServiceTest {
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(dataSource);
+        this.userDao = new UserDao(dataSource, new TxSyncConnectionProvider(dataSource));
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -33,7 +34,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(dataSource);
+        final var userHistoryDao = new UserHistoryDao(dataSource, new TxSyncConnectionProvider(dataSource));
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";

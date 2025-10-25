@@ -1,10 +1,8 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.interface21.transaction.ConnectionProvider;
-import com.interface21.transaction.support.TxSyncConnectionProvider;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
@@ -23,10 +21,6 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final ConnectionProvider connectionProvider;
-
-    public UserDao(final DataSource dataSource) throws DataAccessException {
-        this(dataSource, new TxSyncConnectionProvider(dataSource));
-    }
 
     public UserDao(final DataSource dataSource, final ConnectionProvider connectionProvider) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
