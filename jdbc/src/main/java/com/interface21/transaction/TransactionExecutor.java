@@ -34,7 +34,7 @@ public class TransactionExecutor {
 
         } finally {
             if (connection != null) {
-                DataSourceUtils.releaseConnection(connection);
+                DataSourceUtils.releaseConnection(connection, dataSource);
             }
         }
     }
