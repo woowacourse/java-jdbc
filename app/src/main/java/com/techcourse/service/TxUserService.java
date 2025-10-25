@@ -47,19 +47,23 @@ public class TxUserService implements UserService {
             rollback(connection, e);
             throw new DataAccessException(e);
         } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ignored) {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                } catch (SQLException ignored) {
+                }
+                DataSourceUtils.releaseConnection(connection, dataSource);
             }
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     private void rollback(Connection connection, Exception e) {
-        try {
-            connection.rollback();
-        } catch (SQLException ex) {
-            e.addSuppressed(ex);
+        if (connection != null) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
+            }
         }
     }
 }

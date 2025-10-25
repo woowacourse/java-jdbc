@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {
     }
