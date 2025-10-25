@@ -5,8 +5,7 @@ import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 
 public class TransactionExecutor {
@@ -17,18 +16,18 @@ public class TransactionExecutor {
         this.dataSource = dataSource;
     }
 
-    public void executeVoid(final Consumer<Connection> execution) {
-        executeInSynchronizedTx(conn -> {
-            execution.accept(conn);
+    public void executeVoid(final Runnable execution) {
+        executeInSynchronizedTx(() -> {
+            execution.run();
             return null; // void
         });
     }
 
-    public <T> T execute(final Function<Connection, T> execution) {
+    public <T> T execute(final Supplier<T> execution) {
         return executeInSynchronizedTx(execution);
     }
 
-    private <T> T executeInSynchronizedTx(final Function<Connection, T> execution) {
+    private <T> T executeInSynchronizedTx(final Supplier<T> execution) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
@@ -43,10 +42,10 @@ public class TransactionExecutor {
         }
     }
 
-    private <T> T executeLogic(Function<Connection, T> execution, Connection connection) {
+    private <T> T executeLogic(Supplier<T> execution, Connection connection) {
         try {
             connection.setAutoCommit(false);
-            T result = execution.apply(connection);
+            T result = execution.get();
             connection.commit();
             return result;
 
