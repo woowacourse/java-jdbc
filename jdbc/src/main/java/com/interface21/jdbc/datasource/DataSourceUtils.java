@@ -27,7 +27,7 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(Connection connection) {
         try {
             connection.close();
         } catch (SQLException ex) {

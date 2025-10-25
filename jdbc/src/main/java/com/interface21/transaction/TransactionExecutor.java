@@ -1,6 +1,7 @@
 package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -23,18 +24,7 @@ public class TransactionExecutor {
     }
 
     public <T> T execute(final Function<Connection, T> execution) {
-        try (Connection connection = dataSource.getConnection()) {
-            if (connection == null) {
-                throw new DataAccessException("Connection is null on dataSource " + dataSource);
-            }
-            return executeInTransaction(connection, execution);
-
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T executeInTransaction(final Connection connection, final Function<Connection, T> execution) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
             T result = execution.apply(connection);
@@ -44,6 +34,11 @@ public class TransactionExecutor {
         } catch (final Exception e) {
             rollback(connection);
             throw new DataAccessException(e);
+
+        } finally {
+            if (connection != null) {
+                DataSourceUtils.releaseConnection(connection);
+            }
         }
     }
 
