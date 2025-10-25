@@ -5,7 +5,7 @@ import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class UserRowMapper implements RowMapper {
+public class UserRowMapper implements RowMapper<User> {
 
     @Override
     public User mapRowToResult(final ResultSet rs) throws SQLException {
