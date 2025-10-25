@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.CustomDataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,15 +45,20 @@ public class JdbcTemplate {
         return execute(sql, pstmt -> {
             List<T> list = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) list.add(rowMapper.mapRow(rs));
+                while (rs.next()) {
+                    list.add(rowMapper.mapRow(rs));
+                }
             }
             return list;
         }, parameters);
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        Connection connection;
+        PreparedStatement pstmt;
+        try {
+            connection = CustomDataSourceUtils.getConnection(dataSource);
+            pstmt = connection.prepareStatement(sql);
 
             createPreparedStatementSetter(parameters).setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
