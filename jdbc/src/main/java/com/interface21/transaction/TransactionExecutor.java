@@ -2,6 +2,7 @@ package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -17,14 +18,32 @@ public class TransactionExecutor {
     }
 
     public void executeVoid(final Consumer<Connection> execution) {
-        execute(conn -> {
+        executeInSynchronizedTx(conn -> {
             execution.accept(conn);
             return null; // void
         });
     }
 
     public <T> T execute(final Function<Connection, T> execution) {
+        return executeInSynchronizedTx(execution);
+    }
+
+    private <T> T executeInSynchronizedTx(final Function<Connection, T> execution) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        try {
+            return executeLogic(execution, connection);
+
+        } finally {
+            if (connection != null) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(connection);
+            }
+        }
+    }
+
+    private <T> T executeLogic(Function<Connection, T> execution, Connection connection) {
         try {
             connection.setAutoCommit(false);
             T result = execution.apply(connection);
@@ -35,10 +54,6 @@ public class TransactionExecutor {
             rollback(connection);
             throw new DataAccessException(e);
 
-        } finally {
-            if (connection != null) {
-                DataSourceUtils.releaseConnection(connection);
-            }
         }
     }
 

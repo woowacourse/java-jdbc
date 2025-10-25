@@ -20,7 +20,7 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return transactionExecutor.execute(connection -> userDao.findById(connection, id));
     }
 
     public void insert(final User user) {
