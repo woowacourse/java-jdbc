@@ -54,8 +54,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... parameters) {
-        Connection connection;
-        PreparedStatement pstmt;
+        Connection connection = null;
+        PreparedStatement pstmt = null;
         try {
             connection = CustomDataSourceUtils.getConnection(dataSource);
             pstmt = connection.prepareStatement(sql);
@@ -66,6 +66,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("Database operation failed. sql={}", sql, e);
             throw new DataAccessException("Failed to execute SQL", e);
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    log.error("Failed to close PreparedStatement", e);
+                }
+            }
+            CustomDataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
