@@ -16,7 +16,7 @@ public abstract class DataSourceUtils {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
 
         try {
-            if (connection != null && !connection.isClosed()) {
+            if (connection != null) {
                 return connection;
             }
             connection = dataSource.getConnection();
@@ -30,6 +30,10 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
+            if (connection == null) {
+                return;
+            }
+
             connection.close();
             TransactionSynchronizationManager.unbindResource(dataSource);
         } catch (SQLException ex) {
