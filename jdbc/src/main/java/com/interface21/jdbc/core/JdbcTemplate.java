@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.transaction.ConnectionHolder;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> preparedStatementCallback,
                           PreparedStatementSetter preparedStatementSetter) {
-        Connection connection = ConnectionHolder.getConnection();
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         if (connection == null) {
             return handleForWithoutTransaction(sql, preparedStatementCallback, preparedStatementSetter);

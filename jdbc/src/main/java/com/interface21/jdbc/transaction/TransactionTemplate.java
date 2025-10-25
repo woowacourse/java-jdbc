@@ -24,8 +24,6 @@ public class TransactionTemplate {
         } catch (Exception e) {
             rollback(e, connection);
             throw new DataAccessException(e);
-        } finally {
-            closeConnection(connection);
         }
     }
 
