@@ -17,6 +17,7 @@ public class TransactionTemplate {
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
 
             callback.execute();
