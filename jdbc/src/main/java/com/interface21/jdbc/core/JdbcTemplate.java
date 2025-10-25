@@ -30,11 +30,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> list = query(sql, rowMapper, parameters);
-        if (list.isEmpty()) {
-            return null;
-        }
-        return list.getFirst();
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
+            }
+        }, parameters);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
