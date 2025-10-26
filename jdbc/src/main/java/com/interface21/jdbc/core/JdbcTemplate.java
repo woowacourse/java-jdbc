@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
+import com.interface21.dao.DataAccessException;
+
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -40,11 +42,11 @@ public class JdbcTemplate {
             }
             T returnValue = rowMapper.mapRow(resultSet);
             if (resultSet.next()) { // 결과 1개 초과
-                throw new DataAccessApiException("query returns more than one row");
+                throw new DataAccessException("query returns more than one row");
             }
             return returnValue;
         } catch (SQLException e) {
-            throw new DataAccessApiException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -63,12 +65,31 @@ public class JdbcTemplate {
             }
             return list;
         } catch (SQLException e) {
-            throw new DataAccessApiException(e);
+            throw new DataAccessException(e);
         }
+    }
+
+    public int update(Connection connection, String sql, Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public int update(String sql, Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    private <T> T execute(
+        Connection connection,
+        String sql,
+        PreparedStatementFunction<T> pstmtFunction,
+        Object... args
+    ) {
+        try (PreparedStatement pstmt = getPreparedStatementWithArguments(connection, sql, args)) {
+            log.debug("query : {}", sql);
+            return pstmtFunction.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 
     private <T> T execute(String sql, PreparedStatementFunction<T> pstmtFunction, Object... args) {
@@ -79,7 +100,7 @@ public class JdbcTemplate {
             return pstmtFunction.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessApiException(e);
+            throw new DataAccessException(e);
         }
     }
 
