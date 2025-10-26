@@ -36,6 +36,13 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(String sql, PreparedStatementSetter setter, Connection connection) {
+        execute(sql, pstmt -> {
+            setter.setValues(pstmt);
+            return pstmt.executeUpdate();
+        }, connection);
+    }
+
     public <T> List<T> find(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> {
             setParams(params, pstmt);
@@ -68,6 +75,18 @@ public class JdbcTemplate {
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+            return callback.run(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Connection connection) {
+        try (
+                PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
             return callback.run(pstmt);
