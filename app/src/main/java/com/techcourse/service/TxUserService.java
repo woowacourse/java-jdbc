@@ -67,7 +67,6 @@ public class TxUserService implements UserService {
         }
     }
 
-
     private void processTransaction(Runnable transactionCallback) {
         processTransaction(() -> {
             transactionCallback.run();
