@@ -29,16 +29,13 @@ public class JdbcTemplate {
         );
     }
 
-    public int update(final String sql, final Object... params) {
-        return executeWithPreparedStatement(
-                sql,
-                new SimplePreparedStatementSetter(params),
-                PreparedStatement::executeUpdate
-        );
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return executeWithPreparedStatement(sql, new SimplePreparedStatementSetter(params), (pstmt -> {
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        return executeWithPreparedStatement(connection, sql, new SimplePreparedStatementSetter(params), (pstmt -> {
 
             try (ResultSet rs = pstmt.executeQuery()) {
 
@@ -50,8 +47,14 @@ public class JdbcTemplate {
         }));
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> List<T> query(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
         return executeWithPreparedStatement(
+                connection,
                 sql,
                 new SimplePreparedStatementSetter(params),
                 pstmt -> {
@@ -66,19 +69,6 @@ public class JdbcTemplate {
                     }
                 }
         );
-    }
-
-    private <T> T executeWithPreparedStatement(
-            final String sql,
-            final PreparedStatementSetter pstmtSetter,
-            final PreparedStatementAction<T> action
-    ) {
-        try (Connection conn = dataSource.getConnection()) {
-            return executeWithPreparedStatement(conn, sql, pstmtSetter, action);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
     }
 
     private <T> T executeWithPreparedStatement(

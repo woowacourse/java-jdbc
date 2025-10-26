@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -34,26 +36,32 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
-            try {
-                User user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (Exception e) {
+            User user = findById(id);
+            user.changePassword(newPassword);
+
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+
+            connection.commit();
+        } catch (Exception e) {
+            if (connection != null) {
                 try {
                     connection.rollback();
                 } catch (SQLException rollbackEx) {
-                    log.error(rollbackEx.getMessage(), rollbackEx);
-                    throw new DataAccessException(e);
+                    log.error("Rollback failed", rollbackEx);
                 }
-                throw new DataAccessException(e);
             }
-        } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (connection != null) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 }
