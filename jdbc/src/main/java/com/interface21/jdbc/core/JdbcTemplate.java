@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.PreparedStatementCallBack;
+import com.interface21.jdbc.callback.PreparedStatementCallBack;
 import com.interface21.jdbc.mapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
