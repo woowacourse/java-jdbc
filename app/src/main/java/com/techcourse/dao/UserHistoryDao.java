@@ -47,5 +47,4 @@ public class UserHistoryDao {
             DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
-
 }
