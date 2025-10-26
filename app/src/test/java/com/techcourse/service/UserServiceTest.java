@@ -2,7 +2,6 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,8 +55,10 @@ class UserServiceTest {
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-            () -> userService.changePassword(1L, newPassword, createdBy));
+        assertThatThrownBy(() -> userService.changePassword(1L, newPassword, createdBy))
+            .isInstanceOf(BusinessException.class)
+            .hasCause(new DataAccessException())
+            .hasMessage("비밀번호 변경에 실패했습니다.");
 
         final var actual = userService.findById(1L);
 

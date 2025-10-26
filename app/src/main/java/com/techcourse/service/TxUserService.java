@@ -1,5 +1,12 @@
 package com.techcourse.service;
 
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
@@ -12,21 +19,42 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return null;
+        return userService.findById(id);
     }
 
     @Override
     public void save(final User user) {
-
+        userService.save(user);
     }
 
-    // override 대상인 메서드는 userService의 메서드를 그대로 위임(delegate)한다.
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        // 트랜잭션 처리 영역
+        final DataSource dataSource = getDataSource();
+        try (final var connection = TransactionSynchronizationManager.getResource(dataSource)) {
+            connection.setAutoCommit(false);
 
-        userService.changePassword(id, newPassword, createdBy);
+            try {
+                userService.changePassword(id, newPassword, createdBy);
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                connection.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            throw new BusinessException("비밀번호 변경에 실패했습니다.", e);
+        }
+    }
 
-        // 트랜잭션 처리 영역
+    private DataSource getDataSource() {
+        try {
+            final DataSource dataSource = DataSourceConfig.getInstance();
+            TransactionSynchronizationManager.bindResource(dataSource, dataSource.getConnection());
+            return dataSource;
+        } catch (SQLException e) {
+            throw new DataAccessException("", e);
+        }
     }
 }

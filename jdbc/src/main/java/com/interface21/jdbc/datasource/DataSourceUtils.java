@@ -20,20 +20,24 @@ public abstract class DataSourceUtils {
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(final Connection connection, final DataSource dataSource) {
-        Connection txSyncConnection = TransactionSynchronizationManager.getResource(dataSource);
-        if (txSyncConnection != null && txSyncConnection == connection) {
+        if (connection == null) {
             return;
         }
-        
+
+        Connection txSyncConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (txSyncConnection != null && txSyncConnection == connection) {
+            // 트랜잭션 커넥션인 경우 닫지 않음 (트랜잭션 매니저가 관리)
+            return;
+        }
+
+        // 일반 커넥션인 경우 닫음
         try {
             connection.close();
         } catch (SQLException ex) {
