@@ -38,8 +38,13 @@ public abstract class TransactionSynchronizationManager {
         if (resources.get() == null) {
             throw new IllegalStateException("No bound resource for key" + key);
         }
+
         Map<DataSource, Connection> map = resources.get();
-        resources.remove();
-        return map.remove(key);
+        Connection removed = map.remove(key);
+
+        if (map.isEmpty()) {
+            resources.remove();
+        }
+        return removed;
     }
 }
