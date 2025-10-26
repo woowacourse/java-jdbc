@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.exception.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -26,10 +27,6 @@ public class UserService {
         return userDao.findById(id);
     }
 
-    public User findById(Connection connection, final long id) {
-        return userDao.findById(connection, id);
-    }
-
     public void insert(final User user) {
         userDao.insert(user);
     }
@@ -37,12 +34,12 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
         try {
-            connection = datasource.getConnection();
+            connection = DataSourceUtils.getConnection(datasource);
             connection.setAutoCommit(false);
-            final var user = findById(connection, id);
+            final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException | DataAccessException e) {
             rollbackTransaction(connection);
@@ -63,12 +60,6 @@ public class UserService {
     }
 
     private void closeConnection(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new DataAccessException("DB 커넥션을 닫는데 실패했습니다.", e);
-            }
-        }
+        DataSourceUtils.releaseConnection(connection, datasource);
     }
 }
