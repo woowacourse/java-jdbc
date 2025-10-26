@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -51,19 +49,6 @@ public class UserDao {
         );
     }
 
-    public void update(final User user, final Connection connection) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        log.debug("query : {}", sql);
-
-        jdbcTemplate.update(sql,
-                connection,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
-    }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
@@ -81,13 +66,6 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, this::mapRowToUser, id);
     }
 
-    public User findById(final Long id, final Connection connection) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
-        log.debug("query : {}", sql);
-
-        return jdbcTemplate.queryForObject(sql, this::mapRowToUser, connection, id);
-    }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";

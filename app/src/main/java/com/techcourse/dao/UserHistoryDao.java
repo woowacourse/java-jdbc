@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +29,8 @@ public class UserHistoryDao {
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pstmt.setLong(1, userHistory.getUserId());
@@ -46,36 +44,8 @@ public class UserHistoryDao {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    public void log(final UserHistory userHistory, final Connection connection) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            pstmt.setLong(1, userHistory.getUserId());
-            pstmt.setString(2, userHistory.getAccount());
-            pstmt.setString(3, userHistory.getPassword());
-            pstmt.setString(4, userHistory.getEmail());
-            pstmt.setObject(5, userHistory.getCreatedAt());
-            pstmt.setString(6, userHistory.getCreateBy());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
 }

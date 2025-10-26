@@ -28,6 +28,11 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        Connection boundConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == boundConnection) {
+            return;
+        }
+
         try {
             connection.close();
         } catch (SQLException ex) {
