@@ -1,5 +1,7 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -34,19 +36,22 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        doInTransaction(connection -> {
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-        });
+        try {
+            doInTransaction(connection -> {
+                final var user = findById(id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+            });
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void doInTransaction(Consumer<Connection> consumer){
-        Connection connection = null;
+    private void doInTransaction(Consumer<Connection> consumer) throws SQLException {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        connection.setAutoCommit(false);
         try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
         } catch (Exception e) {
@@ -70,9 +75,11 @@ public class UserService {
     }
 
     private void closeConnection(Connection connection) {
-        if(connection != null){ // 커넥션이 존재할 경우 close
+        if(connection != null){
             try {
                 connection.close();
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
             } catch (SQLException ignored) {}
         }
     }
