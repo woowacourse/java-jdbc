@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -54,7 +55,13 @@ public class TxUserService implements UserService {
             log.warn("트랜잭션 실행 중 예외 발생", e);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                connection.setAutoCommit(true);
+                connection.close();
+            } catch (final SQLException ex) {
+                log.error("커넥션 종료 실패", ex);
+            }
         }
     }
 

@@ -34,17 +34,15 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        try {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        } catch (final Exception e) {
-            log.warn("unbind 실패", e);
-        }
+        final Connection boundConnection = TransactionSynchronizationManager.getResource(dataSource);
 
-        try {
-            connection.setAutoCommit(true);
-            connection.close();
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+        if (boundConnection != connection) {
+            try {
+                connection.setAutoCommit(true);
+                connection.close();
+            } catch (SQLException ex) {
+                throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            }
         }
     }
 
