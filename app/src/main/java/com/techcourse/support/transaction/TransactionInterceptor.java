@@ -32,7 +32,7 @@ public class TransactionInterceptor {
     }
 
     private void rollbackTransaction(Connection connection) {
-        if (connection != null) {
+        if (connection == null) {
             return;
         }
         try {
@@ -43,6 +43,9 @@ public class TransactionInterceptor {
     }
 
     private void closeConnection(Connection connection) {
+        if (connection == null) {
+            return;
+        }
         DataSourceUtils.releaseConnection(connection, datasource);
     }
 }
