@@ -34,7 +34,8 @@ public class JdbcTemplate {
     /**
      * SQL 실행의 핵심 메서드. 자원 관리 관련 중복 부분을 함수형 인터페이스를 이용하여 분리함.
      * - Connection, PreparedStatement를 생성하고, 파라미터를 바인딩한 후 StatementExecutor를 통해 실행한다.
-     * - 자원 해제를 try-with-resources로 자동 처리한다.
+     * - Connection은 트랜잭션 컨텍스트를 고려하여 DataSourceUtils를 통해 관리
+     * - PreparedStatement는 자동으로 close
      *
      * @param sql 실행할 SQL문
      * @param args PreparedStatement에 바인딩할 파라미터 배열
@@ -42,16 +43,16 @@ public class JdbcTemplate {
      * @return 제네릭 타입 결과값 (쿼리 결과나 update 결과 등)
      */
     public <R> R execute(String sql, Object[] args, StatementExecutor<R> executor) {
-        try (
-                Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        final Connection conn = getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setPreparedStatementParameter(args, pstmt);
             log.info("query = {}", sql);
 
             return executor.execute(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("sql 실행 과정에서 문제가 발생하였습니다.", e);
+        } finally {
+            com.interface21.jdbc.datasource.DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -133,16 +134,13 @@ public class JdbcTemplate {
     }
 
     /**
-     * DataSource에서 새로운 데이터베이스 Connection 객체 획득
+     * DataSource에서 데이터베이스 Connection 객체 획득
+     * DataSourceUtils를 사용하여 트랜잭션 컨텍스트에서 관리되는 Connection을 재사용
      *
      * @return 데이터베이스에 연결된 Connection 객체
-     * @throws DataAccessException 커넥션 획득 과정에서 SQL 오류가 발생한 경우
+     * @throws DataAccessException 커넥션 획득 과정에서 오류가 발생한 경우
      */
     private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return com.interface21.jdbc.datasource.DataSourceUtils.getConnection(dataSource);
     }
 }
