@@ -5,8 +5,12 @@ import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionTemplate {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
 
     private final DataSource dataSource;
 
@@ -31,6 +35,7 @@ public class TransactionTemplate {
                 try {
                     connection.rollback();
                 } catch (SQLException ex) {
+                    log.warn("Rollback failure: {}", ex.getMessage(), ex);
                 }
             }
             throw new DataAccessException(e.getMessage(), e);
@@ -40,6 +45,7 @@ public class TransactionTemplate {
                 try {
                     connection.close();
                 } catch (SQLException ex) {
+                    log.warn("Connection close failure in transaction: {}", ex.getMessage(), ex);
                 }
             }
         }

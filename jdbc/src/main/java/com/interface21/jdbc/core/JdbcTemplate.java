@@ -32,6 +32,7 @@ public class JdbcTemplate {
                 return action.doInPreparedStatement(ps);
             }
         } catch (SQLException e) {
+            log.error("Data access error: {}", e.getMessage(), e);
             throw new DataAccessException(e.getMessage(), e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
