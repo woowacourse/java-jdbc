@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.IncorrectResultSizeException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,22 +24,8 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params){
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
-            log.debug("query : {}", sql);
-            setParameters(pstmt, params);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
-        }
-    }
-
-    /*
-    Connection 공유 버전 오버로딩
-     */
-    public void update(Connection connection, String sql, Object... params){
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)){
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)){
             log.debug("query : {}", sql);
             setParameters(pstmt, params);
             pstmt.executeUpdate();
@@ -49,9 +36,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params){
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)){
-
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)){
             log.debug("query : {}", sql);
             setParameters(pstmt, params);
             return executionResult(rowMapper, pstmt);
