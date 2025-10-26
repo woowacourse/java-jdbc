@@ -2,6 +2,7 @@ package com.techcourse.support.transaction;
 
 import com.interface21.exception.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -47,5 +48,6 @@ public class TransactionInterceptor {
             return;
         }
         DataSourceUtils.releaseConnection(connection, datasource);
+        TransactionSynchronizationManager.clear();
     }
 }

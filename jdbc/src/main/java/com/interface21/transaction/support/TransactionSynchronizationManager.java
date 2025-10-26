@@ -27,6 +27,10 @@ public abstract class TransactionSynchronizationManager {
         return savedResource.remove(key);
     }
 
+    public static void clear() {
+        resources.remove();
+    }
+
     private static Map<DataSource, Connection> getResource() {
         Map<DataSource, Connection> savedResource = resources.get();
         if (savedResource == null) {
