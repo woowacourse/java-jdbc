@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.NonUniqueResultException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -80,7 +81,7 @@ public class JdbcTemplate {
             return callback.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -92,7 +93,7 @@ public class JdbcTemplate {
             return callback.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -113,7 +114,6 @@ public class JdbcTemplate {
                 return Optional.empty();
             }
             T result = rowMapper.map(rs);
-            System.out.println(result);
             validateUniqueResult(rs);
             return Optional.of(result);
         }

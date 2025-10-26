@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.NotFoundException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -29,7 +28,7 @@ public class UserService {
 
     public User findById(final long id) {
         return userDao.findById(id)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
     public void insert(final User user) {
