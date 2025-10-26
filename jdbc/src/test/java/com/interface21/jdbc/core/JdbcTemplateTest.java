@@ -227,4 +227,33 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.findAll(sql, userRowMapper))
                 .isInstanceOf(DataAccessException.class);
     }
+
+    @DisplayName("SQL의 파라미터 개수와 인자의 개수가 다르면 예외를 던진다 - 인자가 부족할 때")
+    @Test
+    void validateParameterCountWithNotEnoughArgs() {
+        // given
+        final String sql = "UPDATE users SET password = ?, email = ? WHERE account = ?"; // 3 params
+        final String newPassword = "new_password";
+        final String account = "gugu"; // 2 args
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, newPassword, account))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 파라미터 개수 불일치: ? 3개, 인자 2개");
+    }
+
+    @DisplayName("SQL의 파라미터 개수와 인자의 개수가 다르면 예외를 던진다 - 인자가 많을 때")
+    @Test
+    void validateParameterCountWithTooManyArgs() {
+        // given
+        final String sql = "UPDATE users SET password = ? WHERE account = ?"; // 2 params
+        final String newPassword = "new_password";
+        final String account = "gugu";
+        final String extraArg = "extra"; // 3 args
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, newPassword, account, extraArg))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 파라미터 개수 불일치: ? 2개, 인자 3개");
+    }
 }
