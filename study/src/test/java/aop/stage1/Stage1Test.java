@@ -55,8 +55,8 @@ class Stage1Test {
         final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        final var createdBy = "gugu";
+        userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
 
