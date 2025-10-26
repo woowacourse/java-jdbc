@@ -47,7 +47,10 @@ public class TransactionInterceptor {
         if (connection == null) {
             return;
         }
-        DataSourceUtils.releaseConnection(connection, datasource);
-        TransactionSynchronizationManager.clear();
+        try {
+            DataSourceUtils.releaseConnection(connection, datasource);
+        } finally {
+            TransactionSynchronizationManager.clear();
+        }
     }
 }
