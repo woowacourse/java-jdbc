@@ -1,7 +1,6 @@
 package com.interface21.transaction.support;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -35,7 +34,7 @@ public abstract class TransactionSynchronizationManager {
         dataSourceToConnection.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) throws SQLException {
+    public static Connection unbindResource(DataSource key) {
         final Map<DataSource, Connection> dataSourceToConnection = resources.get();
         if (dataSourceToConnection == null) {
             log.warn("unbind 대상 resource 부재");

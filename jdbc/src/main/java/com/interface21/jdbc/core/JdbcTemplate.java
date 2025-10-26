@@ -119,11 +119,7 @@ public class JdbcTemplate {
     }
 
     private void closeConnection(final Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            log.warn("connection close 실패", e);
-        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     private Connection getConnection() {
