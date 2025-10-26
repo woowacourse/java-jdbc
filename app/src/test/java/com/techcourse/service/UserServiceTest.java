@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.DataSourceTransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -44,12 +45,14 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
+        final var datasource = DataSourceConfig.getInstance();
+        final var platformTransactionManager = new DataSourceTransactionManager(datasource);
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService, platformTransactionManager);
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";

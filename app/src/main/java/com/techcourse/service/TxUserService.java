@@ -1,21 +1,18 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.techcourse.config.DataSourceConfig;
+import com.interface21.transaction.support.PlatformTransactionManager;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.SQLException;
-import javax.sql.DataSource;
 
 public class TxUserService implements  UserService {
 
-    private final DataSource dataSource;
     private final UserService userService;
+    private final PlatformTransactionManager transactionManager;
 
-    public TxUserService(final UserService userService) {
-        this.dataSource = DataSourceConfig.getInstance();
+    public TxUserService(final UserService userService, final PlatformTransactionManager transactionManager) {
         this.userService = userService;
+        this.transactionManager = transactionManager;
     }
 
     @Override
@@ -30,23 +27,17 @@ public class TxUserService implements  UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createBy) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-
         try {
-            connection.setAutoCommit(false);
-
+            transactionManager.getTransaction();
             userService.changePassword(id, newPassword, createBy);
-
-            connection.commit();
+            transactionManager.commit();
         } catch (RuntimeException | SQLException exception) {
             try {
-                connection.rollback();
+                transactionManager.rollback();
                 throw exception;
             } catch (SQLException rollbackException) {
                 throw new DataAccessException(rollbackException.getMessage());
             }
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
