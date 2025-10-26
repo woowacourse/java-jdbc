@@ -24,3 +24,10 @@
   - 원자성(Atomic) 보장
   - 트랜잭션 경계 설정
   - 비즈니스 로직이 끝나면 트랜잭션 커밋 or 롤백 실행
+
+# 4️⃣ step4
+- [ ] 트랜잭션 동기화(Transaction Synchronization)를 적용한다
+  - `Connection` 객체를 따로 보관하고, DAO에서 호출할 때 저장된 커넥션을 사용한다
+  - `DataSourceUtils`와 `TransactionSynchronizationManager`를 활용하여 DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록
+- [ ] 트랜잭션 서비스 추상화
+  - 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리
