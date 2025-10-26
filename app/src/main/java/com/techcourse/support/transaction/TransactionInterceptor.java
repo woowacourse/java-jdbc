@@ -23,11 +23,14 @@ public class TransactionInterceptor {
             connection.setAutoCommit(false);
             result = callback.call();
             connection.commit();
-        } catch (SQLException | RuntimeException e) {
+        } catch (SQLException | DataAccessException e) {
             rollbackTransaction(connection);
             throw new DataAccessException("DB 작업에 실패했습니다.", e);
+        } catch (RuntimeException e) {
+            rollbackTransaction(connection);
+            throw e;
         } finally {
-            closeConnection(connection);
+            clearTransactionResource(connection);
         }
         return result;
     }
@@ -43,14 +46,18 @@ public class TransactionInterceptor {
         }
     }
 
+    private void clearTransactionResource(Connection connection) {
+        try {
+            closeConnection(connection);
+        } finally {
+            TransactionSynchronizationManager.clear();
+        }
+    }
+
     private void closeConnection(Connection connection) {
         if (connection == null) {
             return;
         }
-        try {
-            DataSourceUtils.releaseConnection(connection, datasource);
-        } finally {
-            TransactionSynchronizationManager.clear();
-        }
+        DataSourceUtils.releaseConnection(connection, datasource);
     }
 }
