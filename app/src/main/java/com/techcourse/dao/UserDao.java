@@ -20,16 +20,15 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final Connection connection, final User user) {
+    public long insert(final Connection connection, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.updateAndReturnKey(connection, sql, user.toInsertParams());
     }
 
     public void update(final Connection connection, final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(connection, sql, user.toUpdateParams());
     }
 
     public List<User> findAll(final Connection connection) {

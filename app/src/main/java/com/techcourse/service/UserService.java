@@ -25,8 +25,8 @@ public class UserService {
         return userDao.findById(connection, id);
     }
 
-    public void insert(final Connection connection, final User user) {
-        userDao.insert(connection, user);
+    public long insert(final Connection connection, final User user) {
+        return userDao.insert(connection, user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {

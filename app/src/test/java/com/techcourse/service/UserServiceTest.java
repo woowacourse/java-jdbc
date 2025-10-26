@@ -12,8 +12,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,21 +21,38 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private Connection connection;
+    private DataSource dataSource;
     private UserDao userDao;
     private TransactionTemplate transactionTemplate;
 
     @BeforeEach
-    void setUp() throws SQLException {
-        this.jdbcTemplate = new JdbcTemplate();
-        this.userDao = new UserDao(jdbcTemplate);
+    void setUp() throws Exception {
+        dataSource = DataSourceConfig.getInstance();
 
-        DataSource dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
-        this.transactionTemplate = new TransactionTemplate(dataSource);
-        connection = dataSource.getConnection();
 
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        connection = dataSource.getConnection();
+        connection.setAutoCommit(false);
+
+        jdbcTemplate = new JdbcTemplate();
+        userDao = new UserDao(jdbcTemplate);
+        transactionTemplate = new TransactionTemplate(dataSource);
+
+        try (Connection c = dataSource.getConnection()) {
+            var user = new User("gugu", "password", "hkkang@woowahan.com");
+            userDao.insert(c, user);
+        }
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (connection != null && !connection.isClosed()) {
+            try {
+                connection.rollback();
+            } finally {
+                connection.close();
+            }
+        }
     }
 
     @Test

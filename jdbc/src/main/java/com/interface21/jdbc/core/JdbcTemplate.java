@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -69,6 +70,28 @@ public class JdbcTemplate {
         int index = 1;
         for (Object value : params) {
             pstmt.setObject(index++, value);
+        }
+    }
+
+    public long updateAndReturnKey(final Connection connection, final String sql, final Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            log.debug("query : {}", sql);
+            bindParams(pstmt, params);
+
+            int updated = pstmt.executeUpdate();
+            if (updated != 1) {
+                throw new DataAccessException("Expected 1 row to be inserted, but updated=" + updated);
+            }
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+                throw new DataAccessException("No generated key returned from database");
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
         }
     }
 }

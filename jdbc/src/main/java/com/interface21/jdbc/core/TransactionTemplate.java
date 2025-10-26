@@ -12,18 +12,17 @@ public class TransactionTemplate {
     }
 
     public <T> T execute(TransactionCallBack<T> transactionCallBack) throws Exception {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            T result = transactionCallBack.execute(connection);
-            connection.commit();
-            return result;
-        } catch (Exception e) {
-            if (connection != null) {
+
+            try {
+                T result = transactionCallBack.execute(connection);
+                connection.commit();
+                return result;
+            } catch (Exception e) {
                 connection.rollback();
+                throw e;
             }
-            throw e;
         }
     }
 }

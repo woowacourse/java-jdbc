@@ -9,13 +9,14 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UserDaoTest {
 
-    private UserDao userDao;
     private Connection connection;
+    private UserDao userDao;
 
     @BeforeEach
     void setup() throws SQLException {
@@ -25,8 +26,22 @@ class UserDaoTest {
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
         userDao = new UserDao(jdbcTemplate);
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+
+        try (Connection c = dataSource.getConnection()) {
+            var user = new User("gugu", "password", "hkkang@woowahan.com");
+            userDao.insert(c, user);
+        }
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (connection != null && !connection.isClosed()) {
+            try {
+                connection.rollback();
+            } finally {
+                connection.close();
+            }
+        }
     }
 
     @Test
