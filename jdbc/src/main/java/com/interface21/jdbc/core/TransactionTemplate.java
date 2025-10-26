@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class TransactionTemplate {
@@ -11,7 +12,7 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T execute(TransactionCallBack<T> transactionCallBack) throws Exception {
+    public <T> T execute(TransactionCallBack<T> transactionCallBack) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
@@ -19,7 +20,7 @@ public class TransactionTemplate {
                 T result = transactionCallBack.execute(connection);
                 connection.commit();
                 return result;
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 connection.rollback();
                 throw e;
             }

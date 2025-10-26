@@ -7,6 +7,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserService {
 
@@ -25,10 +26,6 @@ public class UserService {
         return userDao.findById(connection, id);
     }
 
-    public long insert(final Connection connection, final User user) {
-        return userDao.insert(connection, user);
-    }
-
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try {
             transactionTemplate.execute(conn -> {
@@ -38,7 +35,7 @@ public class UserService {
                 userHistoryDao.log(conn, new UserHistory(user, createBy));
                 return null;
             });
-        } catch (Exception e) {
+        } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
