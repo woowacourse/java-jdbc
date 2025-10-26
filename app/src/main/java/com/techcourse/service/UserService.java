@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -30,7 +32,8 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             try {
                 connection.setAutoCommit(false);
                 final var user = findById(id);
@@ -40,10 +43,13 @@ public class UserService {
                 connection.commit();
             } catch (Exception exception) {
                 connection.rollback();
-                throw new DataAccessException(exception);
+                throw new DataAccessException("DB 연결 도중 오류가 발생하였습니다.", exception);
             }
         } catch (SQLException exception) {
-            throw new DataAccessException("DB 연결 도중 오류가 발생하였습니다.");
+            throw new DataAccessException("DB 롤백 도중 오류가 발생하였습니다.");
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
