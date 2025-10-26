@@ -2,16 +2,19 @@ package com.techcourse.support.transaction;
 
 import com.interface21.exception.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.techcourse.config.DataSourceConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class TransactionInterceptor {
 
-    private static final DataSource datasource = DataSourceConfig.getInstance();
+    private DataSource datasource;
 
-    public static <T> T applyTransaction(TransactionTargetMethod<T> callback) {
+    public TransactionInterceptor(DataSource datasource) {
+        this.datasource = datasource;
+    }
+
+    public <T> T applyTransaction(TransactionTargetMethod<T> callback) {
         T result = null;
         Connection connection = null;
         try {
@@ -28,7 +31,7 @@ public class TransactionInterceptor {
         return result;
     }
 
-    private static void rollbackTransaction(Connection connection) {
+    private void rollbackTransaction(Connection connection) {
         if (connection != null) {
             try {
                 connection.rollback();
@@ -38,7 +41,7 @@ public class TransactionInterceptor {
         }
     }
 
-    private static void closeConnection(Connection connection) {
+    private void closeConnection(Connection connection) {
         DataSourceUtils.releaseConnection(connection, datasource);
     }
 }
