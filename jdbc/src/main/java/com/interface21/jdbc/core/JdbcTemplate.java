@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.callback.PreparedStatementCallBack;
+import com.interface21.jdbc.callback.PreparedStatementCallback;
 import com.interface21.jdbc.mapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -66,13 +66,13 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            return callBack.run(pstmt);
+            return callback.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
