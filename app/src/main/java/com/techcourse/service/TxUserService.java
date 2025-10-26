@@ -43,7 +43,8 @@ public class TxUserService implements UserServiceInterface {
             if (connection != null) {
                 try {
                     DataSourceUtils.releaseConnection(connection, dataSource);
-                    TransactionSynchronizationManager.unbindResource(dataSource);
+                    Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
+                    log.info("Resource has been unbound: {}", unboundResource);
                 } catch (Exception ex) {
                     log.error("Failed to release connection or unbind resource", ex);
                 }

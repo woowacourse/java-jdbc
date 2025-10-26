@@ -1,7 +1,6 @@
 package com.interface21.transaction.support;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -13,7 +12,7 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Connection getResource(DataSource key) throws SQLException {
+    public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> resource = resources.get();
         if (resource == null) {
             return null;

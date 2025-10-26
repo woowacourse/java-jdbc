@@ -41,10 +41,10 @@ public class UserService {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
-            final var user = userDao.findById(connection, id)
+            final var user = userDao.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("사용자 정보가 존재하지 않습니다."));
             user.changePassword(newPassword);
-            userDao.update(connection, user);
+            userDao.update(user);
             userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
@@ -61,7 +61,8 @@ public class UserService {
             if (connection != null) {
                 try {
                     DataSourceUtils.releaseConnection(connection, dataSource);
-                    TransactionSynchronizationManager.unbindResource(dataSource);
+                    Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
+                    log.info("Resource has been unbound: {}", unboundResource);
                 } catch (Exception ex) {
                     log.error("Failed to release connection or unbind resource", ex);
                 }
