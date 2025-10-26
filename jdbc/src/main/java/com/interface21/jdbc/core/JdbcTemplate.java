@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,11 +25,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementCreator psc, final PreparedStatementCallback<T> action) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement ps = psc.createPreparedStatement(conn)) {
-            return action.doInPreparedStatement(ps);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            try (final PreparedStatement ps = psc.createPreparedStatement(connection)) {
+                return action.doInPreparedStatement(ps);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
