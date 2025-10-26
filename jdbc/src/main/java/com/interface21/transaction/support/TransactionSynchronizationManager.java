@@ -24,12 +24,6 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection unbindResource(DataSource key) {
-        if (!resources.get().containsKey(key)) {
-            throw new IllegalArgumentException("해당하는 DataSource를 찾을 수 없습니다");
-        }
-
-        Connection connection = resources.get().get(key);
-        resources.get().remove(key, connection);
-        return connection;
+        return resources.get().remove(key);
     }
 }
