@@ -32,9 +32,9 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public List<User> findAll(final Object... args) {
+    public List<User> findAll() {
         final var sql = "select * from users";
-        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER, args);
+        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
