@@ -25,7 +25,7 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... args) {
         execute(sql,
                 pstmt -> {
-                    setParameter(args, pstmt);
+                    setParameter(pstmt, args);
                     return pstmt.executeUpdate();
                 }
         );
@@ -34,7 +34,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql,
                 pstmt -> {
-                    setParameter(args, pstmt);
+                    setParameter(pstmt, args);
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
                             return rowMapper.mapRowToResult(rs);
@@ -60,7 +60,7 @@ public class JdbcTemplate {
         );
     }
 
-    private void setParameter(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+    private void setParameter(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
