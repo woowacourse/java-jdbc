@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 public class TransactionManager {
@@ -16,7 +17,7 @@ public class TransactionManager {
     public static <T> T executeInTransaction(final DataSource dataSource, final Supplier<T> action)
         throws SQLException {
 
-        final Connection connection = dataSource.getConnection();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
         connection.setAutoCommit(false);
 
@@ -30,7 +31,7 @@ public class TransactionManager {
         } finally {
             connection.setAutoCommit(true);
             TransactionSynchronizationManager.unbindResource(dataSource);
-            connection.close();
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
