@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,19 +30,7 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(
-                sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
-    }
-
-    public void log(final Connection conn, final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final var conn = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         jdbcTemplate.update(
                 conn,
                 sql,

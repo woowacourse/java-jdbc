@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -33,16 +34,15 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection conn = null;
+        Connection conn = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         try {
-            conn = DataSourceConfig.getInstance().getConnection();
             conn.setAutoCommit(false);
 
             final var user = findById(id);
             user.changePassword(newPassword);
 
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             conn.commit();
         } catch (Exception e) {
@@ -60,10 +60,10 @@ public class UserService {
             if (conn != null) {
                 try {
                     conn.setAutoCommit(true);
-                    conn.close();
                 } catch (SQLException e) {
                     log.atError().log("Error closing connection", e);
                 }
+                DataSourceUtils.releaseConnection(conn, DataSourceConfig.getInstance());
             }
         }
     }
