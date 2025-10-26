@@ -1,14 +1,13 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.callback.PreparedStatementCallBack;
+import com.interface21.jdbc.mapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,84 +23,59 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameter(args, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Map<String, Object> queryForObject(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameter(args, pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                Map<String, Object> result = new HashMap<>();
-                if (rs.next()) {
-                    ResultSetMetaData metaData = rs.getMetaData();
-                    int columnCount = metaData.getColumnCount();
-
-                    mapRowToResult(columnCount, metaData, rs, result);
+        execute(sql,
+                pstmt -> {
+                    setParameter(pstmt, args);
+                    return pstmt.executeUpdate();
                 }
-                return result;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        );
     }
 
-    public List<Map<String, Object>> queryForList(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<Map<String, Object>> resultList = new ArrayList<>();
-                while (rs.next()) {
-                    Map<String, Object> result = new HashMap<>();
-                    ResultSetMetaData metaData = rs.getMetaData();
-                    int columnCount = metaData.getColumnCount();
-
-                    mapRowToResult(columnCount, metaData, rs, result);
-                    resultList.add(result);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql,
+                pstmt -> {
+                    setParameter(pstmt, args);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            return rowMapper.mapRowToResult(rs);
+                        }
+                        return null;
+                    }
                 }
-                return resultList;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        );
     }
 
-    private void setParameter(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
+        return execute(sql,
+                pstmt -> {
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        List<T> resultList = new ArrayList<>();
+                        while (rs.next()) {
+                            T result = rowMapper.mapRowToResult(rs);
+                            resultList.add(result);
+                        }
+                        return resultList;
+                    }
+                }
+        );
+    }
+
+    private void setParameter(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
     }
 
-    private void mapRowToResult(
-            final int columnCount,
-            final ResultSetMetaData metaData,
-            final ResultSet rs,
-            final Map<String, Object> result
-    ) throws SQLException {
-        for (int i = 0; i < columnCount; i++) {
-            String columnName = metaData.getColumnName(i + 1);
-            Object value = rs.getObject(columnName);
+    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            result.put(columnName, value);
+            log.debug("query : {}", sql);
+
+            return callBack.run(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 }
