@@ -31,7 +31,10 @@ class UserServiceImplTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserServiceImpl(userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
