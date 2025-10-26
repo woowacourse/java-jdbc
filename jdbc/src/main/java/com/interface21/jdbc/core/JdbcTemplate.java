@@ -23,20 +23,25 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        execute(sql, PreparedStatement::executeUpdate, args);
+        execute(sql,
+                pstmt -> {
+                    setParameter(args, pstmt);
+                    return pstmt.executeUpdate();
+                }
+        );
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql,
                 pstmt -> {
+                    setParameter(args, pstmt);
                     try (ResultSet rs = pstmt.executeQuery()) {
                         if (rs.next()) {
                             return rowMapper.mapRowToResult(rs);
                         }
                         return null;
                     }
-                },
-                args
+                }
         );
     }
 
@@ -55,23 +60,22 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack, final Object... args) {
+    private void setParameter(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
-            setParameter(args, pstmt);
 
             return callBack.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        }
-    }
-
-    private void setParameter(final Object[] args, final PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
         }
     }
 }
