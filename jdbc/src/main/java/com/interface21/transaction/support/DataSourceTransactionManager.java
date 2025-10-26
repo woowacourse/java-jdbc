@@ -1,5 +1,6 @@
 package com.interface21.transaction.support;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -28,9 +29,14 @@ public class DataSourceTransactionManager implements PlatformTransactionManager 
     }
 
     @Override
-    public void rollback() throws SQLException {
+    public void rollback() {
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
-        conn.rollback();
-        DataSourceUtils.releaseConnection(conn, dataSource);
-    }
+        try {
+            conn.rollback();
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (RuntimeException | SQLException exception) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+                throw new DataAccessException(exception.getMessage());
+            }
+        }
 }

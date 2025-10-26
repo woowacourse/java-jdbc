@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.support.PlatformTransactionManager;
 import com.techcourse.domain.User;
 import java.sql.SQLException;
@@ -32,12 +31,7 @@ public class TxUserService implements  UserService {
             userService.changePassword(id, newPassword, createBy);
             transactionManager.commit();
         } catch (RuntimeException | SQLException exception) {
-            try {
-                transactionManager.rollback();
-                throw exception;
-            } catch (SQLException rollbackException) {
-                throw new DataAccessException(rollbackException.getMessage());
-            }
+            transactionManager.rollback();
         }
     }
 }
