@@ -45,8 +45,8 @@ public class TxUserService implements UserService {
 
     private void doInTransaction(Consumer<Connection> consumer) throws SQLException {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        connection.setAutoCommit(false);
         try {
+            connection.setAutoCommit(false);
             consumer.accept(connection);
             connection.commit();
         } catch (Exception e) {
@@ -71,10 +71,7 @@ public class TxUserService implements UserService {
 
     private void closeConnection(Connection connection) {
         if(connection != null){
-            try {
-                connection.close();
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            } catch (SQLException ignored) {}
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
