@@ -20,6 +20,8 @@ class UserServiceTest {
     private UserDao userDao;
     private TransactionTemplate transactionTemplate;
 
+    private User testUser;
+
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
@@ -27,8 +29,13 @@ class UserServiceTest {
         this.transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+
+        userDao.deleteAll();
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+
+        this.testUser = userDao.findByAccount("gugu");
     }
 
     @Test
@@ -40,9 +47,10 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        userService.changePassword(testUser.getId(), newPassword, createBy);
+
+        final var actual = userService.findById(testUser.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -58,10 +66,11 @@ class UserServiceTest {
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(testUser.getId(), newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(testUser.getId());
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo(testUser.getPassword());
     }
 }
