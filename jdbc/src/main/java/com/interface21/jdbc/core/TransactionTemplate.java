@@ -40,8 +40,8 @@ public class TransactionTemplate {
             throw new DataAccessException(e);
         } finally {
             if (connection != null) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
                 TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(connection, dataSource);
             }
         }
     }
