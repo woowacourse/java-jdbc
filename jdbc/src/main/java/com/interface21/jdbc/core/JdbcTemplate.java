@@ -20,6 +20,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    public int update(final Connection connection, final String sql, final Object... params) {
+        return executeWithPreparedStatement(
+                connection,
+                sql,
+                new SimplePreparedStatementSetter(params),
+                PreparedStatement::executeUpdate
+        );
+    }
+
     public int update(final String sql, final Object... params) {
         return executeWithPreparedStatement(
                 sql,
@@ -59,12 +68,26 @@ public class JdbcTemplate {
         );
     }
 
-    private <T> T executeWithPreparedStatement(final String sql,
-                                               final PreparedStatementSetter pstmtSetter,
-                                               final PreparedStatementAction<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+    private <T> T executeWithPreparedStatement(
+            final String sql,
+            final PreparedStatementSetter pstmtSetter,
+            final PreparedStatementAction<T> action
+    ) {
+        try (Connection conn = dataSource.getConnection()) {
+            return executeWithPreparedStatement(conn, sql, pstmtSetter, action);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <T> T executeWithPreparedStatement(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter pstmtSetter,
+            final PreparedStatementAction<T> action
+    ) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
 
             return action.doInPreparedStatement(pstmt);
