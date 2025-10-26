@@ -9,8 +9,12 @@ import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -36,7 +40,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try(Connection connection = dataSource.getConnection()) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
 
             final var user = findById(id);
@@ -46,7 +52,22 @@ public class UserService {
 
             connection.commit();
         } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollback) {
+                    log.error("Rollback failed", rollback);
+                }
+            }
             throw new DataAccessException(e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException close) {
+                    log.error("Connection close failed", close);
+                }
+            }
         }
     }
 }
