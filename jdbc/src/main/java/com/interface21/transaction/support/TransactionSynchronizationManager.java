@@ -12,6 +12,10 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
+    public static boolean isSynchronizationActive() {
+        return resources.get() != null;
+    }
+
     public static Connection getResource(DataSource key) {
         if (resources.get() == null) {
             resources.set(new HashMap<>());
