@@ -28,25 +28,49 @@ public class JdbcTemplate {
      * @param sql        실행할 SQL
      * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      */
-    public int update(final String sql, final Object... parameters) {
+    public int update(final String sql, final Object... parameters) throws DataAccessException {
         return update(sql, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
-    public int update(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter
-    ) {
-        return execute(
-                sql,
-                preparedStatementSetter,
-                preparedStatement -> executeUpdate(preparedStatement)
-        );
+    /**
+     * preparedStatementSetter로 바인딩 후 SQL를 실행합니다.
+     *
+     * @param sql                     실행할 SQL
+     * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
+     */
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter)
+            throws DataAccessException {
+        return createNewConnectionAndExecute(sql, preparedStatementSetter,
+                preparedStatement -> executeUpdate(preparedStatement));
     }
 
-    private int executeUpdate(
-            final PreparedStatement preparedStatement
-    ) throws SQLException {
+    private int executeUpdate(final PreparedStatement preparedStatement) throws SQLException {
         return preparedStatement.executeUpdate();
+    }
+
+    /**
+     * 외부에서 관리되는 Connection 객체를 사용하여 데이터베이스 작업을 수행합니다. parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL를 실행합니다.
+     *
+     * @param connection 외부에서 관리되는 Connection 객체
+     * @param sql        실행할 SQL
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     */
+    public int update(final Connection connection, final String sql, final Object... parameters)
+            throws DataAccessException {
+        return update(connection, sql,
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
+    }
+
+    /**
+     * 외부에서 관리되는 Connection 객체를 사용하여 데이터베이스 작업을 수행합니다. preparedStatementSetter로 바인딩 후 SQL를 실행합니다.
+     *
+     * @param connection              외부에서 관리되는 Connection 객체
+     * @param sql                     실행할 SQL
+     * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
+     */
+    public int update(final Connection connection, final String sql,
+                      final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return execute(connection, sql, preparedStatementSetter, preparedStatement -> executeUpdate(preparedStatement));
     }
 
     /**
@@ -57,30 +81,60 @@ public class JdbcTemplate {
      * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      * @param <T>        매핑된 결과 객체의 타입
      */
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return queryForObject(
-                sql,
-                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters),
-                rowMapper
-        );
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters)
+            throws DataAccessException {
+        return queryForObject(sql, rowMapper, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
-    public <T> T queryForObject(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper
-    ) {
-        return execute(
-                sql,
-                preparedStatementSetter,
-                preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper)
-        );
+    /**
+     * preparedStatementSetter로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 단일 결과를 RowMapper로 매핑하여 반환합니다.
+     *
+     * @param sql                     실행할 SQL
+     * @param rowMapper               결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
+     * @param <T>                     매핑된 결과 객체의 타입
+     */
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return createNewConnectionAndExecute(sql, preparedStatementSetter,
+                preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper));
     }
 
-    private <T> T executeQueryAndMapSingleResult(
-            final PreparedStatement preparedStatement,
-            final RowMapper<T> rowMapper
-    ) throws SQLException {
+    /**
+     * 외부에서 관리되는 Connection 객체를 사용하여 데이터베이스 작업을 수행합니다. parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 단일
+     * 결과를 RowMapper로 매핑하여 반환합니다.
+     *
+     * @param connection 외부에서 관리되는 Connection 객체
+     * @param sql        실행할 SQL 쿼리
+     * @param rowMapper  결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     * @param <T>        매핑된 결과 객체의 타입
+     */
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... parameters) throws DataAccessException {
+        return queryForObject(connection, sql, rowMapper,
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
+    }
+
+    /**
+     * 외부에서 관리되는 Connection 객체를 사용하여 데이터베이스 작업을 수행합니다. preparedStatementSetter로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 단일 결과를
+     * RowMapper로 매핑하여 반환합니다.
+     *
+     * @param connection              외부에서 관리되는 Connection 객체
+     * @param sql                     실행할 SQL
+     * @param rowMapper               결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
+     * @param <T>                     매핑된 결과 객체의 타입
+     */
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter preparedStatementSetter)
+            throws DataAccessException {
+        return execute(connection, sql, preparedStatementSetter,
+                preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper));
+    }
+
+    private <T> T executeQueryAndMapSingleResult(final PreparedStatement preparedStatement,
+                                                 final RowMapper<T> rowMapper) throws SQLException {
         try (final ResultSet resultSet = preparedStatement.executeQuery()) {
             return mapSingleResult(resultSet, rowMapper);
         }
@@ -105,30 +159,60 @@ public class JdbcTemplate {
      * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
      * @param <T>        매핑된 결과 객체의 타입
      */
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return query(
-                sql,
-                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters),
-                rowMapper
-        );
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters)
+            throws DataAccessException {
+        return query(sql, rowMapper, DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
     }
 
-    public <T> List<T> query(
-            final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final RowMapper<T> rowMapper
-    ) {
-        return execute(
-                sql,
-                preparedStatementSetter,
-                preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper)
-        );
+    /**
+     * preparedStatementSetter로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 결과를 RowMapper로 매핑하여 List로 반환합니다.
+     *
+     * @param sql                     실행할 SQL
+     * @param rowMapper               결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
+     * @param <T>                     매핑된 결과 객체의 타입
+     */
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
+        return createNewConnectionAndExecute(sql, preparedStatementSetter,
+                preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper));
     }
 
-    private <T> List<T> executeQueryAndMapResults(
-            final PreparedStatement preparedStatement,
-            final RowMapper<T> rowMapper
-    ) throws SQLException {
+    /**
+     * 외부에서 관리되는 Connection 객체를 사용하여 데이터베이스 작업을 수행합니다.  parameters를 SQL의 물음표 마커(?) 순서대로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 결과를
+     * RowMapper로 매핑하여 List로 반환합니다.
+     *
+     * @param connection 외부에서 관리되는 Connection 객체
+     * @param sql        실행할 SQL 쿼리
+     * @param rowMapper  결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param parameters SQL의 물음표 마커(?)에 바인딩될 파라미터들
+     * @param <T>        매핑된 결과 객체의 타입
+     */
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final Object... parameters) throws DataAccessException {
+        return query(connection, sql, rowMapper,
+                DEFAULT_PREPARED_STATEMENT_SETTER.getPreparedStatementSetter(parameters));
+    }
+
+    /**
+     * 외부에서 관리되는 Connection 객체를 사용하여 데이터베이스 작업을 수행합니다. preparedStatementSetter로 바인딩 후 SQL 쿼리를 실행합니다. SQL 쿼리의 결과를
+     * RowMapper로 매핑하여 List로 반환합니다.
+     *
+     * @param connection              외부에서 관리되는 Connection 객체
+     * @param sql                     실행할 SQL
+     * @param rowMapper               결과 행(Row)을 매핑하는 RowMapper 구현체
+     * @param preparedStatementSetter 파라미터를 바인딩할 PreparedStatementSetter 구현체
+     * @param <T>                     매핑된 결과 객체의 타입
+     */
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final PreparedStatementSetter preparedStatementSetter)
+            throws DataAccessException {
+        return execute(connection, sql, preparedStatementSetter,
+                preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper));
+    }
+
+    private <T> List<T> executeQueryAndMapResults(final PreparedStatement preparedStatement,
+                                                  final RowMapper<T> rowMapper) throws SQLException {
         try (final ResultSet resultSet = preparedStatement.executeQuery()) {
             return mapResults(resultSet, rowMapper);
         }
@@ -143,24 +227,35 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T execute(
+    private <T> T createNewConnectionAndExecute(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
-    ) {
-        log.debug("query : {}", sql);
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            return doExecute(preparedStatement, preparedStatementSetter, preparedStatementCallback);
+    ) throws DataAccessException {
+        try (final Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, preparedStatementSetter, preparedStatementCallback);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T doExecute(
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> preparedStatementCallback
+    ) throws DataAccessException {
+        log.debug("query : {}", sql);
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return executePreparedStatement(preparedStatement, preparedStatementSetter, preparedStatementCallback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executePreparedStatement(
             final PreparedStatement preparedStatement,
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
