@@ -49,7 +49,7 @@ public class TxUserService implements UserService {
 
             final T result = transactionCallback.call();
 
-            connection.commit();
+            commit(connection);
             return result;
         } catch (final Exception e) {
             rollback(connection);
@@ -57,6 +57,15 @@ public class TxUserService implements UserService {
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void commit(final Connection connection) {
+        try {
+            connection.commit();
+        } catch (final SQLException e) {
+            rollback(connection);
+            log.warn("commit 중 오류 발생: rollback 완료", e);
         }
     }
 
