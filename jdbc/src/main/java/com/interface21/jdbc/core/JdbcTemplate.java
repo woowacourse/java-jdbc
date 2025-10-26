@@ -78,15 +78,17 @@ public class JdbcTemplate {
     private <T> T execute(final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
         // 트랜잭션 동기화가 되지 않고 있는 상태라면, 즉 트랜잭션이 이 메서드에서 열렸다면 커넥션을 반납합니다.
         // 만약 동기화되고 있는 상태라면, TransactionExecutor가 커넥션을 반납하기를 기대합니다.
-        boolean isTxSynchronized = DataSourceUtils.isSynchronizedWithTransaction();
-
+        boolean shouldReleaseConnection = !DataSourceUtils.isSynchronizedWithTransaction();
         final Connection connection = DataSourceUtils.getConnection(dataSource);
-        T result = execute(connection, stmtExecutor, sql, pss);
-        if (!isTxSynchronized) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+
+        try {
+            return execute(connection, stmtExecutor, sql, pss);
+        } finally {
+            if (shouldReleaseConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
 
-        return result;
     }
 
     private <T> T execute(final Connection connection, final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
