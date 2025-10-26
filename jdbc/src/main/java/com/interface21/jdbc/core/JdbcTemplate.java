@@ -44,10 +44,11 @@ public class JdbcTemplate {
             conn = DataSourceUtils.getConnection(dataSource);
             return execute(conn, sql, setter, action);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            if (TransactionSynchronizationManager.getResource(dataSource) == null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
-
 
     public void update(
             String sql,
