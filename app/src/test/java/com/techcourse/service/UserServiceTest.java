@@ -32,7 +32,7 @@ class UserServiceTest {
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var dataSource = DataSourceConfig.getInstance();
-        final var appUserService = new AppUserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
         final var userService = new TxUserService(dataSource, appUserService);
 
         final var newPassword = "qqqqq";
@@ -48,7 +48,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var dataSource = DataSourceConfig.getInstance();
-        final var appUserService = new AppUserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
         final var userService = new TxUserService(dataSource, appUserService);
 
         final var newPassword = "newPassword";

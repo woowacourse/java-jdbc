@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.jdbc.DataAccessException;
 import com.interface21.jdbc.IncorrectResultSizeException;
 import com.interface21.jdbc.ParameterBindingException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.preparedstatementsetter.PreparedStatementSetter;
 import com.interface21.jdbc.rowmapper.RowMapper;
 import java.sql.Connection;
@@ -33,8 +34,8 @@ public class JdbcTemplate {
      * @return 영향 받은 행(row) 수
      */
     public int update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParametersToPreparedStatement(params, pstmt);
             return pstmt.executeUpdate();
@@ -54,20 +55,9 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(Connection conn, String sql, Object... params) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParametersToPreparedStatement(params, pstmt);
-            return pstmt.executeUpdate();
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new DataAccessException(exception.getMessage());
-        }
-    }
-
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setParameters(pstmt);
             return pstmt.executeUpdate();
@@ -86,8 +76,8 @@ public class JdbcTemplate {
      * @param params sql에 바인딩할 파라미터
      */
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParametersToPreparedStatement(params, pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -108,8 +98,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             preparedStatementSetter.setParameters(pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
