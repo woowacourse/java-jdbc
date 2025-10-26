@@ -5,6 +5,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import javax.sql.DataSource;
 
 public class UserService {
 
@@ -12,11 +13,10 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final TransactionManager transactionManager;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao,
-                       final TransactionManager transactionManager) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        this.transactionManager = transactionManager;
+        this.transactionManager = new TransactionManager(dataSource);
     }
 
     public User findById(final long id) {
