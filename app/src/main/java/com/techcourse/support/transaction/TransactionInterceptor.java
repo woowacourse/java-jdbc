@@ -23,7 +23,7 @@ public class TransactionInterceptor {
             connection.setAutoCommit(false);
             result = callback.call();
             connection.commit();
-        } catch (SQLException | DataAccessException e) {
+        } catch (SQLException | RuntimeException e) {
             rollbackTransaction(connection);
             throw new DataAccessException("DB 작업에 실패했습니다.", e);
         } finally {
