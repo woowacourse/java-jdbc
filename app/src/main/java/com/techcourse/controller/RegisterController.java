@@ -20,6 +20,7 @@ public class RegisterController {
 
     public RegisterController() {
         this.userService = new UserService(
+                DataSourceConfig.getInstance(),
                 new UserDao(DataSourceConfig.getInstance()),
                 new UserHistoryDao(DataSourceConfig.getInstance())
         );
