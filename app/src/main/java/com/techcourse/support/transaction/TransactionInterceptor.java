@@ -33,11 +33,12 @@ public class TransactionInterceptor {
 
     private void rollbackTransaction(Connection connection) {
         if (connection != null) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                throw new DataAccessException("트랜잭션을 롤백할 수 없습니다!", e);
-            }
+            return;
+        }
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            throw new DataAccessException("트랜잭션을 롤백할 수 없습니다!", e);
         }
     }
 
