@@ -39,26 +39,34 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        processTransaction(() -> userService.changePassword(id, newPassword, createBy));
+    public void changePassword(final long id, final String newPassword, final String createdBy) {
+        processTransaction(() -> userService.changePassword(id, newPassword, createdBy));
     }
 
     private <T> T processTransaction(Callable<T> transactionCallback) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-
             final T result = transactionCallback.call();
-
-            connection.commit();
+            commit(connection);
             return result;
         } catch (final Exception e) {
             rollback(connection);
-            log.warn("sql 실행 중 오류 발생: rollback 완료", e);
+            log.warn("트랜잭션 실행 중 예외 발생", e);
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
+
+    private void commit(final Connection connection) {
+        try {
+            connection.commit();
+        } catch (final SQLException e) {
+            log.error("commit 중 오류 발생", e);
+            throw new DataAccessException(e);
+        }
+    }
+
 
     private void processTransaction(Runnable transactionCallback) {
         processTransaction(() -> {
@@ -68,14 +76,15 @@ public class TxUserService implements UserService {
     }
 
     private void rollback(final Connection connection) {
+        if (connection == null) {
+            log.warn("rollback 실패: null connection");
+            return;
+        }
         try {
-            if (connection != null) {
-                connection.rollback();
-                return;
-            }
-            log.warn("connection 없음");
+            connection.rollback();
+            log.debug("rollback 완료");
         } catch (final SQLException e) {
-            log.error("sql 실행 중 오류 발생: rollback 실패", e);
+            log.error("rollback 실패", e);
         }
     }
 }
