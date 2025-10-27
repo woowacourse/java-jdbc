@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,7 +42,17 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        final var target = new UserService(userDao, userHistoryDao);
+        final var pointcut = new TransactionPointcut();
+        final var advice = new TransactionAdvice(platformTransactionManager);
+        final var advisor = new TransactionAdvisor(pointcut, advice);
+
+        final var proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(target);
+        proxyFactoryBean.addAdvisor(advisor);
+        proxyFactoryBean.setProxyTargetClass(true); // CGLib 사용 (인터페이스 불필요)
+
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +65,17 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        final var target = new UserService(userDao, stubUserHistoryDao);
+        final var pointcut = new TransactionPointcut();
+        final var advice = new TransactionAdvice(platformTransactionManager);
+        final var advisor = new TransactionAdvisor(pointcut, advice);
+
+        final var proxyFactoryBean = new ProxyFactoryBean();
+        proxyFactoryBean.setTarget(target);
+        proxyFactoryBean.addAdvisor(advisor);
+        proxyFactoryBean.setProxyTargetClass(true); // CGLib 사용 (인터페이스 불필요)
+
+        final UserService userService = (UserService) proxyFactoryBean.getObject();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";

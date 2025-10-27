@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,11 +53,16 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return queryForObject(conn, sql, rowMapper, setter);
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
+            throw e;
+        } catch (Exception e) {
             log.error("SQL execution failed: {}", sql, e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -79,11 +85,16 @@ public class JdbcTemplate {
     }
 
     public <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final PreparedStatementSetter setter) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, callback, setter);
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
+            throw e;
+        } catch (Exception e) {
             log.error("SQL execution failed: {}", sql, e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
