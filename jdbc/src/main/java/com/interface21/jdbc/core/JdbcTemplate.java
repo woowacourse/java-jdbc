@@ -4,6 +4,7 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -86,7 +87,12 @@ public class JdbcTemplate {
     }
 
     private Connection getConnection() throws SQLException {
-        return DataSourceUtils.getConnection(dataSource);
+        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == null) {
+            connection = DataSourceUtils.getNewConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+        }
+        return connection;
     }
 
     private void releaseResources(PreparedStatement pstmt, Connection conn) {

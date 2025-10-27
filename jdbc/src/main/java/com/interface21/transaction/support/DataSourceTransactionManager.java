@@ -20,9 +20,9 @@ public class DataSourceTransactionManager implements TransactionManager {
 
     @Override
     public void begin() {
+        final Connection connection = getConnection();
         try {
-            final Connection conn = DataSourceUtils.getConnection(dataSource);
-            conn.setAutoCommit(false);
+            connection.setAutoCommit(false);
         } catch (SQLException e) {
             releaseConnection();
             throw new DataAccessException("Failed to begin transaction", e);
@@ -31,7 +31,7 @@ public class DataSourceTransactionManager implements TransactionManager {
 
     @Override
     public void commit() {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final Connection connection = getConnection();
         try {
             connection.commit();
         } catch (SQLException e) {
@@ -43,7 +43,7 @@ public class DataSourceTransactionManager implements TransactionManager {
 
     @Override
     public void rollback() {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final Connection connection = getConnection();
         try {
             connection.rollback();
         } catch (SQLException e) {
@@ -51,6 +51,15 @@ public class DataSourceTransactionManager implements TransactionManager {
         } finally {
             releaseConnection();
         }
+    }
+
+    private Connection getConnection() {
+        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == null) {
+            connection = DataSourceUtils.getNewConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+        }
+        return connection;
     }
 
     private void releaseConnection() {
