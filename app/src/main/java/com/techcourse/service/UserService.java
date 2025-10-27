@@ -48,7 +48,7 @@ public class UserService {
             safeRollback(connection, e);
             throw e;
         } catch (SQLException sqlException){
-            throw new RuntimeException("롤백 실패");
+            throw new DataAccessException("롤백 실패");
         }
         finally {
             try {
