@@ -103,6 +103,9 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
             }
         }
-        DataSourceUtils.releaseConnection(conn, dataSource);
+
+        if (TransactionSynchronizationManager.hasNotResource(dataSource)) { // 진행중인 트랜잭션이 다 끝난경우에 닫기
+            DataSourceUtils.releaseConnection(conn);
+        }
     }
 }

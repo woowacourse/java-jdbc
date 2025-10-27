@@ -64,6 +64,8 @@ public class DataSourceTransactionManager implements TransactionManager {
 
     private void releaseConnection() {
         final Connection connection = TransactionSynchronizationManager.unbindResource(dataSource);
-        DataSourceUtils.releaseConnection(connection, dataSource);
+        if (TransactionSynchronizationManager.hasNotResource(dataSource)) {
+            DataSourceUtils.releaseConnection(connection);
+        }
     }
 }
