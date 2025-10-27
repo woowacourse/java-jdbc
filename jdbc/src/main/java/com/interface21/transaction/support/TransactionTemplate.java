@@ -21,24 +21,37 @@ public class TransactionTemplate {
     public void execute(TransactionInterface callback) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        try { // 트랜잭션 보장 try - catch
+        try { // 트랜잭션 시작 try - catch
             connection.setAutoCommit(false);
 
-            callback.doTransaction();
+            try { // 트랜잭션 보장 try - catch
+                callback.doTransaction();
+                connection.commit();
+            } catch (Exception exceptionWhenCommit) {
+                log.error("트랜잭션 실패. 롤백을 시도합니다.", exceptionWhenCommit);
 
-            connection.commit();
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    log.error("롤백 실패.", ex);
+                }
 
-        } catch (Exception exceptionWhenCommit) {
-            log.error("커밋 실패. 롤백합니다.", exceptionWhenCommit);
-
-            try { // 롤백 try - catch
-                connection.rollback();
-            } catch (SQLException exceptionWhenRollback) {
-                log.error("롤백 실패", exceptionWhenRollback);
+                throw new DataAccessException("비지니스 로직 혹은 커밋 도중 에러가 발생했습니다.", exceptionWhenCommit);
             }
 
-            throw new DataAccessException("커밋 중 에러가 발생했습니다. 롤백합니다.", exceptionWhenCommit);
+        } catch (SQLException exceptionWhenCommitStart) { // 트랜잭션 실패 시 catch
+            throw new DataAccessException("트랜잭션을 시작할 수 없습니다.", exceptionWhenCommitStart);
 
+        } catch (Exception e) { // 트랜잭션 실패는 아니고 그 이외 에러일 때는 rollback 가능
+            log.error("예상치 못한 오류. 롤백을 시도합니다.", e);
+
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                log.error("롤백 실패.", ex);
+            }
+
+            throw new DataAccessException("예상치 못한 오류가 발생했습니다.", e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
