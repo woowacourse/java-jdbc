@@ -19,6 +19,11 @@ public abstract class TransactionSynchronizationManager {
         return map.get(key);
     }
 
+    public static boolean hasResource(final Object key) {
+        final Map<Object, Object> map = resources.get();
+        return map != null && map.containsKey(key);
+    }
+
     public static void bindResource(
             final Object key,
             final Object value

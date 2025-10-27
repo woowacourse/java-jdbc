@@ -40,11 +40,15 @@ public class TxUserService implements UserService {
             final String newPassword,
             final String createdBy
     ) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            userService.changePassword(id, newPassword, createdBy);
+            return;
+        }
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
         } catch (final Exception e) {
@@ -57,6 +61,9 @@ public class TxUserService implements UserService {
             }
             throw new DataAccessException("비밀번호 변경 중 오류가 발생했습니다.", e);
         } finally {
+            if (TransactionSynchronizationManager.hasResource(dataSource)) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
             if (connection != null) {
                 try {
                     connection.close();
@@ -64,7 +71,6 @@ public class TxUserService implements UserService {
                     log.error("JDBC Connection 종료 실패", e);
                 }
             }
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }

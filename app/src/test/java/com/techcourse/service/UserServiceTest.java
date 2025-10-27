@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,5 +64,52 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void testNestedTransaction() throws SQLException {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var dataSource = DataSourceConfig.getInstance();
+        final var userService = new TxUserService(appUserService, dataSource);
+
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+            final var newPassword = "nestedPassword";
+            final var createdBy = "gugu";
+            userService.changePassword(1L, newPassword, createdBy);
+
+            assertThat(connection.isClosed()).isFalse();
+            assertThat(TransactionSynchronizationManager.hasResource(dataSource)).isTrue();
+
+            connection.commit();
+        } catch (final Exception e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (final SQLException ex) {
+                    // ignore
+                }
+            }
+            throw new RuntimeException(e);
+        } finally {
+            if (TransactionSynchronizationManager.hasResource(dataSource)) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (final SQLException e) {
+                    // ignore
+                }
+            }
+        }
+
+        final var actual = userService.findById(1L);
+        assertThat(actual.getPassword()).isEqualTo("nestedPassword");
     }
 }
