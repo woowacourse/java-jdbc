@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -50,7 +49,8 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final StatementCallback<T> action, final Object... args) {
-        try (final var conn = DataSourceUtils.getConnection(dataSource); final var pstmt = conn.prepareStatement(sql)) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        try (final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             if (args != null) {
                 for (int i = 0; i < args.length; i++) {
