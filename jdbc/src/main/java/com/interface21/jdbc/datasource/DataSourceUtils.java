@@ -30,10 +30,23 @@ public abstract class DataSourceUtils {
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         Connection boundConnection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection == boundConnection) {
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            return;
         }
 
         closeConnection(connection);
+    }
+
+    public static void doReleaseConnection(Connection connection, DataSource dataSource) {
+        Connection boundConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == boundConnection) {
+            try {
+                closeConnection(connection);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        } else {
+            closeConnection(connection);
+        }
     }
 
     private static void closeConnection(Connection connection) {

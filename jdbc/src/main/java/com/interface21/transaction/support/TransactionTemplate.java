@@ -27,7 +27,7 @@ public class TransactionTemplate {
         } catch (Exception e) {
             rollbackAndThrow(connection, e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.doReleaseConnection(connection, dataSource);
         }
     }
 
