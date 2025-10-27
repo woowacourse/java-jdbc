@@ -2,7 +2,6 @@ package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +48,6 @@ public class TransactionTemplate {
                     log.atError().log("Error setting autoCommit", e);
                 }
                 DataSourceUtils.releaseConnection(conn, dataSource);
-                TransactionSynchronizationManager.clear();
             }
         }
     }
@@ -63,7 +61,6 @@ public class TransactionTemplate {
         } finally {
             if (conn != null) {
                 DataSourceUtils.releaseConnection(conn, dataSource);
-                TransactionSynchronizationManager.clear();
             }
         }
     }
