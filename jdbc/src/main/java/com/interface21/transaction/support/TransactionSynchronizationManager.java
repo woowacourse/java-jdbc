@@ -12,17 +12,17 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Connection getConnection(final DataSource dataSource) {
+    public static Connection getResource(final DataSource dataSource) {
         final Map<DataSource, Connection> map = resources.get();
         return map.get(dataSource);
     }
 
-    public static void bindConnection(final DataSource dataSource, final Connection connection) {
+    public static void bindResource(final DataSource dataSource, final Connection connection) {
         Map<DataSource, Connection> map = resources.get();
         map.put(dataSource, connection);
     }
 
-    public static Connection unbindConnection(final DataSource dataSource) {
+    public static Connection unbindResource(final DataSource dataSource) {
         final Map<DataSource, Connection> map = resources.get();
         final Connection connection = map.remove(dataSource);
         if (map.isEmpty()) {
@@ -31,12 +31,12 @@ public abstract class TransactionSynchronizationManager {
         return connection;
     }
 
-    public static boolean hasConnection(final DataSource dataSource) {
+    public static boolean hasResource(final DataSource dataSource) {
         final Map<DataSource, Connection> map = resources.get();
         return map.containsKey(dataSource);
     }
 
-    public static boolean hasNotConnection(final DataSource dataSource) {
-        return !hasConnection(dataSource);
+    public static boolean hasNotResource(final DataSource dataSource) {
+        return !hasResource(dataSource);
     }
 }
