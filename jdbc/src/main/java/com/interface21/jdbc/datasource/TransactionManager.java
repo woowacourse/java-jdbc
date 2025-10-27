@@ -26,6 +26,10 @@ public class TransactionManager {
                 } catch (SQLException rollbackEx) {
                     e.addSuppressed(rollbackEx);
                 }
+
+                if (e instanceof RuntimeException && !(e instanceof DataAccessException)) {
+                    throw (RuntimeException) e;
+                }
                 throw new DataAccessException("Transaction failed", e);
             }
         } catch (SQLException connectionEx) {
