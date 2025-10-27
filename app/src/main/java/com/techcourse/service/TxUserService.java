@@ -46,7 +46,9 @@ public class TxUserService implements UserService {
 
     private <T> T processTransaction(Callable<T> transactionCallback) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
+            connection.setAutoCommit(false);
             final T result = transactionCallback.call();
             commit(connection);
             return result;
@@ -55,10 +57,10 @@ public class TxUserService implements UserService {
             log.warn("트랜잭션 실행 중 예외 발생", e);
             throw new DataAccessException(e);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            final Connection unboundConnection = TransactionSynchronizationManager.unbindResource(dataSource);
             try {
-                connection.setAutoCommit(true);
-                connection.close();
+                unboundConnection.setAutoCommit(true);
+                unboundConnection.close();
             } catch (final SQLException ex) {
                 log.error("커넥션 종료 실패", ex);
             }
