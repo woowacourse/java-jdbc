@@ -43,4 +43,24 @@ public class UserHistoryDao {
             throw new RuntimeException(e);
         }
     }
+
+    public void log(final Connection conn, final UserHistory userHistory) {
+        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            pstmt.setLong(1, userHistory.getUserId());
+            pstmt.setString(2, userHistory.getAccount());
+            pstmt.setString(3, userHistory.getPassword());
+            pstmt.setString(4, userHistory.getEmail());
+            pstmt.setObject(5, userHistory.getCreatedAt());
+            pstmt.setString(6, userHistory.getCreateBy());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
 }

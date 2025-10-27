@@ -38,6 +38,21 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
+    }
+
+    private <T> T execute(Connection conn, String sql, PreparedStatementExecutor<T> executor, Object[] parameters) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setStatementParameters(pstmt, parameters);
+            log.debug("query : {}, params : {}", sql, Arrays.toString(parameters));
+            return executor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error("executeUpdate failed. sql={}, params={}", sql, Arrays.toString(parameters), e);
+            throw new JdbcExecutionException("쿼리 실행 실패 : " + e.getMessage());
+        }
+    }
+
     private void setStatementParameters(PreparedStatement pstmt, Object... parameters) throws SQLException {
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
