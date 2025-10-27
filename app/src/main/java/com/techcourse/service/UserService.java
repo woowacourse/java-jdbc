@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -21,7 +23,11 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
 
     public UserService() {
-        this(DataSourceConfig.getInstance(), new UserDao(DataSourceConfig.getInstance()), new UserHistoryDao(DataSourceConfig.getInstance()));
+        this(
+                DataSourceConfig.getInstance(),
+                new UserDao(DataSourceConfig.getInstance()),
+                new UserHistoryDao(DataSourceConfig.getInstance())
+        );
     }
 
     public UserService(DataSource dataSource, UserDao userDao, UserHistoryDao userHistoryDao) {
@@ -44,9 +50,11 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
+
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
             final var user = findById(id);
             user.changePassword(newPassword);
@@ -54,13 +62,18 @@ public class UserService {
             userHistoryDao.log(connection, new UserHistory(user, createBy));
 
             connection.commit();
-        }catch (Exception e) {
+        } catch (SQLException e) {
+            rollbackSafely(connection);
+            throw new DataAccessException("트랜잭션 처리 중 오류가 발생했습니다.", e);
+        } catch (Exception e) {
             rollbackSafely(connection);
             throw new DataAccessException(e);
         } finally {
-            closeSafely(connection);
+            if (connection != null) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
-
     }
 
     private void rollbackSafely(Connection connection) {
@@ -73,14 +86,5 @@ public class UserService {
         }
     }
 
-    private void closeSafely(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                log.error(e.getMessage());
-            }
-        }
-    }
 }
 
