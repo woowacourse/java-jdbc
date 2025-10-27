@@ -27,7 +27,7 @@ public class AppUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        final var user = findById(id);
+        final var user = userDao.findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createdBy));
