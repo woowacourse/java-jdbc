@@ -36,9 +36,7 @@ public class UserService {
         user.changePassword(newPassword);
         Connection connection = null;
         try {
-            connection = userDao.getJdbcTemplate()
-                    .getDataSource()
-                    .getConnection();
+            connection = userDao.getConnection();
             // transaction start
             connection.setAutoCommit(false);
             userDao.update(connection, user);
@@ -48,7 +46,7 @@ public class UserService {
             safeRollback(connection, e);
             throw e;
         } catch (SQLException sqlException){
-            throw new DataAccessException("롤백 실패");
+            throw new DataAccessException("SQL 작업 실패", sqlException);
         }
         finally {
             try {
