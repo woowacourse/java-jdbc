@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -39,20 +41,27 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final Connection connection = dataSource.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
-            try {
-                final var user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-            } catch (Exception ex) {
-                connection.rollback();
-                throw new DataAccessException("비밀번호를 변경하는데 실패했습니다.", ex);
-            }
+            handleChangePasswordTransaction(id, newPassword, createBy, connection);
             connection.commit();
         } catch (SQLException ex) {
             throw new DataAccessException(ex);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void handleChangePasswordTransaction(long id, String newPassword, String createBy, Connection connection) throws SQLException {
+        try {
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+        } catch (Exception ex) {
+            connection.rollback();
         }
     }
 }
