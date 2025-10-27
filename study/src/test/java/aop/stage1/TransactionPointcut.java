@@ -1,8 +1,8 @@
 package aop.stage1;
 
-import org.springframework.aop.support.StaticMethodMatcherPointcut;
-
+import aop.Transactional;
 import java.lang.reflect.Method;
+import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 /**
  * 포인트컷(pointcut). 어드바이스를 적용할 조인 포인트를 선별하는 클래스.
@@ -14,6 +14,17 @@ public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
-        return false;
+        // CGLIB 프록시인 경우 부모 클래스에서 찾기
+        Class<?> classToCheck = targetClass;
+        if (targetClass.getName().contains("$$")) {
+            classToCheck = targetClass.getSuperclass();
+        }
+
+        try {
+            final Method targetMethod = classToCheck.getDeclaredMethod(method.getName(), method.getParameterTypes());
+            return targetMethod.isAnnotationPresent(Transactional.class);
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
     }
 }
