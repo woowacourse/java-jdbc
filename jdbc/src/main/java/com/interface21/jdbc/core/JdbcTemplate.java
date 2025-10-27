@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -20,6 +22,36 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    /**
+     * PreparedStatement를 사용하는 콜백 인터페이스
+     */
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
+    }
+
+    /**
+     * SQL을 실행하고 콜백을 통해 결과를 반환한다. (DataSource에서 Connection 획득)
+     */
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        try (var connection = dataSource.getConnection();
+             var pstmt = connection.prepareStatement(sql)) {
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException("Execute Error: " + sql, e);
+        }
+    }
+
+    /**
+     * SQL을 실행하고 콜백을 통해 결과를 반환한다. (외부 Connection 사용)
+     */
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> callback) {
+        try (var pstmt = connection.prepareStatement(sql)) {
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException("Execute Error: " + sql, e);
+        }
+    }
 
     /**
      * INSERT, UPDATE, DELETE 같은 데이터 변경 쿼리를 실행한다.
@@ -36,18 +68,32 @@ public class JdbcTemplate {
         return executeUpdate(sql, pstmtSetter);
     }
 
+    // 가변 인자 버전 (+ connection)
+    public int executeUpdate(
+            final Connection connection, final String sql, final Object... params
+    ) {
+        var pstmtSetter = ofParams(params);
+        return executeUpdate(connection, sql, pstmtSetter);
+    }
+
     // PreparedStatementSetter 버전
     public int executeUpdate(
             final String sql, final PreparedStatementSetter pstmtSetter
     ) {
-        try (var connection = dataSource.getConnection();
-             var pstmt = connection.prepareStatement(sql)) {
-
+        return execute(sql, pstmt -> {
             pstmtSetter.setValues(pstmt);
             return pstmt.executeUpdate(); // 실행 후 영향을 받은 row 개수 반환
-        } catch (SQLException e) {
-            throw new DataAccessException("Execute Update Error: " + sql, e);
-        }
+        });
+    }
+
+    // PreparedStatementSetter 버전 (+ connection)
+    public int executeUpdate(
+            final Connection connection, final String sql, final PreparedStatementSetter pstmtSetter
+    ) {
+        return execute(connection, sql, pstmt -> {
+            pstmtSetter.setValues(pstmt);
+            return pstmt.executeUpdate(); // 실행 후 영향을 받은 row 개수 반환
+        });
     }
 
     /**
@@ -61,25 +107,20 @@ public class JdbcTemplate {
     public <T> List<T> executeQuery(
             final String sql, @Nonnull final RowMapper<T> rowMapper, final Object... params
     ) {
-        ResultSet resultSet = null;
-        try (var connection = dataSource.getConnection();
-             var pstmt = connection.prepareStatement(sql)) {
+        return execute(sql, pstmt -> {
             var pstmtSetter = ofParams(params);
             pstmtSetter.setValues(pstmt);
 
-            // 쿼리 실행
-            resultSet = pstmt.executeQuery();
-            List<T> result = new ArrayList<>();
+            // 쿼리 실행 및 결과 처리
+            try (var resultSet = pstmt.executeQuery()) {
+                List<T> result = new ArrayList<>();
 
-            if (resultSet.next()) {
-                result.add(rowMapper.mapRow(resultSet));
+                while (resultSet.next()) {
+                    result.add(rowMapper.mapRow(resultSet));
+                }
+                return result;
             }
-            return result;
-        } catch (SQLException e) {
-            throw new DataAccessException("Execute Query Error");
-        } finally {
-            closeResultSet(resultSet);
-        }
+        });
     }
 
     /**
@@ -115,18 +156,5 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, params[i]);
             }
         };
-    }
-
-    /**
-     * Result Set 객체 close 메서드
-     */
-    private void closeResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        } catch (SQLException ignored) {
-            throw new RuntimeException("Result Set Close Error");
-        }
     }
 }

@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -16,10 +17,10 @@ public class UserDao {
 
     private final RowMapper<User> userRowMapper =
             rs -> new User(
-                    rs.getLong(1),
-                    rs.getString(2),
-                    rs.getString(3),
-                    rs.getString(4)
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
             );
 
     public UserDao(final DataSource dataSource) {
@@ -36,10 +37,20 @@ public class UserDao {
         log.info("insert 영향을 받은 row 수: {}", insertCount);
     }
 
+    // 기존 버전 (호환성을 위해서 유지)
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         int updateRowsCount = jdbcTemplate.executeUpdate(
                 sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        log.info("update 영향을 받은 row 수: {}", updateRowsCount);
+    }
+
+    // connection 버전
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        int updateRowsCount = jdbcTemplate.executeUpdate(
+                connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         log.info("update 영향을 받은 row 수: {}", updateRowsCount);
     }
 
