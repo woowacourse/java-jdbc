@@ -1,8 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.TransactionCallback;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -23,13 +23,35 @@ public class TxUserService implements UserServiceInterface {
     // override 대상인 메서드는 userService의 메서드를 그대로 위임(delegate)한다.
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
+        executeTransaction(() -> userServiceInterface.changePassword(id, newPassword, createdBy));
+    }
+
+    @Override
+    public void save(User user) {
+        executeTransaction(() -> userServiceInterface.save(user));
+    }
+
+    @Override
+    public User findById(long id) {
+        return executeTransaction(() -> userServiceInterface.findById(id));
+    }
+
+    private void executeTransaction(Runnable runnable) {
+        executeTransaction(() -> {
+            runnable.run();
+            return null;
+        });
+    }
+
+    private <T> T executeTransaction(TransactionCallback<T> transactionCallback) {
         DataSource dataSource = DataSourceConfig.getInstance();
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            userServiceInterface.changePassword(id, newPassword, createdBy);
+            T result = transactionCallback.doInTransaction();
             connection.commit();
+            return result;
         } catch (Exception e) {
             if (connection != null) {
                 try {
@@ -43,23 +65,11 @@ public class TxUserService implements UserServiceInterface {
             if (connection != null) {
                 try {
                     DataSourceUtils.releaseConnection(connection, dataSource);
-                    Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
-                    log.info("Resource has been unbound: {}", unboundResource);
                 } catch (Exception ex) {
                     log.error("Failed to release connection or unbind resource", ex);
                 }
             }
         }
-    }
-
-    @Override
-    public void save(User user) {
-        userServiceInterface.save(user);
-    }
-
-    @Override
-    public User findById(long id) {
-        return userServiceInterface.findById(id);
     }
 }
 

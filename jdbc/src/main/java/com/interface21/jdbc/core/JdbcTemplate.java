@@ -48,18 +48,19 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
-        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
             try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
                 log.debug("query : {}", sql);
                 setParameters(preparedStatement, parameters);
                 return preparedStatementCallback.doInPreparedStatement(preparedStatement);
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-                throw new DataAccessException(e);
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

@@ -2,7 +2,6 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -61,8 +60,6 @@ public class UserService {
             if (connection != null) {
                 try {
                     DataSourceUtils.releaseConnection(connection, dataSource);
-                    Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
-                    log.info("Resource has been unbound: {}", unboundResource);
                 } catch (Exception ex) {
                     log.error("Failed to release connection or unbind resource", ex);
                 }

@@ -5,8 +5,12 @@ import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DataSourceUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSourceUtils.class);
 
     private DataSourceUtils() {
     }
@@ -29,9 +33,14 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            connection.close();
+            if (connection != null && connection.getAutoCommit()) {
+                connection.close();
+                Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
+                log.info("Resource has been unbound: {}", unboundResource);
+            }
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
     }
 }
+
