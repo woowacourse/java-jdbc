@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -54,7 +55,8 @@ class AppUserServiceTest {
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
+        assertThrows(
+                DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createdBy));
 
         final var actual = userService.findById(1L);

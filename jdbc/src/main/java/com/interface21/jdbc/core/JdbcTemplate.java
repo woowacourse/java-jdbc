@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.RowMapper;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.datasource.PlatformTransactionManager;
 import com.interface21.jdbc.exception.DatabaseConnectionFailException;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
         try {
-            Connection connection = PlatformTransactionManager.getConnection(dataSource);
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             PreparedStatement ps = connection.prepareStatement(sql);
             return callback.doInPreparedStatement(ps);
         } catch (SQLException e) {
