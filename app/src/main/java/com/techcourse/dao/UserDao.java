@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,18 +35,6 @@ public final class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
-    public void update(
-            final Connection connection,
-            final User user
-    ) {
-        final String sql = """
-                UPDATE users
-                SET password = ?
-                WHERE id = ?
-                """;
-        log.debug("Updating user: {}", user);
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
-    }
 
     public List<User> findAll() {
         final String sql = """
