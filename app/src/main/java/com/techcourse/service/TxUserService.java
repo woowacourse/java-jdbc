@@ -86,7 +86,7 @@ public class TxUserService implements UserService {
             }
             throw new DataAccessException(e);
         } finally {
-            if (isNewTransaction && connection != null) {.
+            if (isNewTransaction && connection != null) {
                 try {
                     connection.setAutoCommit(true);
                 } catch (SQLException ignored) {
