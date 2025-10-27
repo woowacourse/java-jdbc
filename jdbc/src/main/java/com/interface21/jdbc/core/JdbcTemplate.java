@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -78,20 +80,18 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return callback.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 

@@ -1,51 +1,12 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
 
-public class UserService {
+public interface UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
+    User findById(long id);
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-    }
+    void insert(User user);
 
-    public User findById(final long id) {
-        return userDao.findById(id);
-    }
-
-    public void insert(final User user) {
-        userDao.insert(user);
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        final DataSource dataSource = DataSourceConfig.getInstance();
-
-        try (final Connection conn = dataSource.getConnection()) {
-            try {
-                conn.setAutoCommit(false);
-
-                final User user = findById(id);
-                user.changePassword(newPassword);
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createdBy));
-
-                conn.commit();
-            } catch (SQLException e) {
-                conn.rollback();
-                throw new RuntimeException(e);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    void changePassword(long id, String newPassword, String createBy);
 }
