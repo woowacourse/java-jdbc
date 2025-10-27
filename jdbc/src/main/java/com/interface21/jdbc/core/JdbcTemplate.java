@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,11 +42,13 @@ public final class JdbcTemplate {
             final String sql,
             final Object... args
     ) {
-        try (final PreparedStatement ps = createPreparedStatement(connection, sql, args)) {
+        try (
+                final PreparedStatement ps = createPreparedStatement(connection, sql, args)
+        ) {
             return ps.executeUpdate();
         } catch (final SQLException e) {
-            log.error("데이터베이스 처리 중 예외 발생", e);
-            throw new DataAccessException(e);
+            log.error("데이터베이스 업데이트 중 오류 발생: {}", sql, e);
+            throw new DataAccessException("데이터를 수정하는 중 오류가 발생했습니다.", e);
         }
     }
 
@@ -70,11 +73,11 @@ public final class JdbcTemplate {
     ) {
         return executeQuery(sql, args, rs -> {
             if (!rs.next()) {
-                throw new DataAccessException("쿼리 결과가 없습니다.");
+                throw new DataAccessException("조회 결과가 존재하지 않습니다.");
             }
-            final T result = rowMapper.mapRow(rs);
+            T result = rowMapper.mapRow(rs);
             if (rs.next()) {
-                throw new DataAccessException("쿼리 결과가 2개 이상입니다. " + result);
+                throw new DataAccessException("조회 결과가 2개 이상입니다. SQL: " + sql);
             }
             return result;
         });
@@ -83,16 +86,22 @@ public final class JdbcTemplate {
     private <T> T executeQuery(
             final String sql,
             final Object[] args,
-            final SqlFunction<ResultSet, T> mapper
+            final SqlFunction<ResultSet, T> extractor
     ) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement ps = createPreparedStatement(connection, sql, args);
-                final ResultSet rs = ps.executeQuery()
-        ) {
-            return mapper.apply(rs);
+        Connection con = null;
+        try {
+            con = DataSourceUtils.getConnection(dataSource);
+            try (
+                    final PreparedStatement ps = createPreparedStatement(con, sql, args);
+                    final ResultSet rs = ps.executeQuery()
+            ) {
+                return extractor.apply(rs);
+            }
         } catch (final SQLException e) {
-            throw new DataAccessException(e);
+            log.error("쿼리 실행 중 오류 발생: {}", sql, e);
+            throw new DataAccessException("데이터를 조회하는 중 오류가 발생했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(con, dataSource);
         }
     }
 
@@ -100,14 +109,17 @@ public final class JdbcTemplate {
             final String sql,
             final Object... args
     ) {
-        try (
-                final Connection connection = dataSource.getConnection();
-                final PreparedStatement ps = createPreparedStatement(connection, sql, args)
-        ) {
-            return ps.executeUpdate();
+        Connection con = null;
+        try {
+            con = DataSourceUtils.getConnection(dataSource);
+            try (final PreparedStatement ps = createPreparedStatement(con, sql, args)) {
+                return ps.executeUpdate();
+            }
         } catch (final SQLException e) {
-            log.error("데이터베이스 처리 중 예외 발생", e);
-            throw new DataAccessException(e);
+            log.error("쿼리 실행 중 오류 발생: {}", sql, e);
+            throw new DataAccessException("데이터를 수정하는 중 오류가 발생했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(con, dataSource);
         }
     }
 
