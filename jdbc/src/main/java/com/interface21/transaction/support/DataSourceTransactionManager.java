@@ -5,9 +5,7 @@ import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import lombok.Getter;
 
-@Getter
 public class DataSourceTransactionManager implements TransactionManager {
 
     private final DataSource dataSource;
