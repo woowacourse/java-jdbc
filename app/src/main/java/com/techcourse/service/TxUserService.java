@@ -55,7 +55,10 @@ public class TxUserService implements UserService {
                 connection.setAutoCommit(false);
             }
             final T result = transactionCallback.call();
-            commit(connection);
+
+            if (isNewTransaction) {
+                commit(connection);
+            }
             return result;
         } catch (final Exception e) {
             rollback(connection);
