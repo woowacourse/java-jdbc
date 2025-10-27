@@ -8,9 +8,12 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
@@ -58,6 +61,10 @@ public class UserService {
     }
 
     private void safeRollback(Connection conn, Exception cause) {
+        if(conn == null){
+            log.debug("Connection is null");
+            return;
+        }
         try { conn.rollback(); } catch (SQLException rb) { cause.addSuppressed(rb); }
     }
 }
