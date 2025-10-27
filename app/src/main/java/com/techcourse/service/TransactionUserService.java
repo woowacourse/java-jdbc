@@ -4,12 +4,12 @@ import com.interface21.transaction.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
-public class TxUserService implements UserService {
+public class TransactionUserService implements UserService {
 
     private final UserService userService;
     private final TransactionTemplate transactionTemplate;
 
-    public TxUserService(final UserService userService) {
+    public TransactionUserService(final UserService userService) {
         this.userService = userService;
         this.transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
     }
