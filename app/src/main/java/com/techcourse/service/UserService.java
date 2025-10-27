@@ -1,6 +1,5 @@
 package com.techcourse.service;
 
-import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.jdbc.datasource.TransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -30,7 +29,8 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         transactionManager.executeInTransaction(connection -> {
-            final User user = getById(id);
+            final User user = userDao.findById(connection, id)
+                    .orElseThrow(() -> new IllegalArgumentException("해당하는 사용자가 존재하지 않습니다. id: " + id));
             user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));

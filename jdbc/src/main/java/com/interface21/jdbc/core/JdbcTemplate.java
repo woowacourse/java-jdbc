@@ -34,6 +34,21 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final List<T> result = query(sql, rowMapper, parameters);
 
+        return getObjectFrom(result);
+    }
+
+    public <T> Optional<T> queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... parameters
+    ) {
+        final List<T> result = query(connection, sql, rowMapper, parameters);
+
+        return getObjectFrom(result);
+    }
+
+    private <T> Optional<T> getObjectFrom(final List<T> result) {
         if (result.size() > 1) {
             throw new DataAccessException("Expected single result, but found " + result.size());
         }
@@ -56,6 +71,24 @@ public class JdbcTemplate {
         );
     }
 
+    public <T> List<T> query(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... parameters
+    ) {
+        return execute(
+                connection,
+                sql,
+                preparedStatement -> {
+                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                        return extractResults(resultSet, rowMapper);
+                    }
+                },
+                parameters
+        );
+    }
+
     public <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... parameters) {
         return execute(
                 sql,
@@ -68,13 +101,27 @@ public class JdbcTemplate {
         );
     }
 
+    public <T> T query(
+            final Connection connection,
+            final String sql,
+            final ResultSetExtractor<T> resultSetExtractor,
+            final Object... parameters
+    ) {
+        return execute(
+                connection,
+                sql,
+                preparedStatement -> {
+                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                        return resultSetExtractor.extractData(resultSet);
+                    }
+                },
+                parameters
+        );
+    }
+
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            bindParameters(preparedStatement, parameters);
-            return callback.execute(preparedStatement);
+        try (final Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, parameters);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
