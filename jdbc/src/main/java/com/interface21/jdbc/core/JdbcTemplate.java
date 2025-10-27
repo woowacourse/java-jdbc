@@ -44,13 +44,6 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(final Connection conn, final String sql, final Object... params) {
-        return execute(conn, sql, pstmt -> {
-            bindParameters(params, pstmt);
-            return pstmt.executeUpdate();
-        });
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return execute(sql, pstmt -> {
             bindParameters(params, pstmt);
@@ -71,41 +64,8 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> Optional<T> queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(conn, sql, pstmt -> {
-            bindParameters(params, pstmt);
-
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    return Optional.empty();
-                }
-
-                final T mappedRow = rowMapper.mapRow(rs);
-
-                if (rs.next()) {
-                    throw new DataAccessException("queryForObject 실행 시 조회 결과가 1건 이상입니다.");
-                }
-
-                return Optional.ofNullable(mappedRow);
-            }
-        });
-    }
-
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         return execute(sql, pstmt ->  {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        });
-    }
-
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper) {
-        return execute(conn, sql, pstmt ->  {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -132,8 +92,9 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
-            DataSourceUtils.releaseConnection(conn, dataSource);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -148,20 +109,9 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(pstmt);
         } catch (final SQLException e) {
             log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        } finally {
             DataSourceUtils.releaseConnection(conn, dataSource);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallBack<T> action) {
-        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            return action.doInPreparedStatement(pstmt);
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -34,16 +34,31 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        Connection conn = null;
         try {
+            conn = dataSource.getConnection();
+            TransactionSynchronizationManager.bindResource(dataSource, conn);
             conn.setAutoCommit(false);
+
             userService.changePassword(id, newPassword, createdBy);
+
             conn.commit();
         } catch (final Exception e) {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            closeConnection(conn);
+        }
+    }
+
+    private void closeConnection(final Connection conn) {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (final SQLException ex) {
+                log.error("Connection close failed", ex);
+            }
         }
     }
 
