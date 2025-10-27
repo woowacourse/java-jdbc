@@ -1,9 +1,12 @@
 package com.techcourse.service;
 
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserService {
 
@@ -16,11 +19,29 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            final var user = userDao.findById(connection, id);
+
+            connection.commit();
+
+            return user;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void insert(final User user) {
-        userDao.insert(user);
+        try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.insert(connection, user);
+
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
