@@ -35,17 +35,22 @@ public class TxUserService implements UserService {
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
             userService.changePassword(id, newPassword, createdBy);
 
             connection.commit();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             rollbackTransaction(connection);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                } catch (SQLException ignored) {
+                }
+            }
             TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -53,7 +58,6 @@ public class TxUserService implements UserService {
         if (connection != null) {
             try {
                 connection.rollback();
-                connection.setAutoCommit(true);
             } catch (SQLException e) {
                 throw new DataAccessException(e);
             }
