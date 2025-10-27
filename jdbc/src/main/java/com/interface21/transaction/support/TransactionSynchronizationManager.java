@@ -10,15 +10,12 @@ public abstract class TransactionSynchronizationManager {
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
 
-    private TransactionSynchronizationManager() {}
+    private TransactionSynchronizationManager() {
+    }
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
-        Connection connection = dataSourceConnectionMap.get(key);
-        if (connection == null) {
-            throw new DataAccessException("해당하는 리소스가 없습니다.");
-        }
-        return connection;
+        return dataSourceConnectionMap.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
