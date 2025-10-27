@@ -27,7 +27,10 @@ public class TransactionManager {
                     e.addSuppressed(rollbackEx);
                 }
 
-                if (e instanceof RuntimeException && !(e instanceof DataAccessException)) {
+                if (e instanceof DataAccessException) {
+                    throw (DataAccessException) e;
+                }
+                if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 }
                 throw new DataAccessException("Transaction failed", e);
