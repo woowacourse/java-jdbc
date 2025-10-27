@@ -23,6 +23,7 @@ public class UserService {
         userDao.insert(user);
     }
 
+    // Transaction 적용하기
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
