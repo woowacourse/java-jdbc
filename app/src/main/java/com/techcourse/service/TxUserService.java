@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -36,6 +37,7 @@ public class TxUserService implements UserService {
             final String createdBy
     ) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
             connection.setAutoCommit(false);
             try {
@@ -49,6 +51,7 @@ public class TxUserService implements UserService {
             throw new DataAccessException(e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
