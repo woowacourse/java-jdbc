@@ -2,14 +2,11 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -47,11 +44,11 @@ public class UserHistoryDao {
         public UserHistory mapRow(final ResultSet resultSet) throws SQLException {
             return new UserHistory(
                     resultSet.getLong("id"),
-                    resultSet.getLong("userId"),
+                    resultSet.getLong("user_id"),
                     resultSet.getString("account"),
                     resultSet.getString("password"),
                     resultSet.getString("email"),
-                    resultSet.getString("createBy"));
+                    resultSet.getString("created_by"));
         }
     }
 }
