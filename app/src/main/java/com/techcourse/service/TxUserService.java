@@ -34,7 +34,9 @@ public class TxUserService implements UserService {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
+        boolean originalAutoCommit = false;
         try {
+            originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
 
             userService.changePassword(id, newPassword, createdBy);
@@ -48,6 +50,11 @@ public class TxUserService implements UserService {
             }
             throw new DataAccessException(e);
         } finally {
+            try {
+                connection.setAutoCommit(originalAutoCommit);
+            } catch (SQLException e) {
+                throw new DataAccessException("Failed to reset autoCommit", e);
+            }
             TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
