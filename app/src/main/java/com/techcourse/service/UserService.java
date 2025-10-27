@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -26,10 +28,6 @@ public class UserService {
         return userDao.findById(id);
     }
 
-    public User findById(final Connection connection, final long id) {
-        return userDao.findById(connection, id);
-    }
-
     public void insert(final User user) {
         userDao.insert(user);
     }
@@ -37,20 +35,21 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
-            final var user = findById(connection, id);
+            final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException e) {
             rollbackTransaction(connection);
             throw new DataAccessException(e);
         } finally {
-            closeConnection(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -60,16 +59,6 @@ public class UserService {
                 connection.rollback();
             } catch (SQLException e) {
                 throw new DataAccessException("트랜잭션을 롤백할 수 없습니다!", e);
-            }
-        }
-    }
-
-    private void closeConnection(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                throw new DataAccessException("DB 커넥션을 닫는데 실패했습니다.", e);
             }
         }
     }
