@@ -2,7 +2,6 @@ package com.techcourse.service;
 
 import com.interface21.dao.SqlExecutionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -43,7 +42,6 @@ public class TxUserService implements UserService {
             rollbackAndThrow(connection, e);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
