@@ -58,8 +58,42 @@ public class JdbcTemplate {
         );
     }
 
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return execute(
+                connection,
+                sql,
+                pstmt -> {
+                    setParameter(pstmt, args);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            return rowMapper.mapRowToResult(rs);
+                        }
+                        return null;
+                    }
+                }
+        );
+    }
+
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
         return execute(
+                sql,
+                pstmt -> {
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        List<T> resultList = new ArrayList<>();
+                        while (rs.next()) {
+                            T result = rowMapper.mapRowToResult(rs);
+                            resultList.add(result);
+                        }
+                        return resultList;
+                    }
+                }
+        );
+    }
+
+    public <T> List<T> queryForList(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
+        return execute(
+                connection,
                 sql,
                 pstmt -> {
                     try (ResultSet rs = pstmt.executeQuery()) {
