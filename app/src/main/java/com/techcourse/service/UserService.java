@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -64,6 +65,7 @@ public class UserService {
                     log.atError().log("Error closing connection", e);
                 }
                 DataSourceUtils.releaseConnection(conn, DataSourceConfig.getInstance());
+                TransactionSynchronizationManager.clear();
             }
         }
     }
