@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -32,10 +32,8 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final DataSource dataSource = DataSourceConfig.getInstance();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            TransactionSynchronizationManager.bindResource(dataSource, dataSource.getConnection());
-
-            final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
             connection.setAutoCommit(false);
             try {
                 final var user = userDao.findById(connection, id);
@@ -50,7 +48,7 @@ public class UserService {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
