@@ -30,6 +30,13 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
+    public void update(final Connection connection, final String sql, final Object... parameters) {
+        if (sql == null || sql.trim().isEmpty()) {
+            throw new DataAccessException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
+        }
+        execute(connection, sql, PreparedStatement::executeUpdate, parameters);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         validateQuery(sql);
         if (rowMapper == null) {
@@ -65,6 +72,19 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... parameters) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement prepareStatement = conn.prepareStatement(sql)) {
+            validateParameterCount(prepareStatement, parameters, sql);
+            setStatementParameters(prepareStatement, parameters);
+            log.debug("query : {}", sql);
+            return executor.execute(prepareStatement);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw dataAccessException("실패", sql, parameters, e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementExecutor<T> executor,
+                          final Object... parameters) {
+        try (final PreparedStatement prepareStatement = conn.prepareStatement(sql)) {
             validateParameterCount(prepareStatement, parameters, sql);
             setStatementParameters(prepareStatement, parameters);
             log.debug("query : {}", sql);
