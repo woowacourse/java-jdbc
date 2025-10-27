@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
+
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +26,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         final var results = query(sql, rowMapper, args);
         if (results.size() != 1) {
-            throw new DataAccessException("result size doesn't match");
+            throw new DataAccessException("result size doesn't match: " + results.size());
         }
         return results.getFirst();
     }
@@ -32,12 +34,15 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
         final var results = query(sql, connection, rowMapper, args);
         if (results.size() != 1) {
-            throw new DataAccessException("result size doesn't match");
+            throw new DataAccessException("result size doesn't match: " + results.size());
         }
         return results.getFirst();
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return query(sql, TransactionSynchronizationManager.getResource(dataSource), rowMapper, args);
+        }
         return execute(conn -> queryInternal(conn, sql, rowMapper, args));
     }
 
@@ -46,6 +51,9 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return update(sql, TransactionSynchronizationManager.getResource(dataSource), args);
+        }
         return execute(conn -> updateInternal(conn, sql, args));
     }
 
