@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -35,13 +37,15 @@ public class UserService {
 
     // TODO 4단계에서 트랜잭션 로직 분리하기
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
             conn.setAutoCommit(false);
             try {
-                User user = userDao.findById(conn, id);
+                User user = userDao.findById(id);
                 user.changePassword(newPassword);
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
                 conn.commit();
             } catch (Exception e) {
                 rollback(conn, e);
@@ -50,6 +54,15 @@ public class UserService {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                log.error("Failed to close connection", e);
+            }
         }
     }
 
