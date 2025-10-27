@@ -2,8 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +33,7 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?;";
-        final var conn = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
-        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

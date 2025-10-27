@@ -30,9 +30,7 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        final var conn = DataSourceUtils.getConnection(DataSourceConfig.getInstance());
         jdbcTemplate.update(
-                conn,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
