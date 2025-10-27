@@ -31,6 +31,11 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
+    public void update(final Connection connection, final User user) {
+        final var sql = "UPDATE users SET account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public List<User> findAll() {
         final var sql = "select * from users";
         return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
@@ -39,6 +44,11 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {

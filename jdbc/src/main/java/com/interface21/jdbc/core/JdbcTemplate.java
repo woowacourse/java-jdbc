@@ -22,8 +22,9 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        execute(sql,
+    public void update(String sql, final Object... args) {
+        execute(
+                sql,
                 pstmt -> {
                     setParameter(pstmt, args);
                     return pstmt.executeUpdate();
@@ -31,8 +32,20 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql,
+    public void update(final Connection connection, String sql, final Object... args) {
+        execute(connection,
+                sql,
+                pstmt -> {
+                    setParameter(pstmt, args);
+                    return pstmt.executeUpdate();
+                }
+        );
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return execute(
+                sql,
                 pstmt -> {
                     setParameter(pstmt, args);
                     try (ResultSet rs = pstmt.executeQuery()) {
@@ -46,7 +59,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        return execute(sql,
+        return execute(
+                sql,
                 pstmt -> {
                     try (ResultSet rs = pstmt.executeQuery()) {
                         List<T> resultList = new ArrayList<>();
@@ -63,6 +77,22 @@ public class JdbcTemplate {
     private void setParameter(final PreparedStatement pstmt, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementCallback<T> callback
+    ) {
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
+            log.debug("query : {}", sql);
+
+            return callback.run(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
