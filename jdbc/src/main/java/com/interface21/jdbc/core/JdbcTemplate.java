@@ -16,12 +16,6 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
     public void update(final Connection connection, String sql, final Object... args) {
         execute(connection,
                 sql,
