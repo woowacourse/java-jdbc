@@ -22,10 +22,10 @@ public class TransactionManager {
                 connection.commit();
             } catch (Exception e) {
                 connection.rollback();
-                throw new DataAccessException("트랜잭션 오류발생으로 롤백 : " + e);
+                throw new DataAccessException("트랜잭션 오류발생으로 롤백", e);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("커넥션 오류 발생 : " + e);
+            throw new RuntimeException("커넥션 오류 발생", e);
         }
     }
 }
