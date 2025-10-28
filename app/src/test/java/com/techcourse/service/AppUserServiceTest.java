@@ -42,7 +42,7 @@ class AppUserServiceTest {
         // given
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword123";
         final var createdBy = "gugu";
@@ -60,7 +60,7 @@ class AppUserServiceTest {
         // given
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var originalPassword = testUser.getPassword();
         final var newPassword = "newPassword123";
