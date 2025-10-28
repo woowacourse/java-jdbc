@@ -1,7 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -19,22 +16,35 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... params) {
+    public void update(final String sql, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            setParameters(pstmt, params);
+            pss.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
-    public <T> List<T> query(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
+    public void update(final String sql, final Object... params) {
+        update(sql, pstmt -> {
+            try {
+                setParameters(pstmt, params);
+            } catch (SQLException e) {
+                throw new SqlExecutionException("파라미터 설정 중 오류가 발생했습니다: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(pstmt, params)) {
-            return extractResults(rs, mapper);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pss.setValues(pstmt);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractResults(rs, rowMapper);
+            }
         } catch (SQLException e) {
             throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -42,21 +52,30 @@ public class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt, Object... params) throws SQLException {
-        setParameters(pstmt, params);
-        return pstmt.executeQuery();
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return query(sql, pstmt -> {
+            try {
+                setParameters(pstmt, params);
+            } catch (SQLException e) {
+                throw new SqlExecutionException("파라미터 설정 중 오류가 발생했습니다: " + e.getMessage(), e);
+            }
+        }, rowMapper);
     }
 
-    private <T> List<T> extractResults(ResultSet rs, Function<ResultSet, T> mapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(mapper.apply(rs));
+    private <T> List<T> extractResults(ResultSet rs, RowMapper<T> rowMapper) {
+        try {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new RowMappingException("ResultSet 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
-        return results;
     }
 
-    public <T> T queryForObject(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
-        List<T> results = query(sql, mapper, params);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> results = query(sql, rowMapper, params);
 
         if (results.isEmpty()) {
             throw new InvalidResultException("조회 결과가 없습니다");
