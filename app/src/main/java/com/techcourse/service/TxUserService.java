@@ -45,8 +45,11 @@ public class TxUserService implements UserService {
 
     private void closeConnection(Connection connection) {
         if (connection != null) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
