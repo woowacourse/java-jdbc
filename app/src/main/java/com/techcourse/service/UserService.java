@@ -1,39 +1,12 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.datasource.TransactionManager;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 
-public class UserService {
+public interface UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
-    private final TransactionManager transactionManager;
+    User getById(final long id);
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final TransactionManager transactionManager) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-        this.transactionManager = transactionManager;
-    }
+    void save(final User user);
 
-    public User getById(final long id) {
-        return userDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당하는 사용자가 존재하지 않습니다. id: " + id));
-    }
-
-    public void insert(final User user) {
-        userDao.insert(user);
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionManager.executeInTransaction(connection -> {
-            final User user = userDao.findById(connection, id)
-                    .orElseThrow(() -> new IllegalArgumentException("해당하는 사용자가 존재하지 않습니다. id: " + id));
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-        });
-    }
+    void changePassword(final long id, final String newPassword, final String createdBy);
 }
