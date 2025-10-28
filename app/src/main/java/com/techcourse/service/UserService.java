@@ -23,16 +23,12 @@ public class UserService {
         try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
             try {
                 connection.setAutoCommit(false);
-
                 final var user = userDao.findById(connection, id);
-
                 connection.commit();
-
                 return user;
-
             } catch (SQLException e) {
-                connection.rollback();
-                throw new DataAccessException();
+                rollback(e, connection);
+                throw new DataAccessException(e);
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -43,12 +39,10 @@ public class UserService {
         try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
             try {
                 connection.setAutoCommit(false);
-
                 userDao.insert(connection, user);
-
                 connection.commit();
-
             } catch (SQLException e) {
+                rollback(e, connection);
                 throw new DataAccessException(e);
             }
         } catch (SQLException e) {
@@ -60,14 +54,13 @@ public class UserService {
         try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
             try {
                 connection.setAutoCommit(false);
-
                 final var user = userDao.findById(connection, id);
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy)); //커넥션 A
-
                 connection.commit();
             } catch (SQLException e) {
+                rollback(e, connection);
                 throw new DataAccessException(e);
             }
         } catch (SQLException e) {
