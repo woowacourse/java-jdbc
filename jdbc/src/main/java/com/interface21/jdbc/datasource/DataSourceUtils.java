@@ -31,8 +31,7 @@ public abstract class DataSourceUtils {
             return;
         }
 
-        Connection boundConnection = TransactionSynchronizationManager.getResource(dataSource);
-        if (connection == boundConnection) {
+        if (isConnectionTransactional(connection, dataSource)) {
             return;
         }
 
@@ -41,5 +40,10 @@ public abstract class DataSourceUtils {
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
+    }
+
+    private static boolean isConnectionTransactional(Connection conn, DataSource dataSource) {
+        Connection boundConn = TransactionSynchronizationManager.getResource(dataSource);
+        return (boundConn == conn);
     }
 }
