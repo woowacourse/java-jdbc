@@ -30,7 +30,7 @@ public class UserService {
 
                 return user;
 
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 connection.rollback();
                 throw new DataAccessException();
             }
@@ -48,8 +48,8 @@ public class UserService {
 
                 connection.commit();
 
-            } catch (Exception e) {
-                throw new DataAccessException();
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -67,8 +67,8 @@ public class UserService {
                 userHistoryDao.log(connection, new UserHistory(user, createBy)); //커넥션 A
 
                 connection.commit();
-            } catch (Exception e) {
-                throw new DataAccessException();
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
