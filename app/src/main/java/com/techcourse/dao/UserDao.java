@@ -22,19 +22,9 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
     public void insert(final Connection connection, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void update(final User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final Connection connection, final User user) {
@@ -42,29 +32,14 @@ public class UserDao {
         jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
-        final var sql = "select * from users";
-        return jdbcTemplate.queryForList(sql, USER_ROW_MAPPER);
-    }
-
     public List<User> findAll(final Connection connection) {
         final var sql = "select * from users";
         return jdbcTemplate.queryForList(connection, sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
-    }
-
     public User findById(final Connection connection, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
-    }
-
-    public User findByAccount(final String account) {
-        final var sql = "select * from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 
     public User findByAccount(final Connection connection, final String account) {
