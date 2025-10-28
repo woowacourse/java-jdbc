@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -69,33 +70,14 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(Connection connection, String sql, Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     public int update(String sql, Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    private <T> T execute(
-        Connection connection,
-        String sql,
-        PreparedStatementFunction<T> pstmtFunction,
-        Object... args
-    ) {
-        try (PreparedStatement pstmt = getPreparedStatementWithArguments(connection, sql, args)) {
-            log.debug("query : {}", sql);
-            return pstmtFunction.execute(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
     private <T> T execute(String sql, PreparedStatementFunction<T> pstmtFunction, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatementWithArguments(conn, sql, args);
-        ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            PreparedStatement pstmt = getPreparedStatementWithArguments(connection, sql, args);
             log.debug("query : {}", sql);
             return pstmtFunction.execute(pstmt);
         } catch (SQLException e) {
