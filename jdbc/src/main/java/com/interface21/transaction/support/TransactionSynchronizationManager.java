@@ -12,19 +12,26 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        return resources.get().get(key);
+        final var sources = resources.get();
+        if (sources == null) {
+            return null;
+        }
+        return sources.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        final var changed = resources.get();
-        changed.put(key, value);
-        resources.set(changed);
+        var sources = resources.get();
+        if (sources == null) {
+            sources = new HashMap<>();
+        }
+        sources.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        final var changed = resources.get();
-        final var removed = changed.remove(key);
-        resources.set(changed);
-        return removed;
+        final var sources = resources.get();
+        if (sources == null) {
+            return null;
+        }
+        return sources.remove(key);
     }
 }
