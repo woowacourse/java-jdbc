@@ -68,10 +68,6 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new DataAccessException("일치하는 결과가 1을 초과합니다.");
         }
-        return results.get(0);
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
+        return results.getFirst();
     }
 }
