@@ -24,19 +24,19 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        simpleJpa.insert(TransactionManagerConfig.getCurrentConnection(), user);
+        simpleJpa.insert(TransactionManagerConfig.getOrCreateConnection(), user);
     }
 
     public void update(final User user) {
-        simpleJpa.update(TransactionManagerConfig.getCurrentConnection(), user);
+        simpleJpa.update(TransactionManagerConfig.getOrCreateConnection(), user);
     }
 
     public List<User> findAll() {
-        return simpleJpa.selectAll(TransactionManagerConfig.getCurrentConnection(), User.class);
+        return simpleJpa.selectAll(TransactionManagerConfig.getOrCreateConnection(), User.class);
     }
 
     public User findById(final Long id) {
-        List<User> users = simpleJpa.selectById(TransactionManagerConfig.getCurrentConnection(), User.class, id);
+        List<User> users = simpleJpa.selectById(TransactionManagerConfig.getOrCreateConnection(), User.class, id);
         if (users.size() > 1) {
             throw new IllegalStateException("Multiple users found with id: " + id);
         }
@@ -44,7 +44,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        List<User> users = simpleJpa.selectByColumn(TransactionManagerConfig.getCurrentConnection(), User.class, "account", account);
+        List<User> users = simpleJpa.selectByColumn(TransactionManagerConfig.getOrCreateConnection(), User.class, "account", account);
         if (users.size() > 1) {
             throw new IllegalStateException("Multiple users found with account: " + account);
         }
@@ -52,6 +52,6 @@ public class UserDao {
     }
 
     public void delete(User user) {
-        simpleJpa.deleteById(TransactionManagerConfig.getCurrentConnection(), user.getClass(), user.getId());
+        simpleJpa.deleteById(TransactionManagerConfig.getOrCreateConnection(), user.getClass(), user.getId());
     }
 }

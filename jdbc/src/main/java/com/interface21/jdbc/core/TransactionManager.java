@@ -8,6 +8,8 @@ public interface TransactionManager {
 
     Connection getCurrentConnection();
 
+    Connection getOrCreateConnection();
+
     void commit();
 
     void rollback();

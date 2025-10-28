@@ -22,6 +22,6 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        simpleJpa.insert(TransactionManagerConfig.getCurrentConnection(), userHistory);
+        simpleJpa.insert(TransactionManagerConfig.getOrCreateConnection(), userHistory);
     }
 }

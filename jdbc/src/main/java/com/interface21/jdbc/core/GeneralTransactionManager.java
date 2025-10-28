@@ -41,6 +41,15 @@ public class GeneralTransactionManager implements TransactionManager {
         return conn;
     }
 
+    public Connection getOrCreateConnection() {
+        Connection conn = connection.get();
+        if (conn == null) {
+            begin();
+            conn = connection.get();
+        }
+        return conn;
+    }
+
     public void commit() {
         Connection conn = connection.get();
         if (conn == null) {

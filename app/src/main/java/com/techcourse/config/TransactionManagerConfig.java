@@ -25,6 +25,10 @@ public class TransactionManagerConfig {
         return getInstance().getCurrentConnection();
     }
 
+    public static Connection getOrCreateConnection() {
+        return getInstance().getOrCreateConnection();
+    }
+
     public static <T> T executeInTransaction(TransactionCallback<T> callback) {
         TransactionManager instance = getInstance();
         instance.begin();
