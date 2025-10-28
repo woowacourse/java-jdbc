@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -20,13 +21,19 @@ public class UserService {
 
     public User findById(final long id) {
         try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
-            connection.setAutoCommit(false);
+            try {
+                connection.setAutoCommit(false);
 
-            final var user = userDao.findById(connection, id);
+                final var user = userDao.findById(connection, id);
 
-            connection.commit();
+                connection.commit();
 
-            return user;
+                return user;
+
+            } catch (Exception e) {
+                connection.rollback();
+                throw new DataAccessException();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -34,11 +41,16 @@ public class UserService {
 
     public void insert(final User user) {
         try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
-            connection.setAutoCommit(false);
+            try {
+                connection.setAutoCommit(false);
 
-            userDao.insert(connection, user);
+                userDao.insert(connection, user);
 
-            connection.commit();
+                connection.commit();
+
+            } catch (Exception e) {
+                throw new DataAccessException();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -46,14 +58,18 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (Connection connection = DataSourceConfig.getInstance().getConnection()) {
-            connection.setAutoCommit(false);
+            try {
+                connection.setAutoCommit(false);
 
-            final var user = userDao.findById(connection, id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy)); //커넥션 A
+                final var user = userDao.findById(connection, id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy)); //커넥션 A
 
-            connection.commit();
+                connection.commit();
+            } catch (Exception e) {
+                throw new DataAccessException();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
