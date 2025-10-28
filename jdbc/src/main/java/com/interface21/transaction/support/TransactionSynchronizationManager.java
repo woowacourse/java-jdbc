@@ -27,15 +27,14 @@ public abstract class TransactionSynchronizationManager {
         map.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) {
+    public static void unbindResource(DataSource key) {
         final Map<DataSource, Connection> map = resources.get();
         if (map == null) {
-            return null;
+            return;
         }
-        final Connection connection = map.remove(key);
+        map.remove(key);
         if (map.isEmpty()) {
             resources.remove();
         }
-        return connection;
     }
 }
