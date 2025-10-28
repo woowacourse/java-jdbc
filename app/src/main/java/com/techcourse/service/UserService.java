@@ -63,6 +63,7 @@ public class UserService {
     private void close(final Connection connection) {
         if (connection != null) {
             try {
+                connection.setAutoCommit(true);
                 connection.close();
             } catch (SQLException e) {
             }
