@@ -1,8 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.RowMapper;
-import com.interface21.jdbc.datasource.LocalTransactionManager;
-import com.interface21.jdbc.exception.JdbcFailException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.jdbc.datasource.PlatformTransactionManager;
+import com.interface21.jdbc.exception.DatabaseConnectionFailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +27,12 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
         try {
-            Connection connection = LocalTransactionManager.getConnection(dataSource);
+            Connection connection = DataSourceUtils.getConnection(dataSource);
             PreparedStatement ps = connection.prepareStatement(sql);
             return callback.doInPreparedStatement(ps);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new JdbcFailException(e.getSQLState(), e.getMessage());
+            throw new DatabaseConnectionFailException(e.getSQLState(), e.getMessage());
         }
     }
 
@@ -58,10 +59,10 @@ public class JdbcTemplate {
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
         List<T> results = queryForObjects(sql, rowMapper, objects);
         if (results.isEmpty()) {
-            throw new JdbcFailException("유효한 데이터를 찾는데 실패하였습니다.");
+            throw new DatabaseConnectionFailException("유효한 데이터를 찾는데 실패하였습니다.");
         }
         if (results.size() > 1) {
-            throw new JdbcFailException("결과가 하나 이상입니다.");
+            throw new DatabaseConnectionFailException("결과가 하나 이상입니다.");
         }
         return results.getFirst();
     }
