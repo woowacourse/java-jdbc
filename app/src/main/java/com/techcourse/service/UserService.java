@@ -20,21 +20,21 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        return transactionExecutor.execute(() -> userDao.findById(id));
     }
 
     public void insert(final User user) {
-        transactionExecutor.executeVoid(connection ->
-            userDao.insert(connection, user)
+        transactionExecutor.executeVoid(() ->
+                userDao.insert(user)
         );
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionExecutor.executeVoid(connection -> {
-            final var user = userDao.findById(connection, id);
+        transactionExecutor.executeVoid(() -> {
+            final var user = userDao.findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }

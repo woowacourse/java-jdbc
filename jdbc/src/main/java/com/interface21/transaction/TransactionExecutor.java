@@ -1,10 +1,10 @@
 package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 
 public class TransactionExecutor {
@@ -15,35 +15,41 @@ public class TransactionExecutor {
         this.dataSource = dataSource;
     }
 
-    public void executeVoid(final Consumer<Connection> execution) {
-        execute(conn -> {
-            execution.accept(conn);
+    public void executeVoid(final Runnable execution) {
+        executeInSynchronizedTx(() -> {
+            execution.run();
             return null; // void
         });
     }
 
-    public <T> T execute(final Function<Connection, T> execution) {
-        try (Connection connection = dataSource.getConnection()) {
-            if (connection == null) {
-                throw new DataAccessException("Connection is null on dataSource " + dataSource);
-            }
-            return executeInTransaction(connection, execution);
+    public <T> T execute(final Supplier<T> execution) {
+        return executeInSynchronizedTx(execution);
+    }
 
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
+    private <T> T executeInSynchronizedTx(final Supplier<T> execution) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
+            return executeLogic(execution, connection);
+
+        } finally {
+            if (connection != null) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
-    private <T> T executeInTransaction(final Connection connection, final Function<Connection, T> execution) {
+    private <T> T executeLogic(Supplier<T> execution, Connection connection) {
         try {
             connection.setAutoCommit(false);
-            T result = execution.apply(connection);
+            T result = execution.get();
             connection.commit();
             return result;
 
         } catch (final Exception e) {
             rollback(connection);
             throw new DataAccessException(e);
+
         }
     }
 

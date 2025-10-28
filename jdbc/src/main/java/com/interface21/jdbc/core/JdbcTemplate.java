@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,20 +31,8 @@ public class JdbcTemplate {
         execute(PreparedStatement::execute, sql, pss);
     }
 
-    public void update(final Connection conn, final String sql, final Object... args) {
-        update(conn, sql, PreparedStatementSetter.ofSequenced(args));
-    }
-
-    public void update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
-        execute(conn, PreparedStatement::execute, sql, pss);
-    }
-
     public <T> T selectOne(final RowMapper<T> rowMapper, final String sql, final Object... args) {
         return selectOne(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
-    }
-
-    public <T> T selectOne(final Connection conn, final RowMapper<T> rowMapper, final String sql, final Object... args) {
-        return selectOne(conn, rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
     public <T> T selectOne(final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
@@ -54,16 +43,6 @@ public class JdbcTemplate {
         };
 
         return execute(stmtExecutor, sql, pss);
-    }
-
-    public <T> T selectOne(final Connection conn, final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
-        StatementExecutor<T> stmtExecutor = pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return mapSingleRow(rowMapper, rs);
-            }
-        };
-
-        return execute(conn, stmtExecutor, sql, pss);
     }
 
     private <T> T mapSingleRow(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
@@ -77,10 +56,6 @@ public class JdbcTemplate {
         return selectMulti(rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
     }
 
-    public <T> List<T> selectMulti(final Connection conn, final RowMapper<T> rowMapper, final String sql, final Object... args) {
-        return selectMulti(conn, rowMapper, sql, PreparedStatementSetter.ofSequenced(args));
-    }
-
     public <T> List<T> selectMulti(final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
         StatementExecutor<List<T>> stmtExecutor = pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
@@ -89,16 +64,6 @@ public class JdbcTemplate {
         };
 
         return execute(stmtExecutor, sql, pss);
-    }
-
-    public <T> List<T> selectMulti(final Connection conn, final RowMapper<T> rowMapper, final String sql, final PreparedStatementSetter pss) {
-        StatementExecutor<List<T>> stmtExecutor = pstmt -> {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                return mapMultipleRows(rowMapper, rs);
-            }
-        };
-
-        return execute(conn, stmtExecutor, sql, pss);
     }
 
     private <T> List<T> mapMultipleRows(final RowMapper<T> rowMapper, final ResultSet rs) throws SQLException {
@@ -111,13 +76,19 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
-        try (final Connection connection = dataSource.getConnection()) {
-            return execute(connection, stmtExecutor, sql, pss);
+        // 트랜잭션 동기화가 되지 않고 있는 상태라면, 즉 트랜잭션이 이 메서드에서 열렸다면 커넥션을 반납합니다.
+        // 만약 동기화되고 있는 상태라면, TransactionExecutor가 커넥션을 반납하기를 기대합니다.
+        boolean shouldReleaseConnection = !DataSourceUtils.isSynchronizedWithTransaction();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
-        } catch (final SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        try {
+            return execute(connection, stmtExecutor, sql, pss);
+        } finally {
+            if (shouldReleaseConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
+
     }
 
     private <T> T execute(final Connection connection, final StatementExecutor<T> stmtExecutor, final String sql, final PreparedStatementSetter pss) {
