@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -16,6 +17,7 @@ import java.sql.SQLException;
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final DataSource dataSource = DataSourceConfig.getInstance();
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -29,42 +31,30 @@ public class UserService {
         return userDao.findById(id);
     }
 
-    public User findById(final Connection connection, final long id) {
-        return userDao.findById(connection, id);
-    }
-
     public void insert(final User user) {
         userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final var connection = getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
-
             try {
-                final var user = findById(connection, id);
+                final var user = findById(id);
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
             } catch (Exception e) {
                 rollback(e, connection);
                 throw e;
             }
-
             connection.commit();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
-    private Connection getConnection() {
-        final DataSource dataSource = DataSourceConfig.getInstance();
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException(e.getMessage(), e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 

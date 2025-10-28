@@ -2,11 +2,10 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -20,19 +19,7 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-
-        jdbcTemplate.update(sql, getPreparedStatementSetter(
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        ));
-    }
-
-    public void log(final Connection connection, final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+        final var connection = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
         jdbcTemplate.update(
                 connection,
                 sql,
@@ -43,7 +30,7 @@ public class UserHistoryDao {
                         userHistory.getEmail(),
                         userHistory.getCreatedAt(),
                         userHistory.getCreateBy()
-        ));
+                ));
     }
 
     private static PreparedStatementSetter getPreparedStatementSetter(Object... params) {
