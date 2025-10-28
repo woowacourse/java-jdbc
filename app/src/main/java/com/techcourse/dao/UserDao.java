@@ -4,6 +4,7 @@ import java.sql.Connection;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,15 +50,7 @@ public class UserDao {
         return jdbcTemplate.executeQueryForObject(sql, new UserRowMapper(), account);
     }
 
-    public JdbcTemplate getJdbcTemplate() {
-        return jdbcTemplate;
-    }
-
-    public Connection getConnection() {
-        try {
-            return jdbcTemplate.getDataSource().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    public DataSource getDataSource() {
+        return jdbcTemplate.getDataSource();
     }
 }
