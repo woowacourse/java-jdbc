@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
+class AppUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
@@ -41,7 +41,9 @@ class UserServiceTest {
     void changePassword() {
         // given
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
+
         final var newPassword = "newPassword123";
         final var createdBy = "gugu";
 
@@ -57,7 +59,9 @@ class UserServiceTest {
     void transactionRollback() {
         // given
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
+
         final var originalPassword = testUser.getPassword();
         final var newPassword = "newPassword123";
         final var createdBy = "gugu";
