@@ -35,7 +35,7 @@ public class UserService {
                 throw new DataAccessException();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -52,7 +52,7 @@ public class UserService {
                 throw new DataAccessException(e);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -71,7 +71,15 @@ public class UserService {
                 throw new DataAccessException(e);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(final SQLException e, final Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            e.addSuppressed(rollbackEx);
         }
     }
 }
