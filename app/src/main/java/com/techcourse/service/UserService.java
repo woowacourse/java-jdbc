@@ -26,7 +26,7 @@ public class UserService {
                 final var user = userDao.findById(connection, id);
                 connection.commit();
                 return user;
-            } catch (SQLException e) {
+            } catch (DataAccessException e) {
                 rollback(e, connection);
                 throw new DataAccessException(e);
             }
@@ -41,7 +41,7 @@ public class UserService {
                 connection.setAutoCommit(false);
                 userDao.insert(connection, user);
                 connection.commit();
-            } catch (SQLException e) {
+            } catch (DataAccessException e) {
                 rollback(e, connection);
                 throw new DataAccessException(e);
             }
@@ -59,7 +59,7 @@ public class UserService {
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy)); //커넥션 A
                 connection.commit();
-            } catch (SQLException e) {
+            } catch (DataAccessException e) {
                 rollback(e, connection);
                 throw new DataAccessException(e);
             }
@@ -68,7 +68,7 @@ public class UserService {
         }
     }
 
-    private void rollback(final SQLException e, final Connection connection) {
+    private void rollback(final DataAccessException e, final Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException rollbackEx) {
