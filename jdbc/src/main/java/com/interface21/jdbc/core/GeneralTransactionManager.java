@@ -4,65 +4,41 @@ import java.sql.Connection;
 
 import javax.sql.DataSource;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+
 public class GeneralTransactionManager implements TransactionManager {
 
-    private final DataSource dataSource;
-    private final ThreadLocal<Connection> connection = new ThreadLocal<>();
-    private final ThreadLocal<Integer> transactionCount = new ThreadLocal<>();
-    private final ThreadLocal<Boolean> rollbackOnly = new ThreadLocal<>();
-
-    public GeneralTransactionManager(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void begin() {
+    public void begin(DataSource dataSource) {
         try {
-            // propagation level: REQUIRED
-            if (connection.get() == null) {
-                Connection connection1 = dataSource.getConnection();
+            Connection connection1 = DataSourceUtils.getConnection(dataSource);
+            TransactionSynchronizationManager.setRollbackOnly(false);
+            // 중첩 트랜잭션인 경우 카운트 증가
+            Integer currentTransactionCount = TransactionSynchronizationManager.getTransactionCount();
+            if (currentTransactionCount == null) {
                 connection1.setAutoCommit(false);
-                connection.set(connection1);
-                transactionCount.set(1);
-                rollbackOnly.set(false);
+                TransactionSynchronizationManager.setTransactionCount(1);
             } else {
-                // 중첩 트랜잭션인 경우 카운트 증가
-                transactionCount.set(transactionCount.get() + 1);
+                TransactionSynchronizationManager.setTransactionCount(currentTransactionCount + 1);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to begin transaction", e);
         }
     }
 
-    public Connection getCurrentConnection() {
-        Connection conn = connection.get();
-        if (conn == null) {
-            throw new IllegalStateException("No transaction started for this thread.");
-        }
-        return conn;
+    public Connection getCurrentConnection(DataSource dataSource) {
+        return DataSourceUtils.getConnection(dataSource);
     }
 
-    public Connection getOrCreateConnection() {
-        Connection conn = connection.get();
-        if (conn == null) {
-            begin();
-            conn = connection.get();
-        }
-        return conn;
-    }
-
-    public void commit() {
-        Connection conn = connection.get();
-        if (conn == null) {
-            throw new IllegalStateException("No transaction started for this thread.");
-        }
-
-        int count = transactionCount.get();
-        transactionCount.set(count - 1);
+    public void commit(DataSource dataSource) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        int count = TransactionSynchronizationManager.getTransactionCount();
+        TransactionSynchronizationManager.setTransactionCount(count - 1);
 
         if (count == 1) {
             // 최상위 트랜잭션에서만 실제 commit
             try {
-                if (rollbackOnly.get()) {
+                if (TransactionSynchronizationManager.isRollbackOnly()) {
                     conn.rollback();
                 } else {
                     conn.commit();
@@ -70,19 +46,15 @@ public class GeneralTransactionManager implements TransactionManager {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to commit transaction", e);
             } finally {
-                cleanupConnection(conn);
+                cleanupConnection(dataSource, conn);
             }
         }
     }
 
-    public void rollback() {
-        Connection conn = connection.get();
-        if (conn == null) {
-            throw new IllegalStateException("No transaction started for this thread.");
-        }
-
-        int count = transactionCount.get();
-        transactionCount.set(count - 1);
+    public void rollback(DataSource dataSource) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        int count = TransactionSynchronizationManager.getTransactionCount();
+        TransactionSynchronizationManager.setTransactionCount(count - 1);
         if (count == 1) {
             // 최상위 트랜잭션에서만 실제 rollback
             try {
@@ -90,27 +62,24 @@ public class GeneralTransactionManager implements TransactionManager {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to rollback transaction", e);
             } finally {
-                cleanupConnection(conn);
+                cleanupConnection(dataSource, conn);
             }
         } else {
             // 중첩 트랜잭션인 경우 롤백 표시
-            rollbackOnly.set(true);
+            TransactionSynchronizationManager.setRollbackOnly(true);
         }
     }
 
-    private void cleanupConnection(Connection conn) {
+    private void cleanupConnection(DataSource dataSource, Connection conn) {
         try {
             try {
                 conn.setAutoCommit(true);
             } catch (Exception ignored) {
             }
-            try {
-                conn.close();
-            } catch (Exception ignored) {
-            }
         } finally {
-            connection.remove();
-            transactionCount.remove();
+            DataSourceUtils.releaseConnection(conn, dataSource);
+            TransactionSynchronizationManager.removeTransactionCount();
+            TransactionSynchronizationManager.removeRollbackOnly();
         }
     }
 }

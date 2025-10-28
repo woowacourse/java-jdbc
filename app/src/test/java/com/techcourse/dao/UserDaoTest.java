@@ -2,9 +2,6 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,24 +16,22 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 class UserDaoTest {
 
     private UserDao userDao;
-    private Connection connection;
+    private DataSource dataSource = DataSourceConfig.getInstance();
 
     @BeforeEach
-    void setup() throws SQLException {
-        DataSource datasource = DataSourceConfig.getInstance();
-        DatabasePopulatorUtils.execute(datasource);
-        connection = DataSourceConfig.getInstance().getConnection();
+    void setup() {
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(new JdbcTemplate(datasource));
+        userDao = new UserDao(new JdbcTemplate(dataSource));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             userDao.insert(user);
         });
     }
 
     @Test
     void findAll() {
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             final var users = userDao.findAll();
             assertThat(users).isNotEmpty();
         });
@@ -44,7 +39,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             final var user = userDao.findById(1L);
 
             assertThat(user.getAccount()).isEqualTo("gugu");
@@ -53,7 +48,7 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             final var account = "gugu";
             final var user = userDao.findByAccount(account);
 
@@ -63,7 +58,7 @@ class UserDaoTest {
 
     @Test
     void insert() {
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             final var account = "insert-gugu";
             final var user = new User(account, "password", "hkkang@woowahan.com");
             userDao.insert(user);
@@ -76,7 +71,7 @@ class UserDaoTest {
 
     @Test
     void update() {
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             final var newPassword = "password99";
             final var user = userDao.findById(1L);
             user.changePassword(newPassword);
@@ -91,7 +86,7 @@ class UserDaoTest {
 
     @Test
     void delete() {
-        TransactionManagerConfig.executeInTransaction(conn -> {
+        TransactionManagerConfig.executeInTransaction(dataSource, conn -> {
             final var user = userDao.findById(1L);
             userDao.delete(user);
 
