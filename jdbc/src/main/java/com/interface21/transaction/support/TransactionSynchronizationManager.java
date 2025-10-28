@@ -25,6 +25,11 @@ public abstract class TransactionSynchronizationManager {
             map = new HashMap<>();
             resources.set(map);
         }
+
+        if (map.containsKey(key)) {
+            throw new IllegalStateException("Connection already bound to DataSource in this thread");
+        }
+
         map.put(key, value);
     }
 
