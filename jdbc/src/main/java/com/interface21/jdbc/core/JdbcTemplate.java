@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.dao.SqlExecutionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +23,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (final var connection = dataSource.getConnection()) {
-            update(sql, connection, args);
-        } catch (SQLException e) {
-            throw new SqlExecutionException(e);
-        }
-    }
-
-    public void update(final String sql, final Connection connection, final Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final var pstmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
@@ -38,6 +32,8 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new SqlExecutionException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -46,11 +42,6 @@ public class JdbcTemplate {
         return getSingleResult(results);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
-                                final Connection connection, final Object... args) {
-        var results = query(sql, connection, rowMapper, args);
-        return getSingleResult(results);
-    }
 
     private <T> T getSingleResult(List<T> results) {
         if (results.isEmpty()) {
@@ -63,15 +54,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final var connection = dataSource.getConnection()) {
-            return query(sql, connection, rowMapper, args);
-        } catch (SQLException e) {
-            throw new SqlExecutionException(e);
-        }
-    }
-
-    public <T> List<T> query(final String sql, final Connection connection,
-                             final RowMapper<T> rowMapper, final Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try (final var pstmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
@@ -89,6 +72,8 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             throw new SqlExecutionException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }

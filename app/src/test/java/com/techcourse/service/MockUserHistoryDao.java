@@ -5,17 +5,15 @@ import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 
-import java.sql.Connection;
 import javax.sql.DataSource;
 
 public class MockUserHistoryDao extends UserHistoryDao {
-
-    public MockUserHistoryDao(final DataSource dataSource) {
-        super(dataSource);
+    public MockUserHistoryDao(final JdbcTemplate jdbcTemplate) {
+        super(jdbcTemplate);
     }
 
     @Override
-    public void log(final UserHistory userHistory, final Connection connection) {
+    public void log(final UserHistory userHistory) {
         throw new DataAccessException();
     }
 }
