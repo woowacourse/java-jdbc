@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import java.sql.Connection;
