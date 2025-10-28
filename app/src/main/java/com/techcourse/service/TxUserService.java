@@ -6,8 +6,12 @@ import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TxUserService implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final DataSource dataSource;
     private final UserService userService;
@@ -52,6 +56,7 @@ public class TxUserService implements UserService {
             try {
                 connection.rollback();
             } catch (SQLException e) {
+                log.error("Failed to rollback transaction", e);
             }
         }
     }
@@ -62,6 +67,7 @@ public class TxUserService implements UserService {
                 connection.setAutoCommit(true);
                 connection.close();
             } catch (SQLException e) {
+                log.error("Failed to close connection", e);
             }
         }
     }
