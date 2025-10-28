@@ -22,38 +22,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, final Object... args) {
-        execute(
-                sql,
-                pstmt -> {
-                    setParameter(pstmt, args);
-                    return pstmt.executeUpdate();
-                }
-        );
-    }
-
     public void update(final Connection connection, String sql, final Object... args) {
         execute(connection,
                 sql,
                 pstmt -> {
                     setParameter(pstmt, args);
                     return pstmt.executeUpdate();
-                }
-        );
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return execute(
-                sql,
-                pstmt -> {
-                    setParameter(pstmt, args);
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        if (rs.next()) {
-                            return rowMapper.mapRowToResult(rs);
-                        }
-                        return null;
-                    }
                 }
         );
     }
@@ -70,22 +44,6 @@ public class JdbcTemplate {
                             return rowMapper.mapRowToResult(rs);
                         }
                         return null;
-                    }
-                }
-        );
-    }
-
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        return execute(
-                sql,
-                pstmt -> {
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        List<T> resultList = new ArrayList<>();
-                        while (rs.next()) {
-                            T result = rowMapper.mapRowToResult(rs);
-                            resultList.add(result);
-                        }
-                        return resultList;
                     }
                 }
         );
@@ -121,19 +79,6 @@ public class JdbcTemplate {
     ) {
         try {
             PreparedStatement pstmt = connection.prepareStatement(sql);
-            log.debug("query : {}", sql);
-
-            return callback.run(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             log.debug("query : {}", sql);
 
             return callback.run(pstmt);
