@@ -21,7 +21,10 @@ public abstract class TransactionSynchronizationManager {
             throw new IllegalArgumentException("key and value must not be null");
         }
         final Map<DataSource, Connection> map = resources.get();
-        map.putIfAbsent(key, value);
+        Connection existing = map.putIfAbsent(key, value);
+        if (existing != null) {
+            throw new IllegalStateException("이미 다른 커넥션이 바인딩되어 있습니다.");
+        }
     }
 
     public static Connection unbindResource(DataSource key) {
