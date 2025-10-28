@@ -36,7 +36,7 @@ public class TxUserService implements UserService {
             try {
                 connection.rollback();
             } catch (SQLException ex) {
-                throw new RuntimeException(ex);
+                e.addSuppressed(ex);
             }
             throw new DataAccessException(e);
         } finally {
