@@ -36,6 +36,13 @@ class UserServiceTest {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
+//        final var appUserService = new AppUserService(userDao, userHistoryDao);
+//        final UserService userService = (UserService) Proxy.newProxyInstance(
+//                UserService.class.getClassLoader(),
+//                new Class[]{UserService.class},
+//                new TransactionHandler(dataSource, appUserService)
+//        );
+
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -50,6 +57,13 @@ class UserServiceTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
+
+//        final var appUserService = new AppUserService(userDao, userHistoryDao);
+//        final UserService userService = (UserService) Proxy.newProxyInstance(
+//                UserService.class.getClassLoader(),
+//                new Class[]{UserService.class},
+//                new TransactionHandler(dataSource, appUserService)
+//        );
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
