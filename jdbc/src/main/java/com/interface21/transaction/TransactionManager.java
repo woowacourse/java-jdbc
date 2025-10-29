@@ -17,22 +17,39 @@ public class TransactionManager {
     public static <T> T executeInTransaction(final DataSource dataSource, final Supplier<T> action)
         throws SQLException {
 
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
-        connection.setAutoCommit(false);
+        // 이미 바인딩된 연결이 있는지 확인 (중첩 트랜잭션 감지)
+        Connection existingConnection = TransactionSynchronizationManager.getResource(dataSource);
+        boolean isNewTransaction = isNewTransaction(existingConnection);
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        boolean originAutoCommit = connection.getAutoCommit();
+
+        if (isNewTransaction) {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            connection.setAutoCommit(false);
+        }
 
         try {
             T result = action.get();
-            connection.commit();
+            if (isNewTransaction) {
+                connection.commit();
+            }
             return result;
         } catch (Exception e) {
-            connection.rollback();
+            if (isNewTransaction) {
+                connection.rollback();
+            }
             throw e;
         } finally {
-            connection.setAutoCommit(true);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            if (isNewTransaction) {
+                connection.setAutoCommit(originAutoCommit);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
+    private static boolean isNewTransaction(Connection existingConnection) {
+        return existingConnection == null;
+    }
 }
