@@ -25,6 +25,10 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
+    public void update(final Connection conn, final String sql, final Object... parameters) {
+        execute(conn, sql, PreparedStatement::executeUpdate, parameters);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return execute(sql, (pstmt) -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
@@ -60,7 +64,22 @@ public class JdbcTemplate {
         }
     }
 
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementExecutor<T> executor,
+                          final Object... parameters) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setStatementParameters(pstmt, parameters);
+            log.debug("query : {}", sql);
+            return executor.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new JdbcExecutionException(String.format("\"%s\" 쿼리 실행 중 오류가 발생했습니다.", sql), e);
+        }
+    }
+
     private void setStatementParameters(final PreparedStatement pstmt, final Object[] parameters) throws SQLException {
+        if (parameters == null) {
+            throw new JdbcExecutionException(String.format("쿼리에 필요한 파라미터가 전달되지 않았습니다."));
+        }
         for (int i = 0; i < parameters.length; i++) {
             pstmt.setObject(i + 1, parameters[i]);
         }
