@@ -14,7 +14,7 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> connectionMap = resources.get();
-        return connectionMap.getOrDefault(key, null);
+        return connectionMap.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
