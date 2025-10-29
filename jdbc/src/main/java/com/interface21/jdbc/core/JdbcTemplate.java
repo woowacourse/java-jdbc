@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.jdbc.JdbcExecutionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,14 +28,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementExecutor<T> executor, Object[] parameters) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);) {
             setStatementParameters(pstmt, parameters);
             log.debug("query : {}, params : {}", sql, Arrays.toString(parameters));
             return executor.execute(pstmt);
         } catch (SQLException e) {
             log.error("executeUpdate failed. sql={}, params={}", sql, Arrays.toString(parameters), e);
             throw new JdbcExecutionException("쿼리 실행 실패 : " + e.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 

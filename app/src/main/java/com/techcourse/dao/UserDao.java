@@ -30,11 +30,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, new UserRowMapper());
@@ -48,9 +43,5 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.executeQueryForObject(sql, new UserRowMapper(), account);
-    }
-
-    public DataSource getDataSource() {
-        return jdbcTemplate.getDataSource();
     }
 }
