@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,8 +39,8 @@ public class JdbcTemplate {
     }
 
     private void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (final SQLException e) {
@@ -48,8 +49,8 @@ public class JdbcTemplate {
     }
 
     private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
             return executeQuery(preparedStatement, rowMapper, preparedStatementSetter);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
