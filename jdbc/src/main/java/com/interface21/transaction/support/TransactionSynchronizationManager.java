@@ -25,13 +25,14 @@ public abstract class TransactionSynchronizationManager {
             map = new HashMap<>();
             resources.set(map);
         }
-        final Connection alreadyExistsConnection = map.put(key, value);
-        if (alreadyExistsConnection != null) {
+
+        if (map.containsKey(key)) {
             throw new IllegalStateException(
                     String.format("Already connection[%s] for key[%s] bound to thread[%s]",
-                            alreadyExistsConnection, key, Thread.currentThread().getName())
+                            map.get(key), key, Thread.currentThread().getName())
             );
         }
+        map.put(key, value);
     }
 
     public static void unbindResource(final DataSource key) {
