@@ -40,19 +40,12 @@ public class TxUserService implements UserService {
             conn = DataSourceUtils.getConnection(dataSource);
             originalAutoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
-            try {
-                userService.changePassword(id, newPassword, createdBy);
-                conn.commit();
-            } catch (Exception e) {
-                rollback(conn, e);
-                throw e;
-            }
-        } catch (SQLException e) {
-            if (conn != null) {
-                rollback(conn, e);
-            }
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+
+            userService.changePassword(id, newPassword, createdBy);
+
+            conn.commit();
+        } catch (Exception e) {
+            handleException(conn, e);
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
             if (conn != null) {
@@ -70,7 +63,24 @@ public class TxUserService implements UserService {
         }
     }
 
-    private void rollback(Connection conn, Exception originalException) {
+    private Throwable handleException(final Connection conn, final Exception exception) {
+        log.error(exception.getMessage(), exception);
+
+        if (exception instanceof SQLException) {
+            rollback(conn, exception);
+            throw new DataAccessException(exception.getMessage(), exception);
+        }
+
+        if (exception instanceof RuntimeException runtimeException) {
+            rollback(conn, exception);
+            throw runtimeException;
+        }
+
+        commit(conn, exception);
+        throw new RuntimeException(exception.getMessage(), exception);
+    }
+
+    private void rollback(Connection conn, Throwable originalException) {
         try {
             conn.rollback();
         } catch (SQLException rollbackEx) {
