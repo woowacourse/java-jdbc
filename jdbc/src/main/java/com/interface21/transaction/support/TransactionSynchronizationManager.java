@@ -29,7 +29,7 @@ public class TransactionSynchronizationManager {
         map.put(key, value);
     }
 
-    public static Map<DataSource, Connection> getOrCreateResourceMap() {
+    private static Map<DataSource, Connection> getOrCreateResourceMap() {
         final Map<DataSource, Connection> map = resources.get();
         if (map != null) {
             return map;
