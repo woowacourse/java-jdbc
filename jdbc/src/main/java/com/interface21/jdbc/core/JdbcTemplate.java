@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -86,10 +87,12 @@ public class JdbcTemplate {
     }
 
     private Connection getConnection() throws SQLException {
-        if (TransactionSynchronizationManager.hasConnection()) {
-            return TransactionSynchronizationManager.getConnection();
+        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        if (connection == null) {
+            connection = DataSourceUtils.getNewConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
         }
-        return dataSource.getConnection();
+        return connection;
     }
 
     private void releaseResources(PreparedStatement pstmt, Connection conn) {
@@ -100,12 +103,9 @@ public class JdbcTemplate {
                 log.error(e.getMessage(), e);
             }
         }
-        if (conn != null && !TransactionSynchronizationManager.hasConnection()) {
-            try {
-                conn.close();
-            } catch (SQLException e) {
-                log.error(e.getMessage(), e);
-            }
+
+        if (TransactionSynchronizationManager.hasNotResource(dataSource)) { // 진행중인 트랜잭션이 다 끝난경우에 닫기
+            DataSourceUtils.releaseConnection(conn);
         }
     }
 }

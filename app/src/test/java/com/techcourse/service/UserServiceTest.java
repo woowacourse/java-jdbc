@@ -5,11 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.DataSourceTransactionManager;
+import com.interface21.transaction.handler.TransactionHandler;
+import com.interface21.transaction.support.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.lang.reflect.Proxy;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +22,7 @@ class UserServiceTest {
 
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
+    private TransactionManager transactionManager;
 
     private UserDao userDao;
     private UserHistoryDao userHistoryDao;
@@ -27,10 +32,11 @@ class UserServiceTest {
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.transactionManager = DataSourceTransactionManager.init(dataSource);
 
         this.userDao = new UserDao(jdbcTemplate);
         this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        this.userService = new UserService(dataSource, userDao, userHistoryDao);
+        this.userService = new AppUserService(userDao, userHistoryDao);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -39,6 +45,12 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
+        userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[] { UserService.class },
+                new TransactionHandler(transactionManager, new AppUserService(userDao, userHistoryDao))
+        );
+
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
@@ -51,14 +63,21 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(dataSource);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        userService = (UserService) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class[] { UserService.class },
+                new TransactionHandler(transactionManager, new TxUserService(appUserService))
+        );
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         final var actual = userService.findById(1L);
 
