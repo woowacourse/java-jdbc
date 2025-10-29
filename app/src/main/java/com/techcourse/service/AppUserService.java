@@ -33,11 +33,11 @@ public class AppUserService implements UserService {
 
 //    @Transactional
     @Override
-    public void changePassword(final long id, final String newPassword, final String createBy) {
+    public void changePassword(final long id, final String newPassword, final String createdBy) {
         User user = userDao.findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        userHistoryDao.log(new UserHistory(user, createdBy));
     }
 }
 
