@@ -142,10 +142,13 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
-    ) throws DataAccessException, CannotGetJdbcConnectionException {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+    ) throws DataAccessException {
+        Connection connection = null;
         try {
+            connection = DataSourceUtils.getConnection(dataSource);
             return doExecuteWithConnection(connection, sql, preparedStatementSetter, preparedStatementCallback);
+        } catch (CannotGetJdbcConnectionException ex) {
+            throw new DataAccessException(ex);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
