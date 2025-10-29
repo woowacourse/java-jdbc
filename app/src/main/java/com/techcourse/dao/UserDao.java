@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.BeanPropertyRowMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -24,19 +23,9 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(Connection connection, User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
     public void insert(User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void update(Connection connection, User user) {
-        final var sql = "update users set password = ? where id = ?";
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
     }
 
     public void update(User user) {
@@ -47,11 +36,6 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, userMapper);
-    }
-
-    public User findById(Connection connection, final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(connection, sql, userMapper, id);
     }
 
     public User findById(final Long id) {
