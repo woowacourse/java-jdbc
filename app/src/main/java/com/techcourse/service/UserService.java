@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.JdbcExecutionException;
 import com.interface21.transaction.TransactionManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -23,7 +24,7 @@ public class UserService {
     public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
-        DataSource dataSource = userDao.getDataSource();
+        DataSource dataSource = DataSourceConfig.getInstance();
         transactionManager = new TransactionManager(dataSource);
     }
 

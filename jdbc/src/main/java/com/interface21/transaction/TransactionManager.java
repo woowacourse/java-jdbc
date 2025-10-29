@@ -24,6 +24,7 @@ public class TransactionManager {
                 connection.rollback();
                 throw new DataAccessException("트랜잭션 오류발생으로 롤백", e);
             }
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             throw new RuntimeException("커넥션 오류 발생", e);
         }
