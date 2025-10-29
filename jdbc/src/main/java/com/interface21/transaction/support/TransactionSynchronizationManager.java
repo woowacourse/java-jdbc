@@ -4,8 +4,12 @@ import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionSynchronizationManager {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionSynchronizationManager.class);
 
     private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
@@ -43,12 +47,14 @@ public class TransactionSynchronizationManager {
     public static Connection unbindResource(final DataSource key) {
         final Map<DataSource, Connection> map = resources.get();
         if (map == null) {
-            throw new IllegalStateException("Not bound resources map, key: " + key);
+            log.error("Not bound resources map, key: {}", key);
+            return null;
         }
 
         final Connection value = map.remove(key);
         if (value == null) {
-            throw new IllegalStateException("Not bound connection, key: " + key);
+            log.error("Not bound connection, key: {}", key);
+            return null;
         }
 
         if (map.isEmpty()) {
