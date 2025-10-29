@@ -1,7 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.dao.DataAccessException;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -20,43 +17,22 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameters(pstmt, params);
+        execute(sql, pstmt -> {
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
-        }
+            return null;
+        }, params);
     }
 
-    public <T> List<T> query(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = executeQuery(pstmt, params)) {
-            return extractResults(rs, mapper);
-        } catch (SQLException e) {
-            throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
-        } catch (Exception e) {
-            throw new RowMappingException("ResultSet을 객체로 매핑하는 중 오류가 발생했습니다: " + e.getMessage(), e);
-        }
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return extractResults(rs, rowMapper);
+            }
+        }, params);
     }
 
-    private ResultSet executeQuery(PreparedStatement pstmt, Object... params) throws SQLException {
-        setParameters(pstmt, params);
-        return pstmt.executeQuery();
-    }
-
-    private <T> List<T> extractResults(ResultSet rs, Function<ResultSet, T> mapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while (rs.next()) {
-            results.add(mapper.apply(rs));
-        }
-        return results;
-    }
-
-    public <T> T queryForObject(final String sql, final Function<ResultSet, T> mapper, final Object... params) {
-        List<T> results = query(sql, mapper, params);
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        List<T> results = query(sql, rowMapper, params);
 
         if (results.isEmpty()) {
             throw new InvalidResultException("조회 결과가 없습니다");
@@ -68,9 +44,37 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            setParameters(pstmt, params);
+            return callback.execute(pstmt);
+        } catch (SQLException e) {
+            throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
+    }
+
+    private <T> List<T> extractResults(final ResultSet rs, final RowMapper<T> rowMapper) {
+        try {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new RowMappingException("ResultSet 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T execute(PreparedStatement pstmt) throws SQLException;
     }
 }

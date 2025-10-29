@@ -2,15 +2,14 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
 import java.util.List;
-import java.util.function.Function;
 
 public class UserDao {
 
-    private static final Function<ResultSet, User> USER_MAPPER = rs -> {
+    private static final RowMapper<User> USER_MAPPER = rs -> {
         try {
             return new User(
                     rs.getLong("id"),
