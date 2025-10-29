@@ -64,4 +64,36 @@ public class TransactionTemplate {
             }
         }
     }
+
+    public void executeWithoutResult(TransactionCallbackWithoutResult callback) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            conn.setAutoCommit(false);
+
+            callback.doInTransaction();
+
+            conn.commit();
+
+        } catch (Exception e) {
+            log.atError().log("Transaction is being rolled back", e);
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    throw new DataAccessException("Rollback failed: " + ex.getMessage(), ex);
+                }
+            }
+            throw new DataAccessException("Transaction failed: " + e.getMessage(), e);
+
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException e) {
+                    log.atError().log("Error setting autoCommit", e);
+                }
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
+        }
+    }
 }

@@ -21,17 +21,11 @@ public class TransactionUserService implements UserService {
 
     @Override
     public void save(final User user) {
-        transactionTemplate.execute(() -> {
-            userService.save(user);
-            return null;
-        });
+        transactionTemplate.executeWithoutResult(() -> userService.save(user));
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(() -> {
-            userService.changePassword(id, newPassword, createBy);
-            return null;
-        });
+        transactionTemplate.executeWithoutResult(() -> userService.changePassword(id, newPassword, createBy));
     }
 }
