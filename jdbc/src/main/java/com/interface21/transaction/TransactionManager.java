@@ -14,28 +14,60 @@ public class TransactionManager {
     private TransactionManager() {
     }
 
+    public static void executeInTransaction(final DataSource dataSource, final Runnable action) {
+        try {
+            executeInTransaction(dataSource, () -> {
+                action.run();
+                return null;
+            });
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static <T> T executeInTransaction(final DataSource dataSource, final Supplier<T> action)
         throws SQLException {
 
-        // 이미 바인딩된 연결이 있는지 확인 (중첩 트랜잭션 감지)
-        Connection existingConnection = TransactionSynchronizationManager.getResource(dataSource);
-        boolean isNewTransaction = isNewTransaction(existingConnection);
-
+        boolean isNewTransaction = isNewTransaction(dataSource);
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        boolean originAutoCommit = connection.getAutoCommit();
 
         if (isNewTransaction) {
             TransactionSynchronizationManager.bindResource(dataSource, connection);
-            connection.setAutoCommit(false);
         }
 
+        try {
+            boolean originAutoCommit = connection.getAutoCommit();
+
+            if (isNewTransaction) {
+                connection.setAutoCommit(false);
+            }
+            return getResult(action, isNewTransaction, connection, originAutoCommit);
+        } catch (SQLException e) {
+            if (isNewTransaction) {
+                connection.rollback();
+            }
+            throw e;
+        } finally {
+            if (isNewTransaction) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
+        }
+    }
+
+    private static <T> T getResult(
+        final Supplier<T> action,
+        final boolean isNewTransaction,
+        final Connection connection,
+        final boolean originAutoCommit
+    ) throws SQLException {
         try {
             T result = action.get();
             if (isNewTransaction) {
                 connection.commit();
             }
             return result;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             if (isNewTransaction) {
                 connection.rollback();
             }
@@ -43,13 +75,12 @@ public class TransactionManager {
         } finally {
             if (isNewTransaction) {
                 connection.setAutoCommit(originAutoCommit);
-                TransactionSynchronizationManager.unbindResource(dataSource);
-                DataSourceUtils.releaseConnection(connection, dataSource);
             }
         }
     }
 
-    private static boolean isNewTransaction(Connection existingConnection) {
+    private static boolean isNewTransaction(final DataSource dataSource) {
+        Connection existingConnection = TransactionSynchronizationManager.getResource(dataSource);
         return existingConnection == null;
     }
 }

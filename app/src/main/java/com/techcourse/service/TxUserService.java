@@ -28,10 +28,9 @@ public class TxUserService implements UserService {
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         final DataSource dataSource = DataSourceConfig.getInstance();
         try {
-            TransactionManager.executeInTransaction(dataSource, () -> {
-                userService.changePassword(id, newPassword, createdBy);
-                return null;
-            });
+            TransactionManager.executeInTransaction(dataSource,
+                () -> userService.changePassword(id, newPassword, createdBy)
+            );
         } catch (Exception e) {
             throw new BusinessException("비밀번호 변경에 실패했습니다.", e);
         }
