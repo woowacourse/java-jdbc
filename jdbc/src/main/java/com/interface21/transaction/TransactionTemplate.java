@@ -56,7 +56,7 @@ public class TransactionTemplate {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             return callback.doInTransaction();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new DataAccessException("Read-only operation failed: " + e.getMessage(), e);
         } finally {
             if (conn != null) {
