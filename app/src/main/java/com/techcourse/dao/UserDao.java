@@ -20,32 +20,32 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public long insert(final Connection connection, final User user) {
+    public long insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        return jdbcTemplate.updateAndReturnKey(connection, sql, user.toInsertParams());
+        return jdbcTemplate.updateAndReturnKey(sql, user.toInsertParams());
     }
 
-    public void update(final Connection connection, final User user) {
+    public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.update(connection, sql, user.toUpdateParams());
+        jdbcTemplate.update(sql, user.toUpdateParams());
     }
 
-    public List<User> findAll(final Connection connection) {
+    public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(connection, sql, USER_ROW_MAPPER);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Connection connection, final Long id) {
+    public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final Connection connection, final String account) {
+    public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
