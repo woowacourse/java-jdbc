@@ -1,16 +1,9 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.RowMapper;
-import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 public class UserHistoryDao {
 

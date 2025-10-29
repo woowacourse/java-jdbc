@@ -2,7 +2,6 @@ package com.techcourse.controller;
 
 import com.techcourse.domain.User;
 import jakarta.servlet.http.HttpSession;
-
 import java.util.Optional;
 
 public class UserSession {
@@ -18,5 +17,6 @@ public class UserSession {
         return getUserFrom(session).isPresent();
     }
 
-    private UserSession() {}
+    private UserSession() {
+    }
 }
