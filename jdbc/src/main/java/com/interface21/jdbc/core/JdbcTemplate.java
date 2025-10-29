@@ -136,13 +136,10 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            try {
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 log.debug("query : {}", sql);
                 setParameters(pstmt, parameters);
                 return callback.doInPreparedStatement(pstmt);
-            } finally {
-                pstmt.close();
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
