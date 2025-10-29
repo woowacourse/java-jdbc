@@ -68,6 +68,9 @@ public class TxUserService implements UserService {
     }
 
     private void rollback(Connection conn, Throwable originalException) {
+        if (conn == null) {
+            return;
+        }
         try {
             conn.rollback();
         } catch (SQLException rollbackEx) {
@@ -77,6 +80,9 @@ public class TxUserService implements UserService {
     }
 
     private void commit(Connection conn, Throwable originalException) {
+        if (conn == null) {
+            return;
+        }
         try {
             conn.commit();
         } catch (SQLException commitEx) {
