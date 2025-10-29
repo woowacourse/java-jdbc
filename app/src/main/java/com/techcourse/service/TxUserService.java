@@ -35,10 +35,9 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         Connection conn = null;
-        boolean originalAutoCommit = true;
         try {
             conn = DataSourceUtils.getConnection(dataSource);
-            originalAutoCommit = conn.getAutoCommit();
+            TransactionSynchronizationManager.bindResource(dataSource, conn);
             conn.setAutoCommit(false);
 
             userService.changePassword(id, newPassword, createdBy);
@@ -47,23 +46,11 @@ public class TxUserService implements UserService {
         } catch (Exception e) {
             handleException(conn, e);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(originalAutoCommit);
-                } catch (SQLException e) {
-                    log.error("Failed to restore connection", e);
-                }
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    log.warn("Failed to close connection", e);
-                }
-            }
+            cleanUpConnection(conn);
         }
     }
 
-    private Throwable handleException(final Connection conn, final Exception exception) {
+    private void handleException(final Connection conn, final Exception exception) {
         log.error(exception.getMessage(), exception);
 
         if (exception instanceof SQLException) {
@@ -86,6 +73,41 @@ public class TxUserService implements UserService {
         } catch (SQLException rollbackEx) {
             log.error("Rollback failed", rollbackEx);
             originalException.addSuppressed(rollbackEx);
+        }
+    }
+
+    private void commit(Connection conn, Throwable originalException) {
+        try {
+            conn.commit();
+        } catch (SQLException commitEx) {
+            log.error("Commit failed", commitEx);
+            originalException.addSuppressed(commitEx);
+        }
+    }
+
+    private void cleanUpConnection(final Connection conn) {
+        if (conn == null) {
+            return;
+        }
+
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        restoreAutoCommit(conn);
+        closeConnection(conn);
+    }
+
+    private void restoreAutoCommit(final Connection conn) {
+        try {
+            conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private void closeConnection(final Connection conn) {
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
     }
 }
