@@ -6,7 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.service.TransactionService.Transaction;
 
-public class AppUserService implements UserService{
+public class AppUserService {
 
     private final TransactionService transactionService;
     private final UserDao userDao;
@@ -18,12 +18,10 @@ public class AppUserService implements UserService{
         this.userHistoryDao = userHistoryDao;
     }
 
-    @Override
     public User findById(final long id) {
         return userDao.findById(id);
     }
-
-    @Override
+    
     public void save(User user) {
         userDao.insert(user);
     }
@@ -32,7 +30,7 @@ public class AppUserService implements UserService{
         userDao.insert(user);
     }
 
-    @Override
+    
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try(Transaction transaction = transactionService.begin()) {
             final var user = findById(id);
