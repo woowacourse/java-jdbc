@@ -37,7 +37,7 @@ public class TypeConversionService {
         // 3. 변환 가능한 컨버터가 없으면 기본 변환 규칙(DefaultTypeConverters)을 적용합니다.
         TypeConverter defaultConverter = DefaultTypeConverters.findConverter(sourceValue, targetType);
         if (defaultConverter != null) {
-            final var converted = defaultConverter.convertIfPossible(sourceValue, targetType);
+            final var converted = defaultConverter.convert(sourceValue, targetType);
             if (hasConversionOccurred(converted, sourceValue)) {
                 return converted;
             }
@@ -54,9 +54,8 @@ public class TypeConversionService {
 
     private Object convertWithRegisteredConverters(final Object sourceValue, final Class<?> targetType) {
         for (final TypeConverter converter : registeredConverters) {
-            final var converted = converter.convertIfPossible(sourceValue, targetType);
-            if (hasConversionOccurred(converted, sourceValue) && isCompatibleType(targetType, converted)) {
-                return converted;
+            if (converter.supports(sourceValue.getClass(), targetType)) {
+                return converter.convert(sourceValue, targetType);
             }
         }
         return sourceValue;
