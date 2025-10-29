@@ -1,5 +1,6 @@
 package com.interface21.jdbc.datasource;
 
+import com.interface21.jdbc.CannotCloseJdbcConnectionException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
@@ -25,7 +26,8 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(final Connection connection, final DataSource dataSource) {
+    public static void releaseConnection(final Connection connection, final DataSource dataSource)
+            throws CannotCloseJdbcConnectionException {
         if ((connection == null) || (connection == TransactionSynchronizationManager.getResource(dataSource))) {
             return;
         }
@@ -33,7 +35,7 @@ public abstract class DataSourceUtils {
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotCloseJdbcConnectionException("Failed to close JDBC Connection", ex);
         }
     }
 }

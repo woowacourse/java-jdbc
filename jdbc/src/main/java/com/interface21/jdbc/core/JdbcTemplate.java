@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotCloseJdbcConnectionException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -141,7 +143,7 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
-    ) throws DataAccessException {
+    ) throws DataAccessException, CannotGetJdbcConnectionException, CannotCloseJdbcConnectionException {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             return doExecuteWithConnection(connection, sql, preparedStatementSetter, preparedStatementCallback);
