@@ -23,7 +23,6 @@ class UserServiceTest {
     private Connection connection;
     private DataSource dataSource;
     private UserDao userDao;
-    private TransactionTemplate transactionTemplate;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -36,8 +35,6 @@ class UserServiceTest {
 
         jdbcTemplate = new JdbcTemplate();
         userDao = new UserDao(jdbcTemplate);
-        transactionTemplate = new TransactionTemplate(dataSource);
-
         try (Connection c = dataSource.getConnection()) {
             var user = new User("gugu", "password", "hkkang@woowahan.com");
             userDao.insert(c, user);
@@ -58,13 +55,13 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
+        final var userService = new UserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(connection, 1L);
+        final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -73,7 +70,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
+        final var userService = new UserService(userDao, userHistoryDao, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -81,7 +78,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(connection, 1L);
+        final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
