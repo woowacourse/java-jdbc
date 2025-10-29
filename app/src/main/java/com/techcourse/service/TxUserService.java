@@ -31,9 +31,9 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        connection.setAutoCommit(false);
 
         try {
+            connection.setAutoCommit(false);
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
         } catch (Exception e) {
