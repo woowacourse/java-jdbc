@@ -6,6 +6,7 @@ import java.util.Objects;
 import javax.sql.DataSource;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.GeneralTransactionManager;
 import com.interface21.jdbc.core.TransactionManager;
 
 public class TransactionManagerConfig {
@@ -14,37 +15,36 @@ public class TransactionManagerConfig {
 
     public static TransactionManager getInstance() {
         if (Objects.isNull(INSTANCE)) {
-            DataSource dataSource = DataSourceConfig.getInstance();
-            INSTANCE = new TransactionManager(dataSource);
+            INSTANCE = new GeneralTransactionManager();
         }
         return INSTANCE;
     }
 
-    public static Connection getCurrentConnection() {
-        return getInstance().getCurrentConnection();
+    public static Connection getCurrentConnection(DataSource dataSource) {
+        return getInstance().getCurrentConnection(dataSource);
     }
 
-    public static <T> T executeInTransaction(TransactionCallback<T> callback) {
+    public static <T> T executeInTransaction(DataSource dataSource, TransactionCallback<T> callback) {
         TransactionManager instance = getInstance();
-        instance.begin();
+        instance.begin(dataSource);
         try {
-            T result = callback.execute(getCurrentConnection());
-            instance.commit();
+            T result = callback.execute(getCurrentConnection(dataSource));
+            instance.commit(dataSource);
             return result;
         } catch (Exception e) {
-            instance.rollback();
+            instance.rollback(dataSource);
             throw new DataAccessException(e);
         }
     }
 
-    public static void executeInTransaction(VoidTransactionCallback callback) {
+    public static void executeInTransaction(DataSource dataSource, VoidTransactionCallback callback) {
         TransactionManager instance = getInstance();
-        instance.begin();
+        instance.begin(dataSource);
         try {
-            callback.execute(getCurrentConnection());
-            instance.commit();
+            callback.execute(getCurrentConnection(dataSource));
+            instance.commit(dataSource);
         } catch (Exception e) {
-            instance.rollback();
+            instance.rollback(dataSource);
             throw new DataAccessException(e);
         }
     }

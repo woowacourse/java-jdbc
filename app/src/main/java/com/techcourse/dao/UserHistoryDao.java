@@ -1,13 +1,15 @@
 package com.techcourse.dao;
 
-import java.sql.Connection;
+import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.jpa.SimpleJpa;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.config.JpaConfig;
+import com.techcourse.config.TransactionManagerConfig;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -16,13 +18,14 @@ public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJpa simpleJpa;
+    private static final DataSource dataSource = DataSourceConfig.getInstance();
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.simpleJpa = new SimpleJpa(jdbcTemplate, JpaConfig.BASE_PACKAGE);
     }
 
-    public void log(Connection connection, final UserHistory userHistory) {
-        simpleJpa.insert(connection, userHistory);
+    public void log(final UserHistory userHistory) {
+        simpleJpa.insert(TransactionManagerConfig.getCurrentConnection(dataSource), userHistory);
     }
 }
