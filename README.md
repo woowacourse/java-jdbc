@@ -77,7 +77,7 @@ UserService에서 changePassword() 메서드를 하나의 트랜잭션으로 처
 트랜잭션 동기화란 트랜잭션을 시작하기 위한 Connection 객체를 따로 보관해두고, DAO에서 호출할 때 저장된 Connection을 가져다 사용하는 방식이다.
 DataSourceUtils와 TransactionSynchronizationManager를 활용하여 DAO가 Connection 객체를 파라미터로 전달받아 사용하지 않도록 만들어보자.
 
-- [ ] Transaction synchronization 적용하기
+- [x] Transaction synchronization 적용하기
   서비스와 DAO에서 Connection 객체를 가져오는 부분은 DataSourceUtils를 사용하도록 수정하자.
   그리고 TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현해보자.
 
@@ -98,12 +98,6 @@ DataSourceUtils와 TransactionSynchronizationManager를 활용하여 DAO가 Conn
         }
     }
     ```
-
-  생각해보기 🤔
-  JDBC가 아닌 JPA, JMS 같이 다른 커넥션을 사용하거나 2개 이상의 데이터소스를 하나의 트랜잭션처럼 관리하려면 어떻게 해야 할까?
-  스프링에서는 이 문제를 PlatformTransactionManager를 사용하여 해결한다.
-  PlatformTransactionManager가 어떻게 추상화되어 있는지는 스프링 문서를 참고하자.
-  추가로 로컬 트랜잭션, 글로벌 트랜잭션, JTA 라는 세 가지 키워드도 같이 학습하자.
 
 - [ ] 트랜잭션 서비스 추상화하기
   트랜잭션 동기화를 적용하여 DAO에게 Connection 객체를 전달하는 코드를 개선할 수 있었다.
