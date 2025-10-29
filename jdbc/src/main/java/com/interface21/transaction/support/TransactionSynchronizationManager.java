@@ -16,7 +16,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
+        resources.get().putIfAbsent(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
