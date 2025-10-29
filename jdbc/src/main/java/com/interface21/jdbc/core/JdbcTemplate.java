@@ -41,7 +41,7 @@ public class JdbcTemplate {
      */
     public int update(final String sql, final PreparedStatementSetter preparedStatementSetter)
             throws DataAccessException {
-        return createNewConnectionAndExecute(sql, preparedStatementSetter,
+        return execute(sql, preparedStatementSetter,
                 preparedStatement -> executeUpdate(preparedStatement));
     }
 
@@ -71,7 +71,8 @@ public class JdbcTemplate {
      */
     public int update(final Connection connection, final String sql,
                       final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        return execute(connection, sql, preparedStatementSetter, preparedStatement -> executeUpdate(preparedStatement));
+        return doExecuteWithConnection(connection, sql, preparedStatementSetter,
+                preparedStatement -> executeUpdate(preparedStatement));
     }
 
     /**
@@ -97,7 +98,7 @@ public class JdbcTemplate {
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        return createNewConnectionAndExecute(sql, preparedStatementSetter,
+        return execute(sql, preparedStatementSetter,
                 preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper));
     }
 
@@ -130,7 +131,7 @@ public class JdbcTemplate {
     public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter preparedStatementSetter)
             throws DataAccessException {
-        return execute(connection, sql, preparedStatementSetter,
+        return doExecuteWithConnection(connection, sql, preparedStatementSetter,
                 preparedStatement -> executeQueryAndMapSingleResult(preparedStatement, rowMapper));
     }
 
@@ -175,7 +176,7 @@ public class JdbcTemplate {
      */
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final PreparedStatementSetter preparedStatementSetter) throws DataAccessException {
-        return createNewConnectionAndExecute(sql, preparedStatementSetter,
+        return execute(sql, preparedStatementSetter,
                 preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper));
     }
 
@@ -208,7 +209,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
                              final PreparedStatementSetter preparedStatementSetter)
             throws DataAccessException {
-        return execute(connection, sql, preparedStatementSetter,
+        return doExecuteWithConnection(connection, sql, preparedStatementSetter,
                 preparedStatement -> executeQueryAndMapResults(preparedStatement, rowMapper));
     }
 
@@ -228,14 +229,14 @@ public class JdbcTemplate {
         return results;
     }
 
-    private <T> T createNewConnectionAndExecute(
+    private <T> T execute(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
     ) throws DataAccessException {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            return execute(connection, sql, preparedStatementSetter, preparedStatementCallback);
+            return doExecuteWithConnection(connection, sql, preparedStatementSetter, preparedStatementCallback);
         } finally {
             closeIfAutoCommitTrue(connection);
         }
@@ -251,7 +252,7 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(
+    private <T> T doExecuteWithConnection(
             final Connection connection,
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
