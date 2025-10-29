@@ -5,6 +5,7 @@ import com.interface21.jdbc.core.conversion.TypeConversionService;
 import com.interface21.jdbc.core.util.NamingUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -114,6 +115,10 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
     private void addDeclaredFields(Map<String, Field> cache, Class<?> current) {
         Field[] fields = current.getDeclaredFields();
         for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                // static 필드는 건너뜀
+                continue;
+            }
             String key = field.getName().toLowerCase();
             field.setAccessible(true);
             cache.putIfAbsent(key, field);
