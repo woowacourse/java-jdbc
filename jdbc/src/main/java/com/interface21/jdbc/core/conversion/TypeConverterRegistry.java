@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TypeConverterRegistry {
-    private static final List<TypeConverter> converters = new ArrayList<>();
+    private final List<TypeConverter> converters = new ArrayList<>();
 
-    public static void register(TypeConverter converter) {
+    public void register(TypeConverter converter) {
         converters.add(converter);
     }
 
-    static List<TypeConverter> getConverters() {
+    public List<TypeConverter> getConverters() {
         return converters;
     }
 }
