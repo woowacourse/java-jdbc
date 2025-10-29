@@ -146,17 +146,7 @@ public class JdbcTemplate {
         try {
             return doExecuteWithConnection(connection, sql, preparedStatementSetter, preparedStatementCallback);
         } finally {
-            closeIfAutoCommitTrue(connection);
-        }
-    }
-
-    private void closeIfAutoCommitTrue(final Connection connection) {
-        try {
-            if (connection.getAutoCommit()) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

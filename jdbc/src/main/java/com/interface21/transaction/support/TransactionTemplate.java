@@ -20,6 +20,7 @@ public class TransactionTemplate {
 
     public <T> T execute(final TransactionCallback<T> callback) throws DataAccessException {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         try {
             connection.setAutoCommit(false);
@@ -35,18 +36,15 @@ public class TransactionTemplate {
     }
 
     private void rollback(final Connection connection) {
-        if (connection != null) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                log.error("rollback fail", rollbackEx);
-            }
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            log.error("rollback fail", rollbackEx);
         }
     }
 
     private void cleanup(final Connection connection) {
-        if (connection != null) {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
