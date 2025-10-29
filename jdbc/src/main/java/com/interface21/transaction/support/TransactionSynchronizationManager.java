@@ -18,10 +18,6 @@ public abstract class TransactionSynchronizationManager {
             return null;
         }
 
-        if (map.containsKey(key)) {
-            throw new IllegalStateException("Already bound resource for key: " + key);
-        }
-
         return map.get(key);
     }
 
@@ -31,6 +27,10 @@ public abstract class TransactionSynchronizationManager {
         if (map == null) {
             map = new HashMap<>();
             resources.set(map);
+        }
+
+        if (map.containsKey(key)) {
+            throw new IllegalStateException("Already bound resource for key: " + key);
         }
 
         map.put(key, value);
