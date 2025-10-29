@@ -55,7 +55,11 @@ public class TxUserService implements UserServiceInterface {
         } catch (Exception e) {
             if (connection != null) {
                 try {
-                    connection.rollback();
+                    if ((e instanceof RuntimeException)) {
+                        connection.commit();
+                    } else {
+                        connection.rollback();
+                    }
                 } catch (SQLException ex) {
                     log.error("Rollback failed", ex);
                 }
