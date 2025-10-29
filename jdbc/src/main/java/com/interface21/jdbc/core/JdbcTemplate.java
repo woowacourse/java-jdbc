@@ -7,7 +7,6 @@ import com.interface21.jdbc.exception.ResultSetProcessingException;
 import com.interface21.jdbc.exception.RowMappingException;
 import com.interface21.jdbc.exception.StatementPreparationException;
 import com.interface21.jdbc.exception.UpdateExecutionException;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +38,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new UpdateExecutionException(e, sql);
         } finally {
-            if (TransactionSynchronizationManager.getResource(dataSource) == null) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -59,9 +56,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new ResultSetProcessingException(e, sql);
         } finally {
-            if (TransactionSynchronizationManager.getResource(dataSource) == null) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -78,9 +73,7 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new ResultSetProcessingException(e, sql);
         } finally {
-            if (TransactionSynchronizationManager.getResource(dataSource) == null) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

@@ -36,6 +36,7 @@ public class TxUserService implements UserService {
 
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
             connection.setAutoCommit(false);
             try {
@@ -49,8 +50,8 @@ public class TxUserService implements UserService {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
