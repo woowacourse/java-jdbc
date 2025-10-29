@@ -29,7 +29,7 @@ public enum DefaultTypeConverters implements TypeConverter {
     }
 
     @Override
-    public Object convert(Object value, Class<?> targetType) {
+    public Object convertIfPossible(Object value, Class<?> targetType) {
         if (value == null) {
             return null;
         }
@@ -39,7 +39,7 @@ public enum DefaultTypeConverters implements TypeConverter {
         return value;
     }
 
-    public static Object tryConvert(Object value, Class<?> targetType) {
+    public static Object applyDefaultConversion(Object value, Class<?> targetType) {
         if (value == null) {
             return null;
         }

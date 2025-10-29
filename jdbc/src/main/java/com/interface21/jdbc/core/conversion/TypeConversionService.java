@@ -6,7 +6,7 @@ import java.util.List;
 
 public class TypeConversionService {
 
-    private final TypeConverter DEFAULT_CONVERTER = DefaultTypeConverters::tryConvert;
+    private final TypeConverter DEFAULT_CONVERTER = DefaultTypeConverters::applyDefaultConversion;
     private final List<TypeConverter> registeredConverters;
 
     public TypeConversionService(List<TypeConverter> registeredConverters) {
@@ -30,7 +30,7 @@ public class TypeConversionService {
             return convertedByRegistered;
         }
 
-        final var convertedByDefault = DEFAULT_CONVERTER.convert(sourceValue, targetType);
+        final var convertedByDefault = DEFAULT_CONVERTER.convertIfPossible(sourceValue, targetType);
         if (hasConversionOccurred(convertedByDefault, sourceValue) && isCompatibleType(targetType, convertedByDefault)) {
             return convertedByDefault;
         }
@@ -46,7 +46,7 @@ public class TypeConversionService {
 
     private Object convertWithRegisteredConverters(final Object sourceValue, final Class<?> targetType) {
         for (final TypeConverter converter : registeredConverters) {
-            final var converted = converter.convert(sourceValue, targetType);
+            final var converted = converter.convertIfPossible(sourceValue, targetType);
             if (hasConversionOccurred(converted, sourceValue) && isCompatibleType(targetType, converted)) {
                 return converted;
             }
