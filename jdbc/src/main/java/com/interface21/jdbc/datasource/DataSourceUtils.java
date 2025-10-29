@@ -22,8 +22,7 @@ public abstract class DataSourceUtils {
         }
 
         try {
-            final Connection newConnection = dataSource.getConnection();
-            return newConnection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
