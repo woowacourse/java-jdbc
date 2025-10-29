@@ -24,6 +24,30 @@ public record JdbcTemplate(DataSource dataSource) {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    public Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void startTransaction(Connection connection) {
+        try {
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void commitTransaction(Connection connection) {
+        try {
+            connection.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private <T> T execute(
             PreparedStatementSpecification preparedStatementSpecification,
             PreparedStatementExecutor<T> preparedStatementExecutor
@@ -41,8 +65,34 @@ public record JdbcTemplate(DataSource dataSource) {
         }
     }
 
+    private <T> T executeWithTransaction(
+            PreparedStatementSpecification preparedStatementSpecification,
+            PreparedStatementExecutor<T> preparedStatementExecutor,
+            Connection externalConnection
+    ) {
+        try (
+                PreparedStatement preparedStatement = PreparedStatementFactory.initialize(
+                        externalConnection,
+                        preparedStatementSpecification
+                )
+        ) {
+            return preparedStatementExecutor.process(preparedStatement);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private int command(final CommandExecution execution, final CommandSpecification specification) {
         return execute(specification.preparedStatementSpecification(), execution::execute);
+    }
+
+    private int commandWithTransaction(
+            final CommandExecution execution,
+            final CommandSpecification specification,
+            final Connection externalConnection
+    ) {
+        return executeWithTransaction(
+                specification.preparedStatementSpecification(), execution::execute, externalConnection);
     }
 
     private <T, R> R query(
@@ -55,20 +105,50 @@ public record JdbcTemplate(DataSource dataSource) {
         );
     }
 
+    private <T, R> R queryWithTransaction(
+            final QueryExecution<T, R> execution,
+            final QuerySpecification<T> specification,
+            final Connection externalConnection
+    ) {
+        return executeWithTransaction(
+                specification.preparedStatementSpecification(),
+                preparedStatement -> execution.execute(preparedStatement, specification),
+                externalConnection
+        );
+    }
+
     public int insert(final CommandSpecification specification) {
         return command(new CreateExecution(), specification);
+    }
+
+    public int insertWithTransaction(final CommandSpecification specification, Connection externalConnection) {
+        return commandWithTransaction(new CreateExecution(), specification, externalConnection);
     }
 
     public int update(final CommandSpecification specification) {
         return command(new UpdateExecution(), specification);
     }
 
+    public int updateWithTransaction(final CommandSpecification specification, Connection externalConnection) {
+        return commandWithTransaction(new UpdateExecution(), specification, externalConnection);
+    }
+
     public <T> Optional<T> findOne(final QuerySpecification<T> specification) {
         return query(new FindOneQueryExecution<>(), specification);
     }
 
+    public <T> Optional<T> findOneWithTransaction(
+            final QuerySpecification<T> specification, Connection externalConnection) {
+        return queryWithTransaction(new FindOneQueryExecution<>(), specification, externalConnection);
+    }
+
     public <T> List<T> findAll(final QuerySpecification<T> specification) {
         return query(new FindAllQueryExecution<>(), specification);
+    }
+
+    public <T> List<T> findAllWithTransaction(
+            final QuerySpecification<T> specification, Connection externalConnection) {
+        return queryWithTransaction(new FindAllQueryExecution<>(), specification, externalConnection);
     }
 
     private interface PreparedStatementExecutor<T> {
