@@ -52,10 +52,9 @@ public abstract class DataSourceUtils {
 
         Connection transactionalConnection = TransactionSynchronizationManager.getResource(dataSource);
         if (transactionalConnection != null && transactionalConnection == connection) {
-            return;
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
 
-        // 트랜잭션 외부의 커넥션은 직접 닫는다.
         try {
             connection.close();
         } catch (SQLException ex) {

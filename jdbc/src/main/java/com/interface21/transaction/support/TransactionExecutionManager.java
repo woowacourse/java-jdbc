@@ -37,7 +37,6 @@ public abstract class TransactionExecutionManager {
             throw new DataAccessException("트랜잭션 처리 중 오류가 발생했습니다.", exception);
         } finally {
             DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
