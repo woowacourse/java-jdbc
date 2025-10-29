@@ -44,6 +44,13 @@ public class TransactionTemplate {
     }
 
     private void cleanup(final Connection connection) {
+        try {
+            if (!connection.getAutoCommit()) {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException ex) {
+            log.error("Failed to restore AutoCommit status", ex);
+        }
         TransactionSynchronizationManager.unbindResource(dataSource);
         DataSourceUtils.releaseConnection(connection, dataSource);
     }
