@@ -25,13 +25,19 @@ public class TransactionSynchronizationManager {
             throw new IllegalStateException("Already bound resource, key: " + key);
         }
 
-        Map<DataSource, Connection> map = resources.get();
-        if (map == null) {
-            // 쓰레드 로컬에 커넥션을 관리하는 Map이 없는 경우 생성
-            map = new HashMap<>();
-            resources.set(map);
-        }
+        final Map<DataSource, Connection> map = getOrCreateResourceMap();
         map.put(key, value);
+    }
+
+    public static Map<DataSource, Connection> getOrCreateResourceMap() {
+        final Map<DataSource, Connection> map = resources.get();
+        if (map != null) {
+            return map;
+        }
+
+        final Map<DataSource, Connection> newMap = new HashMap<>();
+        resources.set(newMap);
+        return newMap;
     }
 
     public static Connection unbindResource(final DataSource key) {
