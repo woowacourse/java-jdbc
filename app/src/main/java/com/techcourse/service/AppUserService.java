@@ -9,7 +9,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
-public class AppUserService {
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
@@ -21,14 +21,17 @@ public class AppUserService {
         this.dataSource = dataSource;
     }
 
+    @Override
     public User findById(final long id) {
         return userDao.findById(id);
     }
 
-    public void insert(final User user) {
+    @Override
+    public void save(final User user) {
         userDao.insert(user);
     }
 
+    @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (final Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
