@@ -45,8 +45,8 @@ public class TransactionTemplate {
     }
 
     private void cleanup(final Connection connection) {
-        restoreAutoCommitStatus(connection);
         TransactionSynchronizationManager.unbindResource(dataSource);
+        restoreAutoCommitStatus(connection);
         DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
