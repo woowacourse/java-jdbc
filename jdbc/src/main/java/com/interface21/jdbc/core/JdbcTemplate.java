@@ -6,8 +6,10 @@ import com.interface21.jdbc.core.querybuilder.delete.DeleteQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.delete.DeleteWhereStep;
 import com.interface21.jdbc.core.querybuilder.insert.InsertQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.insert.InsertValueStep;
+import com.interface21.jdbc.core.querybuilder.select.SelectColumnsStep;
 import com.interface21.jdbc.core.querybuilder.select.SelectQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.select.SelectSqlStep;
+import com.interface21.jdbc.core.querybuilder.select.SelectStringQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.update.UpdateQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.update.UpdateSetStep;
 import java.sql.Connection;
@@ -93,7 +95,11 @@ public class JdbcTemplate {
         return query(sql, new ColumnMatchingRowMapper<>(clazz, typeConversionService), params);
     }
 
-    public <T> SelectSqlStep<T> select(Class<T> clazz) {
+    public <T> SelectSqlStep<T> selectWithSql(Class<T> clazz) {
+        return new SelectStringQueryBuilder<>(this, clazz);
+    }
+
+    public <T> SelectColumnsStep<T> select(Class<T> clazz) {
         return new SelectQueryBuilder<>(this, clazz);
     }
 

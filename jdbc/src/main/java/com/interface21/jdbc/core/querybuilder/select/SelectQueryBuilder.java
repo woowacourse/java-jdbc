@@ -1,61 +1,80 @@
-// com/interface21/jdbc/core/querybuilder/SelectQueryBuilder.java
-
 package com.interface21.jdbc.core.querybuilder.select;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class SelectQueryBuilder<T> implements SelectSqlStep<T>, SelectExecutableStep<T> {
+public class SelectQueryBuilder<T> implements SelectFromStep<T>, SelectColumnsStep<T>, SelectWhereStep<T> {
 
     private final JdbcTemplate jdbcTemplate;
     private final Class<T> mappedClass;
-    private String sql;
-    private final List<Object> params = new ArrayList<>();
+    private String tableName;
+    private List<String> selectedColumns = new ArrayList<>();
+    private final List<String> whereColumns = new ArrayList<>();
+    private final List<Object> whereParams = new ArrayList<>();
 
     public SelectQueryBuilder(JdbcTemplate jdbcTemplate, Class<T> mappedClass) {
         this.jdbcTemplate = jdbcTemplate;
         this.mappedClass = mappedClass;
     }
 
-    /**
-     * 실행할 SQL 쿼리를 설정합니다.
-     */
     @Override
-    public SelectExecutableStep<T> sql(String sql) {
-        this.sql = sql;
+    public SelectWhereStep<T> from(String tableName) {
+        this.tableName = tableName;
         return this;
     }
 
-    /**
-     * SQL의 ?에 순서대로 바인딩될 파라미터를 추가합니다.
-     */
     @Override
-    public SelectExecutableStep<T> param(Object param) {
-        this.params.add(param);
+    public SelectFromStep<T> columns(String... columns) {
+        this.selectedColumns.addAll(Arrays.asList(columns));
         return this;
     }
 
-    /**
-     * 쿼리를 실행하고 결과를 List<T> 형태로 반환합니다.
-     */
+    @Override
+    public SelectFromStep<T> allColumns() {
+        this.selectedColumns.add("*"); // '*'로 모든 컬럼 표시
+        return this;
+    }
+
+    @Override
+    public SelectWhereStep<T> where(String column, Object value) {
+        this.whereColumns.add(column + " = ?");
+        this.whereParams.add(value);
+        return this;
+    }
+
     @Override
     public List<T> toList() {
-        if (sql == null || sql.isBlank()) {
-            throw new IllegalStateException("SQL must be provided before executing a query.");
-        }
-        return jdbcTemplate.query(sql, mappedClass, params.toArray());
+        String sql = buildSelectSql();
+        return jdbcTemplate.query(sql, mappedClass, whereParams.toArray());
     }
 
-    /**
-     * 쿼리를 실행하고 결과를 Optional<T> 형태로 반환합니다.
-     */
     @Override
     public Optional<T> findFirst() {
-        if (sql == null || sql.isBlank()) {
-            throw new IllegalStateException("SQL must be provided before executing a query.");
+        String sql = buildSelectSql();
+        return jdbcTemplate.queryForObject(sql, mappedClass, whereParams.toArray());
+    }
+
+    private String buildSelectSql() {
+        if (tableName == null || tableName.isBlank()) {
+            throw new IllegalStateException("FROM clause is required.");
         }
-        return jdbcTemplate.queryForObject(sql, mappedClass, params.toArray());
+        if (selectedColumns.isEmpty()) {
+            throw new IllegalStateException("At least one column or allColumns() must be specified.");
+        }
+
+        String columnsToSelect = String.join(", ", selectedColumns);
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ")
+                .append(columnsToSelect)
+                .append(" FROM ")
+                .append(tableName);
+
+        if (!whereColumns.isEmpty()) {
+            sqlBuilder.append(" WHERE ")
+                      .append(String.join(" AND ", whereColumns));
+        }
+        return sqlBuilder.toString();
     }
 }

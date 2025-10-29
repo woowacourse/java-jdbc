@@ -30,25 +30,25 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
         return jdbcTemplate.select(User.class)
-                .sql(sql)
+                .columns("id", "account", "password", "email")
+                .from("users")
                 .toList();
     }
 
     public Optional<User> findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.select(User.class)
-                .sql(sql)
-                .param(id)
+                .columns("id", "account", "password", "email")
+                .from("users")
+                .where("id", id)
                 .findFirst();
     }
 
     public Optional<User> findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.select(User.class)
-                .sql(sql)
-                .param(account)
+                .columns("id", "account", "password", "email")
+                .from("users")
+                .where("account", account)
                 .findFirst();
     }
 }
