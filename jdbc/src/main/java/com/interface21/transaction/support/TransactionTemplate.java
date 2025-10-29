@@ -19,10 +19,11 @@ public class TransactionTemplate {
     }
 
     public <T> T execute(final TransactionCallback<T> callback) throws DataAccessException {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        Connection connection = null;
 
         try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
             final T result = callback.doInTransaction();
             connection.commit();
@@ -44,14 +45,16 @@ public class TransactionTemplate {
     }
 
     private void cleanup(final Connection connection) {
-        try {
-            if (!connection.getAutoCommit()) {
-                connection.setAutoCommit(true);
-            }
-        } catch (SQLException ex) {
-            log.error("Failed to restore AutoCommit status", ex);
-        }
+        restoreAutoCommitStatus(connection);
         TransactionSynchronizationManager.unbindResource(dataSource);
         DataSourceUtils.releaseConnection(connection, dataSource);
+    }
+
+    private void restoreAutoCommitStatus(final Connection connection) {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException ex) {
+            log.error("Fail to set auto commit status for true", ex);
+        }
     }
 }
