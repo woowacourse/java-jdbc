@@ -32,14 +32,15 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            return;
+        }
         try {
-            if (connection != null && connection.getAutoCommit()) {
-                connection.close();
-                Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
-                log.info("Resource has been unbound: {}", unboundResource);
-            }
+            connection.close();
+            Connection unboundResource = TransactionSynchronizationManager.unbindResource(dataSource);
+            log.info("Connection closed for DataSource: {} Unbound Resource: {}", dataSource, unboundResource);
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("Failed to close Connection");
         }
     }
 }

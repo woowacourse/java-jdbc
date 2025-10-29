@@ -40,4 +40,9 @@ public abstract class TransactionSynchronizationManager {
         }
         return value;
     }
+
+    public static boolean hasResource(DataSource key) {
+        Map<DataSource, Connection> resource = resources.get();
+        return resource.containsKey(key);
+    }
 }
