@@ -4,12 +4,8 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TransactionTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
 
     private final DataSource dataSource;
 
@@ -18,9 +14,6 @@ public class TransactionTemplate {
     }
 
     public <T> T execute(TransactionCallBack<T> action) {
-        log.info("[TX] dsId={} TSM={}", System.identityHashCode(dataSource),
-                TransactionSynchronizationManager.class.getName());
-
         Connection existing = TransactionSynchronizationManager.getResource(dataSource);
         if (existing != null) {
             return action.execute();
@@ -37,8 +30,6 @@ public class TransactionTemplate {
 
             TransactionSynchronizationManager.bindResource(dataSource, con);
             begunByMe = true;
-
-            log.info("[TX] begin conId={} autoCommit={}", System.identityHashCode(con), con.getAutoCommit());
 
             T result = action.execute();
             con.commit();
