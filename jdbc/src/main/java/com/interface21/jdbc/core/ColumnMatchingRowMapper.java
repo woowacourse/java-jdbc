@@ -35,16 +35,19 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
     private final Map<String, Integer> parameterIndexMap;
     private final Map<String, Field> fieldCache;
 
+    private final TypeConversionService typeConversionService;
+
     /**
      * 매핑할 클래스 타입을 받아 RowMapper를 생성합니다.
      *
      * @param mappedClass ResultSet에서 매핑할 대상 클래스
      */
-    public ColumnMatchingRowMapper(Class<T> mappedClass) {
+    public ColumnMatchingRowMapper(Class<T> mappedClass, TypeConversionService typeConversionService) {
         this.mappedClass = mappedClass;
         this.constructor = findWidestConstructor();
         this.parameterIndexMap = buildParameterIndexMap(constructor);
         this.fieldCache = buildFieldCache();
+        this.typeConversionService = typeConversionService;
     }
 
     /**
@@ -149,11 +152,11 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
 
     private void assignConstructorArgument(Object[] args, ResultSet rs, int columnIndex,
                                            Class<?>[] parameterTypes, String label) throws SQLException {
-        Integer index = parameterIndexMap.get(label);
+        Integer index = parameterIndexMap.get(label.toLowerCase());
         if (index != null) {
             Object value = rs.getObject(columnIndex);
             Class<?> parameterType = parameterTypes[index];
-            args[index] = TypeConversionService.convert(value, parameterType);
+            args[index] = typeConversionService.convert(value, parameterType);
         }
     }
 
@@ -204,7 +207,7 @@ public class ColumnMatchingRowMapper<T> implements RowMapper<T> {
             if (field == null) {
                 return;
             }
-            final Object convertedValue = TypeConversionService.convert(value, field.getType());
+            final Object convertedValue = typeConversionService.convert(value, field.getType());
             field.set(target, convertedValue);
         } catch (Exception e) {
             throw new DataMappingException("필드 설정 실패: " + fieldName, e);

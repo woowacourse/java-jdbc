@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.conversion.TypeConversionService;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
@@ -17,7 +18,8 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DataSource dataSource = TestDataSourceConfig.create();
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        TypeConversionService typeConversionService = new TypeConversionService();
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource, typeConversionService);
         DatabasePopulatorUtils.execute(dataSource);
 
         userDao = new UserDao(jdbcTemplate);

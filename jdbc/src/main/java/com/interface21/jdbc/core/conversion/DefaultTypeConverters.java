@@ -30,7 +30,9 @@ public enum DefaultTypeConverters implements TypeConverter {
 
     @Override
     public Object convert(Object value, Class<?> targetType) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
         if (source.isInstance(value) && target == targetType) {
             return converter.apply(value);
         }

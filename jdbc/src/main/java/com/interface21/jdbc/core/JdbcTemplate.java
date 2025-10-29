@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.conversion.TypeConversionService;
 import com.interface21.jdbc.core.querybuilder.delete.DeleteQueryBuilder;
 import com.interface21.jdbc.core.querybuilder.delete.DeleteWhereStep;
 import com.interface21.jdbc.core.querybuilder.insert.InsertQueryBuilder;
@@ -25,9 +26,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final TypeConversionService typeConversionService;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(final DataSource dataSource, final TypeConversionService typeConversionService) {
         this.dataSource = dataSource;
+        this.typeConversionService = typeConversionService;
     }
 
     public void update(String sql, Object... params) {
@@ -60,7 +63,7 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(String sql, Class<T> clazz, Object... params) {
-        return queryForObject(sql, new ColumnMatchingRowMapper<>(clazz), params);
+        return queryForObject(sql, new ColumnMatchingRowMapper<>(clazz, typeConversionService), params);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -87,7 +90,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, Class<T> clazz, Object... params) {
-        return query(sql, new ColumnMatchingRowMapper<>(clazz), params);
+        return query(sql, new ColumnMatchingRowMapper<>(clazz, typeConversionService), params);
     }
 
     public <T> SelectSqlStep<T> select(Class<T> clazz) {
