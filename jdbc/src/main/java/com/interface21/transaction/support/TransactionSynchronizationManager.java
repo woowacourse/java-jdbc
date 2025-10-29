@@ -43,12 +43,12 @@ public class TransactionSynchronizationManager {
     public static Connection unbindResource(final DataSource key) {
         final Map<DataSource, Connection> map = resources.get();
         if (map == null) {
-            throw new IllegalStateException("Not bound resource, key: " + key);
+            throw new IllegalStateException("Not bound resources map, key: " + key);
         }
 
         final Connection value = map.remove(key);
         if (value == null) {
-            throw new IllegalStateException("Not bound resource, key: " + key);
+            throw new IllegalStateException("Not bound connection, key: " + key);
         }
 
         if (map.isEmpty()) {
