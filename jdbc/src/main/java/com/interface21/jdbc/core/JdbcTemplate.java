@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -232,11 +233,21 @@ public class JdbcTemplate {
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> preparedStatementCallback
     ) throws DataAccessException {
-        try (final Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(connection, sql, preparedStatementSetter, preparedStatementCallback);
+        } finally {
+            closeIfAutoCommitTrue(connection);
+        }
+    }
+
+    private void closeIfAutoCommitTrue(final Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
     }
 
