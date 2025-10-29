@@ -37,6 +37,10 @@ public class TransactionTemplate {
     }
 
     private void rollback(final Connection connection) {
+        if (connection == null) {
+            return;
+        }
+
         try {
             connection.rollback();
         } catch (SQLException rollbackEx) {
@@ -45,6 +49,10 @@ public class TransactionTemplate {
     }
 
     private void cleanup(final Connection connection) {
+        if (connection == null) {
+            return;
+        }
+
         TransactionSynchronizationManager.unbindResource(dataSource);
         restoreAutoCommitStatus(connection);
         DataSourceUtils.releaseConnection(connection, dataSource);
