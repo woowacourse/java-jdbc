@@ -10,7 +10,6 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.sql.SQLSyntaxErrorException;
 import java.util.List;
 
@@ -28,79 +27,6 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-    }
-
-    public Connection getConnection() {
-        return jdbcTemplate.getConnection();
-    }
-
-    public void startTransaction(Connection connection) {
-        jdbcTemplate.startTransaction(connection);
-    }
-
-    public void commitTransaction(Connection connection) {
-        jdbcTemplate.commitTransaction(connection);
-    }
-
-    public void insertWithTransaction(final User user, final Connection connection) {
-        CommandSpecification specification = new CommandSpecification(createPreparedStatementSpecification(
-                "insert into users (account, password, email) values (?, ?, ?)",
-                List.of(
-                        new PreparedStatementParameter(1, user.getAccount()),
-                        new PreparedStatementParameter(2, user.getPassword()),
-                        new PreparedStatementParameter(3, user.getEmail())
-                )
-        ));
-        jdbcTemplate.insertWithTransaction(specification, connection);
-    }
-
-    public void updateWithTransaction(final User user, final Connection connection) {
-        CommandSpecification specification = new CommandSpecification(createPreparedStatementSpecification(
-                "update users set account = ?, password = ?, email = ? where id = ?",
-                List.of(
-                        new PreparedStatementParameter(1, user.getAccount()),
-                        new PreparedStatementParameter(2, user.getPassword()),
-                        new PreparedStatementParameter(3, user.getEmail()),
-                        new PreparedStatementParameter(4, user.getId())
-                )
-        ));
-        jdbcTemplate.updateWithTransaction(specification, connection);
-    }
-
-    public List<User> findAllWithTransaction(final Connection connection) {
-        QuerySpecification<User> specification = new QuerySpecification<>(
-                USER_ROW_MAPPER,
-                createPreparedStatementSpecification(
-                        "select id, account, password, email from users",
-                        List.of()
-                )
-        );
-        return jdbcTemplate.findAllWithTransaction(specification, connection);
-    }
-
-    public User findByIdWithTransaction(final Long id, final Connection connection) {
-        QuerySpecification<User> specification = new QuerySpecification<>(
-                USER_ROW_MAPPER,
-                createPreparedStatementSpecification(
-                        "select id, account, password, email from users where id = ?",
-                        List.of(new PreparedStatementParameter(1, id))
-                )
-        );
-        return jdbcTemplate.findOneWithTransaction(specification, connection)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
-    }
-
-    public User findByAccountWithTransaction(final String account, final Connection connection) {
-
-        QuerySpecification<User> specification = new QuerySpecification<>(
-                USER_ROW_MAPPER,
-                createPreparedStatementSpecification(
-                        "select id, account, password, email from users where account = ?",
-                        List.of(new PreparedStatementParameter(1, account))
-                )
-        );
-        return jdbcTemplate.findOneWithTransaction(specification, connection)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
     }
 
     public void insert(final User user) {
