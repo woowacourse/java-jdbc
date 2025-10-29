@@ -1,20 +1,19 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
 
     private final UserService userService;
     private final DataSource dataSource;
+    private final TransactionTemplate transactionTemplate;
 
     public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
         this.dataSource = dataSource;
+        this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
     @Override
@@ -29,25 +28,9 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        Connection connection = null;
-
-        try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
+        transactionTemplate.execute(() -> {
             userService.changePassword(id, newPassword, createdBy);
-            connection.commit();
-        } catch (Exception ex) {
-            if (connection != null) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackEx) {
-                }
-            }
-            throw new DataAccessException(ex);
-        } finally {
-            if (connection != null) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            }
-        }
+            return null;
+        });
     }
 }
