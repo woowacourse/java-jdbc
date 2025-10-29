@@ -31,10 +31,9 @@ public class JdbcTemplate {
 
     public int update(String sql, PreparedStatementSetter setter) {
         final var connection = DataSourceUtils.getConnection(dataSource);
-        final var pstmt = getPreparedStatement(sql, connection);
         log.debug("query : {}", sql);
-        bindParams(sql, pstmt, setter);
-        try {
+        try (final var pstmt = getPreparedStatement(sql, connection)) {
+            bindParams(sql, pstmt, setter);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -48,11 +47,10 @@ public class JdbcTemplate {
 
     public <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         final var connection = DataSourceUtils.getConnection(dataSource);
-        final var pstmt = getPreparedStatement(sql, connection);
-
         final var result = new ArrayList<T>();
         log.debug("query : {}", sql);
-        try (final var rs = executeQuery(sql, pstmt, setter)) {
+        try (final var pstmt = getPreparedStatement(sql, connection);
+             final var rs = executeQuery(sql, pstmt, setter)) {
             while (rs.next()) {
                 result.add(mapRow(rowMapper, rs, sql));
             }
@@ -69,9 +67,9 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         final var connection = DataSourceUtils.getConnection(dataSource);
-        final var pstmt = getPreparedStatement(sql, connection);
         log.debug("query : {}", sql);
-        try (final var rs = executeQuery(sql, pstmt, setter)) {
+        try (final var pstmt = getPreparedStatement(sql, connection);
+             final var rs = executeQuery(sql, pstmt, setter)) {
             if (rs.next()) {
                 return mapRow(rowMapper, rs, sql);
             }
