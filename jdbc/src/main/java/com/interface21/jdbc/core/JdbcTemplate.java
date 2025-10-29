@@ -35,19 +35,13 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final Connection connection, final String sql, RowMapper<T> mapper,
                                 final Object... params) {
-        return execute(connection, sql, ps -> {
-            try (ResultSet resultSet = ps.executeQuery()) {
-                if (resultSet.next()) {
-                    T result = mapper.mapRow(resultSet);
-                    if (resultSet.next()) {
-                        throw new IllegalStateException("Expected single row, but got multiple rows");
-
-                    }
-                    return result;
-                }
-                throw new IllegalStateException("Expected single row, but got none");
-            }
-        }, params);
+        List<T> result = query(connection, sql, mapper, params);
+        if (result.size() != 1) {
+            throw new IllegalStateException(
+                    "Expected single row, but got " + result.size() + " rows"
+            );
+        }
+        return result.getFirst();
     }
 
     private <R> R execute(final Connection connection, String sql, PreparedStatementSetter<R> action,
