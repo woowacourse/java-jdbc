@@ -39,15 +39,12 @@ public enum DefaultTypeConverters implements TypeConverter {
         return value;
     }
 
-    public static Object applyDefaultConversion(Object value, Class<?> targetType) {
-        if (value == null) {
-            return null;
-        }
+    public static TypeConverter findConverter(Object value, Class<?> targetType) {
         for (DefaultTypeConverters rule : values()) {
             if (rule.source.isInstance(value) && rule.target == targetType) {
-                return rule.converter.apply(value);
+                return rule;
             }
         }
-        return value;
+        return null;
     }
 }

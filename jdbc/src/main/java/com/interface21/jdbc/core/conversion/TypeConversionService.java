@@ -6,7 +6,6 @@ import java.util.List;
 
 public class TypeConversionService {
 
-    private final TypeConverter DEFAULT_CONVERTER = DefaultTypeConverters::applyDefaultConversion;
     private final List<TypeConverter> registeredConverters;
 
     public TypeConversionService(List<TypeConverter> registeredConverters) {
@@ -17,22 +16,31 @@ public class TypeConversionService {
         this.registeredConverters = new ArrayList<>();
     }
 
+    /**
+     * 주어진 sourceValue를 targetType으로 변환합니다.
+     */
     public Object convert(final Object sourceValue, final Class<?> targetType) {
         if (sourceValue == null) {
             return resolveNullValueBy(targetType);
         }
+        // 이미 대상 타입과 동일한 경우 변환 과정을 생략합니다.
         if (isAlreadyTargetType(sourceValue, targetType)) {
             return sourceValue;
         }
 
+        // 2. 먼저 등록된 사용자 정의 컨버터(registeredConverters)를 이용해 변환을 시도하고,
         final var convertedByRegistered = convertWithRegisteredConverters(sourceValue, targetType);
         if (hasConversionOccurred(convertedByRegistered, sourceValue)) {
             return convertedByRegistered;
         }
 
-        final var convertedByDefault = DEFAULT_CONVERTER.convertIfPossible(sourceValue, targetType);
-        if (hasConversionOccurred(convertedByDefault, sourceValue) && isCompatibleType(targetType, convertedByDefault)) {
-            return convertedByDefault;
+        // 3. 변환 가능한 컨버터가 없으면 기본 변환 규칙(DefaultTypeConverters)을 적용합니다.
+        TypeConverter defaultConverter = DefaultTypeConverters.findConverter(sourceValue, targetType);
+        if (defaultConverter != null) {
+            final var converted = defaultConverter.convertIfPossible(sourceValue, targetType);
+            if (hasConversionOccurred(converted, sourceValue)) {
+                return converted;
+            }
         }
         return sourceValue;
     }
