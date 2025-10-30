@@ -22,7 +22,7 @@ public class DataSourceTransactionManager implements PlatformTransactionManager 
     }
 
     @Override
-    public void commit() throws SQLException{
+    public void commit() throws SQLException {
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         conn.commit();
         DataSourceUtils.releaseConnection(conn, dataSource);
@@ -33,10 +33,10 @@ public class DataSourceTransactionManager implements PlatformTransactionManager 
         Connection conn = TransactionSynchronizationManager.getResource(dataSource);
         try {
             conn.rollback();
-            DataSourceUtils.releaseConnection(conn, dataSource);
         } catch (RuntimeException | SQLException exception) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-                throw new DataAccessException(exception.getMessage());
-            }
+            throw new DataAccessException(exception.getMessage());
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
+    }
 }
