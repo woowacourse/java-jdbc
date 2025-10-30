@@ -22,30 +22,42 @@ public class JdbcTemplate {
                              final Object... params) {
         return execute(connection, sql, ps -> {
             try (ResultSet resultSet = ps.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while (resultSet.next()) {
-                    result.add(mapper.mapRow(resultSet));
-                }
-
-                return result;
+                return mapResultSetToList(resultSet, mapper);
             }
         }, params);
+    }
+
+    private <T> List<T> mapResultSetToList(final ResultSet resultSet, final RowMapper<T> mapper) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(mapper.mapRow(resultSet));
+        }
+        return result;
     }
 
     public <T> T queryForObject(final Connection connection, final String sql, RowMapper<T> mapper,
                                 final Object... params) {
         return execute(connection, sql, ps -> {
             try (ResultSet resultSet = ps.executeQuery()) {
-                if (resultSet.next()) {
-                    T result = mapper.mapRow(resultSet);
-                    if (resultSet.next()) {
-                        throw new IllegalStateException("Expected single row, but got multiple rows");
-                    }
-                    return result;
-                }
-                throw new IllegalStateException("Expected single row, but got none");
+                return extractSingleResult(resultSet, mapper);
             }
         }, params);
+    }
+
+    private <T> T extractSingleResult(final ResultSet resultSet, final RowMapper<T> mapper) throws SQLException {
+        if (!resultSet.next()) {
+            throw new IllegalStateException("Expected single row, but got none");
+        }
+
+        T result = mapper.mapRow(resultSet);
+        validateSingleRow(resultSet);
+        return result;
+    }
+
+    private void validateSingleRow(final ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            throw new IllegalStateException("Expected single row, but got multiple rows");
+        }
     }
 
     private <R> R execute(final Connection connection, String sql, PreparedStatementSetter<R> action,
