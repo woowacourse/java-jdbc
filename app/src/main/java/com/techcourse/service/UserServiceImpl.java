@@ -24,7 +24,6 @@ public class UserServiceImpl implements UserService {
         userDao.insert(user);
     }
 
-    @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);

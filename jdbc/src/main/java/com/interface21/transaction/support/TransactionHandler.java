@@ -1,6 +1,6 @@
 package com.interface21.transaction.support;
 
-import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.Transactional;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -8,8 +8,13 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionHandler implements InvocationHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionHandler.class);
+
 
     private final DataSource dataSource;
     private final Object target;
@@ -21,18 +26,37 @@ public class TransactionHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
-
-        if (!targetMethod.isAnnotationPresent(Transactional.class)) {
-            return targetMethod.invoke(target, args);
+        // 기존 구현체 Method를 호출하게 되면, 리플렉션이 2배가 되어 성능 저하 발생
+        // 따라서 인터페이스에 애노테이션이 붙어있는지 확인
+        if (!method.isAnnotationPresent(Transactional.class)) {
+            return method.invoke(target, args);
         }
 
-        // 트랜잭션 시작
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            JdbcTemplate.setCurrentConnection(connection);
-            return getObject(args, targetMethod, connection);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        boolean originalAutoCommit = connection.getAutoCommit();
+
+        try {
+            if (originalAutoCommit) {
+                connection.setAutoCommit(false);
+            }
+            return getObject(args, method, connection);
+        } finally {
+            finalizeTransaction(originalAutoCommit, connection);
         }
+
+    }
+
+    private void finalizeTransaction(boolean originalAutoCommit, Connection connection) {
+        try {
+            if (originalAutoCommit) {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            log.error("Failed to reset auto-commit to original value.", e);
+        }
+
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     private Object getObject(Object[] args, Method targetMethod, Connection connection) throws Throwable {
@@ -44,8 +68,9 @@ public class TransactionHandler implements InvocationHandler {
             Throwable cause = e.getTargetException();
             rollback(connection, cause);
             throw cause;
-        } finally {
-            JdbcTemplate.clearCurrentConnection();
+        }catch (SQLException e){
+            rollback(connection, e);
+            throw e;
         }
     }
 
