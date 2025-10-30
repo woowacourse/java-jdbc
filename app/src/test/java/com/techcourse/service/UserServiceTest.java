@@ -12,8 +12,10 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,21 +25,30 @@ class UserServiceTest {
     UserDao userDao;
     TransactionTemplate transactionTemplate;
     DataSource dataSource;
+    Connection connection;
 
     @BeforeEach
     void setUp() throws SQLException {
         dataSource = DataSourceConfig.getInstance();
+        connection = dataSource.getConnection();
         transactionTemplate = new TransactionTemplate(dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource, new TypeConversionService());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(connection, user);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        if (connection != null) {
+            connection.close();
+        }
     }
 
     @Test
-    void testChangePassword() throws SQLException {
+    void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
 
@@ -45,13 +56,13 @@ class UserServiceTest {
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.getById(dataSource.getConnection(), 1L);
+        final var actual = userService.getById(connection, 1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
 
     @Test
-    void testTransactionRollback() throws SQLException {
+    void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
@@ -62,7 +73,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.getById(dataSource.getConnection(), 1L);
+        final var actual = userService.getById(connection, 1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
