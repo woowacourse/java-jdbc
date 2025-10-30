@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.callback.PreparedStatementCallBack;
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.callback.PreparedStatementCallback;
 import com.interface21.jdbc.mapper.RowMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,14 +16,9 @@ public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    private final DataSource dataSource;
-
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void update(final String sql, final Object... args) {
-        execute(sql,
+    public void update(final Connection connection, String sql, final Object... args) {
+        execute(connection,
+                sql,
                 pstmt -> {
                     setParameter(pstmt, args);
                     return pstmt.executeUpdate();
@@ -31,8 +26,11 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql,
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return execute(
+                connection,
+                sql,
                 pstmt -> {
                     setParameter(pstmt, args);
                     try (ResultSet rs = pstmt.executeQuery()) {
@@ -45,8 +43,10 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> queryForList(final String sql, final RowMapper<T> rowMapper) {
-        return execute(sql,
+    public <T> List<T> queryForList(final Connection connection, final String sql, final RowMapper<T> rowMapper) {
+        return execute(
+                connection,
+                sql,
                 pstmt -> {
                     try (ResultSet rs = pstmt.executeQuery()) {
                         List<T> resultList = new ArrayList<>();
@@ -66,16 +66,19 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallBack<T> callBack) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementCallback<T> callback
+    ) {
+        try {
+            PreparedStatement pstmt = connection.prepareStatement(sql);
             log.debug("query : {}", sql);
 
-            return callBack.run(pstmt);
+            return callback.run(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }
