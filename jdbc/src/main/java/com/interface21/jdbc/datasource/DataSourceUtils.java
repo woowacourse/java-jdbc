@@ -28,7 +28,7 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            if(TransactionSynchronizationManager.existsResource(dataSource)) {
+            if(!TransactionSynchronizationManager.existsResource(dataSource)) {
                 connection.close();
             }
         } catch (SQLException ex) {
