@@ -7,28 +7,32 @@ import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, Connection>> RESOURCES = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<DataSource, Boolean>> TRANSACTION_ACTIVE = ThreadLocal.withInitial(HashMap::new);
 
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        if (resources.get() == null) {
-            resources.set(new HashMap<>());
-        }
-        return resources.get().get(key);
+        return RESOURCES.get().get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        if (resources.get() == null) {
-            resources.set(new HashMap<>());
-        }
-        resources.get().put(key, value);
+        RESOURCES.get().put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
-        if (resources.get() == null) {
-            resources.set(new HashMap<>());
+        return RESOURCES.get().remove(key);
+    }
+
+    public static boolean isTransactionActive(DataSource key) {
+        Boolean active = TRANSACTION_ACTIVE.get().get(key);
+        if (active == null) {
+            return false;
         }
-        return resources.get().remove(key);
+        return active;
+    }
+
+    public static void setTransactionActive(DataSource key, boolean active) {
+        TRANSACTION_ACTIVE.get().put(key, active);
     }
 }
