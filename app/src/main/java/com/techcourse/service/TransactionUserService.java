@@ -48,8 +48,10 @@ public class TransactionUserService implements UserService {
                 try {
                     connection.setAutoCommit(true);
                     DataSourceUtils.releaseConnection(connection, dataSource);
-                    TransactionSynchronizationManager.unbindResource(dataSource);
                 } catch (SQLException ignored) {
+                    log.error("Connection release failed", ignored);
+                } finally {
+                    TransactionSynchronizationManager.unbindResource(dataSource);
                 }
             }
         }
