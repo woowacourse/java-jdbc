@@ -17,13 +17,13 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        jdbcTemplate.update("user_history")
-                .set("user_id", userHistory.getUserId())
-                .set("account", userHistory.getAccount())
-                .set("password", userHistory.getPassword())
-                .set("email", userHistory.getEmail())
-                .set("created_at", userHistory.getCreatedAt())
-                .set("created_by", userHistory.getCreateBy())
+        jdbcTemplate.insertInto("user_history")
+                .value("user_id", userHistory.getUserId())
+                .value("account", userHistory.getAccount())
+                .value("password", userHistory.getPassword())
+                .value("email", userHistory.getEmail())
+                .value("created_at", userHistory.getCreatedAt())
+                .value("created_by", userHistory.getCreateBy())
                 .execute();
     }
 
