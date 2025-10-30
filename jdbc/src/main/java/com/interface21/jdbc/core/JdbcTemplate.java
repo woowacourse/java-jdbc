@@ -1,9 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,22 +23,21 @@ public class JdbcTemplate {
     }
 
     /**
-     * PreparedStatement를 사용하는 콜백 인터페이스
-     */
-    @FunctionalInterface
-    private interface PreparedStatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
-    }
-
-    /**
-     * SQL을 실행하고 콜백을 통해 결과를 반환한다. (DataSource에서 Connection 획득)
+     * SQL을 실행하고 콜백을 통해 결과를 반환한다. (DataSource에서 Connection 획득) DataSourceUtils를 통해 Connection을 획득한다. 트랜잭션 동기화가 활성화되어 있으면
+     * 동기화된 Connection을 사용하고, 그렇지 않으면 새로운 Connection을 생성한다.
      */
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
-        try (var connection = dataSource.getConnection();
-             var pstmt = connection.prepareStatement(sql)) {
+        // DataSourceUtils를 통해 Connection 획득
+        // 트랜잭션이 활성화되어 있으면 TransactionSynchronizationManager에 바인딩된 Connection 반환
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (var pstmt = connection.prepareStatement(sql)) {
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("Execute Error: " + sql, e);
+        } finally {
+            // Connection 반환
+            // 트랜잭션 동기화된 Connection이면 닫지 않고, 일반 Connection이면 닫는다
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -156,5 +155,13 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, params[i]);
             }
         };
+    }
+
+    /**
+     * PreparedStatement를 사용하는 콜백 인터페이스
+     */
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
     }
 }
