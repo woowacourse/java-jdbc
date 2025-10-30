@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,26 +16,9 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
-    private Connection currentConnection;
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public void setCurrentConnection() {
-        try {
-            this.currentConnection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void setCurrentConnection(final Connection connection) {
-        if (connection == null) {
-            setCurrentConnection();
-            return;
-        }
-        this.currentConnection = connection;
     }
 
     public void update(final String sql, final Object... parameters) {
@@ -69,7 +53,8 @@ public class JdbcTemplate {
     }
 
     private <T> T executeSql(final String sql, final QueryExecutor<T> queryExecutor, final Object... parameters) {
-        try (PreparedStatement pstmt = currentConnection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setParameters(pstmt, parameters);
@@ -77,6 +62,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        } finally {
+            try {
+                if (connection.getAutoCommit()) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
