@@ -1,6 +1,8 @@
 package com.interface21.jdbc;
 
-public class NonUniqueResultException extends RuntimeException {
+import com.interface21.dao.DataAccessException;
+
+public class NonUniqueResultException extends DataAccessException {
     public NonUniqueResultException(final String message) {
         super(message);
     }
