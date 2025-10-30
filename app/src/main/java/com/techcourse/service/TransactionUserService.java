@@ -47,12 +47,16 @@ public class TransactionUserService implements UserService {
             }
         } finally {
             try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                log.error("커넥션의 autoCommit 상태를 true로 복원하는 데 실패했습니다. 커넥션 풀 오염 가능성이 있습니다.", e);
+            }
+            try {
                 TransactionSynchronizationManager.unbindResource(dataSource);
             } catch (IllegalStateException e) {
-                log.warn("Failed to unbind resource from TransactionSynchronizationManager", e);
-            } finally {
-                DataSourceUtils.releaseConnection(conn, dataSource);
+                log.error("TransactionSynchronizationManager에서 DataSource 리소스 언바인드(unbind)에 실패했습니다.", e);
             }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 }
