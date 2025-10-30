@@ -34,7 +34,7 @@ public class TxUserService implements UserService {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        boolean originalAutoCommit = false;
+        boolean originalAutoCommit = true;
         try {
             originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
