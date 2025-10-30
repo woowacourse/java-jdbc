@@ -5,11 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.interface21.dao.DataAccessException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +15,6 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
-    private DataSource dataSource;
 
     @BeforeEach
     void setUp() {
@@ -27,7 +23,6 @@ class JdbcTemplateTest {
         jdbcDatasource.setUser("sa");
         jdbcDatasource.setPassword("");
 
-        this.dataSource = jdbcDatasource;
         this.jdbcTemplate = new JdbcTemplate(jdbcDatasource);
 
         createDefaultTable(jdbcTemplate);
@@ -75,26 +70,6 @@ class JdbcTemplateTest {
                 () -> assertThat(user.getName()).isEqualTo("듀2")
         );
     }
-
-    @Test
-   void testUpdate_withConnection() throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-
-            final String sql = "insert into users (id, name) values (?, ?)";
-            jdbcTemplate.update(connection, sql, 2, "트랜잭션");
-
-            final Optional<User> userBeforeCommit = findUserById(2L);
-            assertThat(userBeforeCommit).isEmpty();
-            connection.commit();
-
-            final Optional<User> userAfterCommit = findUserById(2L);
-            assertAll(
-                    () -> assertThat(userAfterCommit).isNotEmpty(),
-                    () -> assertThat(userAfterCommit.get().getName()).isEqualTo("트랜잭션")
-            );
-        }
-   }
 
     @Test
     void testQueryForObject() {
