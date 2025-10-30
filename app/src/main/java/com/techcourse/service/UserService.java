@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -22,8 +24,8 @@ public class UserService {
         this.dataSource = DataSourceConfig.getInstance();
     }
 
-    public User findById(final Connection conn, final long id) {
-        return userDao.findById(conn, id);
+    public User findById(final long id) {
+        return userDao.findById(id);
     }
 
     // todo : Connection 리팩토링 이후 주석 삭제 예정
@@ -32,20 +34,23 @@ public class UserService {
 //    }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             conn.setAutoCommit(false);
 
             try {
-                final var user = findById(conn, id);
+                final var user = findById(id);
                 user.changePassword(newPassword);
-                userDao.update(conn, user);
+                userDao.update(user);
 
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
+                userHistoryDao.log(new UserHistory(user, createBy));
                 conn.commit();
             } catch (Exception e) {
                 conn.rollback();
                 throw e;
+            } finally {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource, conn);
             }
         } catch (DataAccessException | SQLException e) {
             throw new DataAccessException("비밀번호 변경 실패", e);

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,7 +18,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(Connection conn, String sql, Object... params) {
+    public void executeUpdate(String sql, Object... params) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
@@ -27,10 +29,13 @@ public class JdbcTemplate {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
@@ -46,8 +51,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> queryForList(String sql, RowMapper<T> rowMapper, Object... params) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
         try (
-                Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)
         ) {
             validationParamLength(ps, params);
