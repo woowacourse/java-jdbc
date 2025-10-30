@@ -23,12 +23,7 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static Connection unbindResource(DataSource key) {
-        Map<DataSource, Connection> savedResource = getResource();
-        return savedResource.remove(key);
-    }
-
-    public static void clear() {
-        resources.remove();
+        return removeResource(key);
     }
 
     private static Map<DataSource, Connection> getResource() {
@@ -39,5 +34,14 @@ public abstract class TransactionSynchronizationManager {
             return newSavedResource;
         }
         return savedResource;
+    }
+
+    private static Connection removeResource(DataSource key) {
+        Map<DataSource, Connection> savedResource = getResource();
+        Connection removedResource = savedResource.remove(key);
+        if (savedResource.isEmpty()) {
+            resources.remove();
+        }
+        return removedResource;
     }
 }
