@@ -1,6 +1,7 @@
 package com.techcourse.service.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import java.sql.Connection;
@@ -36,8 +37,12 @@ public class TxUserService implements UserService {
             // 1. Connection 생성
             connection = dataSource.getConnection();
 
-            // 2. 트랜잭션 시작 (autoCommit 비활성화)
-            connection.setAutoCommit(false);
+            try {
+                // 2. 트랜잭션 시작 (autoCommit 비활성화)
+                connection.setAutoCommit(false);
+            } catch (SQLException e) {
+                throw new DataAccessException("트랜잭션 시작전 예외가 발생했습니다.");
+            }
 
             // 3. ThreadLocal에 Connection 바인딩
             TransactionSynchronizationManager.bindResource(dataSource, connection);
@@ -56,14 +61,9 @@ public class TxUserService implements UserService {
         } finally {
             // 6. ThreadLocal에서 제거
             TransactionSynchronizationManager.unbindResource(dataSource);
-
             // 7. Connection 닫기
             if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new DataAccessException("커넥션 닫는 중 문제가 발생했습니다.");
-                }
+                DataSourceUtils.releaseConnection(connection, dataSource);
             }
         }
     }
