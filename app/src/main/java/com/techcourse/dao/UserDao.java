@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -20,24 +19,35 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.executeUpdate(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.executeUpdate(
+                sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
     }
 
-    public void update(Connection connection, final User user) {
+    public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.executeUpdate(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.executeUpdate(
+                sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, rs ->
-            new User(
-                    rs.getLong("id"),
-                    rs.getString("account"),
-                    rs.getString("password"),
-                    rs.getString("email")
-            )
+                new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                )
         );
     }
 

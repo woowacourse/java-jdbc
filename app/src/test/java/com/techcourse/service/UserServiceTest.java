@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.service.service.AppUserService;
+import com.techcourse.service.service.TxUserService;
+import com.techcourse.service.service.UserService;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,10 +18,13 @@ import org.junit.jupiter.api.Test;
 class UserServiceTest {
 
     private UserDao userDao;
+    private UserService userService;
 
     @BeforeEach
     void setUp() {
         this.userDao = new UserDao(DataSourceConfig.getInstance());
+        UserHistoryDao userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
+        userService = new AppUserService(userDao, userHistoryDao);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -26,7 +33,6 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userService = new UserService();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -39,16 +45,18 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final var dataSource = DataSourceConfig.getInstance();
-        final var userDao = new UserDao(dataSource);
+        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao();
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         final var actual = userService.findById(1L);
 
