@@ -1,6 +1,9 @@
 package com.interface21.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -13,7 +16,10 @@ public class TransactionManager {
     }
 
     public void executeTransaction(final TransactionalAction action) {
-        try (final var connection = dataSource.getConnection();) {
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
 
             try {
@@ -26,6 +32,9 @@ public class TransactionManager {
 
         } catch (SQLException e) {
             throw new RuntimeException("트랜잭션 로직을 실행하는 중 Connection 오류가 발생했습니다.");
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
