@@ -42,7 +42,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+    public  <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pss) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -52,15 +52,13 @@ public class JdbcTemplate {
 
             log.debug("query: {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            pss.setValues(pstmt);
 
             rs = pstmt.executeQuery();
             List<T> results = new ArrayList<>();
             int rowNum = 0;
             while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rowNum));
+                results.add(rowMapper.mapRow(rs, rowNum++));
             }
             return results;
         } catch (SQLException e) {
@@ -69,6 +67,14 @@ public class JdbcTemplate {
         } finally {
             closeResources(rs, pstmt, conn);
         }
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, rowMapper, pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        });
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
@@ -82,21 +88,19 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private static void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
+    private void closeResources(ResultSet rs, PreparedStatement pstmt, Connection conn) {
         try {
             if (rs != null) {
                 rs.close();
             }
         } catch (SQLException ignored) {
         }
-
         try {
             if (pstmt != null) {
                 pstmt.close();
             }
         } catch (SQLException ignored) {
         }
-
         try {
             if (conn != null) {
                 conn.close();
