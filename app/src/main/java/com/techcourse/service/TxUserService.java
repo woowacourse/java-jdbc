@@ -52,19 +52,26 @@ public class TxUserService implements UserServiceInterface {
             T result = transactionCallback.doInTransaction();
             connection.commit();
             return result;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             if (connection != null) {
                 try {
-                    if ((e instanceof RuntimeException)) {
-                        connection.commit();
-                    } else {
-                        connection.rollback();
-                    }
+                    connection.rollback();
                 } catch (SQLException ex) {
                     log.error("Rollback failed", ex);
+                    throw new DataAccessException("Rollback failed");
                 }
             }
             throw new DataAccessException(e);
+        } catch (RuntimeException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    log.error("Rollback failed", ex);
+                    throw new DataAccessException("Rollback failed");
+                }
+            }
+            throw e;
         } finally {
             if (connection != null) {
                 try {
