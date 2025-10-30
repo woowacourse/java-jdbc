@@ -13,9 +13,6 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> resourceMap = resources.get();
-        if (resourceMap == null) {
-            return null;
-        }
         return resourceMap.get(key);
     }
 
@@ -26,9 +23,6 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection unbindResource(DataSource key) {
         Map<DataSource, Connection> resourceMap = resources.get();
-        if (resourceMap == null) {
-            return null;
-        }
         return resourceMap.remove(key);
     }
 }
