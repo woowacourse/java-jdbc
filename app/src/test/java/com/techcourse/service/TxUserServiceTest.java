@@ -13,26 +13,29 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class UserServiceTest {
+class TxUserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userService.save(user);
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -45,8 +48,8 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var mockUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var userService = new TxUserService(new AppUserService(userDao, mockUserHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
