@@ -32,6 +32,14 @@ public class User {
         return account;
     }
 
+    public Object[] toInsertParams() {
+        return new Object[]{account, password, email};
+    }
+
+    public Object[] toUpdateParams() {
+        return new Object[]{account, password, email, id};
+    }
+
     public long getId() {
         return id;
     }

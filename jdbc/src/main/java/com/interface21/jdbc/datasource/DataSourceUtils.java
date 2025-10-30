@@ -2,10 +2,9 @@ package com.interface21.jdbc.datasource;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 // 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
@@ -19,15 +18,22 @@ public abstract class DataSourceUtils {
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return;
+        }
+        Connection bound = TransactionSynchronizationManager.getResource(dataSource);
+
+        if (bound != null && bound == connection) {
+            return;
+        }
+
         try {
             connection.close();
         } catch (SQLException ex) {

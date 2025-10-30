@@ -1,9 +1,9 @@
 package com.interface21.jdbc.core;
 
-import java.sql.Connection;
+import com.interface21.dao.DataAccessException;
 
 @FunctionalInterface
 public interface TransactionCallBack<R> {
 
-    R execute(Connection connection) throws Exception;
+    R execute() throws DataAccessException;
 }
