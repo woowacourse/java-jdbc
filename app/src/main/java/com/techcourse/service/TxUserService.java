@@ -1,17 +1,17 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.transaction.TransactionInterceptor;
+import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
 
     private final UserService userService;
     private final TransactionInterceptor transactionInterceptor;
 
-    public TxUserService(UserService userService) {
+    public TxUserService(UserService userService, DataSource dataSource) {
         this.userService = userService;
-        this.transactionInterceptor = new TransactionInterceptor(DataSourceConfig.getInstance());
+        this.transactionInterceptor = new TransactionInterceptor(dataSource);
     }
 
     @Override

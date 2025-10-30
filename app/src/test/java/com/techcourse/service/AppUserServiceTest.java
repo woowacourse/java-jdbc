@@ -49,7 +49,7 @@ class AppUserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
