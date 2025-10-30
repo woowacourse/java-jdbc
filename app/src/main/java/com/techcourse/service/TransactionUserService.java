@@ -8,9 +8,12 @@ import com.techcourse.domain.User;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionUserService implements UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionUserService.class);
     private final DataSource dataSource;
     private final UserService userService;
 
@@ -41,8 +44,14 @@ public class TransactionUserService implements UserService {
             }
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                    TransactionSynchronizationManager.unbindResource(dataSource);
+                } catch (SQLException ignored) {
+                }
+            }
         }
     }
 }
