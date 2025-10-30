@@ -15,9 +15,9 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
-
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
 
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -50,8 +50,7 @@ class UserDaoTest {
     @Test
     void insert() {
         final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        saveUser(account);
 
         final var actual = userDao.findById(2L);
 
@@ -62,8 +61,8 @@ class UserDaoTest {
     void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
 
+        user.changePassword(newPassword);
         userDao.update(user);
 
         final var actual = userDao.findById(1L);
