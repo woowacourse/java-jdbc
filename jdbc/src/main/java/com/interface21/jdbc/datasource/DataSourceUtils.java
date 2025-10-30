@@ -23,15 +23,16 @@ public abstract class DataSourceUtils {
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             return connection;
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
+            throw new CannotGetJdbcConnectionException("JDBC Connection을 얻는데 실패했습니다.", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("JDBC Connection을 해제하는데 실패했습니다.", ex);
         }
     }
 }

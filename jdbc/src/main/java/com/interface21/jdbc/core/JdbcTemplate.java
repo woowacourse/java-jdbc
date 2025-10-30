@@ -1,11 +1,11 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.exception.CannotGetJdbcConnectionException;
 import com.interface21.exception.DataAccessException;
 import com.interface21.exception.ResultBindingException;
 import com.interface21.exception.StatementExecuteQueryException;
 import com.interface21.exception.StatementExecuteUpdateException;
 import com.interface21.exception.StatementParameterBindingException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,19 +27,9 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... parameters) {
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindPreparedStatement(pstmt, parameters);
-            executeUpdateQuery(pstmt);
-        } catch (SQLException e) {
-            log.error("SQL 예외 발생: {}", e.getMessage(), e);
-            throw new DataAccessException("SQL 예외 발생", e);
-        }
-    }
-
-    public void update(Connection conn, String sql, Object... parameters) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try {
+            Connection conn = getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             bindPreparedStatement(pstmt, parameters);
             executeUpdateQuery(pstmt);
@@ -50,22 +40,9 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindPreparedStatement(pstmt, parameters);
-            List<T> result = executeQuery(pstmt, rowMapper);
-            validateResultCountIsOne(result.size());
-            return result.getFirst();
-        } catch (SQLException e) {
-            log.error("SQL 예외 발생: {}", e.getMessage(), e);
-            throw new DataAccessException("SQL 예외 발생", e);
-        }
-    }
-
-    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper,
-            Object... parameters) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try {
+            Connection conn = getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             bindPreparedStatement(pstmt, parameters);
             List<T> result = executeQuery(pstmt, rowMapper);
@@ -78,36 +55,20 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        try (Connection conn = getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindPreparedStatement(pstmt, parameters);
-            return executeQuery(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error("SQL 예외 발생: {}", e.getMessage(), e);
-            throw new DataAccessException("SQL 예외 발생", e);
-        }
-    }
-
-    public <T> List<T> query(Connection conn, String sql, RowMapper<T> rowMapper,
-            Object... parameters) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindPreparedStatement(pstmt, parameters);
-            return executeQuery(pstmt, rowMapper);
-        } catch (SQLException e) {
-            log.error("SQL 예외 발생: {}", e.getMessage(), e);
-            throw new DataAccessException("SQL 예외 발생", e);
-        }
-    }
-
-    private Connection getConnection() {
         try {
-            return dataSource.getConnection();
+            Connection conn = getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            log.debug("query : {}", sql);
+            bindPreparedStatement(pstmt, parameters);
+            return executeQuery(pstmt, rowMapper);
         } catch (SQLException e) {
-            log.error("DB 연결 실패: {}", e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException("DB 연결 실패", e);
+            log.error("SQL 예외 발생: {}", e.getMessage(), e);
+            throw new DataAccessException("SQL 예외 발생", e);
         }
+    }
+
+    private Connection getConnection() throws SQLException {
+        return DataSourceUtils.getConnection(dataSource);
     }
 
     private PreparedStatement bindPreparedStatement(PreparedStatement pstmt, Object[] params) {
