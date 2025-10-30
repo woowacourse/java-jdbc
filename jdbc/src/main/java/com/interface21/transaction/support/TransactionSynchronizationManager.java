@@ -37,4 +37,15 @@ public abstract class TransactionSynchronizationManager {
             resources.remove();
         }
     }
+
+    public static boolean isBound(DataSource key) {
+        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
+        return dataSourceConnectionMap.containsKey(key);
+    }
+
+    public static void unbindResourceIfBound(DataSource key) {
+        if (isBound(key)) {
+            unbindResource(key);
+        }
+    }
 }

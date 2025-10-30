@@ -37,15 +37,14 @@ public class TxUserService implements UserService {
             // 1. Connection 생성
             connection = dataSource.getConnection();
 
+            // 2. ThreadLocal에 Connection 바인딩
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             try {
-                // 2. 트랜잭션 시작 (autoCommit 비활성화)
+                // 3. 트랜잭션 시작 (autoCommit 비활성화)
                 connection.setAutoCommit(false);
             } catch (SQLException e) {
                 throw new DataAccessException("트랜잭션 시작전 예외가 발생했습니다.");
             }
-
-            // 3. ThreadLocal에 Connection 바인딩
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
             // 4. 비즈니스 로직 실행
             userService.changePassword(id, newPassword, createBy);
@@ -60,7 +59,7 @@ public class TxUserService implements UserService {
             throw new DataAccessException("트랜잭션 실행 중 문제가 발생했습니다.", e);
         } finally {
             // 6. ThreadLocal에서 제거
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            TransactionSynchronizationManager.unbindResourceIfBound(dataSource);
             // 7. Connection 닫기
             if (connection != null) {
                 DataSourceUtils.releaseConnection(connection, dataSource);
