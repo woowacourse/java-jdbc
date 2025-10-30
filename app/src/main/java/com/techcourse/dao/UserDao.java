@@ -2,9 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -17,11 +15,9 @@ public class UserDao {
             rs.getString("email")
     );
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
@@ -29,7 +25,6 @@ public class UserDao {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(
-                getConnection(),
                 sql,
                 user.getAccount(),
                 user.getPassword(),
@@ -41,7 +36,6 @@ public class UserDao {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(
-                getConnection(),
                 sql,
                 user.getAccount(),
                 user.getPassword(),
@@ -53,22 +47,18 @@ public class UserDao {
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(getConnection(), sql, USER_ROW_MAPPER);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(getConnection(), sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(getConnection(), sql, USER_ROW_MAPPER, account);
-    }
-
-    private Connection getConnection() {
-        return DataSourceUtils.getConnection(dataSource);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
