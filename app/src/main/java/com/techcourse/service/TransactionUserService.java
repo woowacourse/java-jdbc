@@ -36,7 +36,6 @@ public class TransactionUserService implements UserService {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         try {
             conn.setAutoCommit(false);
-            TransactionSynchronizationManager.bindResource(dataSource, conn);
             userService.changePassword(id, newPassword, createBy);
             conn.commit();
         } catch (SQLException e) {
