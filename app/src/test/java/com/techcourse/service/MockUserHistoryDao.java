@@ -11,8 +11,8 @@ public class MockUserHistoryDao extends UserHistoryDao {
         super(jdbcTemplate);
     }
 
-    @Override
-    public void log(final UserHistory userHistory) {
-        throw new DataAccessException();
-    }
+//    @Override
+//    public void log(final UserHistory userHistory) {
+//        throw new DataAccessException();
+//    }
 }
