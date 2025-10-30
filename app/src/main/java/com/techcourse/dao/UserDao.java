@@ -22,19 +22,6 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(Connection connection, User user) {
-        String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
-        jdbcTemplate.update(
-                connection,
-                sql,
-                setter -> {
-            setter.setString(1, user.getAccount());
-            setter.setString(2, user.getPassword());
-            setter.setString(3, user.getEmail());
-        }
-        );
-    }
-
     public void insert(final User user) {
         final String sql = "INSERT INTO users (account, password, email) VALUES (?, ?, ?)";
 
@@ -42,17 +29,6 @@ public class UserDao {
             setter.setString(1, user.getAccount());
             setter.setString(2, user.getPassword());
             setter.setString(3, user.getEmail());
-        });
-    }
-
-    public void update(final Connection connection, final User user) {
-        final String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-
-        jdbcTemplate.update(connection, sql, setter -> {
-            setter.setString(1, user.getAccount());
-            setter.setString(2, user.getPassword());
-            setter.setString(3, user.getEmail());
-            setter.setLong(4, user.getId());
         });
     }
 
@@ -67,17 +43,6 @@ public class UserDao {
         });
     }
 
-    public List<User> findAll(final Connection connection) {
-        final String sql = "SELECT * FROM users";
-
-        return jdbcTemplate.queryForObjects(
-                connection,
-                sql,
-                setter -> {},
-                userMapper
-        );
-    }
-
     public List<User> findAll() {
         final String sql = "SELECT * FROM users";
 
@@ -85,19 +50,6 @@ public class UserDao {
                 sql,
                 setter -> {},
                 userMapper
-        );
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        final String sql = "SELECT * FROM users WHERE id = ?";
-
-        return jdbcTemplate.queryForObject(
-                connection,
-                sql,
-                setter -> setter.setLong(1, id),
-                userMapper
-        ).orElseThrow(() ->
-                new NoSuchElementException("[ERROR] no such user id: " + id)
         );
     }
 
@@ -110,19 +62,6 @@ public class UserDao {
                 userMapper
         ).orElseThrow(() ->
                 new NoSuchElementException("[ERROR] no such user id: " + id)
-        );
-    }
-
-    public User findByAccount(final Connection connection, final String account) {
-        final String sql = "SELECT * FROM users WHERE account = ?";
-
-        return jdbcTemplate.queryForObject(
-                connection,
-                sql,
-                setter -> setter.setString(1, account),
-                userMapper
-        ).orElseThrow(() ->
-                new NoSuchElementException("[ERROR] no such user account: " + account)
         );
     }
 
