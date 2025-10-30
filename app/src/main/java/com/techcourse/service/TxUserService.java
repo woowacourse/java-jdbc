@@ -1,24 +1,41 @@
-package com.interface21.jdbc.datasource;
+package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 
-public class TransactionManager {
+public class TxUserService implements UserService {
 
     private final DataSource dataSource;
+    private final UserService userService;
 
-    public TransactionManager(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public TxUserService(final UserService userService) {
+        this.dataSource = DataSourceConfig.getInstance();
+        this.userService = userService;
     }
 
-    public void executeInTransaction(final Consumer<Connection> callback) {
-        try (final Connection connection = dataSource.getConnection()) {
+    @Override
+    public User getById(final long id) {
+        return userService.getById(id);
+    }
+
+    @Override
+    public void save(final User user) {
+        userService.save(user);
+    }
+
+    @Override
+    public void changePassword(final long id, final String newPassword, final String createdBy) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
             connection.setAutoCommit(false);
             try {
-                callback.accept(connection);
+                userService.changePassword(id, newPassword, createdBy);
                 connection.commit();
             } catch (Exception e) {
                 try {
@@ -37,6 +54,8 @@ public class TransactionManager {
             }
         } catch (SQLException connectionEx) {
             throw new DataAccessException("Failed to set connection", connectionEx);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }

@@ -29,7 +29,17 @@ public abstract class DataSourceUtils {
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            connection.close();
+            final Connection boundConnection = TransactionSynchronizationManager.unbindResource(dataSource);
+
+            if (boundConnection == null) {
+                throw new IllegalStateException("No connection bound to current thread");
+            }
+
+            if (boundConnection != connection) {
+                throw new IllegalStateException("Connection mismatch");
+            }
+
+            boundConnection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }

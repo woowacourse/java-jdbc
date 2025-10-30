@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -27,23 +28,8 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, parameters);
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final List<T> result = query(sql, rowMapper, parameters);
-
-        return getObjectFrom(result);
-    }
-
-    public <T> Optional<T> queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... parameters
-    ) {
-        final List<T> result = query(connection, sql, rowMapper, parameters);
 
         return getObjectFrom(result);
     }
@@ -71,24 +57,6 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> List<T> query(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... parameters
-    ) {
-        return execute(
-                connection,
-                sql,
-                preparedStatement -> {
-                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                        return extractResults(resultSet, rowMapper);
-                    }
-                },
-                parameters
-        );
-    }
-
     public <T> T query(final String sql, final ResultSetExtractor<T> resultSetExtractor, final Object... parameters) {
         return execute(
                 sql,
@@ -101,39 +69,9 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> T query(
-            final Connection connection,
-            final String sql,
-            final ResultSetExtractor<T> resultSetExtractor,
-            final Object... parameters
-    ) {
-        return execute(
-                connection,
-                sql,
-                preparedStatement -> {
-                    try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                        return resultSetExtractor.extractData(resultSet);
-                    }
-                },
-                parameters
-        );
-    }
-
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
-        try (final Connection connection = dataSource.getConnection()) {
-            return execute(connection, sql, callback, parameters);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
-    private <T> T execute(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementCallback<T> callback,
-            final Object... parameters
-    ) {
         try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             bindParameters(preparedStatement, parameters);
