@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
@@ -14,49 +13,42 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
-            rs.getLong("id"),
-            rs.getString("account"),
-            rs.getString("password"),
-            rs.getString("email")
-    );
-
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.insertInto("users")
+                .value("account", user.getAccount())
+                .value("password", user.getPassword())
+                .value("email", user.getEmail())
+                .execute();
     }
 
     public void update(final User user) {
-        final var sql = "update users set password = ?, email = ? where account = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
+        jdbcTemplate.update("users")
+                .set("password", user.getPassword())
+                .set("email", user.getEmail())
+                .where("account", user.getAccount())
+                .execute();
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(
-                sql,
-                USER_ROW_MAPPER
-        );
+        return jdbcTemplate.select(User.class)
+                .columns("id", "account", "password", "email")
+                .from("users")
+                .toList();
     }
 
     public Optional<User> findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(
-                sql,
-                USER_ROW_MAPPER,
-                id);
+        return jdbcTemplate.select(User.class)
+                .columns("id", "account", "password", "email")
+                .from("users")
+                .where("id", id)
+                .findFirst();
     }
 
     public Optional<User> findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(
-                sql,
-                rs -> new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")
-                ),
-                account);
+        return jdbcTemplate.select(User.class)
+                .columns("id", "account", "password", "email")
+                .from("users")
+                .where("account", account)
+                .findFirst();
     }
 }

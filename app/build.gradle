@@ -52,3 +52,7 @@ sourceSets {
         java.destinationDirectory.set(file('src/main/webapp/WEB-INF/classes'))
     }
 }
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs.add '-parameters'
+}

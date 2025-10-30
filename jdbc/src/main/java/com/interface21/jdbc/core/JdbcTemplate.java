@@ -1,5 +1,17 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.conversion.TypeConversionService;
+import com.interface21.jdbc.core.querybuilder.delete.DeleteQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.delete.DeleteWhereStep;
+import com.interface21.jdbc.core.querybuilder.insert.InsertQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.insert.InsertValueStep;
+import com.interface21.jdbc.core.querybuilder.select.SelectColumnsStep;
+import com.interface21.jdbc.core.querybuilder.select.SelectQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.select.SelectSqlStep;
+import com.interface21.jdbc.core.querybuilder.select.SelectStringQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.update.UpdateQueryBuilder;
+import com.interface21.jdbc.core.querybuilder.update.UpdateSetStep;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,9 +28,11 @@ public class JdbcTemplate {
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
+    private final TypeConversionService typeConversionService;
 
-    public JdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate(final DataSource dataSource, final TypeConversionService typeConversionService) {
         this.dataSource = dataSource;
+        this.typeConversionService = typeConversionService;
     }
 
     public void update(String sql, Object... params) {
@@ -33,7 +47,7 @@ public class JdbcTemplate {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL update failed", e);
         }
     }
 
@@ -45,9 +59,13 @@ public class JdbcTemplate {
             return Optional.empty();
         }
         if (results.size() > 1) {
-            throw new RuntimeException("쿼리 실행 결과가 2개 이상입니다.");
+            throw new DataAccessException("Expected 1 result, but got " + results.size());
         }
         return Optional.of(results.get(0));
+    }
+
+    public <T> Optional<T> queryForObject(String sql, Class<T> clazz, Object... params) {
+        return queryForObject(sql, new ColumnMatchingRowMapper<>(clazz, typeConversionService), params);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -69,7 +87,31 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL query failed", e);
         }
+    }
+
+    public <T> List<T> query(String sql, Class<T> clazz, Object... params) {
+        return query(sql, new ColumnMatchingRowMapper<>(clazz, typeConversionService), params);
+    }
+
+    public <T> SelectSqlStep<T> selectWithSql(Class<T> clazz) {
+        return new SelectStringQueryBuilder<>(this, clazz);
+    }
+
+    public <T> SelectColumnsStep<T> select(Class<T> clazz) {
+        return new SelectQueryBuilder<>(this, clazz);
+    }
+
+    public InsertValueStep insertInto(String tableName) {
+        return new InsertQueryBuilder(this, tableName);
+    }
+
+    public UpdateSetStep update(String tableName) {
+        return new UpdateQueryBuilder(this, tableName);
+    }
+
+    public DeleteWhereStep deleteFrom(String tableName) {
+        return new DeleteQueryBuilder(this, tableName);
     }
 }
