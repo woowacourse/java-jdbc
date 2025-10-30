@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,11 @@ public class UserDao {
                 .set("email", user.getEmail())
                 .where("account", user.getAccount())
                 .execute();
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "UPDATE users SET password = ?, email = ? WHERE account = ?";
+        jdbcTemplate.update(connection, sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
     public List<User> findAll() {

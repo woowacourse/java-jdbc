@@ -51,6 +51,21 @@ public class JdbcTemplate {
         }
     }
 
+    public void update(Connection connection, String sql, Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("SQL update failed", e);
+        }
+    }
+
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         log.debug("query : {}", sql);
 
