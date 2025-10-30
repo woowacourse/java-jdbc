@@ -53,8 +53,12 @@ public class UserService {
 
         try {
             connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                connection.setAutoCommit(false);
+            } catch (SQLException e) {
+                throw new DataAccessException("트랜잭션 시작전 예외가 발생했습니다.", e);
+            }
 
             final var user = findById(id);
             user.changePassword(newPassword);
@@ -67,12 +71,12 @@ public class UserService {
             throw new DataAccessException("트랜잭션 처리 중 오류가 발생했습니다.", e);
         } catch (Exception e) {
             rollbackSafely(connection);
-            throw new DataAccessException(e);
+            throw new DataAccessException("트랜잭션 실행 중 SQL 오류가 발생했습니다.", e);
         } finally {
+            TransactionSynchronizationManager.unbindResourceIfBound(dataSource);
             if (connection != null) {
                 DataSourceUtils.releaseConnection(connection, dataSource);
             }
-            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
