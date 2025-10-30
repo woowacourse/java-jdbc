@@ -22,4 +22,8 @@ public abstract class TransactionSynchronizationManager {
     public static Connection unbindResource(DataSource key) {
         return resources.get().remove(key);
     }
+
+    public static boolean existsResource(DataSource key){
+        return resources.get().containsKey(key);
+    }
 }

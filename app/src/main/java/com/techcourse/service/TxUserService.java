@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -70,8 +71,7 @@ public class TxUserService implements UserService {
     }
 
     private void closeConnection(Connection connection) {
-        if(connection != null){
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
