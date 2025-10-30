@@ -2,6 +2,7 @@ package com.interface21.jdbc.core.querybuilder.delete;// DeleteQueryBuilder.java
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,7 +40,7 @@ public class DeleteQueryBuilder implements DeleteWhereStep, DeleteExecutableStep
      * 만약 where절이 하나도 없으면, 안전을 위해 아무 동작도 하지 않습니다.
      */
     @Override
-    public void execute() {
+    public void execute(Connection connection) {
         if (whereClauses.isEmpty()) {
             throw new DataAccessException("WHERE절 없는 DELETE는 허용되지 않습니다.");
         }
@@ -56,6 +57,6 @@ public class DeleteQueryBuilder implements DeleteWhereStep, DeleteExecutableStep
         Object[] params = whereClauses.values().toArray();
 
         // JdbcTemplate의 update 메서드 호출
-        jdbcTemplate.update(sql, params);
+        jdbcTemplate.update(connection, sql, params);
     }
 }

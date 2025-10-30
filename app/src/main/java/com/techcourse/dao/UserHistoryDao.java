@@ -16,7 +16,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final UserHistory userHistory) {
+    public void log(final Connection connection, final UserHistory userHistory) {
         jdbcTemplate.insertInto("user_history")
                 .value("user_id", userHistory.getUserId())
                 .value("account", userHistory.getAccount())
@@ -24,18 +24,6 @@ public class UserHistoryDao {
                 .value("email", userHistory.getEmail())
                 .value("created_at", userHistory.getCreatedAt())
                 .value("created_by", userHistory.getCreateBy())
-                .execute();
-    }
-
-    public void log(final Connection conn, final UserHistory userHistory) {
-        final String sql = "INSERT INTO user_history (user_id, account, password, email, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(conn, sql,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
+                .execute(connection);
     }
 }
