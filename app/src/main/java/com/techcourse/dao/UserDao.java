@@ -34,11 +34,6 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(Connection conn, User user) {
-        String sql = "update users set password = ?, email = ? where id = ?";
-        jdbcTemplate.update(conn, sql, user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public List<User> findAll() {
         String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
@@ -47,11 +42,6 @@ public class UserDao {
     public User findById(Long id) {
         String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
-    }
-
-    public User findById(Connection conn, Long id) {
-        String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(String account) {
