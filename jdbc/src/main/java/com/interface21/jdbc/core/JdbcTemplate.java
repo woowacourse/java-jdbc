@@ -77,7 +77,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            if (conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 }
