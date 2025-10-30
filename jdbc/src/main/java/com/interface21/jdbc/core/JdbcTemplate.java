@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,19 +23,24 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, StatementExecutor<T> executor, PreparedStatementSetter pss) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (pss != null) {
-                pss.setValues(pstmt);
+                if (pss != null) {
+                    pss.setValues(pstmt);
+                }
+                log.debug("query : {}", sql);
+
+                return executor.execute(pstmt);
+
+            } catch (SQLException e) {
+                log.error("SQL execution failed. Query: {}", sql, e);
+                throw new DataAccessException(e);
             }
-            log.debug("query : {}", sql);
-
-            return executor.execute(pstmt);
-
-        } catch (SQLException e) {
-            log.error("SQL execution failed. Query: {}", sql, e);
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
