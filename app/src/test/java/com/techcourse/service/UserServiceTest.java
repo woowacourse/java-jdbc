@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.TransactionManager;
+import com.interface21.jdbc.core.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,12 +19,15 @@ class UserServiceTest {
 
     private UserDao userDao;
     private DataSource dataSource;
+    private TransactionTemplate transactionTemplate;
+    private TransactionManager transactionManager;
 
     @BeforeEach
     void setUp() {
         this.dataSource = DataSourceConfig.getInstance();
         this.userDao = new UserDao(dataSource);
-        TransactionManager.initialize(dataSource);
+        this.transactionManager = new TransactionManager(dataSource);
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         DatabasePopulatorUtils.execute(dataSource);
         userDao.deleteAll();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -34,7 +37,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(dataSource);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new AppUserService(userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -48,24 +51,20 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new UserHistoryDao(dataSource) {
-            @Override
-            public void log(final UserHistory userHistory) {
-                throw new DataAccessException("롤백 테스트를 위한 예외");
-            }
-        };
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        final var user = userDao.findByAccount(createBy);
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
+        final var createdBy = "gugu";
+
+        final var user = userDao.findByAccount(createdBy);
+        final var originalPassword = user.getPassword();
+
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(user.getId(), newPassword, createBy));
+                () -> userService.changePassword(user.getId(), newPassword, createdBy));
 
-        final var actual = userDao.findById(user.getId());
-
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        final var actual = userService.findById(user.getId());
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 }
