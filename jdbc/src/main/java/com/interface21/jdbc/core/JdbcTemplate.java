@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,15 +21,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final Connection connection, final String sql, final Object... params) {
-        return executeWithPreparedStatement(
-                connection,
-                sql,
-                new SimplePreparedStatementSetter(params),
-                PreparedStatement::executeUpdate
-        );
-    }
-
     public int update(final String sql, final Object... params) {
         return executeWithPreparedStatement(
                 sql,
@@ -37,7 +29,11 @@ public class JdbcTemplate {
         );
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
         return executeWithPreparedStatement(sql, new SimplePreparedStatementSetter(params), (pstmt -> {
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -50,7 +46,11 @@ public class JdbcTemplate {
         }));
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
         return executeWithPreparedStatement(
                 sql,
                 new SimplePreparedStatementSetter(params),
@@ -73,21 +73,7 @@ public class JdbcTemplate {
             final PreparedStatementSetter pstmtSetter,
             final PreparedStatementAction<T> action
     ) {
-        try (Connection conn = dataSource.getConnection()) {
-            return executeWithPreparedStatement(conn, sql, pstmtSetter, action);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T> T executeWithPreparedStatement(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementSetter pstmtSetter,
-            final PreparedStatementAction<T> action
-    ) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
 
             return action.doInPreparedStatement(pstmt);
@@ -95,5 +81,9 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private Connection getConnection() {
+        return DataSourceUtils.getConnection(dataSource);
     }
 }
