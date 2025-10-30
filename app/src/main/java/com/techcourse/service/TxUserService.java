@@ -28,55 +28,74 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
+        boolean isNewConnection = DataSourceUtils.isNewConnection(dataSource);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setReadOnly(true);
+            if (isNewConnection) {
+                connection.setReadOnly(true);
+            }
             return userService.findById(id);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            if (isNewConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
     @Override
     public void save(final User user) {
+        boolean isNewConnection = DataSourceUtils.isNewConnection(dataSource);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
+            if (isNewConnection) {
+                connection.setAutoCommit(false);
+            }
             userService.save(user);
-            connection.commit();
+            if (isNewConnection) {
+                connection.commit();
+            }
         } catch (Exception e) {
             try {
-                connection.rollback();
+                if (isNewConnection) {
+                    connection.rollback();
+                }
             } catch (SQLException sqlException) {
                 logger.error("롤백 실패", sqlException);
             }
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            if (isNewConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        boolean isNewConnection = DataSourceUtils.isNewConnection(dataSource);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            connection.setAutoCommit(false);
+            if (isNewConnection) {
+                connection.setAutoCommit(false);
+            }
             userService.changePassword(id, newPassword, createBy);
-            connection.commit();
+            if (isNewConnection) {
+                connection.commit();
+            }
         } catch (Exception e) {
             try {
-                connection.rollback();
+                if (isNewConnection) {
+                    connection.rollback();
+                }
             } catch (SQLException sqlException) {
                 logger.error("롤백 실패", sqlException);
             }
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
-        }
+            if (isNewConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }        }
     }
 }
