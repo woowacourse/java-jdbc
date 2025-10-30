@@ -64,6 +64,11 @@ public class TransactionSynchronizationManager {
     }
 
     public static boolean isConnectionTransactional(final Connection connection, final DataSource dataSource) {
-        return connection == getResource(dataSource);
+        final Connection boundConnection = getResource(dataSource);
+        if (boundConnection == null) {
+            return false;
+        }
+
+        return connection == boundConnection;
     }
 }
