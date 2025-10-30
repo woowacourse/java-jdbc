@@ -55,8 +55,17 @@ public class TxUserService implements UserService {
             } catch (SQLException e) {
                 throw new DataAccessException("Failed to reset autoCommit", e);
             }
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            try {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            } catch (IllegalStateException e) {
+                throw new DataAccessException("Failed to unbind resource", e);
+            }
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (Exception e) {
+                throw new DataAccessException("Failed to release connection", e);
+            }
         }
     }
+
 }
