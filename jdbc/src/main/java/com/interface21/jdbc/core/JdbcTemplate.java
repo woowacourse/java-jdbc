@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -61,12 +62,21 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> action) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
+        java.sql.Connection conn = null;
+        java.sql.PreparedStatement pstmt = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            pstmt = conn.prepareStatement(sql);
             log.debug("query : {}", sql);
             pss.setParameters(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (pstmt != null) {
+                try { pstmt.close(); } catch (SQLException ignored) {}
+            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
