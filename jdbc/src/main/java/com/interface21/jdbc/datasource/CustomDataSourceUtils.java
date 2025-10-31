@@ -22,7 +22,6 @@ public class CustomDataSourceUtils {
         }
 
         connection = dataSource.getConnection();
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
         return connection;
     }
 
