@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
-import java.sql.Connection;
 
 public interface UserService {
 

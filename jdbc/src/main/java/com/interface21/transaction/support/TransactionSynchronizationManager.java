@@ -31,7 +31,14 @@ public abstract class TransactionSynchronizationManager {
         }
         Map<DataSource, Connection> map = resources.get();
         Connection removed = map.remove(key);
+        releaseThreadLocalMap(map);
         return removed;
+    }
+
+    private static void releaseThreadLocalMap(Map<DataSource, Connection> map) {
+        if(map.size() == 0){
+            resources.remove();
+        }
     }
 
     public static boolean isBound(DataSource key){
