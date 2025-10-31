@@ -13,10 +13,6 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Map<DataSource, Connection> getResources() {
-        return resources.get();
-    }
-
     public static boolean hasResource(DataSource key) {
         return getResources().containsKey(key);
     }
@@ -34,5 +30,13 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection unbindResource(DataSource key) {
         return getResources().remove(key);
+    }
+
+    private static Map<DataSource, Connection> getResources() {
+        return resources.get();
+    }
+
+    public static void clear() {
+        resources.remove();
     }
 }

@@ -35,6 +35,7 @@ public class TransactionTemplate {
         } finally {
             try {
                 TransactionSynchronizationManager.unbindResource(dataSource);
+                TransactionSynchronizationManager.clear();
                 if (connection != null && !connection.isClosed()) {
                     connection.close();
                 }
