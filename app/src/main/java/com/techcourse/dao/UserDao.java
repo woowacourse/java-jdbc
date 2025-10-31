@@ -1,12 +1,8 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -30,17 +26,6 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
-    }
-
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set password = ? where id = ?";
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setObject(1, user.getPassword());
-            pstmt.setObject(2, user.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
     }
 
     public List<User> findAll() {
