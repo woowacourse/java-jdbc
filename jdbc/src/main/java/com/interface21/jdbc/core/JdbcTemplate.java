@@ -37,21 +37,6 @@ public final class JdbcTemplate {
         return executeUpdate(sql, args);
     }
 
-    public int update(
-            final Connection connection,
-            final String sql,
-            final Object... args
-    ) {
-        try (
-                final PreparedStatement ps = createPreparedStatement(connection, sql, args)
-        ) {
-            return ps.executeUpdate();
-        } catch (final SQLException e) {
-            log.error("데이터베이스 업데이트 중 오류 발생: {}", sql, e);
-            throw new DataAccessException("데이터를 수정하는 중 오류가 발생했습니다.", e);
-        }
-    }
-
     public <T> List<T> findAll(
             final String sql,
             final RowMapper<T> rowMapper,
