@@ -43,33 +43,28 @@ public class TxUserService implements UserService {
 
             final var user = findById(id);
             user.changePassword(newPassword);
-
             userService.changePassword(user.getId(), newPassword, createBy);
 
             connection.commit();
-        } catch (SQLException e) {
-            if (connection != null) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollback) {
-                    log.error("Rollback failed", rollback);
-                }
-            }
+        } catch (SQLException | DataAccessException e) {
+            rollback(connection);
             throw new DataAccessException(e);
-        } catch (DataAccessException e) {
-            if (connection != null) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollback) {
-                    log.error("Rollback failed", rollback);
-                }
-            }
-            throw e;
         } finally {
             if (connection != null) {
                 DataSourceUtils.releaseConnection(connection, dataSource);
                 unbindResource(dataSource);
             }
+        }
+    }
+
+    private void rollback(final Connection connection) {
+        if (connection != null) {
+            return;
+        }
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackError) {
+            log.error("Rollback failed", rollbackError);
         }
     }
 }

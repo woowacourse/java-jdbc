@@ -9,5 +9,5 @@ public interface UserService {
 
     void save(final User user);
 
-    void changePassword(final long id, final String newPassword, final String createdBy) throws SQLException;
+    void changePassword(final long id, final String newPassword, final String createdBy);
 }
