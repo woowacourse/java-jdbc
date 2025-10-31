@@ -37,8 +37,11 @@ public class TransactionalUserService implements UserService {
                 userService.changePassword(id, newPassword, createdBy);
                 connection.commit();
             } catch (Exception e) {
-                connection.rollback();
-                throw e;
+                try {
+                    connection.rollback();
+                } catch (SQLException sqlException) {
+                    throw new RuntimeException("트랜잭션 롤백에 실패했습니다.", sqlException);
+                }
             }
         } catch (CannotGetJdbcConnectionException | SQLException e) {
             throw new RuntimeException(dataSource.toString() + "로부터 커넥션을 획득하는 데에 실패했습니다.", e);
