@@ -30,7 +30,7 @@ class UserDaoTest {
 
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
     }
 
     @AfterEach
@@ -42,14 +42,14 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final var users = userDao.findAll(connection);
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final var optionalUser = userDao.findById(connection, 1L);
+        final var optionalUser = userDao.findById(1L);
 
         Assertions.assertThat(optionalUser)
                 .get()
@@ -60,7 +60,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var optionalUser = userDao.findByAccount(connection, account);
+        final var optionalUser = userDao.findByAccount(account);
 
         Assertions.assertThat(optionalUser)
                 .get()
@@ -72,9 +72,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(connection, user);
+        userDao.insert(user);
 
-        final var optionalActual = userDao.findById(connection, 2L);
+        final var optionalActual = userDao.findById(2L);
 
         Assertions.assertThat(optionalActual)
                 .get()
@@ -86,14 +86,14 @@ class UserDaoTest {
     void update() {
          // given
         final var newPassword = "password99";
-        final var user = userDao.findById(connection, 1L).get();
+        final var user = userDao.findById(1L).get();
         user.changePassword(newPassword);
 
         // when
-        userDao.update(connection, user);
+        userDao.update(user);
 
         // then
-        final var optionalActual = userDao.findById(connection, 1L);
+        final var optionalActual = userDao.findById(1L);
 
         Assertions.assertThat(optionalActual)
                 .get()

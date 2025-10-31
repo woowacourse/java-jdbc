@@ -5,7 +5,6 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 
 public class UserService {
 
@@ -24,25 +23,20 @@ public class UserService {
     public User getById(final long id) {
         return userDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 id의 user를 찾을 수 없습니다, id: " + id));
-    };
+    }
 
     public void insert(final User user) {
-        transactionTemplate.execute(connection ->
-                userDao.insert(connection, user)
+        transactionTemplate.execute(() ->
+                userDao.insert(user)
         );
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(connection -> {
-            final var user = getByIdInTransaction(connection, id);
+        transactionTemplate.execute(() -> {
+            final var user = getById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
-    }
-
-    private User getByIdInTransaction(final Connection connection, final long id) {
-        return userDao.findById(connection, id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 id의 user를 찾을 수 없습니다, id: " + id));
     }
 }
