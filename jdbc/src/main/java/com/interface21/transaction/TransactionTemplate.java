@@ -1,5 +1,6 @@
 package com.interface21.transaction;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,49 +15,31 @@ public class TransactionTemplate {
     }
 
     public <T> T execute(TransactionCallback<T> action) {
-        Connection connection = null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
-            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-
             T result = action.doInTransaction();
-
             connection.commit();
             return result;
 
         } catch (SQLException e) {
-            if (connection != null) {
-                try {
-                    connection.rollback();
-                } catch (SQLException ex) {
-                    throw new RuntimeException("Rollback failed", ex);
-                }
-            }
+            rollback(connection);
             throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            if (connection != null) {
-                try {
-                    connection.rollback();
-                } catch (SQLException ex) {
-                    throw new RuntimeException("Rollback failed", ex);
-                }
-            }
+            rollback(connection);
             throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
-            if (connection != null) {
-                try {
-                    connection.setAutoCommit(true);
-                    connection.close();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void rollback(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            throw new RuntimeException("Rollback failed", ex);
         }
     }
 

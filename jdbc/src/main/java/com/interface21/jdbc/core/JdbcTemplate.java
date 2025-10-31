@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.CustomDataSourceUtils;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,7 +57,7 @@ public class JdbcTemplate {
         Connection connection = null;
         PreparedStatement pstmt = null;
         try {
-            connection = CustomDataSourceUtils.getConnection(dataSource);
+            connection = DataSourceUtils.getConnection(dataSource);
             pstmt = connection.prepareStatement(sql);
 
             createPreparedStatementSetter(parameters).setValues(pstmt);
@@ -74,7 +74,7 @@ public class JdbcTemplate {
                     log.error("Failed to close PreparedStatement", e);
                 }
             }
-            CustomDataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
