@@ -17,22 +17,23 @@ public class TransactionManager {
 
     public void executeTransaction(final TransactionalAction action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
+        boolean originAutoCommit = false;
         try {
+            originAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindResource(dataSource, connection);
+            action.execute(connection);
+            connection.commit();
+        } catch (Exception e) {
             try {
-                action.execute(connection);
-                connection.commit();
-            } catch (Exception e) {
                 connection.rollback();
-                throw new DataAccessException("트랜잭션 수행 중 오류 발생으로 롤백", e);
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
             }
-            connection.setAutoCommit(true);
-        } catch (SQLException e) {
-            throw new RuntimeException("SQL 오류 발생", e);
+            throw new DataAccessException("트랜잭션 수행 중 오류 발생으로 롤백 시도", e);
         } finally {
             try {
-                connection.setAutoCommit(true);
+                connection.setAutoCommit(originAutoCommit);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
