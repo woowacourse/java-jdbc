@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,18 +28,8 @@ public class JdbcTemplate {
         execute(PreparedStatement::executeUpdate, sql, parameters);
     }
 
-    public void update(Connection connection, String sql, Object... parameters) {
-        execute(connection, PreparedStatement::executeUpdate, sql, parameters);
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return execute((preparedStatement) -> executeQuery(preparedStatement, rowMapper), sql, parameters);
-    }
-
-    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... parameters) {
-        return execute(connection,
-                (preparedStatement) -> executeQuery(preparedStatement, rowMapper), sql, parameters
-        );
     }
 
     private <T> List<T> executeQuery(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
@@ -56,30 +47,22 @@ public class JdbcTemplate {
         return extractSingleResult(results);
     }
 
-    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper,
-                                          Object... parameters) {
-        List<T> results = query(connection, sql, rowMapper, parameters);
-        return extractSingleResult(results);
-    }
-
     private <T> T execute(PreparedStatementCallback<T> preparedStatementCallback, String sql, Object... parameters) {
-        try (Connection connection = dataSource.getConnection()) {
-            return execute(connection, preparedStatementCallback, sql, parameters);
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                log.debug("query : {}", sql);
+                setParameters(preparedStatement, parameters);
+                return preparedStatementCallback.doInPreparedStatement(preparedStatement);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(Connection connection, PreparedStatementCallback<T> preparedStatementCallback, String sql,
-                          Object... parameters) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(preparedStatement, parameters);
-            return preparedStatementCallback.doInPreparedStatement(preparedStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            if (connection != null) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
