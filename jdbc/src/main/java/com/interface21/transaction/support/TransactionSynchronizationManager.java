@@ -3,7 +3,6 @@ package com.interface21.transaction.support;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import javax.sql.DataSource;
 
 public abstract class TransactionSynchronizationManager {
@@ -11,7 +10,8 @@ public abstract class TransactionSynchronizationManager {
     private static final ThreadLocal<Map<DataSource, Connection>> resources =
             ThreadLocal.withInitial(HashMap::new);
 
-    private TransactionSynchronizationManager() {}
+    private TransactionSynchronizationManager() {
+    }
 
     public static Map<DataSource, Connection> getResources() {
         return resources.get();
@@ -26,7 +26,9 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        Objects.requireNonNull(value, "Connection must not be null");
+        if (value == null) {
+            throw new IllegalArgumentException("Connection은 null일 수 없습니다.");
+        }
         getResources().put(key, value);
     }
 
