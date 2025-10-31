@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.NonUniqueResultException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,13 +39,6 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(String sql, PreparedStatementSetter setter, Connection connection) {
-        execute(sql, pstmt -> {
-            setter.setValues(pstmt);
-            return pstmt.executeUpdate();
-        }, connection);
-    }
-
     public <T> List<T> find(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> {
             setParams(params, pstmt);
@@ -73,27 +68,22 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            return callback.run(pstmt);
+        final boolean hasExisting = (TransactionSynchronizationManager.getResource(dataSource) != null);
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                log.debug("query : {}", sql);
+                return callback.run(pstmt);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Connection connection) {
-        try (
-                PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            return callback.run(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            if (!hasExisting && conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
