@@ -26,8 +26,7 @@ public class UserDao {
 
     public void update(User user) {
         final var sql = "update users set password = ?, email = ? where account = ?";
-        final var connection = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
-        jdbcTemplate.update(connection,sql, user.getPassword(), user.getEmail(), user.getAccount());
+        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
     public List<User> findAll() {

@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.UserHistory;
 
 public class UserHistoryDao {
@@ -13,9 +12,7 @@ public class UserHistoryDao {
 
     public void log(UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        final var connection = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
         jdbcTemplate.update(
-                connection,
                 sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
