@@ -51,9 +51,6 @@ class UserDaoTest {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
-        userDao.findAll().forEach(
-                u -> System.out.println("user = " + u)
-        );
 
         final var actual = userDao.findById(2L);
 
