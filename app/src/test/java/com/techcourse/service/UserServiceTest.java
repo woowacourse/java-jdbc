@@ -28,7 +28,8 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
         this.userHistoryDao = new UserHistoryDao(jdbcTemplate);
 
-        this.userService = new UserService(userDao, userHistoryDao, dataSource);
+        UserService appUserService = new AppUserService(userDao, userHistoryDao);
+        this.userService = new TransactionUserService(appUserService, dataSource);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -51,20 +52,21 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        // given
-        final var mockUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userServiceWithMock = new UserService(userDao, mockUserHistoryDao, dataSource);
+        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TransactionUserService(appUserService, dataSource);
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
-
+        final var createdBy = "gugu";
+        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(RuntimeException.class,
-                () -> userServiceWithMock.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
-        // when
         final var actual = userService.findById(1L);
 
-        // then
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 }

@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,9 +32,9 @@ public class UserDao {
         jdbcTemplate.update(sql, pss);
     }
 
-    public void update(final User user, Connection connection) {
+    public void update(final User user) {
         final String sql = "update users set password = ?, email = ? where account = ?";
-        jdbcTemplate.update(connection, sql, user.getPassword(), user.getEmail(), user.getAccount());
+        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
     public List<User> findAll() {

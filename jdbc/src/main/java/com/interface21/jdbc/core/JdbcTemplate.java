@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,12 +33,8 @@ public class JdbcTemplate {
     /**
      * INSERT, UPDATE, DELETE 쿼리를 위한 메서드 (자동 파라미터 설정)
      */
-    public int update(final Connection connection, final String sql, final Object... params) {
-        return executeUpdate(connection, sql, createPss(params));
-    }
-
-    public int update(final Connection connection, final String sql, final PreparedStatementSetter pss) {
-        return executeUpdate(connection, sql, pss);
+    public int update(final String sql, final Object... params) {
+        return executeUpdate(sql, createPss(params));
     }
 
     /**
@@ -79,38 +76,46 @@ public class JdbcTemplate {
     }
 
     private int executeUpdate(final String sql, final PreparedStatementSetter pss) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement ps = createPreparedStatement(connection, sql, pss)) {
-            return ps.executeUpdate();
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            try (final PreparedStatement ps = createPreparedStatement(conn, sql, pss)) {
+                return ps.executeUpdate();
+            }
         } catch (final SQLException e) {
             log.error("SQL 실행 실패: ", e);
             throw new DataAccessException("SQL 실행 실패", e);
-        }
-    }
-
-    private int executeUpdate(final Connection connection, final String sql, final PreparedStatementSetter pss) {
-        try (final PreparedStatement ps = createPreparedStatement(connection, sql, pss)) {
-            return ps.executeUpdate();
-        } catch (final SQLException e) {
-            log.error("SQL 실행 실패: ", e);
-            throw new DataAccessException("SQL 실행 실패", e);
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(conn, this.dataSource);
+            } catch (SQLException e) {
+                log.error("Connection 릴리즈 실패", e);
+            }
         }
     }
 
     private <T> List<T> executeQuery(final String sql, final PreparedStatementSetter pss, final RowMapper<T> mapper) {
-        try (final Connection conn = getConnection();
-             final PreparedStatement ps = createPreparedStatement(conn, sql, pss);
-             final ResultSet rs = ps.executeQuery()) {
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            try (final PreparedStatement ps = createPreparedStatement(conn, sql, pss);
+                 final ResultSet rs = ps.executeQuery()) {
 
-            final List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(mapper.mapRowToObject(rs));
+                final List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(mapper.mapRowToObject(rs));
+                }
+                return results;
             }
-
-            return results;
         } catch (final SQLException e) {
             log.error("SQL 실행 실패: ", e);
             throw new DataAccessException("SQL 실행 실패", e);
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(conn, this.dataSource);
+            } catch (SQLException e) {
+                log.error("Connection 릴리즈 실패", e);
+            }
         }
     }
 
@@ -146,7 +151,7 @@ public class JdbcTemplate {
 
     private Connection getConnection() {
         try {
-            return dataSource.getConnection();
+            return DataSourceUtils.getConnection(this.dataSource);
         } catch (final SQLException e) {
             log.error("DB 연결 실패: ", e);
             throw new DataAccessException("DB 연결 실패", e);
