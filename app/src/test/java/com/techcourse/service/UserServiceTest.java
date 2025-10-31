@@ -56,7 +56,7 @@ class UserServiceTest {
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.getById(connection, 1L);
+        final var actual = userService.getById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -73,7 +73,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.getById(connection, 1L);
+        final var actual = userService.getById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

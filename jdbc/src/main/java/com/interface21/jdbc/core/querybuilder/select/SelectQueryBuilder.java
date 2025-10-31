@@ -53,9 +53,21 @@ public class SelectQueryBuilder<T> implements SelectFromStep<T>, SelectColumnsSt
     }
 
     @Override
+    public List<T> toList() {
+        String sql = buildSelectSql();
+        return jdbcTemplate.query(sql, mappedClass, whereParams.toArray());
+    }
+
+    @Override
     public Optional<T> findFirst(Connection connection) {
         String sql = buildSelectSql();
         return jdbcTemplate.queryForObject(connection, sql, mappedClass, whereParams.toArray());
+    }
+
+    @Override
+    public Optional<T> findFirst() {
+        String sql = buildSelectSql();
+        return jdbcTemplate.queryForObject(sql, mappedClass, whereParams.toArray());
     }
 
     private String buildSelectSql() {

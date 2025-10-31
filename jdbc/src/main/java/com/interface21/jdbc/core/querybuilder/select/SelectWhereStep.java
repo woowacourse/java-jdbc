@@ -10,5 +10,11 @@ public interface SelectWhereStep<T> {
 
     List<T> toList(Connection connection);
 
+    //JdbcTemplate이 내부적으로 Connection을 획득/반납 (auto-commit)
+    List<T> toList();
+
     Optional<T> findFirst(Connection connection);
+
+    //JdbcTemplate이 내부적으로 Connection을 획득/반납 (auto-commit)
+    Optional<T> findFirst();
 }

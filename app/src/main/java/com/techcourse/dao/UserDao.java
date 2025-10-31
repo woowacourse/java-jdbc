@@ -45,6 +45,14 @@ public class UserDao {
                 .findFirst(connection);
     }
 
+    public Optional<User> findById(final Long id) {
+        return jdbcTemplate.select(User.class)
+                .columns("id", "account", "password", "email")
+                .from("users")
+                .where("id", id)
+                .findFirst();
+    }
+
     public Optional<User> findByAccount(final Connection connection, final String account) {
         return jdbcTemplate.select(User.class)
                 .columns("id", "account", "password", "email")

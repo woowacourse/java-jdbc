@@ -21,21 +21,28 @@ public class UserService {
         this.transactionTemplate = transactionTemplate;
     }
 
-    public User getById(final Connection connection, final long id) {
-        return userDao.findById(connection, id)
+    public User getById(final long id) {
+        return userDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 id의 user를 찾을 수 없습니다, id: " + id));
-    }
+    };
 
-    public void insert(final Connection connection, final User user) {
-        userDao.insert(connection, user);
+    public void insert(final User user) {
+        transactionTemplate.execute(connection ->
+                userDao.insert(connection, user)
+        );
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        transactionTemplate.execute(conn -> {
-            final var user = getById(conn, id);
+        transactionTemplate.execute(connection -> {
+            final var user = getByIdInTransaction(connection, id);
             user.changePassword(newPassword);
-            userDao.update(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
         });
+    }
+
+    private User getByIdInTransaction(final Connection connection, final long id) {
+        return userDao.findById(connection, id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 id의 user를 찾을 수 없습니다, id: " + id));
     }
 }
