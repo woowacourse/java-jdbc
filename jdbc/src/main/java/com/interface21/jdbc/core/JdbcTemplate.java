@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.CustomDataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,26 +31,34 @@ public class JdbcTemplate {
     }
 
     public <T> T queryByObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
-        List<T> list = query(sql, rowMapper, parameters);
-        if (list.isEmpty()) {
-            return null;
-        }
-        return list.getFirst();
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
+            }
+        }, parameters);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... parameters) {
         return execute(sql, pstmt -> {
             List<T> list = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) list.add(rowMapper.mapRow(rs));
+                while (rs.next()) {
+                    list.add(rowMapper.mapRow(rs));
+                }
             }
             return list;
         }, parameters);
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        try {
+            connection = CustomDataSourceUtils.getConnection(dataSource);
+            pstmt = connection.prepareStatement(sql);
 
             createPreparedStatementSetter(parameters).setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
@@ -57,6 +66,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error("Database operation failed. sql={}", sql, e);
             throw new DataAccessException("Failed to execute SQL", e);
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    log.error("Failed to close PreparedStatement", e);
+                }
+            }
+            CustomDataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
