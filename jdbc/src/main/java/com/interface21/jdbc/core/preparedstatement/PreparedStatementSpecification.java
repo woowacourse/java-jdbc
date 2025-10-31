@@ -8,6 +8,9 @@ import java.util.List;
 
 public record PreparedStatementSpecification(String sql, List<PreparedStatementParameter> parameters) {
 
+    /**
+     * @throws IllegalArgumentException
+     */
     public PreparedStatementSpecification {
         validateSpecification(sql, parameters);
     }
@@ -19,7 +22,7 @@ public record PreparedStatementSpecification(String sql, List<PreparedStatementP
     private void validateSpecification(
             String sql,
             List<PreparedStatementParameter> parameters
-    ) {
+    ) throws IllegalArgumentException {
         long placeholderCount = sql
                 .chars()
                 .filter(ch -> ch == '?')
