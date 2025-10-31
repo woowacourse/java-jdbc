@@ -1,6 +1,8 @@
 package com.interface21.jdbc.transaction;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -10,17 +12,12 @@ import org.slf4j.LoggerFactory;
 public class TransactionTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionTemplate.class);
-    private final DataSource dataSource;
 
-    public TransactionTemplate(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public void execute(final TransactionCallback callback) {
+    public void execute(final TransactionCallback callback, final DataSource dataSource) {
         Connection connection = null;
         try {
-            connection = dataSource.getConnection();
-            ConnectionHolder.setConnection(connection);
+            connection = DataSourceUtils.getConnection(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             connection.setAutoCommit(false);
 
             callback.execute();
@@ -30,7 +27,8 @@ public class TransactionTemplate {
             rollback(e, connection);
             throw new DataAccessException(e);
         } finally {
-            closeConnection(connection);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -42,17 +40,6 @@ public class TransactionTemplate {
             } catch (SQLException rollbackException) {
                 log.error("Failed to rollback transaction", rollbackException);
                 e.addSuppressed(rollbackException);
-            }
-        }
-    }
-
-    private void closeConnection(Connection connectionToClose) {
-        ConnectionHolder.clear();
-        if (connectionToClose != null) {
-            try {
-                connectionToClose.close();
-            } catch (SQLException closeException) {
-                log.error("Failed to close connection", closeException);
             }
         }
     }
