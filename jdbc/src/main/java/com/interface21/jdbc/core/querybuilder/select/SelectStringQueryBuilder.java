@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core.querybuilder.select;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,21 +40,21 @@ public class SelectStringQueryBuilder<T> implements SelectSqlStep<T>, SelectExec
      * 쿼리를 실행하고 결과를 List<T> 형태로 반환합니다.
      */
     @Override
-    public List<T> toList() {
+    public List<T> toList(Connection connection) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalStateException("SQL must be provided before executing a query.");
         }
-        return jdbcTemplate.query(sql, mappedClass, params.toArray());
+        return jdbcTemplate.query(connection, sql, mappedClass, params.toArray());
     }
 
     /**
      * 쿼리를 실행하고 결과를 Optional<T> 형태로 반환합니다.
      */
     @Override
-    public Optional<T> findFirst() {
+    public Optional<T> findFirst(Connection connection) {
         if (sql == null || sql.isBlank()) {
             throw new IllegalStateException("SQL must be provided before executing a query.");
         }
-        return jdbcTemplate.queryForObject(sql, mappedClass, params.toArray());
+        return jdbcTemplate.queryForObject(connection, sql, mappedClass, params.toArray());
     }
 }

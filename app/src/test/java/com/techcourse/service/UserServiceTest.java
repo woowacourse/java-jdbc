@@ -6,41 +6,57 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.conversion.TypeConversionService;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class UserServiceTest {
 
-    private JdbcTemplate jdbcTemplate;
-    private UserDao userDao;
+    JdbcTemplate jdbcTemplate;
+    UserDao userDao;
+    TransactionTemplate transactionTemplate;
+    DataSource dataSource;
+    Connection connection;
 
     @BeforeEach
-    void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance(), new TypeConversionService());
+    void setUp() throws SQLException {
+        dataSource = DataSourceConfig.getInstance();
+        connection = dataSource.getConnection();
+        transactionTemplate = new TransactionTemplate(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource, new TypeConversionService());
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(connection, user);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        if (connection != null) {
+            connection.close();
+        }
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.getById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -49,7 +65,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(userDao, userHistoryDao, transactionTemplate);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -57,7 +73,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.getById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }

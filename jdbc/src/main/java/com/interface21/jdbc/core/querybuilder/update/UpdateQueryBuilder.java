@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core.querybuilder.update;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,7 +55,7 @@ public class UpdateQueryBuilder implements UpdateSetStep, UpdateExecutableStep {
      * 만약 set값이 하나도 없으면 아무 동작도 하지 않습니다.
      */
     @Override
-    public void execute() {
+    public void execute(Connection connection) {
         if (setValues.isEmpty()) {
             return;
         }
@@ -78,6 +79,6 @@ public class UpdateQueryBuilder implements UpdateSetStep, UpdateExecutableStep {
             params.addAll(whereClauses.values());
         }
 
-        jdbcTemplate.update(sql, params.toArray());
+        jdbcTemplate.update(connection, sql, params.toArray());
     }
 }
