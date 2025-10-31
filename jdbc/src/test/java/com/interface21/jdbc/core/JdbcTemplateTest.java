@@ -189,7 +189,7 @@ class JdbcTemplateTest {
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, userRowMapper, "gugu"))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessage("쿼리 결과가 없습니다.");
+                .hasMessage("조회 결과가 존재하지 않습니다.");
     }
 
     @DisplayName("queryForObject는 결과가 2개 이상이면 예외를 던진다.")
@@ -210,7 +210,7 @@ class JdbcTemplateTest {
         // when & then
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, userRowMapper))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("쿼리 결과가 2개 이상입니다.");
+                .hasMessageContaining("조회 결과가 2개 이상입니다. SQL: SELECT account, password, email");
     }
 
     @DisplayName("SQLException 발생 시 DataAccessException으로 전환하여 던진다.")
