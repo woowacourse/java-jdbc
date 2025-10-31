@@ -44,8 +44,6 @@ public class TxUserService implements UserService {
             final var user = findById(id);
             user.changePassword(newPassword);
 
-//            userDao.update(user);
-//            userHistoryDao.log(new UserHistory(user, createBy));
             userService.changePassword(user.getId(), newPassword, createBy);
 
             connection.commit();
