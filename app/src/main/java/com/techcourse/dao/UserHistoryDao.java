@@ -27,16 +27,4 @@ public class UserHistoryDao {
                 userHistory.getCreateBy()
         );
     }
-
-    public void log(final Connection conn, final UserHistory userHistory) {
-        jdbcTemplate.update(conn,
-                INSERT_USER_HISTORY_SQL,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        );
-    }
 }
