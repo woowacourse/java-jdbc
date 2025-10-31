@@ -25,22 +25,27 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection connection = DataSourceUtils.getConnection(dataSource);
-             final var pstmt = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, args);
             final var result = pstmt.executeUpdate();
             log.debug("query : {}, result : {}", sql, result);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute update", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, final Object... args) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, args);
             return mappingResultSet(pstmt, rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute query", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

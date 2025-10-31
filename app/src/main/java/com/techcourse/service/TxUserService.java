@@ -28,10 +28,12 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             connection.setAutoCommit(false);
             try {
                 userService.changePassword(id, newPassword, createdBy);
+                connection.commit();
             } catch (Exception e) { // 비즈니스 로직 실패
                 try {
                     connection.rollback();
@@ -40,11 +42,11 @@ public class TxUserService implements UserService {
                     throw new DataAccessException("Failed to rollback transaction", ex);
                 }
             }
-            connection.commit();
-            DataSourceUtils.releaseConnection(connection, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 }
