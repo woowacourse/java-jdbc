@@ -27,6 +27,15 @@ public class TransactionTemplate {
             connection.commit();
             return result;
 
+        } catch (SQLException e) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    throw new RuntimeException("Rollback failed", ex);
+                }
+            }
+            throw new RuntimeException(e);
         } catch (RuntimeException e) {
             if (connection != null) {
                 try {
