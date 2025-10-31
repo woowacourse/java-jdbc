@@ -1,80 +1,85 @@
 package com.interface21.jdbc.core;
 
-import javax.sql.DataSource;
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
-    private final DataSource dataSource;
+    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+    public void update(final Connection connection, final String sql, final Object... params) {
+        execute(connection, sql, PreparedStatement::executeUpdate, params);
     }
 
-    public void update(final String sql, final Object... params) {
-        execute(sql, pstmt -> {
-            pstmt.executeUpdate();
-            return null;
-        }, params);
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return extractResults(rs, rowMapper);
+    public <T> List<T> query(final Connection connection, final String sql, RowMapper<T> mapper,
+                             final Object... params) {
+        return execute(connection, sql, ps -> {
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return mapResultSetToList(resultSet, mapper);
             }
         }, params);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        List<T> results = query(sql, rowMapper, params);
-
-        if (results.isEmpty()) {
-            throw new InvalidResultException("조회 결과가 없습니다");
+    private <T> List<T> mapResultSetToList(final ResultSet resultSet, final RowMapper<T> mapper) throws SQLException {
+        List<T> result = new ArrayList<>();
+        while (resultSet.next()) {
+            result.add(mapper.mapRow(resultSet));
         }
-        if (results.size() > 1) {
-            throw new InvalidResultException("조회 결과가 2개 이상입니다");
-        }
-
-        return results.getFirst();
+        return result;
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameters(pstmt, params);
-            return callback.execute(pstmt);
-        } catch (SQLException e) {
-            throw new SqlExecutionException("SQL 실행 중 오류가 발생했습니다: " + e.getMessage(), e);
-        }
-    }
-
-    private void setParameters(final PreparedStatement pstmt, final Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
-    }
-
-    private <T> List<T> extractResults(final ResultSet rs, final RowMapper<T> rowMapper) {
-        try {
-            List<T> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+    public <T> T queryForObject(final Connection connection, final String sql, RowMapper<T> mapper,
+                                final Object... params) {
+        return execute(connection, sql, ps -> {
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return extractSingleResult(resultSet, mapper);
             }
-            return results;
-        } catch (SQLException e) {
-            throw new RowMappingException("ResultSet 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }, params);
+    }
+
+    private <T> T extractSingleResult(final ResultSet resultSet, final RowMapper<T> mapper) throws SQLException {
+        if (!resultSet.next()) {
+            throw new IllegalStateException("Expected single row, but got none");
+        }
+
+        T result = mapper.mapRow(resultSet);
+        validateSingleRow(resultSet);
+        return result;
+    }
+
+    private void validateSingleRow(final ResultSet resultSet) throws SQLException {
+        if (resultSet.next()) {
+            throw new IllegalStateException("Expected single row, but got multiple rows");
         }
     }
 
-    @FunctionalInterface
-    private interface PreparedStatementCallback<T> {
-        T execute(PreparedStatement pstmt) throws SQLException;
+    private <R> R execute(final Connection connection, String sql, PreparedStatementSetter<R> action,
+                          Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            bindParams(pstmt, params);
+
+            return action.execute(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e.getMessage(), e);
+        }
+    }
+
+    private void bindParams(final PreparedStatement pstmt, final Object... params) throws SQLException {
+        if (params == null) {
+            return;
+        }
+        int index = 1;
+        for (Object value : params) {
+            pstmt.setObject(index++, value);
+        }
     }
 }
