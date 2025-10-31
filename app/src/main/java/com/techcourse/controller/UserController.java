@@ -4,6 +4,8 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.service.AppUserService;
+import com.techcourse.service.TxUserService;
 import com.techcourse.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +23,7 @@ public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-    private final UserService userService = new UserService(new UserDao(jdbcTemplate), new UserHistoryDao(jdbcTemplate));
+    private final UserService userService = new TxUserService(new AppUserService(new UserDao(jdbcTemplate), new UserHistoryDao(jdbcTemplate)));
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
     public ModelAndView show(final HttpServletRequest request, final HttpServletResponse response) {
