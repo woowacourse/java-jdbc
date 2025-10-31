@@ -34,6 +34,8 @@ public class TxUserService implements UserService {
             connection.setAutoCommit(false);
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
         } catch (Exception e) {
             rollbackTransaction(connection);
             throw new DataAccessException(e);
