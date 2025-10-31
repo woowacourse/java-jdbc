@@ -30,32 +30,47 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
+        Connection existingConnection = TransactionSynchronizationManager.getResource(dataSource);
+        boolean isNewTransaction = (existingConnection == null);
+
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        if (isNewTransaction) {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+        }
 
         try {
-            connection.setAutoCommit(false);
+            if (isNewTransaction) {
+                connection.setAutoCommit(false);
+            }
 
             userService.changePassword(id, newPassword, createdBy);
 
-            connection.commit();
+            if (isNewTransaction) {
+                connection.commit();
+            }
         } catch (RuntimeException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                throw new RuntimeException("Failed to rollback transaction", rollbackEx);
+            if (isNewTransaction) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    throw new RuntimeException("Failed to rollback transaction", rollbackEx);
+                }
             }
             throw e;
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                throw new RuntimeException("Failed to rollback transaction", rollbackEx);
+            if (isNewTransaction) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    throw new RuntimeException("Failed to rollback transaction", rollbackEx);
+                }
             }
             throw new RuntimeException("Transaction failed", e);
         } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            if (isNewTransaction) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 }
