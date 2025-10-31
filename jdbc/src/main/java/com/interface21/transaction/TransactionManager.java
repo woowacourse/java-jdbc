@@ -36,8 +36,8 @@ public class TransactionManager {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            DataSourceUtils.releaseConnection(connection, dataSource);
             TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
