@@ -1,6 +1,7 @@
 package com.interface21.transaction;
 
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -29,6 +30,7 @@ public class TransactionTemplate {
             rollback(connection);
             throw e;
         } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
