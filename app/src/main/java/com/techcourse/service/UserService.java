@@ -1,41 +1,12 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.domain.UserHistory;
-import com.interface21.dao.DataAccessException;
+import com.techcourse.domain.User;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+public interface UserService {
 
-public class UserService {
+    User findById(long id);
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
+    void insert(User user);
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-    }
-
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection conn = DataSourceConfig.getInstance().getConnection()) {
-            conn.setAutoCommit(false);
-
-            try {
-                final var user = userDao.findById(conn, id);
-                user.changePassword(newPassword);
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
-
-                conn.commit();
-            } catch (Exception e) {
-                conn.rollback();
-                throw new DataAccessException(e);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
+    void changePassword(long id, String newPassword, String createBy);
 }
