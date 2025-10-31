@@ -1,6 +1,8 @@
+// jdbc/src/main/java/com/interface21/transaction/support/TransactionTemplate.java
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -13,11 +15,16 @@ public class TransactionTemplate {
     }
 
     public void execute(final TransactionalWork work) {
-        try (final var connection = dataSource.getConnection()) {
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
             connection.setAutoCommit(false);
+
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
             try {
-                work.execute(connection);
-                
+                work.execute();
+
                 connection.commit();
             } catch (Exception e) {
                 connection.rollback();
@@ -25,6 +32,15 @@ public class TransactionTemplate {
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            try {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                if (connection != null && !connection.isClosed()) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                throw new DataAccessException("Connection 닫기 실패", e);
+            }
         }
     }
 }
