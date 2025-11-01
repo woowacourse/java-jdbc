@@ -1,5 +1,6 @@
 package com.interface21.transaction.support;
 
+import java.util.HashMap;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.Map;
@@ -21,7 +22,7 @@ public abstract class TransactionSynchronizationManager {
     public static void bindResource(DataSource key, Connection value) {
         Map<DataSource, Connection> map = resources.get();
         if (map == null) {
-            map = new java.util.HashMap<>();
+            map = new HashMap<>();
             resources.set(map);
         }
         map.put(key, value);
