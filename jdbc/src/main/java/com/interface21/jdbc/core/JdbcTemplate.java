@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,19 +31,16 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    public <T> T queryForObject(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
-        final var results = query(sql, connection, rowMapper, args);
-        if (results.size() != 1) {
-            throw new DataAccessException("result size doesn't match: " + results.size());
-        }
-        return results.getFirst();
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        if (TransactionSynchronizationManager.hasResource(dataSource)) {
-            return query(sql, TransactionSynchronizationManager.getResource(dataSource), rowMapper, args);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            return queryInternal(conn, sql, rowMapper, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
-        return execute(conn -> queryInternal(conn, sql, rowMapper, args));
     }
 
     public <T> List<T> query(String sql, Connection connection, RowMapper<T> rowMapper, Object... args) {
@@ -51,10 +48,15 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        if (TransactionSynchronizationManager.hasResource(dataSource)) {
-            return update(sql, TransactionSynchronizationManager.getResource(dataSource), args);
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            return updateInternal(conn, sql, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
-        return execute(conn -> updateInternal(conn, sql, args));
     }
 
     public int update(String sql, Connection connection, Object... args) {

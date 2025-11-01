@@ -50,6 +50,8 @@ public class TxUserService implements UserService {
         boolean autoCommitChanged = false;
 
         try {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
             originalAutoCommit = connection.getAutoCommit();
             if (originalAutoCommit) {
                 connection.setAutoCommit(false);
@@ -73,7 +75,11 @@ public class TxUserService implements UserService {
                 } catch (SQLException ignored) {
                 }
             }
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                connection.close();
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
