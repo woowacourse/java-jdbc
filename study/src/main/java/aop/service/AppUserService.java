@@ -28,7 +28,7 @@ public class AppUserService implements UserService {
 
     @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        final var user = userDao.findById(id);
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
