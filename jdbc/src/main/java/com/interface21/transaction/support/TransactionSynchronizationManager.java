@@ -20,7 +20,13 @@ public abstract class TransactionSynchronizationManager {
             return null;
         }
 
-        count.set(count.get() + 1);
+        Integer current = count.get();
+        if (current == null) {
+            current = 0;
+            count.set(current);
+        }
+
+        count.set(current + 1);
         return connectionMap.get(key);
     }
 
