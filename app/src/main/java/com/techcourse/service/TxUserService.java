@@ -45,44 +45,71 @@ public class TxUserService implements UserService {
 
     @Override
     public void save(final User user) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-
-        try {
-            conn.setAutoCommit(false);
-
-            try {
-                userService.save(user);
-
-                conn.commit();
-            } catch (Exception e) {
-                conn.rollback();
-                throw e;
-            }
-        } catch (DataAccessException | SQLException e) {
-            throw new DataAccessException("User 정보 저장 실패", e);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
+        executeInTransaction(
+                () -> userService.save(user),
+                "User 정보 저장 실패"
+        );
     }
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        executeInTransaction(
+                () -> userService.changePassword(id, newPassword, createBy),
+                "비밀번호 변경 실패"
+        );
+    }
+
+    private void executeInTransaction(Runnable work, String errorMessage) {
         Connection conn = DataSourceUtils.getConnection(dataSource);
+        boolean mustReset = false;
         try {
-            conn.setAutoCommit(false);
+            if (conn.getAutoCommit()) {
+                conn.setAutoCommit(false);
+                mustReset = true;
+            }
 
             try {
-                userService.changePassword(id, newPassword, createBy);
-
-                conn.commit();
+                work.run();
+                processCommit(mustReset, conn);
             } catch (Exception e) {
-                conn.rollback();
+                processRollback(mustReset, conn);
                 throw e;
             }
         } catch (DataAccessException | SQLException e) {
-            throw new DataAccessException("비밀번호 변경 실패", e);
+            throw new DataAccessException(errorMessage, e);
         } finally {
+            processAutoCommit(mustReset, conn);
             DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private void processCommit(boolean mustReset, Connection conn) {
+        if (mustReset) {
+            try {
+                conn.commit();
+            } catch (SQLException e) {
+                throw new DataAccessException("commit 실패", e);
+            }
+        }
+    }
+
+    private void processRollback(boolean mustReset, Connection conn) {
+        if (mustReset) {
+            try {
+                conn.rollback();
+            } catch (SQLException e) {
+                throw new DataAccessException("rollback 실패", e);
+            }
+        }
+    }
+
+    private void processAutoCommit(boolean mustReset, Connection conn) {
+        if (mustReset) {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                log.warn("auto commit 복원 실패", e);
+            }
         }
     }
 }
