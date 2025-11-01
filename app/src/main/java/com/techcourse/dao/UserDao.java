@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,14 +27,6 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    // 커넥션 외부 주입 버전
-    public void update(final Connection conn, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(
-                conn, sql, user.getAccount(), user.getPassword(), user.getEmail(),  user.getId()
-        );
     }
 
     public void update(final User user) {
