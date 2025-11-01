@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 
 public class AppUserService implements UserService {
 
@@ -32,5 +33,12 @@ public class AppUserService implements UserService {
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
+    }
+
+    public void changePassword(final Connection connection, final long id, final String newPassword, final String createBy) {
+        final var user = findById(id);
+        user.changePassword(newPassword);
+        userDao.update(connection, user);
+        userHistoryDao.log(connection, new UserHistory(user, createBy));
     }
 }

@@ -27,7 +27,11 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         transactionManager.executeTransaction(connection -> {
-            userService.changePassword(id, newPassword, createdBy);
+            if (userService instanceof AppUserService) {
+                ((AppUserService) userService).changePassword(connection, id, newPassword, createdBy);
+            } else {
+                userService.changePassword(id, newPassword, createdBy);
+            }
         });
     }
 }

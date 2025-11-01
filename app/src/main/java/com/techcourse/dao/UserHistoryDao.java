@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,7 +30,7 @@ public class UserHistoryDao {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = dataSource.getConnection();
+            conn = DataSourceUtils.getConnection(dataSource);
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
@@ -52,12 +53,7 @@ public class UserHistoryDao {
             } catch (SQLException ignored) {
             }
 
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {
-            }
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
