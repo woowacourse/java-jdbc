@@ -1,13 +1,17 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.TransactionManager;
 import com.techcourse.domain.User;
+import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
 
     private final UserService userService;
+    private final TransactionManager transactionManager;
 
-    public TxUserService(UserService userService) {
+    public TxUserService(UserService userService, DataSource dataSource) {
         this.userService = userService;
+        this.transactionManager = new TransactionManager(dataSource);
     }
 
     @Override
@@ -22,10 +26,8 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
-        // 트랜잭션 처리 영역
-
-        userService.changePassword(id, newPassword, createdBy);
-
-        // 트랜잭션 처리 영역
+        transactionManager.executeTransaction(connection -> {
+            userService.changePassword(id, newPassword, createdBy);
+        });
     }
 }
