@@ -17,6 +17,12 @@ public class TxUserService implements UserService {
         this.userService = userService;
     }
 
+    @FunctionalInterface
+    public interface TransactionCallback<T> {
+
+        void doInTransaction() throws Exception;
+    }
+
     @Override
     public User findById(long id) {
         return userService.findById(id);
@@ -29,13 +35,17 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
-        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        execute(() -> {
+            userService.changePassword(id, newPassword, createdBy);
+        });
+    }
+
+    public <T> void execute(TransactionCallback<T> action) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createdBy);
+            action.doInTransaction();
             connection.commit();
-        } catch (SQLException sqlException) {
-            throw new RuntimeException(sqlException);
         } catch (Exception e) {
             rollbackTransaction(connection);
             throw new DataAccessException(e);
