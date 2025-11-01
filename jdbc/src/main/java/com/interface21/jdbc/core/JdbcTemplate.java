@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,28 +31,8 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(
-            final Connection conn,
-            final String sql,
-            final PreparedStatementSetter pss
-    ) {
-        execute(conn, sql, pstmt -> {
-            pss.setValues(pstmt);
-            log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
-        });
-    }
-
     public void update(final String sql, final Object...args) {
         update(sql, pstmt -> {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-        });
-    }
-
-    public void update(final Connection conn, final String sql, final Object...args) {
-        update(conn, sql, pstmt -> {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
@@ -127,21 +108,11 @@ public class JdbcTemplate {
         return queryForList(sql, rowMapper, pstmt -> {});
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callBack) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            return callBack.processIn(pstmt);
-        } catch (final SQLException e) {
-            log.error("JdbcTemplate execution failed. SQL: {}", sql, e);
-            throw new DataAccessException("JdbcTemplate execution failed for SQL: " + sql, e);
-        }
-    }
-
     private <T> T execute(
-            final Connection conn,
             final String sql,
             final PreparedStatementCallback<T> callBack
     ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return callBack.processIn(pstmt);
         } catch (final SQLException e) {
