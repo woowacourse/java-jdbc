@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -29,7 +30,6 @@ public class TxUserService implements UserService {
         userService.save(user);
     }
 
-    // override 대상인 메서드는 userService의 메서드를 그대로 위임(delegate)한다.
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         executeInTransaction(() -> {
@@ -39,12 +39,22 @@ public class TxUserService implements UserService {
     }
 
     private <T> T executeInTransaction(Supplier<T> action) {
+        final boolean isExistingTransaction = TransactionSynchronizationManager.hasResource(dataSource);
+
+        if (isExistingTransaction) {
+            return action.get();
+        }
+
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         boolean originalAutoCommit = true;
+        boolean autoCommitChanged = false;
 
         try {
             originalAutoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
+            if (originalAutoCommit) {
+                connection.setAutoCommit(false);
+                autoCommitChanged = true;
+            }
 
             try {
                 T result = action.get();
@@ -57,9 +67,11 @@ public class TxUserService implements UserService {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         } finally {
-            try {
-                connection.setAutoCommit(originalAutoCommit);
-            } catch (SQLException e) {
+            if (autoCommitChanged) {
+                try {
+                    connection.setAutoCommit(originalAutoCommit);
+                } catch (SQLException ignored) {
+                }
             }
             DataSourceUtils.releaseConnection(connection, dataSource);
         }
