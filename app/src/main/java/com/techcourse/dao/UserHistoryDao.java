@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +15,7 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
+    public void log(final UserHistory userHistory) {
         jdbcTemplate.insertInto("user_history")
                 .value("user_id", userHistory.getUserId())
                 .value("account", userHistory.getAccount())
@@ -24,6 +23,6 @@ public class UserHistoryDao {
                 .value("email", userHistory.getEmail())
                 .value("created_at", userHistory.getCreatedAt())
                 .value("created_by", userHistory.getCreateBy())
-                .execute(connection);
+                .execute();
     }
 }

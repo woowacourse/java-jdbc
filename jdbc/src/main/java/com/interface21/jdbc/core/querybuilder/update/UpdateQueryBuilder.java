@@ -55,7 +55,7 @@ public class UpdateQueryBuilder implements UpdateSetStep, UpdateExecutableStep {
      * 만약 set값이 하나도 없으면 아무 동작도 하지 않습니다.
      */
     @Override
-    public void execute(Connection connection) {
+    public void execute() {
         if (setValues.isEmpty()) {
             return;
         }
@@ -79,6 +79,6 @@ public class UpdateQueryBuilder implements UpdateSetStep, UpdateExecutableStep {
             params.addAll(whereClauses.values());
         }
 
-        jdbcTemplate.update(connection, sql, params.toArray());
+        jdbcTemplate.update(sql, params.toArray());
     }
 }

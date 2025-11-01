@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core.querybuilder.select;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,21 +46,9 @@ public class SelectQueryBuilder<T> implements SelectFromStep<T>, SelectColumnsSt
     }
 
     @Override
-    public List<T> toList(Connection connection) {
-        String sql = buildSelectSql();
-        return jdbcTemplate.query(connection, sql, mappedClass, whereParams.toArray());
-    }
-
-    @Override
     public List<T> toList() {
         String sql = buildSelectSql();
         return jdbcTemplate.query(sql, mappedClass, whereParams.toArray());
-    }
-
-    @Override
-    public Optional<T> findFirst(Connection connection) {
-        String sql = buildSelectSql();
-        return jdbcTemplate.queryForObject(connection, sql, mappedClass, whereParams.toArray());
     }
 
     @Override

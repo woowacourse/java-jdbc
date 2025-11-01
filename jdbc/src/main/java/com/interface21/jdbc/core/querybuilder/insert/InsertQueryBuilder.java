@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core.querybuilder.insert;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -45,7 +44,7 @@ public class InsertQueryBuilder implements InsertValueStep, InsertExecutableStep
      * 빌드된 INSERT SQL을 실제로 실행합니다.
      */
     @Override
-    public void execute(Connection connection) {
+    public void execute() {
         if (values.isEmpty()) {
             return; // 값이 없으면 아무것도 하지 않음
         }
@@ -63,6 +62,6 @@ public class InsertQueryBuilder implements InsertValueStep, InsertExecutableStep
         Object[] params = values.values().toArray();
 
         // 기존의 update 메서드를 호출하여 쿼리 실행
-        jdbcTemplate.update(connection, sql, params);
+        jdbcTemplate.update(sql, params);
     }
 }
