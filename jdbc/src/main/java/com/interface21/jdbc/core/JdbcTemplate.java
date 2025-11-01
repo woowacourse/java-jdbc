@@ -2,11 +2,11 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -39,21 +39,33 @@ public class JdbcTemplate {
     }
 
     private void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        final boolean hadExistingConnection = DataSourceUtils.hasResource(dataSource);
         final var connection = DataSourceUtils.getConnection(dataSource);
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (!hadExistingConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
     private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
+        final boolean hadExistingConnection = DataSourceUtils.hasResource(dataSource);
         final var connection = DataSourceUtils.getConnection(dataSource);
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             return executeQuery(preparedStatement, rowMapper, preparedStatementSetter);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (!hadExistingConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
