@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 public class JdbcTemplate {
 
@@ -23,30 +24,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(Connection connection, final String sql, final Object... args) {
-        try (final var pstmt = connection.prepareStatement(sql)) {
+    public void update(final String sql, final Object... args) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, args);
             final var result = pstmt.executeUpdate();
             log.debug("query : {}, result : {}", sql, result);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute update", e);
-        }
-    }
-
-    public void update(final String sql, final Object... args) {
-        try (final var connection = dataSource.getConnection()) {
-            update(connection, sql, args);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, final Object... args) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, args);
             return mappingResultSet(pstmt, rowMapper);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute query", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
