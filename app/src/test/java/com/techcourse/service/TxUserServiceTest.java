@@ -47,7 +47,7 @@ class TxUserServiceTest {
     }
 
     @Test
-    void testTransactionRollback_1() {
+    void testTransactionRollback() {
         final var mockUserHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new TxUserService(new AppUserService(userDao, mockUserHistoryDao));
 
