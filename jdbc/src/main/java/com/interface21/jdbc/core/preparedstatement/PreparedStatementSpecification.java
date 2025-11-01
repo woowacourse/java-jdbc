@@ -6,16 +6,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-public class PreparedStatementSpecification {
+public record PreparedStatementSpecification(String sql, List<PreparedStatementParameter> parameters) {
 
-    final String sql;
-    final List<PreparedStatementParameter> parameters;
-
-    public PreparedStatementSpecification(
-            String sql, List<PreparedStatementParameter> parameters) throws SQLSyntaxErrorException {
+    /**
+     * @throws IllegalArgumentException
+     */
+    public PreparedStatementSpecification {
         validateSpecification(sql, parameters);
-        this.sql = sql;
-        this.parameters = parameters;
     }
 
     public static Builder builder(String sql) {
@@ -25,7 +22,7 @@ public class PreparedStatementSpecification {
     private void validateSpecification(
             String sql,
             List<PreparedStatementParameter> parameters
-    ) throws SQLSyntaxErrorException {
+    ) throws IllegalArgumentException {
         long placeholderCount = sql
                 .chars()
                 .filter(ch -> ch == '?')
@@ -33,16 +30,10 @@ public class PreparedStatementSpecification {
         long parameterCount = parameters.size();
 
         if (placeholderCount != parameterCount) {
-            throw new SQLSyntaxErrorException("PreparedStatementContext의 SQL과 파라미터의 개수가 일치하지 않습니다.");
+            throw new IllegalArgumentException(
+                    new SQLSyntaxErrorException("PreparedStatementContext의 SQL과 파라미터의 개수가 일치하지 않습니다.")
+            );
         }
-    }
-
-    public String getSql() {
-        return sql;
-    }
-
-    public List<PreparedStatementParameter> getParameters() {
-        return parameters;
     }
 
     public static class Builder {
@@ -68,7 +59,7 @@ public class PreparedStatementSpecification {
             return this;
         }
 
-        public PreparedStatementSpecification build() throws SQLSyntaxErrorException {
+        public PreparedStatementSpecification build() {
             return new PreparedStatementSpecification(
                     sql,
                     parameters

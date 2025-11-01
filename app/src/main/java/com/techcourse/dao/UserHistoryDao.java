@@ -8,8 +8,6 @@ import com.techcourse.domain.UserHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.SQLSyntaxErrorException;
 import java.util.List;
 
 public class UserHistoryDao {
@@ -24,49 +22,20 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         CommandSpecification commandSpecification = new CommandSpecification(
-                createPreparedStatementSpecification(
-                        "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
-                        List.of(
-                                new PreparedStatementParameter(1, userHistory.getUserId()),
-                                new PreparedStatementParameter(2, userHistory.getAccount()),
-                                new PreparedStatementParameter(3, userHistory.getPassword()),
-                                new PreparedStatementParameter(4, userHistory.getEmail()),
-                                new PreparedStatementParameter(5, userHistory.getCreatedAt()),
-                                new PreparedStatementParameter(6, userHistory.getCreateBy())
-                        )
-                )
+                PreparedStatementSpecification
+                        .builder(
+                                "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)")
+                        .parameters(
+                                List.of(
+                                        new PreparedStatementParameter(1, userHistory.getUserId()),
+                                        new PreparedStatementParameter(2, userHistory.getAccount()),
+                                        new PreparedStatementParameter(3, userHistory.getPassword()),
+                                        new PreparedStatementParameter(4, userHistory.getEmail()),
+                                        new PreparedStatementParameter(5, userHistory.getCreatedAt()),
+                                        new PreparedStatementParameter(6, userHistory.getCreateBy())
+                                )
+                        ).build()
         );
         jdbcTemplate.insert(commandSpecification);
-    }
-
-    public void logWithTransaction(final UserHistory userHistory, final Connection connection) {
-        CommandSpecification commandSpecification = new CommandSpecification(
-                createPreparedStatementSpecification(
-                        "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)",
-                        List.of(
-                                new PreparedStatementParameter(1, userHistory.getUserId()),
-                                new PreparedStatementParameter(2, userHistory.getAccount()),
-                                new PreparedStatementParameter(3, userHistory.getPassword()),
-                                new PreparedStatementParameter(4, userHistory.getEmail()),
-                                new PreparedStatementParameter(5, userHistory.getCreatedAt()),
-                                new PreparedStatementParameter(6, userHistory.getCreateBy())
-                        )
-                )
-        );
-        jdbcTemplate.insertWithTransaction(commandSpecification, connection);
-    }
-
-    private PreparedStatementSpecification createPreparedStatementSpecification(
-            String sql,
-            List<PreparedStatementParameter> parameters
-    ) {
-        try {
-            return PreparedStatementSpecification
-                    .builder(sql)
-                    .parameters(parameters)
-                    .build();
-        } catch (SQLSyntaxErrorException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 }
