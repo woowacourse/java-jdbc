@@ -1,17 +1,13 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
-
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -28,14 +24,9 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void update(User user) {
         final var sql = "update users set password = ?, email = ? where account = ?";
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
-    }
-
-    public void update(Connection connection, User user) {
-        final var sql = "update users set password = ?, email = ? where account = ?";
-        jdbcTemplate.update(connection,sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
     public List<User> findAll() {
@@ -52,22 +43,9 @@ public class UserDao {
         return users;
     }
 
-    public Optional<User> findById(final Long id) {
+    public Optional<User> findById(long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        User user = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-            Long foundId = rs.getLong("id");
-            String account = rs.getString("account");
-            String password = rs.getString("password");
-            String email = rs.getString("email");
-
-            return new User(foundId, account, password, email);
-        }, id);
-
-        return Optional.ofNullable(user);
-    }
-
-    public Optional<User> findById(Connection connection, long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final var connection = DataSourceUtils.getConnection(jdbcTemplate.getDataSource());
         User user = jdbcTemplate.queryForObject(connection, sql, (rs, rowNum) -> {
             Long foundId = rs.getLong("id");
             String account = rs.getString("account");
