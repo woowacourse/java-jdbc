@@ -31,22 +31,31 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
         Connection connection = null;
+        boolean existingTx = TransactionSynchronizationManager.hasResource(dataSource);
         try {
-            connection = DataSourceUtils.getConnection(dataSource);
-            connection.setAutoCommit(false);
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            if (!existingTx) {
+                connection = DataSourceUtils.getConnection(dataSource);
+                connection.setAutoCommit(false);
+                TransactionSynchronizationManager.bindResource(dataSource, connection);
+            } else {
+                connection = DataSourceUtils.getConnection(dataSource);
+            }
             try {
                 userService.changePassword(id, newPassword, createdBy);
             } catch (Exception ex) {
-                connection.rollback();
+                if (!existingTx) {
+                    connection.rollback();
+                }
                 throw ex;
             }
-            connection.commit();
+            if (!existingTx) {
+                connection.commit();
+            }
         } catch (SQLException ex) {
             throw new DataAccessException(ex);
         } finally {
             Connection bound = null;
-            if (TransactionSynchronizationManager.hasResource(dataSource)) {
+            if (!existingTx && TransactionSynchronizationManager.hasResource(dataSource)) {
                 bound = TransactionSynchronizationManager.unbindResource(dataSource);
             }
             DataSourceUtils.releaseConnection(bound != null ? bound : connection, dataSource);

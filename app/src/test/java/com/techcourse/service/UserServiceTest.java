@@ -12,6 +12,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +32,12 @@ class UserServiceTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void after() throws SQLException {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update("delete from users");
+    }
+
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
@@ -38,9 +45,10 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        User user = userDao.findByAccount(createBy);
+        userService.changePassword(user.getId(), newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
@@ -60,7 +68,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createdBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userDao.findByAccount("gugu");
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
