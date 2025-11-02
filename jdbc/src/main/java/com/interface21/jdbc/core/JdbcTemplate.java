@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,48 +23,71 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> mapper,
+    public <T> T queryForObject(final String sql, final RowMapper<T> mapper,
                                 final Object... args) {
-        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setPreparedStatement(pstmt, args);
-            final ResultSet rs = pstmt.executeQuery();
-
-            if (!rs.next()) {
-                throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다: " + sql);
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                setPreparedStatement(pstmt, args);
+                try (final ResultSet rs = pstmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다: " + sql);
+                    }
+                    final T result = mapper.mapRow(rs, 1);
+                    if (rs.next()) {
+                        throw new IncorrectResultSizeDataAccessException("조회 결과가 1건이 아닙니다: " + sql);
+                    }
+                    return result;
+                }
             }
-            final T result = mapper.mapRow(rs, 1);
-            if (rs.next()) {
-                throw new IncorrectResultSizeDataAccessException("조회 결과가 1건이 아닙니다: " + sql);
-            }
-            return result;
         } catch (SQLException e) {
             throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
+        } finally {
+            if (conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> mapper, final Object... args) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setPreparedStatement(pstmt, args);
-
-            final ResultSet rs = pstmt.executeQuery();
-            final List<T> result = new ArrayList<>();
-            int rowNum = 1;
-            while (rs.next()) {
-                result.add(mapper.mapRow(rs, rowNum++));
+    public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... args) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                setPreparedStatement(pstmt, args);
+                try (final ResultSet rs = pstmt.executeQuery()) {
+                    final List<T> result = new ArrayList<>();
+                    int rowNum = 1;
+                    while (rs.next()) {
+                        result.add(mapper.mapRow(rs, rowNum++));
+                    }
+                    return result;
+                }
             }
-            return result;
         } catch (SQLException e) {
             throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
+        } finally {
+            if (conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 
-    public void update(final Connection conn, final String sql, final Object... args) {
-        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setPreparedStatement(pstmt, args);
-            pstmt.executeUpdate();
+    public void update(final String sql, final Object... args) {
+        Connection conn = null;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                setPreparedStatement(pstmt, args);
+                pstmt.executeUpdate();
+            }
         } catch (SQLException e) {
             throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
+        } finally {
+            if (conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 

@@ -23,26 +23,26 @@ class UserDaoTest {
 
         userDao = new UserDao(new JdbcTemplate(dataSource));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
     }
 
     @AfterEach
     void after() throws SQLException {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.update(dataSource.getConnection(), "delete from users");
+        jdbcTemplate.update("delete from users");
     }
 
     @Test
     void findAll() throws SQLException {
-        final var users = userDao.findAll(dataSource.getConnection());
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() throws SQLException {
-        User gugu = userDao.findByAccount(dataSource.getConnection(), "gugu");
-        final var user = userDao.findById(dataSource.getConnection(), gugu.getId());
+        User gugu = userDao.findByAccount("gugu");
+        final var user = userDao.findById(gugu.getId());
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -50,7 +50,7 @@ class UserDaoTest {
     @Test
     void findByAccount() throws SQLException {
         final var account = "gugu";
-        final var user = userDao.findByAccount(dataSource.getConnection(), account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -59,9 +59,9 @@ class UserDaoTest {
     void insert() throws SQLException {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(dataSource.getConnection(), user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById(dataSource.getConnection(), 2L);
+        final var actual = userDao.findByAccount(account);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -69,12 +69,12 @@ class UserDaoTest {
     @Test
     void update() throws SQLException {
         final var newPassword = "password99";
-        final var user = userDao.findByAccount(dataSource.getConnection(), "gugu");
+        final var user = userDao.findByAccount("gugu");
         user.changePassword(newPassword);
 
-        userDao.update(dataSource.getConnection(), user);
+        userDao.update(user);
 
-        final var actual = userDao.findById(dataSource.getConnection(), 1L);
+        final var actual = userDao.findById(user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
