@@ -54,16 +54,16 @@ public class JdbcTemplate {
         Connection conn = null;
         try {
             conn = DataSourceUtils.getConnection(dataSource);
-            try (final PreparedStatement pstmt = conn.prepareStatement(sql);
-                 final ResultSet rs = pstmt.executeQuery()) {
+            try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 setPreparedStatement(pstmt, args);
-
-                final List<T> result = new ArrayList<>();
-                int rowNum = 1;
-                while (rs.next()) {
-                    result.add(mapper.mapRow(rs, rowNum++));
+                try (final ResultSet rs = pstmt.executeQuery()) {
+                    final List<T> result = new ArrayList<>();
+                    int rowNum = 1;
+                    while (rs.next()) {
+                        result.add(mapper.mapRow(rs, rowNum++));
+                    }
+                    return result;
                 }
-                return result;
             }
         } catch (SQLException e) {
             throw new DataAccessException("DB 조회에 실패했습니다. :" + sql, e);
