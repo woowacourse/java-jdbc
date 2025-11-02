@@ -1,7 +1,8 @@
-package com.techcourse.service;
+package com.techcourse.support.jdbc;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.CustomDataSourceUtils;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -15,9 +16,10 @@ public class CustomTransactionManager {
     }
 
     public void executeTransaction(TransactionCallback transactionCallback) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             connection.setAutoCommit(false);
-            CustomDataSourceUtils.bindConnection(connection);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            TransactionSynchronizationManager.activateTransaction(dataSource);
             try {
                 transactionCallback.execute();
                 connection.commit();
@@ -28,7 +30,9 @@ public class CustomTransactionManager {
         } catch (SQLException e) {
             throw new RuntimeException("[ERROR] DB 연결 중 오류 발생", e);
         } finally {
-            CustomDataSourceUtils.removeConnection();
+            TransactionSynchronizationManager.deactivateTransaction(dataSource);
+            Connection connection = TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }

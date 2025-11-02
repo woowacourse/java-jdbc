@@ -19,15 +19,16 @@ public abstract class DataSourceUtils {
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (TransactionSynchronizationManager.isActiveTransaction(dataSource)) {
+            throw new IllegalStateException();
+        }
         try {
             connection.close();
         } catch (SQLException ex) {

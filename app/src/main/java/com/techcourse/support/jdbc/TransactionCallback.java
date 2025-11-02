@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.techcourse.support.jdbc;
 
 @FunctionalInterface
 public interface TransactionCallback {
