@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,13 +29,6 @@ public class JdbcTemplate {
             throw new DataAccessException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
         }
         execute(sql, PreparedStatement::executeUpdate, parameters);
-    }
-
-    public void update(final Connection connection, final String sql, final Object... parameters) {
-        if (sql == null || sql.trim().isEmpty()) {
-            throw new DataAccessException("SQL 쿼리는 null이거나 빈 문자열일 수 없습니다.");
-        }
-        execute(connection, sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -70,28 +64,26 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementExecutor<T> executor, final Object... parameters) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement prepareStatement = conn.prepareStatement(sql)) {
-            validateParameterCount(prepareStatement, parameters, sql);
-            setStatementParameters(prepareStatement, parameters);
-            log.debug("query : {}", sql);
-            return executor.execute(prepareStatement);
+        Connection conn = null;
+        boolean isTransactionActive = false;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+            isTransactionActive = (conn.getAutoCommit() == false);
+            
+            try (final PreparedStatement prepareStatement = conn.prepareStatement(sql)) {
+                validateParameterCount(prepareStatement, parameters, sql);
+                setStatementParameters(prepareStatement, parameters);
+                log.debug("query : {}", sql);
+                return executor.execute(prepareStatement);
+            }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw dataAccessException("실패", sql, parameters, e);
-        }
-    }
-
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementExecutor<T> executor,
-                          final Object... parameters) {
-        try (final PreparedStatement prepareStatement = conn.prepareStatement(sql)) {
-            validateParameterCount(prepareStatement, parameters, sql);
-            setStatementParameters(prepareStatement, parameters);
-            log.debug("query : {}", sql);
-            return executor.execute(prepareStatement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw dataAccessException("실패", sql, parameters, e);
+        } finally {
+            // 트랜잭션 중이 아니면 Connection 해제
+            if (!isTransactionActive && conn != null) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 
