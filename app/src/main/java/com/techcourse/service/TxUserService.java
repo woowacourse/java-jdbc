@@ -34,6 +34,13 @@ public class TxUserService implements UserService {
     }
 
     private void executeInTransaction(final Runnable runnable) {
+        final boolean hadExistingConnection = DataSourceUtils.hasResource(dataSource);
+
+        if (hadExistingConnection) {
+            runnable.run();
+            return;
+        }
+
         final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
