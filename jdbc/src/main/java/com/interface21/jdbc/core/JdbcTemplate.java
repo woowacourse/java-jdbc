@@ -4,7 +4,6 @@ import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.JdbcException;
 import com.interface21.jdbc.exception.MultipleDataJdbcException;
 import com.interface21.jdbc.exception.NoDataJdbcException;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -58,7 +57,7 @@ public class JdbcTemplate {
                 pss.setValues(pstmt);
             }
             pstmt.executeUpdate();
-            closeConnection(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException(e);
@@ -82,7 +81,7 @@ public class JdbcTemplate {
             if (results.size() != 1) {
                 throw new MultipleDataJdbcException("Not Only One Data");
             }
-            closeConnection(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
             return results.getFirst();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -100,7 +99,7 @@ public class JdbcTemplate {
             if (pss != null) {
                 pss.setValues(pstmt);
             }
-            closeConnection(conn);
+            DataSourceUtils.releaseConnection(conn, dataSource);
             return queryForList(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -130,12 +129,5 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, objects[i]);
             }
         };
-    }
-
-    private void closeConnection(final Connection conn) throws SQLException {
-        final Connection resource = TransactionSynchronizationManager.getResource(dataSource);
-        if (resource == null) {
-            conn.close();
-        }
     }
 }
