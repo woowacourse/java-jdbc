@@ -21,7 +21,7 @@ public class AppUserService implements UserService {
     }
 
     @Override
-    public void insert(final User user) {
+    public void save(final User user) {
         userDao.insert(user);
     }
 

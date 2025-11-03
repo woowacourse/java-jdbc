@@ -36,11 +36,11 @@ public class TxUserService implements UserService {
     }
 
     @Override
-    public void insert(final User user) {
+    public void save(final User user) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
-            appUserService.insert(user);
+            appUserService.save(user);
             connection.commit();
         } catch (DataAccessException e) {
             rollback(e, connection);
