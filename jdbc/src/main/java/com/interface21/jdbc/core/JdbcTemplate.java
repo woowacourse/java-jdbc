@@ -1,16 +1,15 @@
 package com.interface21.jdbc.core;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import javax.sql.DataSource;
-
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -24,10 +23,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -54,21 +49,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final StatementCallback<T> action, final Object... args) {
-        try (final var conn = dataSource.getConnection(); final var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            if (args != null) {
-                for (int i = 0; i < args.length; i++) {
-                    pstmt.setObject(i + 1, args[i]);
-                }
-            }
-            return action.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> T execute(final Connection conn, final String sql, final StatementCallback<T> action, final Object... args) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
         try (final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             if (args != null) {
