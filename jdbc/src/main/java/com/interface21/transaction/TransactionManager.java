@@ -44,7 +44,7 @@ public class TransactionManager {
         try {
             conn.rollback();
         } catch (SQLException e) {
-            throw new TransactionException("트랜잭션 커밋 실패", e);
+            throw new TransactionException("트랜잭션 롤백 실패", e);
         } finally {
             log.warn("rollback");
             closeConnection(conn);
