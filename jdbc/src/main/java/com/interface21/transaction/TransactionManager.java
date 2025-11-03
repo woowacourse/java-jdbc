@@ -1,4 +1,4 @@
-package com.techcourse.service;
+package com.interface21.transaction;
 
 public interface TransactionManager {
 

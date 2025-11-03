@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.TransactionManager;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
