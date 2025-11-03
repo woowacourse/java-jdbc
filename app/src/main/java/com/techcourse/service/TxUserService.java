@@ -15,15 +15,7 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        try {
-            transactionManager.begin();
-            final var user = appUserService.findById(id);
-            transactionManager.commit();
-            return user;
-        } catch (DataAccessException e) {
-            transactionManager.rollback();
-            throw new DataAccessException(e);
-        }
+        return appUserService.findById(id);
     }
 
     @Override
