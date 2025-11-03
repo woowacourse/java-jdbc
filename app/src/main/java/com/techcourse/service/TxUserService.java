@@ -41,9 +41,7 @@ public class TxUserService implements UserService {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userService.changePassword(user.getId(), newPassword, createBy);
+            userService.changePassword(id, newPassword, createBy);
 
             connection.commit();
         } catch (SQLException | DataAccessException e) {
@@ -51,14 +49,23 @@ public class TxUserService implements UserService {
             throw new DataAccessException(e);
         } finally {
             if (connection != null) {
+                setAutoCommitTrue(connection);
                 DataSourceUtils.releaseConnection(connection, dataSource);
                 unbindResource(dataSource);
             }
         }
     }
 
+    private static void setAutoCommitTrue(final Connection connection) {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            log.error("Failed to reset autoCommit", e);
+        }
+    }
+
     private void rollback(final Connection connection) {
-        if (connection != null) {
+        if (connection == null) {
             return;
         }
         try {
