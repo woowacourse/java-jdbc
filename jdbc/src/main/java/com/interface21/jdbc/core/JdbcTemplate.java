@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.jdbc.exception.JdbcException;
 import com.interface21.jdbc.exception.MultipleDataJdbcException;
 import com.interface21.jdbc.exception.NoDataJdbcException;
@@ -30,14 +31,6 @@ public class JdbcTemplate {
         update(sql, getDefaultPreparedStatementSetter(args));
     }
 
-    public void update(
-            final Connection connection,
-            final String sql,
-            final Object... args
-    ) {
-        update(connection, sql, getDefaultPreparedStatementSetter(args));
-    }
-
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
@@ -58,30 +51,13 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementSetter pss
     ) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             if (pss != null) {
                 pss.setValues(pstmt);
             }
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new JdbcException(e);
-        }
-    }
-
-    public void update(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementSetter pss
-    ) {
-        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            if (pss != null) {
-                pss.setValues(pstmt);
-            }
-            pstmt.executeUpdate();
+            DataSourceUtils.releaseConnection(conn, dataSource);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new JdbcException(e);
@@ -93,10 +69,8 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final PreparedStatementSetter pss
     ) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             if (pss != null) {
                 pss.setValues(pstmt);
             }
@@ -107,6 +81,7 @@ public class JdbcTemplate {
             if (results.size() != 1) {
                 throw new MultipleDataJdbcException("Not Only One Data");
             }
+            DataSourceUtils.releaseConnection(conn, dataSource);
             return results.getFirst();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -119,13 +94,12 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final PreparedStatementSetter pss
     ) {
-        try (
-                final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql);
-        ) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             if (pss != null) {
                 pss.setValues(pstmt);
             }
+            DataSourceUtils.releaseConnection(conn, dataSource);
             return queryForList(rowMapper, pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
