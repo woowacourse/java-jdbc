@@ -71,9 +71,7 @@ public class TransactionTemplate {
         if (exception instanceof RuntimeException) {
             throw (RuntimeException) exception;
         }
-        else {
-            throw new DataAccessException(exception);
-        }
+        throw new DataAccessException(exception);
     }
 
     private void cleanupTransaction(final Connection connection, final boolean isNewTransaction) {
