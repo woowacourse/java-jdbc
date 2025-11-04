@@ -15,43 +15,71 @@ public class TransactionTemplate {
     }
 
     public void execute(final Runnable runnable) {
-        final boolean hadExistingConnection = DataSourceUtils.hasResource(dataSource);
+        final boolean isNewTransaction = !DataSourceUtils.hasResource(dataSource);
         final Connection connection = DataSourceUtils.getConnection(dataSource);
 
         try {
-            final boolean connectionWasInAutoCommitMode = isAutoCommitEnabled(connection);
-
-            // 이미 트랜잭션이 시작된 경우
-            if (hadExistingConnection && !connectionWasInAutoCommitMode) {
+            if (shouldSkipTransactionManagement(connection, isNewTransaction)) {
                 runnable.run();
                 return;
             }
 
-            if (connectionWasInAutoCommitMode) {
-                connection.setAutoCommit(false);
-            }
-
+            configureConnectionForTransaction(connection);
             runnable.run();
-            // 우리가 만든 트랜잭션인 경우
-            if (!hadExistingConnection) {
-                connection.commit();
-            }
-        } catch (final RuntimeException | SQLException e) {
-            if (!hadExistingConnection) {
-                rollback(connection, e);
-            }
-
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            } else {
-                throw new DataAccessException(e);
-            }
+            commitIfNewTransaction(connection, isNewTransaction);
+        } catch (final Exception e) {
+            handleTransactionException(connection, isNewTransaction, e);
         } finally {
-            // 원래 있던 연결이 아니라면
-            if (!hadExistingConnection) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-                TransactionSynchronizationManager.unbindResource(dataSource);
+            cleanupTransaction(connection, isNewTransaction);
+        }
+    }
+
+    private boolean shouldSkipTransactionManagement(final Connection connection, final boolean isNewTransaction) {
+        if (isNewTransaction) {
+            return false;
+        }
+
+        final boolean isInAutoCommitMode = isAutoCommitEnabled(connection);
+        return !isInAutoCommitMode;
+    }
+
+    private void configureConnectionForTransaction(final Connection connection) {
+        if (isAutoCommitEnabled(connection)) {
+            try {
+                connection.setAutoCommit(false);
+            } catch (final SQLException e) {
+                throw new DataAccessException("Failed to disable auto-commit", e);
             }
+        }
+    }
+
+    private void commitIfNewTransaction(final Connection connection, final boolean isNewTransaction) {
+        if (isNewTransaction) {
+            try {
+                connection.commit();
+            } catch (final SQLException e) {
+                throw new DataAccessException("Failed to commit transaction", e);
+            }
+        }
+    }
+
+    private void handleTransactionException(final Connection connection, final boolean isNewTransaction, final Exception exception) {
+        if (isNewTransaction) {
+            rollback(connection, exception);
+        }
+
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
+        }
+        else {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    private void cleanupTransaction(final Connection connection, final boolean isNewTransaction) {
+        if (isNewTransaction) {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
