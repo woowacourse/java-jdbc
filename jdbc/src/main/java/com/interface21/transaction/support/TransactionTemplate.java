@@ -39,12 +39,12 @@ public class TransactionTemplate {
         } catch (final RuntimeException | SQLException e) {
             if (!hadExistingConnection) {
                 rollback(connection, e);
+            }
+
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
             } else {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                } else {
-                    throw new DataAccessException(e);
-                }
+                throw new DataAccessException(e);
             }
         } finally {
             // 원래 있던 연결이 아니라면
@@ -69,6 +69,5 @@ public class TransactionTemplate {
         } catch (final SQLException rollbackException) {
             originalException.addSuppressed(rollbackException);
         }
-        throw new DataAccessException("트랜잭션 실행 실패", originalException);
     }
 }
