@@ -12,6 +12,10 @@ public abstract class DataSourceUtils {
 
     private DataSourceUtils() {}
 
+    public static boolean hasResource(DataSource dataSource) {
+        return TransactionSynchronizationManager.getResource(dataSource) != null;
+    }
+
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection != null) {

@@ -1,11 +1,12 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,16 +26,8 @@ public class JdbcTemplate {
         update(sql, ps -> setParameters(ps, args));
     }
 
-    public void update(final Connection connection, final String sql, final Object... args) {
-        update(connection, sql, ps -> setParameters(ps, args));
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, ps -> setParameters(ps, args));
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(connection, sql, rowMapper, ps -> setParameters(ps, args));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -45,47 +38,34 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(connection, sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.getFirst();
-    }
-
     private void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private void update(final Connection connection, final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        final boolean hadExistingConnection = DataSourceUtils.hasResource(dataSource);
+        final var connection = DataSourceUtils.getConnection(dataSource);
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (!hadExistingConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
     private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
-        try (final var connection = dataSource.getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
-            return executeQuery(preparedStatement, rowMapper, preparedStatementSetter);
-        } catch (final SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    private <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter preparedStatementSetter) {
+        final boolean hadExistingConnection = DataSourceUtils.hasResource(dataSource);
+        final var connection = DataSourceUtils.getConnection(dataSource);
         try (final var preparedStatement = connection.prepareStatement(sql)) {
             return executeQuery(preparedStatement, rowMapper, preparedStatementSetter);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            if (!hadExistingConnection) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
