@@ -72,7 +72,7 @@ public class TxUserService implements UserService {
                 work.run();
                 processCommit(mustReset, conn);
             } catch (Exception e) {
-                processRollback(mustReset, conn);
+                processRollback(mustReset, conn, e);
                 throw e;
             }
         } catch (DataAccessException | SQLException e) {
@@ -93,12 +93,12 @@ public class TxUserService implements UserService {
         }
     }
 
-    private void processRollback(boolean mustReset, Connection conn) {
+    private void processRollback(boolean mustReset, Connection conn, Exception originalExceptionMessage) {
         if (mustReset) {
             try {
                 conn.rollback();
             } catch (SQLException e) {
-                throw new DataAccessException("rollback 실패", e);
+                originalExceptionMessage.addSuppressed(e);
             }
         }
     }
