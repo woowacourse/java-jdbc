@@ -26,8 +26,9 @@ public class TxUserService implements UserService {
             appUserService.save(user);
             transactionManager.commit();
         } catch (DataAccessException e) {
-            transactionManager.rollback();
             throw new DataAccessException(e);
+        } finally {
+            transactionManager.rollback();
         }
     }
 
@@ -38,8 +39,9 @@ public class TxUserService implements UserService {
             appUserService.changePassword(id, newPassword, createBy);
             transactionManager.commit();
         } catch (DataAccessException e) {
-            transactionManager.rollback();
             throw new DataAccessException(e);
+        } finally {
+            transactionManager.rollback();
         }
     }
 }
