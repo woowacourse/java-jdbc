@@ -3,10 +3,8 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -23,8 +21,8 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -37,12 +35,6 @@ public class UserDao {
         final String sql = "update users set password = ?, email = ? where account = ?";
 
         jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getAccount());
-    }
-
-    public void update(final Connection conn, final User user) {
-        final String sql = "update users set password = ?, email = ? where account = ?";
-
-        jdbcTemplate.update(conn, sql, user.getPassword(), user.getEmail(), user.getAccount());
     }
 
     public List<User> findAll() {
