@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -112,12 +113,19 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementCallback<T> callBack
     ) {
+        final Connection existingConn = TransactionSynchronizationManager.getResource(dataSource);
         final Connection conn = DataSourceUtils.getConnection(dataSource);
+
         try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             return callBack.processIn(pstmt);
         } catch (final SQLException e) {
             log.error("JdbcTemplate execution failed. SQL: {}", sql, e);
             throw new DataAccessException("JdbcTemplate execution failed for SQL: " + sql, e);
+        } finally {
+            if (existingConn == null) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 }
