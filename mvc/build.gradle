@@ -2,8 +2,8 @@ plugins {
     id 'java'
 }
 
-group 'com.interface21'
-version '1.0-SNAPSHOT'
+group = 'com.interface21'
+version = '1.0-SNAPSHOT'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -30,6 +30,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.15.2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.13.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
     testImplementation 'org.springframework:spring-test:6.2.10'
 }
 
