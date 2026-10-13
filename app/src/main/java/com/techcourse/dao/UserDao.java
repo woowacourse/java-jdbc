@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,8 +98,51 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select * from users";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            rs = pstmt.executeQuery();
+            List<User> users = new ArrayList<>();
+
+            while(rs.next()){
+                users.add(new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")));
+            }
+            return users;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public User findById(final Long id) {
