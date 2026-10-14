@@ -14,6 +14,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final int MAX_ROWS_FOR_SINGLE_RESULT_CHECK = 2;
 
     private final DataSource dataSource;
 
@@ -48,17 +49,25 @@ public class JdbcTemplate {
     }
 
     public <R> R queryForObject(final String sql, final RowMapper<R> mapper, final Object... args) {
-        final List<R> results = query(sql, mapper, args);
-        if (results.size() != 1) {
-            throw new IllegalStateException("Expected one result, but retrieved " + results.size());
-        }
-        return results.getFirst();
+        return execute(sql, pstmt -> {
+            pstmt.setMaxRows(MAX_ROWS_FOR_SINGLE_RESULT_CHECK);
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new IllegalStateException("No result found.");
+                }
+                final R result = mapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new IllegalStateException("Expected one result, but retrieved more than one.");
+                }
+                return result;
+            }
+        }, args);
     }
 
     public <R> List<R> query(final String sql, final RowMapper<R> mapper, final Object... args) {
         return execute(sql, pstmt -> {
             try (ResultSet resultSet = pstmt.executeQuery()) {
-                List<R> tuples = new ArrayList<>();
+                final List<R> tuples = new ArrayList<>();
                 while (resultSet.next()) {
                     tuples.add(mapper.mapRow(resultSet));
                 }
