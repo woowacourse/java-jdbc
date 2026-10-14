@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,9 +24,6 @@ import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
 
-    private record Crew(long id, String name, int age) {
-    }
-
     // "한 행을 객체로 바꾸는 방법". JdbcTemplate을 쓰는 개발자가 작성해서 넘기는 부분이다.
     private static Crew toCrew(final ResultSet resultSet) throws SQLException {
         return new Crew(
@@ -33,6 +31,9 @@ class JdbcTemplateTest {
                 resultSet.getString("name"),
                 resultSet.getInt("age")
         );
+    }
+
+    private record Crew(long id, String name, int age) {
     }
 
     @Nested
@@ -55,6 +56,22 @@ class JdbcTemplateTest {
             jdbcTemplate = new JdbcTemplate(dataSource);
         }
 
+        private DataSource createDataSource() {
+            final var h2DataSource = new JdbcDataSource();
+            h2DataSource.setUrl("jdbc:h2:mem:jdbc-template-test;DB_CLOSE_DELAY=-1");
+            h2DataSource.setUser("");
+            h2DataSource.setPassword("");
+            return h2DataSource;
+        }
+
+        // 검증 대상인 JdbcTemplate을 거치지 않고 DB 상태를 준비하거나 확인하기 위한 도구다.
+        private void executeRaw(final String sql) throws SQLException {
+            try (final var connection = dataSource.getConnection();
+                 final var statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+        }
+
         @Test
         @DisplayName("insert는 인자를 넘긴 순서대로 바인딩하고, 추가된 행 수를 반환한다")
         void insert() throws SQLException {
@@ -62,6 +79,17 @@ class JdbcTemplateTest {
 
             assertThat(affectedRows).isEqualTo(1);
             assertThat(readCrew(1L)).isEqualTo("pobi,30");
+        }
+
+        private String readCrew(final long id) throws SQLException {
+            try (final var connection = dataSource.getConnection();
+                 final var statement = connection.createStatement();
+                 final var resultSet = statement.executeQuery("select name, age from crew where id = " + id)) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+                return resultSet.getString("name") + "," + resultSet.getInt("age");
+            }
         }
 
         @Test
@@ -197,31 +225,22 @@ class JdbcTemplateTest {
                     .isNotInstanceOf(IndexOutOfBoundsException.class);
         }
 
-        private DataSource createDataSource() {
-            final var h2DataSource = new JdbcDataSource();
-            h2DataSource.setUrl("jdbc:h2:mem:jdbc-template-test;DB_CLOSE_DELAY=-1");
-            h2DataSource.setUser("");
-            h2DataSource.setPassword("");
-            return h2DataSource;
-        }
+        @Test
+        @DisplayName("queryForObject는 조건에 맞는 행이 아주 많아도 전부 변환하지 않고, 두 번째 행을 확인한 시점에 예외를 던진다")
+        void queryForObjectDoesNotMapAllRows() throws SQLException {
+            executeRaw("insert into crew (name, age) select concat('crew', x), 20 from system_range(1, 1000)");
+            final var mappedRows = new AtomicInteger();
 
-        // 검증 대상인 JdbcTemplate을 거치지 않고 DB 상태를 준비하거나 확인하기 위한 도구다.
-        private void executeRaw(final String sql) throws SQLException {
-            try (final var connection = dataSource.getConnection();
-                 final var statement = connection.createStatement()) {
-                statement.execute(sql);
-            }
-        }
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                    "select id, name, age from crew where age = ?",
+                    resultSet -> {
+                        mappedRows.incrementAndGet();
+                        return toCrew(resultSet);
+                    },
+                    20
+            )).isInstanceOf(RuntimeException.class);
 
-        private String readCrew(final long id) throws SQLException {
-            try (final var connection = dataSource.getConnection();
-                 final var statement = connection.createStatement();
-                 final var resultSet = statement.executeQuery("select name, age from crew where id = " + id)) {
-                if (!resultSet.next()) {
-                    return null;
-                }
-                return resultSet.getString("name") + "," + resultSet.getInt("age");
-            }
+            assertThat(mappedRows.get()).isLessThanOrEqualTo(2);
         }
     }
 
