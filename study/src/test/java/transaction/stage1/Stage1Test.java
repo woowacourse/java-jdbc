@@ -111,10 +111,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+행     * Read Uncommitted | qqqq
+     * Read Committed   | qqqq
+     * Repeatable Read  | password
+     * Serializable     | password
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -130,7 +130,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -173,16 +173,17 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
     @Test
     void phantomReading() throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
+                .withUrlParam("allowMultiQueries", "true")
                 .withLogConsumer(new Slf4jLogConsumer(log));
         mysql.start();
         setUp(createMySQLDataSource(mysql));
@@ -197,7 +198,7 @@ class Stage1Test {
         connection.setAutoCommit(false);
 
         // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
+        final int isolationLevel = Connection.TRANSACTION_SERIALIZABLE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
