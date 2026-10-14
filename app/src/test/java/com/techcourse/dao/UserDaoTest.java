@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("drop all objects");
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
@@ -23,9 +25,11 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("another-user", "another-password", "another@example.com"));
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).extracting(User::getAccount)
+                .containsExactlyInAnyOrder("gugu", "another-user");
     }
 
     @Test
@@ -41,6 +45,16 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByIdReturnsNullWhenUserDoesNotExist() {
+        assertThat(userDao.findById(999L)).isNull();
+    }
+
+    @Test
+    void findByAccountReturnsNullWhenUserDoesNotExist() {
+        assertThat(userDao.findByAccount("missing-user")).isNull();
     }
 
     @Test
