@@ -76,10 +76,22 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
+        final var account = "pobi";
+        userDao.insert(new User(account, "password99", "pobi@woowahan.com"));
+
         final var user = userDao.findByAccount(account);
 
+        assertThat(user.getId()).isEqualTo(2L);
         assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.getPassword()).isEqualTo("password99");
+        assertThat(user.getEmail()).isEqualTo("pobi@woowahan.com");
+    }
+
+    @Test
+    void 존재하지_않는_계정으로_조회하면_null을_반환한다() {
+        final var user = userDao.findByAccount("unknown");
+
+        assertThat(user).isNull();
     }
 
     @Test
