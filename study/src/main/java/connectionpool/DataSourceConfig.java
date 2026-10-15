@@ -11,7 +11,7 @@ import javax.sql.DataSource;
 public class DataSourceConfig {
 
     public static final int MAXIMUM_POOL_SIZE = 5;
-    private static final String H2_URL = "jdbc:h2:./test;DB_CLOSE_DELAY=-1";
+    private static final String H2_URL = "jdbc:h2:mem:connectionpool-stage2;DB_CLOSE_DELAY=-1;MODE=MYSQL";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
