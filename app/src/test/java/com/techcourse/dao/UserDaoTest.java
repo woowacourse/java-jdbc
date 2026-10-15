@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class UserDaoTest {
 
@@ -25,9 +26,25 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("pobi", "password99", "pobi@woowahan.com"));
+
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users)
+                .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
+                .containsExactlyInAnyOrder(
+                        tuple(1L, "gugu", "password", "hkkang@woowahan.com"),
+                        tuple(2L, "pobi", "password99", "pobi@woowahan.com")
+                );
+    }
+
+    @Test
+    void 사용자가_없으면_빈_목록을_반환한다() {
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("delete from users");
+
+        final var users = userDao.findAll();
+
+        assertThat(users).isEmpty();
     }
 
     @Test
