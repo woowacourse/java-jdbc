@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
@@ -195,7 +197,7 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("queryForObject는 조건에 맞는 행이 없으면 예외를 던진다")
+        @DisplayName("queryForObject는 조건에 맞는 행이 없으면 DataAccessException을 던진다")
         void queryForObjectNoRow() throws SQLException {
             executeRaw("insert into crew (name, age) values ('pobi', 30)");
 
@@ -203,14 +205,11 @@ class JdbcTemplateTest {
                     "select id, name, age from crew where id = ?",
                     JdbcTemplateTest::toCrew,
                     999L
-            ))
-                    .isInstanceOf(RuntimeException.class)
-                    .isNotInstanceOf(NullPointerException.class)
-                    .isNotInstanceOf(IndexOutOfBoundsException.class);
+            )).isInstanceOf(DataAccessException.class);
         }
 
         @Test
-        @DisplayName("queryForObject는 조건에 맞는 행이 2개 이상이면 예외를 던진다")
+        @DisplayName("queryForObject는 조건에 맞는 행이 2개 이상이면 DataAccessException을 던진다")
         void queryForObjectMultipleRows() throws SQLException {
             executeRaw("insert into crew (name, age) values ('pobi', 30)");
             executeRaw("insert into crew (name, age) values ('crong', 30)");
@@ -219,10 +218,25 @@ class JdbcTemplateTest {
                     "select id, name, age from crew where age = ?",
                     JdbcTemplateTest::toCrew,
                     30
-            ))
-                    .isInstanceOf(RuntimeException.class)
-                    .isNotInstanceOf(NullPointerException.class)
-                    .isNotInstanceOf(IndexOutOfBoundsException.class);
+            )).isInstanceOf(DataAccessException.class);
+        }
+
+        @Test
+        @DisplayName("문법이 틀린 SQL을 실행하면 DB가 던진 SQLException을 원인으로 보존한 DataAccessException을 던진다")
+        void invalidSql() {
+            assertThatThrownBy(() -> jdbcTemplate.update("update no_such_table set name = ?", "neo"))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class);
+        }
+
+        @Test
+        @DisplayName("제약 조건을 위반해도 DataAccessException을 던지고, 테이블은 바뀌지 않는다")
+        void constraintViolation() throws SQLException {
+            assertThatThrownBy(() -> jdbcTemplate.insert("insert into crew (name, age) values (?, ?)", null, 30))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class);
+
+            assertThat(readCrew(1L)).isNull();
         }
 
         @Test
@@ -238,7 +252,7 @@ class JdbcTemplateTest {
                         return toCrew(resultSet);
                     },
                     20
-            )).isInstanceOf(RuntimeException.class);
+            )).isInstanceOf(DataAccessException.class);
 
             assertThat(mappedRows.get()).isLessThanOrEqualTo(2);
         }
@@ -248,6 +262,7 @@ class JdbcTemplateTest {
     @DisplayName("사용한 자원을 정리한다")
     class ReleaseResources {
 
+        private DataSource dataSource;
         private Connection connection;
         private PreparedStatement preparedStatement;
         private ResultSet resultSet;
@@ -255,7 +270,7 @@ class JdbcTemplateTest {
 
         @BeforeEach
         void setUp() throws SQLException {
-            final var dataSource = mock(DataSource.class);
+            dataSource = mock(DataSource.class);
             connection = mock(Connection.class);
             preparedStatement = mock(PreparedStatement.class);
             resultSet = mock(ResultSet.class);
@@ -288,12 +303,12 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("insert 실행 중 SQLException이 나면 원인을 보존한 unchecked 예외로 바꿔 던지고, 그래도 자원은 닫는다")
+        @DisplayName("insert 실행 중 SQLException이 나면 원인을 보존한 DataAccessException으로 바꿔 던지고, 그래도 자원은 닫는다")
         void insertClosesResourcesOnFailure() throws SQLException {
             given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
 
             assertThatThrownBy(() -> jdbcTemplate.insert("insert into crew (name, age) values (?, ?)", "pobi", 30))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("실행 실패");
 
@@ -302,12 +317,12 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("update 실행 중 SQLException이 나면 원인을 보존한 unchecked 예외로 바꿔 던지고, 그래도 자원은 닫는다")
+        @DisplayName("update 실행 중 SQLException이 나면 원인을 보존한 DataAccessException으로 바꿔 던지고, 그래도 자원은 닫는다")
         void updateClosesResourcesOnFailure() throws SQLException {
             given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
 
             assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("실행 실패");
 
@@ -340,12 +355,12 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("query 실행 중 SQLException이 나면 원인을 보존한 unchecked 예외로 바꿔 던지고, 그래도 자원은 닫는다")
+        @DisplayName("query 실행 중 SQLException이 나면 원인을 보존한 DataAccessException으로 바꿔 던지고, 그래도 자원은 닫는다")
         void queryClosesResourcesOnExecuteFailure() throws SQLException {
             given(preparedStatement.executeQuery()).willThrow(new SQLException("실행 실패"));
 
             assertThatThrownBy(() -> jdbcTemplate.query("select id, name, age from crew", JdbcTemplateTest::toCrew))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("실행 실패");
 
@@ -354,14 +369,14 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("행을 변환하다 SQLException이 나도 원인을 보존한 unchecked 예외로 바꿔 던지고, ResultSet까지 전부 닫는다")
+        @DisplayName("행을 변환하다 SQLException이 나도 원인을 보존한 DataAccessException으로 바꿔 던지고, ResultSet까지 전부 닫는다")
         void queryClosesResourcesOnMappingFailure() throws SQLException {
             given(resultSet.next()).willReturn(true, false);
 
             assertThatThrownBy(() -> jdbcTemplate.query("select id, name, age from crew", rs -> {
                 throw new SQLException("변환 실패");
             }))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("변환 실패");
 
@@ -371,16 +386,43 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("queryForObject가 행 수 때문에 예외를 던질 때도 자원은 전부 닫는다")
+        @DisplayName("queryForObject가 행 수 때문에 DataAccessException을 던질 때도 자원은 전부 닫는다")
         void queryForObjectClosesResourcesOnWrongRowCount() throws SQLException {
             given(resultSet.next()).willReturn(false);
 
             assertThatThrownBy(() -> jdbcTemplate.queryForObject("select name from crew where id = ?", rs -> "pobi", 999L))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(DataAccessException.class);
 
             verify(resultSet).close();
             verify(preparedStatement).close();
             verify(connection).close();
+        }
+
+        @Test
+        @DisplayName("PreparedStatement를 만들다 SQLException이 나면 DataAccessException으로 바꿔 던지고, 이미 얻은 Connection은 닫는다")
+        void closesConnectionOnPrepareFailure() throws SQLException {
+            given(connection.prepareStatement(anyString())).willThrow(new SQLException("준비 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("준비 실패");
+
+            verify(connection).close();
+        }
+
+        // 연결 실패를 DataAccessException으로 볼지, 별도 예외로 구분할지는 설계에 맡긴다. 여기서는 공통 계약만 확인한다.
+        @Test
+        @DisplayName("Connection을 얻지 못하면 원인을 보존한 unchecked 예외를 던지고, 쿼리 준비로 넘어가지 않는다")
+        void connectionFailure() throws SQLException {
+            given(dataSource.getConnection()).willThrow(new SQLException("연결 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("연결 실패");
+
+            verify(connection, never()).prepareStatement(anyString());
         }
     }
 }
