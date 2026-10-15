@@ -6,7 +6,10 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcTemplate {
 
@@ -23,13 +26,38 @@ public class JdbcTemplate {
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
+            bindParameters(statement, args);
 
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            bindParameters(statement, args);
+
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
+
+                return results;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void bindParameters(final PreparedStatement statement, final Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + 1, args[i]);
         }
     }
 }

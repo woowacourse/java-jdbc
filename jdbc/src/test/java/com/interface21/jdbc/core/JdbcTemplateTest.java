@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ class JdbcTemplateTest {
     private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
+    private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -31,6 +33,7 @@ class JdbcTemplateTest {
         dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
+        resultSet = mock(ResultSet.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
 
         when(dataSource.getConnection()).thenReturn(connection);
@@ -101,5 +104,81 @@ class JdbcTemplateTest {
                 .hasCause(exception);
 
         verify(connection, never()).prepareStatement(anyString());
+    }
+
+    @Test
+    void 조회_인자를_바인딩하고_각_행을_변환해_반환한다() throws SQLException {
+        final String sql = "select account from users where email = ? and id > ?";
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "pobi");
+
+        final var accounts = jdbcTemplate.query(
+                sql,
+                row -> row.getString("account"),
+                "test@woowahan.com",
+                0L
+        );
+
+        assertThat(accounts).containsExactly("gugu", "pobi");
+        verify(connection).prepareStatement(sql);
+        final var order = inOrder(statement, resultSet, connection);
+        order.verify(statement).setObject(1, "test@woowahan.com");
+        order.verify(statement).setObject(2, 0L);
+        order.verify(statement).executeQuery();
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    void 조회_결과가_없으면_빈_리스트를_반환한다() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final var accounts = jdbcTemplate.query(
+                "select account from users",
+                row -> row.getString("account")
+        );
+
+        assertThat(accounts).isEmpty();
+        verify(resultSet, never()).getString(anyString());
+    }
+
+    @Test
+    void 조회_실행에_실패하면_자원을_닫고_원인_예외를_보존한다() throws SQLException {
+        final var exception = new SQLException("조회 실행 실패");
+        when(statement.executeQuery()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(
+                "select account from users",
+                row -> row.getString("account")
+        ))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(exception);
+
+        final var order = inOrder(statement, connection);
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    void 행_변환에_실패하면_모든_자원을_닫고_원인_예외를_보존한다() throws SQLException {
+        final var exception = new SQLException("행 변환 실패");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(
+                "select account from users",
+                row -> row.getString("account")
+        ))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(exception);
+
+        final var order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
     }
 }
