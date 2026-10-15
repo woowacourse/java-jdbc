@@ -75,7 +75,8 @@ class JdbcTemplateTest {
         when(statement.executeUpdate()).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 실행에 실패했습니다: delete from users")
                 .hasCause(exception);
 
         final var order = inOrder(statement, connection);
@@ -89,7 +90,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(connection).close();
@@ -101,7 +102,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(connection, never()).prepareStatement(anyString());
@@ -155,7 +156,8 @@ class JdbcTemplateTest {
                 "select account from users",
                 row -> row.getString("account")
         ))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 실행에 실패했습니다: select account from users")
                 .hasCause(exception);
 
         final var order = inOrder(statement, connection);
@@ -174,7 +176,7 @@ class JdbcTemplateTest {
                 "select account from users",
                 row -> row.getString("account")
         ))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         final var order = inOrder(resultSet, statement, connection);

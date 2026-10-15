@@ -31,7 +31,7 @@ public class JdbcTemplate {
 
             return statement.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 
@@ -52,7 +52,7 @@ public class JdbcTemplate {
                 return results;
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 
