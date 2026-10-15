@@ -51,6 +51,26 @@ class UserDaoTest {
     void findById() {
         final var user = userDao.findById(1L);
 
+        assertThat(user.getId()).isEqualTo(1L);
+        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user.getPassword()).isEqualTo("password");
+        assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
+    }
+
+    @Test
+    void 존재하지_않는_아이디로_조회하면_null을_반환한다() {
+        final var user = userDao.findById(999L);
+
+        assertThat(user).isNull();
+    }
+
+    @Test
+    void JdbcTemplate으로_생성한_DAO도_아이디로_사용자를_조회한다() {
+        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var dao = new UserDao(jdbcTemplate);
+
+        final var user = dao.findById(1L);
+
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
