@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -180,5 +181,49 @@ class JdbcTemplateTest {
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    @Test
+    void 단건_조회_결과가_한_건이면_객체를_반환한다() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final String account = jdbcTemplate.queryForObject(
+                "select account from users where id = ?",
+                row -> row.getString("account"),
+                1L
+        );
+
+        assertThat(account).isEqualTo("gugu");
+        verify(statement).setObject(1, 1L);
+    }
+
+    @Test
+    void 단건_조회_결과가_없으면_null을_반환한다() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final String account = jdbcTemplate.queryForObject(
+                "select account from users where id = ?",
+                row -> row.getString("account"),
+                1L
+        );
+
+        assertThat(account).isNull();
+    }
+
+    @Test
+    void 단건_조회_결과가_여러_건이면_예외가_발생한다() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "pobi");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users",
+                row -> row.getString("account")
+        ))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("단건 조회 결과는 최대 1개여야 합니다. 조회된 행 수: 2");
     }
 }
