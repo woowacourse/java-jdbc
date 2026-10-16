@@ -31,9 +31,21 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    }
+
     private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try(Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, final String sql, final StatementCallback<T> callback, final Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             mapParameters(pstmt, args);
             return callback.execute(pstmt);
