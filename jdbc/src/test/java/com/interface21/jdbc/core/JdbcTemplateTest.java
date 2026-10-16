@@ -443,4 +443,88 @@ class JdbcTemplateTest {
             verify(connection, never()).prepareStatement(anyString());
         }
     }
+
+    // 트랜잭션처럼 호출한 쪽이 Connection의 수명을 관리하는 경우다. JdbcTemplate은 빌려 쓰기만 하고 닫지 않는다.
+    @Nested
+    @DisplayName("빌린 Connection으로 실행한다")
+    class ExecuteWithBorrowedConnection {
+
+        private DataSource dataSource;
+        private Connection connection;
+        private PreparedStatement preparedStatement;
+        private JdbcTemplate jdbcTemplate;
+
+        @BeforeEach
+        void setUp() throws SQLException {
+            dataSource = mock(DataSource.class);
+            connection = mock(Connection.class);
+            preparedStatement = mock(PreparedStatement.class);
+
+            given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
+
+            jdbcTemplate = new JdbcTemplate(dataSource);
+        }
+
+        @Test
+        @DisplayName("update는 넘겨받은 Connection으로 실행하고, DataSource에서 새 Connection을 얻지 않는다")
+        void updateUsesBorrowedConnection() throws SQLException {
+            given(preparedStatement.executeUpdate()).willReturn(1);
+
+            final int affectedRows = jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
+
+            assertThat(affectedRows).isEqualTo(1);
+            verify(connection).prepareStatement("update crew set name = ? where id = ?");
+            verify(preparedStatement).setObject(1, "neo");
+            verify(preparedStatement).setObject(2, 1L);
+            verify(dataSource, never()).getConnection();
+        }
+
+        @Test
+        @DisplayName("update가 성공하면 PreparedStatement는 닫지만 빌린 Connection은 닫지 않는다")
+        void updateDoesNotCloseBorrowedConnection() throws SQLException {
+            jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
+
+            verify(preparedStatement).close();
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("update 실행 중 SQLException이 나면 DataAccessException으로 바꿔 던지고, 빌린 Connection은 닫지 않는다")
+        void updateDoesNotCloseBorrowedConnectionOnFailure() throws SQLException {
+            given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("실행 실패");
+
+            verify(preparedStatement).close();
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("PreparedStatement를 만들다 SQLException이 나도 빌린 Connection은 닫지 않는다")
+        void doesNotCloseBorrowedConnectionOnPrepareFailure() throws SQLException {
+            given(connection.prepareStatement(anyString())).willThrow(new SQLException("준비 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("준비 실패");
+
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("같은 Connection을 넘기면 여러 번 update해도 그 Connection 하나로 실행한다")
+        void multipleUpdatesShareBorrowedConnection() throws SQLException {
+            jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
+            jdbcTemplate.update(connection, "update crew set age = ? where id = ?", 31, 1L);
+
+            verify(connection).prepareStatement("update crew set name = ? where id = ?");
+            verify(connection).prepareStatement("update crew set age = ? where id = ?");
+            verify(connection, never()).close();
+            verify(dataSource, never()).getConnection();
+        }
+    }
 }
