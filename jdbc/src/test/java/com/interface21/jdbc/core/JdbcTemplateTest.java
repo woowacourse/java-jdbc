@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -218,7 +219,7 @@ class JdbcTemplateTest {
     @Test
     void 단건_조회_결과가_여러_건이면_예외가_발생한다() throws SQLException {
         when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.next()).thenReturn(true, true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "pobi");
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
@@ -226,6 +227,32 @@ class JdbcTemplateTest {
                 row -> row.getString("account")
         ))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessage("단건 조회 결과는 최대 1개여야 합니다. 조회된 행 수: 2");
+                .hasMessage("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getString("account");
+        final var order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    void 두_번째_행의_변환이_실패할_수_있어도_복수_결과_예외를_던진다() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account"))
+                .thenReturn("gugu")
+                .thenThrow(new SQLException("두 번째 행 변환 실패"));
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users",
+                row -> row.getString("account")
+        ))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.")
+                .hasNoCause();
+
+        verify(resultSet).getString("account");
     }
 }

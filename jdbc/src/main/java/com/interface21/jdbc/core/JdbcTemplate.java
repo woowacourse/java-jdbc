@@ -41,17 +41,21 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return execute(sql, statement -> {
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
 
-        if (results.isEmpty()) {
-            return null;
-        }
+                final T result = rowMapper.mapRow(resultSet);
 
-        if (results.size() > 1) {
-            throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 조회된 행 수: " + results.size());
-        }
+                if (resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
+                }
 
-        return results.getFirst();
+                return result;
+            }
+        }, args);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
