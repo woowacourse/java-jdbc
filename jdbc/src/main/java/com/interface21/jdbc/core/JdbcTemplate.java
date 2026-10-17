@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,7 +52,13 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> rows = query(sql, rowMapper, args);
-        return rows.isEmpty() ? null : rows.get(0);
+        if (rows.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        if (rows.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, rows.size());
+        }
+        return rows.getFirst();
     }
 
     public int update(String query, Object... objects) {

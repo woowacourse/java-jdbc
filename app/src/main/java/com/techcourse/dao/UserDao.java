@@ -1,11 +1,13 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -34,14 +36,22 @@ public class UserDao {
         return jdbcTemplate.query(sql, createRowMapper());
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, createRowMapper(), id);
+        return findOne(sql, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, createRowMapper(), account);
+        return findOne(sql, account);
+    }
+
+    private Optional<User> findOne(final String sql, final Object... args) {
+        try {
+            return Optional.of(jdbcTemplate.queryForObject(sql, createRowMapper(), args));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     private static RowMapper<User> createRowMapper() {
