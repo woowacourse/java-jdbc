@@ -45,8 +45,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,7 +59,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
+                .hasSize(2)
                 .containsExactly("");
     }
 
@@ -149,4 +149,5 @@ class Stage2Test {
                 .hasSize(0)
                 .containsExactly("");
     }
+
 }
