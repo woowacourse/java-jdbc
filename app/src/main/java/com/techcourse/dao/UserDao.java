@@ -60,7 +60,39 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set password = ?, email = ? where id = ?";
+
+        Connection conn = null; // 커넥션 얻기
+        PreparedStatement pstmt = null; // SQL 준비
+
+        try {
+            conn = dataSource.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            // 파라미터 세팅
+            pstmt.setString(1, user.getPassword());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setLong(3, user.getId());
+
+            pstmt.executeUpdate(); // 실행
+        } catch (SQLException e) { // 예외 처리
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally { // 자원 해제
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public List<User> findAll() {
