@@ -22,7 +22,7 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public void changePassword(final User user) {
         final var sql = "update users set password = ? where id = ?";
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
