@@ -2,6 +2,8 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -47,30 +49,26 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.findAll(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)));
+        return jdbcTemplate.findAll(sql, UserDao::mapUser);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.find(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), id);
+        return jdbcTemplate.find(sql, UserDao::mapUser, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.find(sql, rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4)), account);
+        return jdbcTemplate.find(sql, UserDao::mapUser, account);
+    }
+
+    private static User mapUser(final ResultSet rs) throws SQLException {
+        return new User(
+                rs.getLong("id"),
+                rs.getString("account"),
+                rs.getString("password"),
+                rs.getString("email"));
     }
 }
