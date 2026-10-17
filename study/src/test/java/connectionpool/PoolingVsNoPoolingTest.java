@@ -63,11 +63,11 @@ class PoolingVsNoPoolingTest {
     @Test
     void noPooling() throws SQLException {
         final var dataSource = createMysqlDataSource();
-
+        printStatus("before");
         long start = ClockSource.currentTime();
         connect(dataSource);
         long end = ClockSource.currentTime();
-
+        printStatus("after");
         // 테스트 결과를 확인한다.
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
@@ -84,11 +84,11 @@ class PoolingVsNoPoolingTest {
         config.setAutoCommit(false);
         config.setReadOnly(false);
         final var hikariDataSource = new HikariDataSource(config);
-
+        printStatus("before");
         long start = ClockSource.currentTime();
         connect(hikariDataSource);
         long end = ClockSource.currentTime();
-
+        printStatus("after");
         // 테스트 결과를 확인한다.
         log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
     }
@@ -114,5 +114,19 @@ class PoolingVsNoPoolingTest {
         dataSource.setPassword(container.getPassword());
         dataSource.setConnectTimeout(1000);
         return dataSource;
+    }
+
+    private static void printStatus(String label) throws SQLException {
+        try (var conn = createMysqlDataSource().getConnection();
+             var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("""
+                 SHOW GLOBAL STATUS WHERE Variable_name IN
+                 ('Connections', 'Com_select', 'Com_rollback', 'Bytes_received', 'Bytes_sent')
+                 """)) {
+            System.out.println("=== " + label + " ===");
+            while (rs.next()) {
+                System.out.println(rs.getString(1) + " = " + rs.getString(2));
+            }
+        }
     }
 }
