@@ -17,8 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -411,14 +414,29 @@ class JdbcTemplateTest {
             verify(connection).close();
         }
 
-        // 연결 실패를 DataAccessException으로 볼지, 별도 예외로 구분할지는 설계에 맡긴다. 여기서는 공통 계약만 확인한다.
         @Test
-        @DisplayName("Connection을 얻지 못하면 원인을 보존한 unchecked 예외를 던지고, 쿼리 준비로 넘어가지 않는다")
+        @DisplayName("파라미터를 바인딩하다 SQLException이 나면 DataAccessException으로 바꿔 던지고, 실행하지 않은 채 PreparedStatement, Connection 순서로 닫는다")
+        void closesResourcesOnBindingFailure() throws SQLException {
+            willThrow(new SQLException("바인딩 실패")).given(preparedStatement).setObject(anyInt(), any());
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("바인딩 실패");
+
+            verify(preparedStatement, never()).executeUpdate();
+            final var inOrder = inOrder(preparedStatement, connection);
+            inOrder.verify(preparedStatement).close();
+            inOrder.verify(connection).close();
+        }
+
+        @Test
+        @DisplayName("Connection을 얻지 못하면 원인을 보존한 DataAccessException을 던지고, 쿼리 준비로 넘어가지 않는다")
         void connectionFailure() throws SQLException {
             given(dataSource.getConnection()).willThrow(new SQLException("연결 실패"));
 
             assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("연결 실패");
 
