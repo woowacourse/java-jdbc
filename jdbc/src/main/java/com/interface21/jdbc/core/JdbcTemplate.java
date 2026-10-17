@@ -28,6 +28,7 @@ public class JdbcTemplate {
             final Connection connection = dataSource.getConnection();
             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
                 preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
             }
@@ -43,6 +44,7 @@ public class JdbcTemplate {
             final Connection connection = dataSource.getConnection();
             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
                 preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
             }
@@ -64,6 +66,7 @@ public class JdbcTemplate {
             final Connection connection = dataSource.getConnection();
             final PreparedStatement preparedStatement = connection.prepareStatement(sql)
         ) {
+            log.debug("query : {}", sql);
             for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
                 preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
             }
