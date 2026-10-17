@@ -44,6 +44,23 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args) {
+        final var results = query(sql, rowMapper, args);
+
+        if (results.size() > 1) { // 동일한 account가 존재하는 것을 예외로 잡지 않고 그냥 첫 사람으로 return 했습니다. 이유는 테스트코드가 그래서
+            return results.getFirst();
+        }
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.getFirst();
+    }
+
     public int update(final String sql, final Object... args) {
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)
