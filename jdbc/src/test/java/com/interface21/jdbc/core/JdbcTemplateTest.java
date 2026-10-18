@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,7 @@ class JdbcTemplateTest {
     private final DataSource dataSource = mock(DataSource.class);
     private final Connection connection = mock(Connection.class);
     private final PreparedStatement pstmt = mock(PreparedStatement.class);
+    private final ResultSet rs = mock(ResultSet.class);
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
     @BeforeEach
@@ -56,4 +58,46 @@ class JdbcTemplateTest {
         verify(connection).close();
     }
 
+    @Test
+    void query() throws SQLException {
+        final var sql = "select account from users where id > ?";
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, true, false);
+        when(rs.getString("account")).thenReturn("gugu", "choco");
+
+        final var accounts = jdbcTemplate.query(sql, row -> row.getString("account"), 0L);
+
+        assertThat(accounts).containsExactly("gugu", "choco");
+        verify(connection).prepareStatement(sql);
+        verify(pstmt).setObject(1, 0L);
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryReturnsEmptyListWhenNoRows() throws SQLException {
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(false);
+
+        final var accounts = jdbcTemplate.query("select account from users", row -> row.getString("account"));
+
+        assertThat(accounts).isEmpty();
+    }
+
+    @Test
+    void closesResourcesWhenMappingFails() throws SQLException {
+        final var exception = new SQLException("Row mapping failed");
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getString("account")).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(exception);
+
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
 }
