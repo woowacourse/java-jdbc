@@ -26,6 +26,10 @@ public class JdbcTemplate {
         return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, args, pstmt -> mapRows(pstmt, rowMapper));
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
@@ -35,10 +39,6 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.getFirst();
-    }
-
-    private <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, args, pstmt -> mapRows(pstmt, rowMapper));
     }
 
     private <T> T execute(final String sql, final Object[] args, final PreparedStatementCallback<T> action) {
