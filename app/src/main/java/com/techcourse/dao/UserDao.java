@@ -4,7 +4,6 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
-import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,10 +16,6 @@ public class UserDao {
             rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
