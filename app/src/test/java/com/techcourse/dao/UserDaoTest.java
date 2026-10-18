@@ -1,10 +1,12 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,11 +16,15 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:dao-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        DatabasePopulatorUtils.execute(dataSource);
+
+        userDao = new UserDao(dataSource);
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
     @Test
@@ -47,6 +53,7 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
+
         userDao.insert(user);
 
         final var actual = userDao.findById(2L);
@@ -65,5 +72,10 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void findByAccountNotFound() {
+        assertThat(userDao.findByAccount("unknown")).isNull();
     }
 }

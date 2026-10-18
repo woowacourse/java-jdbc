@@ -2,13 +2,14 @@ package com.techcourse.config;
 
 import org.h2.jdbcx.JdbcDataSource;
 
+import javax.sql.DataSource;
 import java.util.Objects;
 
 public class DataSourceConfig {
 
-    private static javax.sql.DataSource INSTANCE;
+    private static DataSource INSTANCE;
 
-    public static javax.sql.DataSource getInstance() {
+    public static DataSource getInstance() {
         if (Objects.isNull(INSTANCE)) {
             INSTANCE = createJdbcDataSource();
         }
@@ -16,11 +17,11 @@ public class DataSourceConfig {
     }
 
     private static JdbcDataSource createJdbcDataSource() {
-        final var jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
-        jdbcDataSource.setUser("");
-        jdbcDataSource.setPassword("");
-        return jdbcDataSource;
+        final var dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:file:./java-jdbc");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
+        return dataSource;
     }
 
     private DataSourceConfig() {}
