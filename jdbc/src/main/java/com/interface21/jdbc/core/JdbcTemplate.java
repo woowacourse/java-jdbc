@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class JdbcTemplate {
@@ -19,7 +20,7 @@ public class JdbcTemplate {
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.dataSource = Objects.requireNonNull(dataSource, "DataSource must not be null");
     }
 
     public int update(final String sql, final Object... args) {
@@ -46,8 +47,7 @@ public class JdbcTemplate {
             setParameters(pstmt, args);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
     }
 

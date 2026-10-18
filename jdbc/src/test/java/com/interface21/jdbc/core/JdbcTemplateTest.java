@@ -44,7 +44,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForOptional_결과가_없으면_빈_Optional() throws SQLException {
+    void 단건_조회_결과가_없으면_빈_Optional을_반환한다() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
         final var actual = jdbcTemplate.queryForOptional(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L);
@@ -53,7 +53,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForOptional_결과가_1건이면_값을_담은_Optional() throws SQLException {
+    void 단건_조회_결과가_1건이면_값을_담은_Optional을_반환한다() throws SQLException {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
@@ -63,7 +63,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForOptional_결과가_2건_이상이면_IncorrectResultSizeDataAccessException() throws SQLException {
+    void 단건_조회_결과가_2건_이상이면_IncorrectResultSizeDataAccessException이_발생한다() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "gugu");
 
@@ -73,12 +73,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void SQLException이_발생하면_DataAccessException으로_변환() throws SQLException {
+    void SQLException이_발생하면_실행한_SQL을_담은_DataAccessException으로_변환한다() throws SQLException {
         final var sqlException = new SQLException("syntax error");
         when(connection.prepareStatement(anyString())).thenThrow(sqlException);
 
         assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL, "gugu"))
                 .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining(INSERT_SQL)
                 .hasCause(sqlException);
     }
 
@@ -92,5 +93,11 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void DataSource가_null이면_생성할_수_없다() {
+        assertThatThrownBy(() -> new JdbcTemplate(null))
+                .isInstanceOf(NullPointerException.class);
     }
 }
