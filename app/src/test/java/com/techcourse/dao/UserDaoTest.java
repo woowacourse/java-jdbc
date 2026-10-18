@@ -6,6 +6,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -13,8 +15,13 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection();
+             final var statement = connection.createStatement()) {
+            statement.execute("truncate table users restart identity");
+        }
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -49,10 +56,17 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
+        userDao.insert(new User("choco", "password99", "choco@example.com"));
+
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccountReturnsNullWhenNotFound() {
+        assertThat(userDao.findByAccount("unknown")).isNull();
     }
 
     @Test
