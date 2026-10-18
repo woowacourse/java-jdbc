@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,6 +67,9 @@ public class JdbcTemplate {
         final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException();
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.get(0);
     }

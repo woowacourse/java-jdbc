@@ -1,7 +1,7 @@
 package com.interface21.dao;
 
-public class EmptyResultDataAccessException extends DataAccessException {
+public class EmptyResultDataAccessException extends IncorrectResultSizeDataAccessException {
     public EmptyResultDataAccessException() {
-        super("결과가 없습니다.");
+        super(1, 0);
     }
 }

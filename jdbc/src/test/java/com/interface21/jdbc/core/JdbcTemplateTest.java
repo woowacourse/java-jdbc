@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,6 +51,19 @@ class JdbcTemplateTest {
                 row -> row.getLong("id"),
                 1L))
                 .isInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    void queryForObject_결과가_2건_이상이면_예외를_던진다() throws SQLException {
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, true, false);
+        when(rs.getLong("id")).thenReturn(1L, 2L);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select id from users where account = ?",
+                row -> row.getLong("id"),
+                "gugu"))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test

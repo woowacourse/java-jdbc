@@ -26,7 +26,7 @@ public class UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         user.changePassword(newPassword);
-        userDao.update(user);
+        userDao.changePassword(user);
         userHistoryDao.log(new UserHistory(user, createBy));
     }
 }
