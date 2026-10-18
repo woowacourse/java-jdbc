@@ -38,7 +38,7 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void log() {
+    void 사용자_변경_이력을_저장한다() {
         final var userHistory = new UserHistory(null, 1L, "gugu", "password", "hkkang@woowahan.com", "admin");
 
         userHistoryDao.log(userHistory);

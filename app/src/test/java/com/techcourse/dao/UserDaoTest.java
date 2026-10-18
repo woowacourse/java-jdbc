@@ -26,7 +26,7 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll() {
+    void 모든_사용자를_조회한다() {
         userDao.insert(new User("other-gugu", "password", "other@woowahan.com"));
 
         final var users = userDao.findAll();
@@ -37,21 +37,21 @@ class UserDaoTest {
     }
 
     @Test
-    void findById() {
+    void id로_사용자를_조회한다() {
         final var user = userDao.findById(1L).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
-    void findById_존재하지_않으면_빈_Optional() {
+    void 존재하지_않는_id로_조회하면_빈_Optional을_반환한다() {
         final var user = userDao.findById(999L);
 
         assertThat(user).isEmpty();
     }
 
     @Test
-    void findByAccount() {
+    void 계정으로_사용자를_조회한다() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account).orElseThrow();
 
@@ -59,14 +59,14 @@ class UserDaoTest {
     }
 
     @Test
-    void findByAccount_존재하지_않으면_빈_Optional() {
+    void 존재하지_않는_계정으로_조회하면_빈_Optional을_반환한다() {
         final var user = userDao.findByAccount("unknown");
 
         assertThat(user).isEmpty();
     }
 
     @Test
-    void insert() {
+    void 사용자를_저장한다() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
@@ -77,7 +77,7 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void 사용자_정보를_수정한다() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L).orElseThrow();
         user.changePassword(newPassword);
@@ -90,7 +90,7 @@ class UserDaoTest {
     }
 
     @Test
-    void update_다른_사용자는_변경하지_않는다() {
+    void 사용자_정보를_수정해도_다른_사용자는_변경되지_않는다() {
         userDao.insert(new User("other-gugu", "password", "other@woowahan.com"));
         final var user = userDao.findById(1L).orElseThrow();
         user.changePassword("password99");
