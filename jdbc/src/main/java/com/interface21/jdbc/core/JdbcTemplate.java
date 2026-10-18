@@ -34,22 +34,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
-        try(Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                List<T> rows = new ArrayList<>();
-
-                while (rs.next()) {
-                    rows.add(rowMapper.mapRow(rs));
-                }
-
-                return rows;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, preparedStatementSetter, preparedStatement -> extractRows(preparedStatement, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -68,13 +53,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
     private PreparedStatementSetter createSetter(Object... args) {
@@ -83,5 +62,32 @@ public class JdbcTemplate {
                 preparedStatement.setObject(i + 1, args[i]);
             }
         };
+    }
+
+    private <T> T execute(
+            String sql,
+            PreparedStatementSetter preparedStatementSetter,
+            PreparedStatementCallback<T> preparedStatementCallback
+    ) {
+        log.debug("query : {}", sql);
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
+            return preparedStatementCallback.doInPreparedStatement(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> extractRows(PreparedStatement preparedStatement, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = preparedStatement.executeQuery()) {
+            List<T> rows = new ArrayList<>();
+
+            while (rs.next()) {
+                rows.add(rowMapper.mapRow(rs));
+            }
+
+            return rows;
+        }
     }
 }

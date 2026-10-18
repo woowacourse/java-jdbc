@@ -169,6 +169,21 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("RowMapper에서 SQLException이 발생하면 DataAccessException으로 감싸고 자원을 닫는다")
+    void wrapSQLExceptionFromRowMapper() throws SQLException {
+        final SQLException cause = new SQLException("mapping failed");
+        given(resultSet.next()).willReturn(true);
+        given(resultSet.getString("name")).willThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select name from users", NAME_ROW_MAPPER))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     @DisplayName("SQLException이 발생하면 DataAccessException으로 감싸서 던진다")
     void wrapSQLException() throws SQLException {
         final SQLException cause = new SQLException("connection failed");
