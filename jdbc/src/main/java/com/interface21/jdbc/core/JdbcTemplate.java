@@ -1,13 +1,12 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.dao.utils.DataAccessUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,14 +50,7 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
         final List<T> results = query(connection, sql, rm, pss);
-        if (results.isEmpty()) {
-            return null;
-        }
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        Iterator<T> it = results.iterator();
-        return (it.hasNext() ? it.next() : null);
+        return DataAccessUtils.nullableSingleResult(results);
     }
 
     public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm, final Object... parameters) {
@@ -84,7 +76,7 @@ public class JdbcTemplate {
 
     private <T> List<T> mapResultSetToObject(final RowMapper<T> rm, final PreparedStatement pstmt) {
         try (final ResultSet rs = pstmt.executeQuery()) {
-            final List<T> list = new ArrayList<T>();
+            final List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rm.mapRow(rs));
             }
