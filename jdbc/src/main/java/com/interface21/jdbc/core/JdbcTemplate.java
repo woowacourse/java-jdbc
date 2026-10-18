@@ -56,7 +56,6 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
