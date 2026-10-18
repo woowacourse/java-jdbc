@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DuplicateKeyException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +53,19 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(RuntimeException.class)
+                .hasCause(exception);
+
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateTranslatesDuplicateKeyException() throws SQLException {
+        final var exception = new SQLException("Duplicate key", "23505");
+        when(pstmt.executeUpdate()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("insert into users (account) values (?)", "gugu"))
+                .isInstanceOf(DuplicateKeyException.class)
                 .hasCause(exception);
 
         verify(pstmt).close();

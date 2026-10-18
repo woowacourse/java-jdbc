@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -53,6 +54,26 @@ class UserControllerTest {
         assertThat(actual.getAccount()).isEqualTo("db-user");
         assertThat(actual.getPassword()).isEqualTo("password");
         assertThat(actual.getEmail()).isEqualTo("db@example.com");
+    }
+
+    @Test
+    void duplicateRegistrationShowsErrorAndPreservesLogin() throws Exception {
+        registerUser();
+        when(request.getParameter("password")).thenReturn("other-password");
+
+        final var modelAndView = new RegisterController().register(request, response);
+        final var dispatcher = mock(RequestDispatcher.class);
+        when(request.getRequestDispatcher("/register.jsp")).thenReturn(dispatcher);
+        modelAndView.getView().render(modelAndView.getModel(), request, response);
+
+        verify(response).setStatus(HttpServletResponse.SC_CONFLICT);
+        verify(request).setAttribute("errorMessage", "이미 사용 중인 계정입니다.");
+        verify(dispatcher).forward(request, response);
+        assertThat(new UserDao(DataSourceConfig.getInstance()).findAll()).hasSize(1);
+
+        when(request.getParameter("password")).thenReturn("password");
+        new LoginController().login(request, response);
+        verify(session).setAttribute(eq(UserSession.SESSION_KEY), any(User.class));
     }
 
     @Test

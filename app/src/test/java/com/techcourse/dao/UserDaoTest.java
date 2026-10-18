@@ -4,12 +4,14 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.dao.DuplicateKeyException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -79,6 +81,17 @@ class UserDaoTest {
         final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void insertRejectsDuplicateAccount() {
+        final var duplicate = new User("gugu", "other-password", "other@example.com");
+
+        assertThatThrownBy(() -> userDao.insert(duplicate))
+                .isInstanceOf(DuplicateKeyException.class);
+
+        assertThat(userDao.findAll()).hasSize(1);
+        assertThat(userDao.findByAccount("gugu").getPassword()).isEqualTo("password");
     }
 
     @Test

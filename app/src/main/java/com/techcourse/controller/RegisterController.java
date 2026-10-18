@@ -3,6 +3,7 @@ package com.techcourse.controller;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
+import com.interface21.dao.DuplicateKeyException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JspView;
@@ -22,7 +23,13 @@ public class RegisterController {
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        userDao.insert(user);
+        try {
+            userDao.insert(user);
+        } catch (DuplicateKeyException e) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            return new ModelAndView(new JspView("/register.jsp"))
+                    .addObject("errorMessage", "이미 사용 중인 계정입니다.");
+        }
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
