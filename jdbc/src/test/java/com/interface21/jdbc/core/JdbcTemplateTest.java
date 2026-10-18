@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,6 +120,50 @@ class JdbcTemplateTest {
         assertThat(affectedRows).isEqualTo(1);
         verify(statement).setObject(1, "password99");
         verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("query는 전달받은 PreparedStatementSetter로 파라미터를 바인딩한다")
+    void queryWithPreparedStatementSetter() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("name")).willReturn("gugu");
+
+        final List<String> result = jdbcTemplate.query(
+                "select name from users where id = ?",
+                ps -> ps.setLong(1, 1L),
+                NAME_ROW_MAPPER);
+
+        assertThat(result).containsExactly("gugu");
+        verify(statement).setLong(1, 1L);
+    }
+
+    @Test
+    @DisplayName("update는 전달받은 PreparedStatementSetter로 파라미터를 바인딩한다")
+    void updateWithPreparedStatementSetter() throws SQLException {
+        given(statement.executeUpdate()).willReturn(1);
+
+        final int affectedRows = jdbcTemplate.update("update users set email = ? where id = ?", ps -> {
+            ps.setNull(1, Types.VARCHAR);
+            ps.setLong(2, 1L);
+        });
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setNull(1, Types.VARCHAR);
+        verify(statement).setLong(2, 1L);
+    }
+
+    @Test
+    @DisplayName("PreparedStatementSetter에서 SQLException이 발생하면 DataAccessException으로 감싸고 자원을 닫는다")
+    void wrapSQLExceptionFromPreparedStatementSetter() throws SQLException {
+        final SQLException cause = new SQLException("invalid parameter");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", ps -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
         verify(statement).close();
         verify(connection).close();
     }

@@ -20,6 +20,7 @@ public class JdbcTemplate {
 
     private final DataSource dataSource;
 
+
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
@@ -29,14 +30,15 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        return query(sql, createSetter(args), rowMapper);
+    }
 
-            for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
+    public <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) {
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
 
-            try (ResultSet rs = statement.executeQuery()) {
+            try (ResultSet rs = preparedStatement.executeQuery()) {
                 List<T> rows = new ArrayList<>();
 
                 while (rs.next()) {
@@ -61,17 +63,25 @@ public class JdbcTemplate {
         return rows.getFirst();
     }
 
-    public int update(String query, Object... objects) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)
-        ) {
-            for(int i = 0; i < objects.length; i++) {
-                preparedStatement.setObject(i +  1, objects[i]);
-            }
+    public int update(String query, Object... args) {
+        return update(query, createSetter(args));
+    }
 
+    public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    private PreparedStatementSetter createSetter(Object... args) {
+        return preparedStatement -> {
+            for (int i = 0; i < args.length; i++) {
+                preparedStatement.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
