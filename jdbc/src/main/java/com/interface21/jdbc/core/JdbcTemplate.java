@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class JdbcTemplate {
             return callback.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -53,11 +54,11 @@ public class JdbcTemplate {
             pstmt.setMaxRows(MAX_ROWS_FOR_SINGLE_RESULT_CHECK);
             try (ResultSet resultSet = pstmt.executeQuery()) {
                 if (!resultSet.next()) {
-                    throw new IllegalStateException("No result found.");
+                    throw new DataAccessException("No result found.");
                 }
                 final R result = mapper.mapRow(resultSet);
                 if (resultSet.next()) {
-                    throw new IllegalStateException("Expected one result, but retrieved more than one.");
+                    throw new DataAccessException("Expected one result, but retrieved more than one.");
                 }
                 return result;
             }

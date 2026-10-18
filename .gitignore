@@ -176,3 +176,6 @@ tomcat.*/**
 
 # IDE compile output (Eclipse/VSCode Java LS)
 **/bin/
+
+# DB
+test.mv.db
