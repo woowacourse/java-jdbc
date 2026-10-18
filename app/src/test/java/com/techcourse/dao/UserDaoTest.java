@@ -32,7 +32,15 @@ class UserDaoTest {
     void findById() {
         final var user = userDao.findById(1L);
 
+        assertThat(user.getId()).isEqualTo(1L);
         assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user.getPassword()).isEqualTo("password");
+        assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
+    }
+
+    @Test
+    void findByIdReturnsNullWhenNotFound() {
+        assertThat(userDao.findById(999L)).isNull();
     }
 
     @Test

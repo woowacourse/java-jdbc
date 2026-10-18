@@ -59,6 +59,39 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryForObject() throws SQLException {
+        final var sql = "select account from users where id = ?";
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getString("account")).thenReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(pstmt).setObject(1, 1L);
+    }
+
+    @Test
+    void queryForObjectReturnsNullWhenNoRows() throws SQLException {
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(false);
+
+        final var account = jdbcTemplate.queryForObject("select account from users", row -> row.getString("account"));
+
+        assertThat(account).isNull();
+    }
+
+    @Test
+    void queryForObjectFailsWhenMultipleRows() throws SQLException {
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, true, false);
+        when(rs.getString("account")).thenReturn("gugu", "choco");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select account from users", row -> row.getString("account")))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void query() throws SQLException {
         final var sql = "select account from users where id > ?";
         when(pstmt.executeQuery()).thenReturn(rs);

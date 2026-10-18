@@ -36,6 +36,19 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final var results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        if (results.size() > 1) {
+            throw new IllegalStateException("Expected at most one result but found " + results.size());
+        }
+
+        return results.get(0);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
