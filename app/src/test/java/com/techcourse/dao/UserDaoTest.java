@@ -27,9 +27,13 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("other-gugu", "password", "other@woowahan.com"));
+
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users)
+                .extracting(User::getAccount)
+                .containsExactlyInAnyOrder("gugu", "other-gugu");
     }
 
     @Test
@@ -83,5 +87,17 @@ class UserDaoTest {
         final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void update_다른_사용자는_변경하지_않는다() {
+        userDao.insert(new User("other-gugu", "password", "other@woowahan.com"));
+        final var user = userDao.findById(1L).orElseThrow();
+        user.changePassword("password99");
+
+        userDao.update(user);
+
+        final var other = userDao.findById(2L).orElseThrow();
+        assertThat(other.getPassword()).isEqualTo("password");
     }
 }
