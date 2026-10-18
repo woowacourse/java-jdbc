@@ -43,9 +43,9 @@ class UserHistoryDaoTest {
 
         userHistoryDao.log(userHistory);
 
-        final var saved = jdbcTemplate.queryForObject(
+        final var saved = jdbcTemplate.queryForOptional(
                 "select user_id, account, password, email, created_at, created_by from user_history",
-                SAVED_HISTORY_ROW_MAPPER);
+                SAVED_HISTORY_ROW_MAPPER).orElseThrow();
         assertThat(saved)
                 .usingRecursiveComparison()
                 .ignoringFields("createdAt")

@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -30,15 +30,12 @@ public class JdbcTemplate {
         return execute(sql, args, pstmt -> mapRows(pstmt, rowMapper));
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForOptional(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            throw new EmptyResultDataAccessException(1);
-        }
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
-        return results.getFirst();
+        return results.stream().findFirst();
     }
 
     private <T> T execute(final String sql, final Object[] args, final PreparedStatementCallback<T> action) {

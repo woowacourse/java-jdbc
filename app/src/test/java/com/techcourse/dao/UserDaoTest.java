@@ -34,17 +34,31 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
+    void findById_존재하지_않으면_빈_Optional() {
+        final var user = userDao.findById(999L);
+
+        assertThat(user).isEmpty();
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(account).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccount_존재하지_않으면_빈_Optional() {
+        final var user = userDao.findByAccount("unknown");
+
+        assertThat(user).isEmpty();
     }
 
     @Test
@@ -53,7 +67,7 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(2L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -61,12 +75,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L).orElseThrow();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

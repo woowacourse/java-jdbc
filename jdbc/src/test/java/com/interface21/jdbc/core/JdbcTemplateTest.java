@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,20 +44,31 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObject_결과가_없으면_EmptyResultDataAccessException() throws SQLException {
+    void queryForOptional_결과가_없으면_빈_Optional() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
-                .isInstanceOf(EmptyResultDataAccessException.class);
+        final var actual = jdbcTemplate.queryForOptional(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L);
+
+        assertThat(actual).isEmpty();
     }
 
     @Test
-    void queryForObject_결과가_2건_이상이면_IncorrectResultSizeDataAccessException() throws SQLException {
+    void queryForOptional_결과가_1건이면_값을_담은_Optional() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var actual = jdbcTemplate.queryForOptional(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L);
+
+        assertThat(actual).contains("gugu");
+    }
+
+    @Test
+    void queryForOptional_결과가_2건_이상이면_IncorrectResultSizeDataAccessException() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "gugu");
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
-                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
+        assertThatThrownBy(() -> jdbcTemplate.queryForOptional(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
                 .satisfies(e -> assertThat(((IncorrectResultSizeDataAccessException) e).getActualSize()).isEqualTo(2));
     }
 
@@ -76,7 +86,7 @@ class JdbcTemplateTest {
     void 예외가_발생해도_자원을_닫는다() throws SQLException {
         when(resultSet.next()).thenThrow(new SQLException("connection lost"));
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
+        assertThatThrownBy(() -> jdbcTemplate.queryForOptional(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
                 .isInstanceOf(DataAccessException.class);
 
         verify(resultSet).close();
