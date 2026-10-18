@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -78,6 +79,18 @@ class UserDaoTest {
         final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void insertAndFindWithJdbcTemplate() {
+        final var dao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        dao.insert(new User("template-gugu", "password", "template@example.com"));
+
+        final var actual = dao.findByAccount("template-gugu");
+
+        assertThat(actual.getAccount()).isEqualTo("template-gugu");
+        assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(actual.getEmail()).isEqualTo("template@example.com");
     }
 
     @Test
