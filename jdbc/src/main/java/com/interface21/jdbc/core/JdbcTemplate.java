@@ -22,8 +22,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        execute(sql, pstmt -> {
+    public int update(final String sql, final Object... args) {
+        return execute(sql, pstmt -> {
             setParameters(pstmt, args);
             return pstmt.executeUpdate();
         });

@@ -41,11 +41,14 @@ class JdbcTemplateTest {
 
     @Test
     void update() throws SQLException {
-        jdbcTemplate.update("update users set account = ? where id = ?", "gugu", 1L);
+        when(pstmt.executeUpdate()).thenReturn(1);
+
+        int updatedRows = jdbcTemplate.update("update users set account = ? where id = ?", "gugu", 1L);
 
         verify(pstmt).setObject(1, "gugu");
         verify(pstmt).setObject(2, 1L);
         verify(pstmt).executeUpdate();
+        assertThat(updatedRows).isEqualTo(1);
         verify(pstmt).close();
         verify(conn).close();
     }
