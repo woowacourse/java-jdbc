@@ -12,6 +12,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+ext['testcontainers.version'] = '1.21.4'
+
 repositories {
     mavenCentral()
 }

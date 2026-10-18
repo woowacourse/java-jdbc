@@ -176,3 +176,7 @@ tomcat.*/**
 
 # IDE compile output (Eclipse/VSCode Java LS)
 **/bin/
+
+### H2 file database
+*.mv.db
+*.trace.db
