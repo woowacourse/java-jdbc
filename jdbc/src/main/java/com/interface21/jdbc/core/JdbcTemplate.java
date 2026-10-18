@@ -65,7 +65,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) throws DataAccessException {
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             return mapResultSetToObject(rm, pstmt);
