@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -76,24 +77,46 @@ class JdbcTemplateTest {
                 "select account from users where id = ?", rs -> rs.getString("account"), 1L);
 
         assertThat(account).isEqualTo("gugu");
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    void queryForObjectReturnsNullWhenNoRowsMatch() {
+    void queryForObjectReturnsNullWhenNoRowsMatch() throws SQLException {
         final var account = jdbcTemplate.queryForObject(
                 "select account from users where id = ?", rs -> rs.getString("account"), 99L);
 
         assertThat(account).isNull();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    void queryForObjectRejectsMultipleRows() throws SQLException {
-        when(resultSet.next()).thenReturn(true, true, false);
+    void queryForObjectRejectsMultipleRowsAsSoonAsSecondRowIsFound() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                 "select account from users", rs -> rs.getString("account")))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("found 2");
+                .hasMessageContaining("found at least 2");
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getString("account");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryForObjectMappingSqlExceptionIsTranslatedAndClosesResources() throws SQLException {
+        final var cause = new SQLException("mapping failed");
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select account from users", rs -> {
+            throw cause;
+        })).isInstanceOf(DataAccessException.class).hasCause(cause);
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
