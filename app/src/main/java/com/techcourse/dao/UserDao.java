@@ -10,6 +10,13 @@ import java.util.Optional;
 
 public class UserDao {
 
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -28,7 +35,7 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, createRowMapper());
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public Optional<User> findById(final Long id) {
@@ -43,17 +50,9 @@ public class UserDao {
 
     private Optional<User> findOne(final String sql, final Object... args) {
         try {
-            return Optional.of(jdbcTemplate.queryForObject(sql, createRowMapper(), args));
+            return Optional.of(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, args));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
-    }
-
-    private static RowMapper<User> createRowMapper() {
-        return rs -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"));
     }
 }
