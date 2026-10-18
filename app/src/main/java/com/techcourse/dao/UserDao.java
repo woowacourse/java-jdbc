@@ -34,7 +34,10 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set password = ? where id = ?";
+
+        final var jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
