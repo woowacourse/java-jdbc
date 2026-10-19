@@ -19,7 +19,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void insert(String sql, Object... parameters) {
+    public int update(String sql, Object... parameters) {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         try {
@@ -32,7 +32,7 @@ public class JdbcTemplate {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
 
-            preparedStatement.executeUpdate();
+            return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
