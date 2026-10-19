@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -63,8 +65,12 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
 
         final List<T> results = query(sql, rowMapper, args);
-        if (results.size() != 1) {
-            throw new DataAccessException("결과가 1개가 아닙니다. size:" + results.size());
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
+        }
+
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
 
         return results.getFirst();
