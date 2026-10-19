@@ -480,6 +480,36 @@ class JdbcTemplateTest {
         }
 
         @Test
+        @DisplayName("insert는 넘겨받은 Connection으로 실행하고, PreparedStatement만 닫고 빌린 Connection은 닫지 않는다")
+        void insertUsesBorrowedConnectionWithoutClosingIt() throws SQLException {
+            given(preparedStatement.executeUpdate()).willReturn(1);
+
+            final int affectedRows = jdbcTemplate.insert(connection, "insert into crew (name, age) values (?, ?)", "pobi", 30);
+
+            assertThat(affectedRows).isEqualTo(1);
+            verify(connection).prepareStatement("insert into crew (name, age) values (?, ?)");
+            verify(preparedStatement).setObject(1, "pobi");
+            verify(preparedStatement).setObject(2, 30);
+            verify(preparedStatement).close();
+            verify(connection, never()).close();
+            verify(dataSource, never()).getConnection();
+        }
+
+        @Test
+        @DisplayName("insert 실행 중 SQLException이 나면 DataAccessException으로 바꿔 던지고, 빌린 Connection은 닫지 않는다")
+        void insertDoesNotCloseBorrowedConnectionOnFailure() throws SQLException {
+            given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.insert(connection, "insert into crew (name, age) values (?, ?)", "pobi", 30))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("실행 실패");
+
+            verify(preparedStatement).close();
+            verify(connection, never()).close();
+        }
+
+        @Test
         @DisplayName("update가 성공하면 PreparedStatement는 닫지만 빌린 Connection은 닫지 않는다")
         void updateDoesNotCloseBorrowedConnection() throws SQLException {
             jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
