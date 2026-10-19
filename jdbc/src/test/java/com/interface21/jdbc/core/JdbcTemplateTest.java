@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -52,6 +53,20 @@ class JdbcTemplateTest {
         final InOrder inOrder = inOrder(preparedStatement);
         inOrder.verify(preparedStatement).setObject(1, "gugu");
         inOrder.verify(preparedStatement).setObject(2, "password");
+        inOrder.verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    @DisplayName("PreparedStatementSetter를 넘기면 사용자가 정한 방식으로 바인딩한다")
+    void updateWithPreparedStatementSetter() throws SQLException {
+        jdbcTemplate.update("insert into users (account, email) values (?, ?)", pstmt -> {
+            pstmt.setString(1, "gugu");
+            pstmt.setNull(2, Types.VARCHAR);
+        });
+
+        final InOrder inOrder = inOrder(preparedStatement);
+        inOrder.verify(preparedStatement).setString(1, "gugu");
+        inOrder.verify(preparedStatement).setNull(2, Types.VARCHAR);
         inOrder.verify(preparedStatement).executeUpdate();
     }
 
