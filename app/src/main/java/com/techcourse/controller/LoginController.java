@@ -1,7 +1,8 @@
 package com.techcourse.controller;
 
+import com.techcourse.config.AppConfig;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JspView;
@@ -12,14 +13,27 @@ import com.interface21.web.bind.annotation.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 @Controller
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
+    private final UserDao userDao;
+
+    public LoginController() {
+        this(AppConfig.getInstance().getUserDao());
+    }
+
+    public LoginController(final UserDao userDao) {
+        this.userDao = userDao;
+    }
+
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
-        return UserSession.getUserFrom(request.getSession())
+        return Optional.ofNullable(request.getSession(false))
+                .flatMap(UserSession::getUserFrom)
                 .map(user -> {
                     log.info("logged in {}", user.getAccount());
                     return redirect("/index.jsp");
@@ -29,15 +43,13 @@ public class LoginController {
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ModelAndView login(final HttpServletRequest request, final HttpServletResponse response) {
-        if (UserSession.isLoggedIn(request.getSession())) {
+        final var session = request.getSession(false);
+        if (session != null && UserSession.isLoggedIn(session)) {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
-                .map(user -> {
-                    log.info("User : {}", user);
-                    return login(request, user);
-                })
+        return Optional.ofNullable(userDao.findByAccount(request.getParameter("account")))
+                .map(user -> login(request, user))
                 .orElse(redirect("/401.jsp"));
     }
 
