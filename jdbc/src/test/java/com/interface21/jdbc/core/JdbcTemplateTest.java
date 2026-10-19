@@ -333,6 +333,33 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void 단건_조회_중_행_변환에_실패하면_모든_자원을_닫는다() throws SQLException {
+        final String sql = """
+                select account
+                from users
+                where id = ?
+                """;
+        final var exception = new SQLException("단건 조회 행 변환 실패");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                sql,
+                row -> row.getString("account"),
+                1L
+        ))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 실행에 실패했습니다: " + sql)
+                .hasCause(exception);
+
+        final var order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
     void 단건_조회_결과가_없으면_null을_반환한다() throws SQLException {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);

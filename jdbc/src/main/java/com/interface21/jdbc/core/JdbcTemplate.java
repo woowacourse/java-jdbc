@@ -36,16 +36,14 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final PreparedStatementSetter statementSetter) {
-        return execute(sql, statement -> {
-            try (final ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
+        return executeQuery(sql, resultSet -> {
+            final List<T> results = new ArrayList<>();
 
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-
-                return results;
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
+
+            return results;
         }, statementSetter);
     }
 
@@ -55,19 +53,26 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter statementSetter) {
+        return executeQuery(sql, resultSet -> {
+            if (!resultSet.next()) {
+                return null;
+            }
+
+            final T result = rowMapper.mapRow(resultSet);
+
+            if (resultSet.next()) {
+                throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
+            }
+
+            return result;
+        }, statementSetter);
+    }
+
+    private <T> T executeQuery(final String sql, final ResultSetExtractor<T> resultSetExtractor,
+                              final PreparedStatementSetter statementSetter) {
         return execute(sql, statement -> {
             try (final ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
-
-                final T result = rowMapper.mapRow(resultSet);
-
-                if (resultSet.next()) {
-                    throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
-                }
-
-                return result;
+                return resultSetExtractor.extractData(resultSet);
             }
         }, statementSetter);
     }
@@ -96,5 +101,11 @@ public class JdbcTemplate {
     private interface PreparedStatementCallback<T> {
 
         T execute(PreparedStatement statement) throws SQLException;
+    }
+
+    @FunctionalInterface
+    private interface ResultSetExtractor<T> {
+
+        T extractData(ResultSet resultSet) throws SQLException;
     }
 }
