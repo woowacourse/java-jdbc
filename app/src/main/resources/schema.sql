@@ -6,6 +6,8 @@ create table if not exists users (
     primary key(id)
 );
 
+create unique index if not exists users_account_unique on users(account);
+
 create table if not exists user_history (
     id bigint auto_increment,
     user_id bigint not null,
