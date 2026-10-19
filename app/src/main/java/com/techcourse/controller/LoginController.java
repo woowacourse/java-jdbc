@@ -13,8 +13,6 @@ import com.interface21.web.bind.annotation.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 @Controller
 public class LoginController {
 
@@ -38,7 +36,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return Optional.ofNullable(userDao.findByAccount(request.getParameter("account")))
+        return userDao.findByAccount(request.getParameter("account"))
                 .map(user -> {
                     log.info("User : {}", user);
                     return login(request, user);

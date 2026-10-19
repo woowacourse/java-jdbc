@@ -13,8 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.sql.SQLException;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,8 +45,7 @@ class UserControllerTest {
     void registerAndShowUseDatabase() {
         registerUser();
 
-        final var saved = new UserDao(DataSourceConfig.getInstance()).findByAccount("db-user");
-        assertThat(saved).isNotNull();
+        final var saved = new UserDao(DataSourceConfig.getInstance()).findByAccount("db-user").orElseThrow();
         assertThat(saved.getId()).isEqualTo(1L);
 
         final var modelAndView = new UserController().show(request, response);
@@ -106,6 +107,14 @@ class UserControllerTest {
 
         verify(response, times(2)).sendRedirect("/401.jsp");
         verify(session, never()).setAttribute(eq(UserSession.SESSION_KEY), any());
+    }
+
+    @Test
+    void showRejectsUnknownAccount() {
+        when(request.getParameter("account")).thenReturn("unknown");
+
+        assertThatThrownBy(() -> new UserController().show(request, response))
+                .isInstanceOf(NoSuchElementException.class);
     }
 
     private void registerUser() {

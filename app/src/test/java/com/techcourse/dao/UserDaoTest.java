@@ -44,7 +44,7 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L).orElseThrow();
 
         assertThat(user.getId()).isEqualTo(1L);
         assertThat(user.getAccount()).isEqualTo("gugu");
@@ -53,8 +53,8 @@ class UserDaoTest {
     }
 
     @Test
-    void findByIdReturnsNullWhenNotFound() {
-        assertThat(userDao.findById(999L)).isNull();
+    void findByIdReturnsEmptyWhenNotFound() {
+        assertThat(userDao.findById(999L)).isEmpty();
     }
 
     @Test
@@ -62,14 +62,14 @@ class UserDaoTest {
         userDao.insert(new User("choco", "password99", "choco@example.com"));
 
         final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount(account).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
 
     @Test
-    void findByAccountReturnsNullWhenNotFound() {
-        assertThat(userDao.findByAccount("unknown")).isNull();
+    void findByAccountReturnsEmptyWhenNotFound() {
+        assertThat(userDao.findByAccount("unknown")).isEmpty();
     }
 
     @Test
@@ -78,7 +78,7 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(2L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -91,7 +91,7 @@ class UserDaoTest {
                 .isInstanceOf(DuplicateKeyException.class);
 
         assertThat(userDao.findAll()).hasSize(1);
-        assertThat(userDao.findByAccount("gugu").getPassword()).isEqualTo("password");
+        assertThat(userDao.findByAccount("gugu").orElseThrow().getPassword()).isEqualTo("password");
     }
 
     @Test
@@ -99,7 +99,7 @@ class UserDaoTest {
         final var dao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         dao.insert(new User("template-gugu", "password", "template@example.com"));
 
-        final var actual = dao.findByAccount("template-gugu");
+        final var actual = dao.findByAccount("template-gugu").orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo("template-gugu");
         assertThat(actual.getPassword()).isEqualTo("password");
@@ -109,12 +109,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L).orElseThrow();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }

@@ -12,8 +12,6 @@ import com.interface21.web.bind.annotation.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 @Controller
 public class UserController {
 
@@ -27,7 +25,7 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final var modelAndView = new ModelAndView(new JsonView());
-        final var user = Optional.ofNullable(userDao.findByAccount(account))
+        final var user = userDao.findByAccount(account)
                 .orElseThrow();
 
         modelAndView.addObject("user", user);
