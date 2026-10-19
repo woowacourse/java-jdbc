@@ -2,8 +2,12 @@ package transaction.stage1;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.ValueSources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -63,8 +67,9 @@ class Stage1Test {
      * Repeatable Read  |
      * Serializable     |
      */
-    @Test
-    void dirtyReading() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(ints = {Connection.TRANSACTION_NONE, Connection.TRANSACTION_READ_UNCOMMITTED, Connection.TRANSACTION_READ_COMMITTED, Connection.TRANSACTION_REPEATABLE_READ, Connection.TRANSACTION_SERIALIZABLE})
+    void dirtyReading(int isolationLevel) throws SQLException {
         setUp(createH2DataSource());
 
         // db에 새로운 연결(사용자A)을 받아와서
@@ -80,8 +85,6 @@ class Stage1Test {
             // db에 connection(사용자A)이 아닌 새로운 연결인 subConnection(사용자B)을 받아온다.
             final var subConnection = dataSource.getConnection();
 
-            // 적절한 격리 레벨을 찾는다.
-            final int isolationLevel = Connection.TRANSACTION_NONE;
 
             // 트랜잭션 격리 레벨을 설정한다.
             subConnection.setTransactionIsolation(isolationLevel);
@@ -116,8 +119,9 @@ class Stage1Test {
      * Repeatable Read  |
      * Serializable     |
      */
-    @Test
-    void noneRepeatable() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(ints = {Connection.TRANSACTION_READ_UNCOMMITTED, Connection.TRANSACTION_READ_COMMITTED, Connection.TRANSACTION_REPEATABLE_READ, Connection.TRANSACTION_SERIALIZABLE})
+    void noneRepeatable(int isolationLevel) throws SQLException {
         setUp(createH2DataSource());
 
         // 테스트 전에 필요한 데이터를 추가한다.
@@ -128,9 +132,6 @@ class Stage1Test {
 
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
-
-        // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -178,8 +179,9 @@ class Stage1Test {
      * Repeatable Read  |
      * Serializable     |
      */
-    @Test
-    void phantomReading() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(ints = {Connection.TRANSACTION_READ_UNCOMMITTED, Connection.TRANSACTION_READ_COMMITTED, Connection.TRANSACTION_REPEATABLE_READ, Connection.TRANSACTION_SERIALIZABLE})
+    void phantomReading(int isolationLevel) throws SQLException {
 
         // testcontainer로 docker를 실행해서 mysql에 연결한다.
         final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
@@ -196,8 +198,6 @@ class Stage1Test {
         // 트랜잭션을 시작한다.
         connection.setAutoCommit(false);
 
-        // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
 
         // 트랜잭션 격리 레벨을 설정한다.
         connection.setTransactionIsolation(isolationLevel);
@@ -248,13 +248,18 @@ class Stage1Test {
 
     private static DataSource createH2DataSource() {
         final var jdbcDataSource = new JdbcDataSource();
-        // h2 로그를 확인하고 싶을 때 사용
-//        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=3;MODE=MYSQL");
-        jdbcDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;");
+
+        jdbcDataSource.setUrl(
+                "jdbc:h2:mem:" + UUID.randomUUID()
+                        + ";DB_CLOSE_DELAY=-1;MODE=MYSQL"
+        );
         jdbcDataSource.setUser("sa");
         jdbcDataSource.setPassword("");
+
         return jdbcDataSource;
     }
+
+
 
     private void sleep(double seconds) {
         try {
