@@ -51,7 +51,18 @@ public class UserDao {
     public void update(User user) {
         String sql = "update users set password = ? where id = ?";
 
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
+        int updatedRows = jdbcTemplate.update(
+                sql,
+                user.getPassword(),
+                user.getId()
+        );
+
+        if (updatedRows != 1) {
+            throw new IllegalStateException(
+                    "사용자 수정 실패: id=" + user.getId()
+                            + ", updatedRows=" + updatedRows
+            );
+        }
     }
 
     public List<User> findAll() {

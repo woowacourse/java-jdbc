@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -77,5 +78,19 @@ class UserDaoTest {
     @Test
     void findByAccountNotFound() {
         assertThat(userDao.findByAccount("unknown")).isNull();
+    }
+
+    @Test
+    void updateNonExistentUser() {
+        final var user = new User(
+                999L,
+                "unknown",
+                "newPassword",
+                "unknown@example.com"
+        );
+
+        assertThatThrownBy(() -> userDao.update(user))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("999");
     }
 }
