@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,22 +22,16 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        log.debug("query : {}", sql);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            setter.setValues(statement);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
-        }
+        return execute(sql, setter, PreparedStatement::executeUpdate);
+    }
+
+    public int update(final String sql, final Object... parameters) {
+        return update(sql, createPreparedStatementSetter(parameters));
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                             final RowMapper<T> mapper) {
-        log.debug("query : {}", sql);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            setter.setValues(statement);
+        return execute(sql, setter, statement -> {
             try (final var resultSet = statement.executeQuery()) {
                 final var results = new ArrayList<T>();
                 while (resultSet.next()) {
@@ -44,9 +39,11 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
-        }
+        });
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> mapper, final Object... parameters) {
+        return query(sql, createPreparedStatementSetter(parameters), mapper);
     }
 
     /**
@@ -54,18 +51,43 @@ public class JdbcTemplate {
      */
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
                                final RowMapper<T> mapper) {
-        log.debug("query : {}", sql);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            setter.setValues(statement);
+        return execute(sql, setter, statement -> {
             try (final var resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return mapper.mapRow(resultSet);
                 }
                 return null;
             }
+        });
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... parameters) {
+        return queryForObject(sql, createPreparedStatementSetter(parameters), mapper);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
+        log.debug("query : {}", sql);
+        try (final var connection = dataSource.getConnection();
+             final var statement = connection.prepareStatement(sql)) {
+            setter.setValues(statement);
+            return callback.doInPreparedStatement(statement);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
+        return statement -> {
+            for (int i = 0; i < parameters.length; i++) {
+                statement.setObject(i + 1, parameters[i]);
+            }
+        };
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T doInPreparedStatement(PreparedStatement statement) throws SQLException;
     }
 }
