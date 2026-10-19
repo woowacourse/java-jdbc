@@ -13,6 +13,8 @@ import java.sql.SQLException;
 
 public class UserService {
 
+    private final DataSource dataSource = DataSourceConfig.getInstance();
+
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
@@ -22,11 +24,23 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        return userDao.findById(id);
+        try(Connection conn = dataSource.getConnection()){
+            conn.setReadOnly(true);
+            conn.setAutoCommit(false);
+            try {
+                final User user = userDao.findById(conn, id);
+                conn.commit();
+                return user;
+            } catch (Exception e) {
+                rollback(conn, e);
+                throw new DataAccessException("회원 저장 실패", e);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 
     public void insert(final User user) {
-        DataSource dataSource = DataSourceConfig.getInstance();
         try(Connection conn = dataSource.getConnection()){
             conn.setAutoCommit(false);
             try{
@@ -42,11 +56,10 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        DataSource dataSource = DataSourceConfig.getInstance();
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                final var user = findById(id);
+                final var user = userDao.findById(conn, id);
                 user.changePassword(newPassword);
                 userDao.update(conn,user);
                 userHistoryDao.log(conn, new UserHistory(user, createBy));
