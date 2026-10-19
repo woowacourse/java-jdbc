@@ -8,7 +8,10 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,6 +21,61 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
+
+    @Test
+    @DisplayName("조회한 행을 순서대로 매핑하고 모든 자원을 닫는다")
+    void queryMapsRowsAndClosesResources() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var resultSet = mock(ResultSet.class);
+        final var sql = "select name from users where id > ?";
+        final RowMapper<String> rowMapper = rs -> rs.getString(1);
+        final var template = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString(1)).thenReturn("first", "second");
+
+        final List<String> result = template.query(sql, rowMapper, 1L);
+
+        assertThat(result).containsExactly("first", "second");
+        final var order = inOrder(statement);
+        order.verify(statement).setObject(1, 1L);
+        order.verify(statement).executeQuery();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("조회 결과가 없으면 빈 목록을 돌려준다")
+    void queryReturnsEmptyListWhenNoRows() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var resultSet = mock(ResultSet.class);
+        final var sql = "select name from users";
+        final var mappedRows = new AtomicInteger();
+        final RowMapper<String> rowMapper = rs -> {
+            mappedRows.incrementAndGet();
+            return rs.getString(1);
+        };
+        final var template = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final List<String> result = template.query(sql, rowMapper);
+
+        assertThat(result).isEmpty();
+        assertThat(mappedRows.get()).isZero();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
 
     @Test
     @DisplayName("값을 순서대로 SQL에 넣고 변경된 행 수를 돌려준다")

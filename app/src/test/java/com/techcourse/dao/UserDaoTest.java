@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +34,12 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    @DisplayName("해당 ID의 회원이 없으면 null을 돌려준다")
+    void findByIdReturnsNullWhenUserDoesNotExist() {
+        assertThat(userDao.findById(999L)).isNull();
     }
 
     @Test
