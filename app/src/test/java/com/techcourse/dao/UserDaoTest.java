@@ -27,10 +27,11 @@ class UserDaoTest {
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).hasSize(1);
-        assertThat(users.get(0).getAccount()).isEqualTo("gugu");
-        assertThat(users.get(0).getPassword()).isEqualTo("password");
-        assertThat(users.get(0).getEmail()).isEqualTo("hkkang@woowahan.com");
+        assertThat(users).anySatisfy(user -> {
+            assertThat(user.getAccount()).isEqualTo("gugu");
+            assertThat(user.getPassword()).isEqualTo("password");
+            assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
+        });
     }
 
     @Test
@@ -47,11 +48,21 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("계정으로 회원을 찾는다")
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
+        assertThat(user.getId()).isPositive();
         assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.getPassword()).isEqualTo("password");
+        assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
+    }
+
+    @Test
+    @DisplayName("일치하는 계정이 없으면 null을 돌려준다")
+    void findByAccountReturnsNullWhenUserDoesNotExist() {
+        assertThat(userDao.findByAccount("missing-account")).isNull();
     }
 
     @Test

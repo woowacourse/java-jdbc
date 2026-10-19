@@ -4,6 +4,8 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -29,33 +31,29 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(
-                sql,
-                rs -> new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")));
+        return jdbcTemplate.query(sql, UserDao::mapUser);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final var users = jdbcTemplate.query(
-                sql,
-                rs -> new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")),
-                id);
-        if (users.isEmpty()) {
-            return null;
-        }
-        return users.get(0);
+        return findOne(sql, id);
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        return findOne(sql, account);
+    }
+
+    private User findOne(final String sql, final Object parameter) {
+        final var users = jdbcTemplate.query(sql, UserDao::mapUser, parameter);
+        return users.isEmpty() ? null : users.get(0);
+    }
+
+    private static User mapUser(final ResultSet resultSet) throws SQLException {
+        return new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email"));
     }
 }
