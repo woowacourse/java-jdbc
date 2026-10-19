@@ -49,7 +49,6 @@ public class JdbcTemplate {
 
             return action.doInPreparedStatement(ps);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
@@ -61,8 +60,6 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-
         final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
