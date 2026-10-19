@@ -53,17 +53,28 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        List<T> results = query(sql, rowMapper, params);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-        if (results.isEmpty()) {
-            return null;
+            log.debug("query : {}, sql");
+            setParameters(pstmt, params);
+
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new DataAccessException("조회 결과가 없습니다.");
+                }
+
+                T result = rowMapper.mapRow(resultSet);
+
+                if (resultSet.next()) {
+                    throw new DataAccessException("조회 결과는 1행이여야 합니다. 2행 이상 조회되었습니다.");
+                }
+
+                return result;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
         }
-
-        if (results.size() > 1) {
-            throw new DataAccessException("조회 결과는 최대 1행이여야 합니다. : 현재 " + results.size());
-        }
-
-        return results.get(0);
     }
 
     public int update(final String sql, final Object... params) {
