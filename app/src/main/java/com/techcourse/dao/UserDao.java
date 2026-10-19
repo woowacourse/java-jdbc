@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -31,13 +32,23 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+    }
+
+    public void insert(final Connection conn, final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection conn, final User user) {
+        String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
