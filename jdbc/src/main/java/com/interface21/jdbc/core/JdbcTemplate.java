@@ -40,11 +40,18 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.size() > 1) {
-            throw new DataAccessException("결과가 1건이어야 하지만 " + results.size() + "건이 조회되었습니다.");
-        }
-        return results.stream().findFirst();
+        return execute(sql, pstmt -> {
+            try (final ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                final T result = rowMapper.mapRow(rs);
+                if (rs.next()) {
+                    throw new DataAccessException("결과가 1건이어야 하지만 2건 이상 조회되었습니다.");
+                }
+                return Optional.of(result);
+            }
+        }, args);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {

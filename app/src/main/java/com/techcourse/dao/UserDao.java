@@ -34,7 +34,10 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final int updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        if (updatedRows == 0) {
+            throw new DataAccessException("id가 " + user.getId() + "인 사용자가 없어 수정하지 못했습니다.");
+        }
     }
 
     public List<User> findAll() {
