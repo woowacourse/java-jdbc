@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,7 +23,15 @@ public class JdbcTemplate {
         return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> List<T> findAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final var results = query(sql, rowMapper, args);
+        if (results.size() != 1) {
+            throw new DataAccessException("Expected exactly 1 row but found " + results.size());
+        }
+        return results.getFirst();
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return executeQuery(sql, pstmt -> {
             try (final var rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
@@ -30,17 +39,6 @@ public class JdbcTemplate {
                     results.add(rowMapper.mapRow(rs));
                 }
                 return results;
-            }
-        }, args);
-    }
-
-    public <T> T find(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, pstmt -> {
-            try (final var rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
             }
         }, args);
     }
