@@ -114,4 +114,46 @@ class UserControllerTest {
         when(request.getParameter("email")).thenReturn("db@example.com");
         new RegisterController().register(request, response);
     }
+
+    @Test
+    void invalidRegistrationShowsErrorWithoutSavingUser() throws Exception {
+        final var controller = new RegisterController();
+        final var dispatcher = mock(RequestDispatcher.class);
+        when(request.getRequestDispatcher("/register.jsp")).thenReturn(dispatcher);
+
+        for (final var field : new String[]{"account", "password", "email"}) {
+            for (final var invalidValue : new String[]{null, "a".repeat(101)}) {
+                when(request.getParameter("account")).thenReturn("db-user");
+                when(request.getParameter("password")).thenReturn("password");
+                when(request.getParameter("email")).thenReturn("db@example.com");
+                when(request.getParameter(field)).thenReturn(invalidValue);
+
+                final var result = controller.register(request, response);
+                assertThat(result.getObject("errorMessage")).isInstanceOf(String.class);
+                result.getView().render(result.getModel(), request, response);
+
+                assertThat(new UserDao(DataSourceConfig.getInstance()).findAll()).isEmpty();
+            }
+        }
+
+        verify(response, times(6)).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        verify(dispatcher, times(6)).forward(request, response);
+    }
+
+    @Test
+    void registrationAcceptsFieldsAtColumnLength() {
+        final var value = "a".repeat(100);
+        when(request.getParameter("account")).thenReturn(value);
+        when(request.getParameter("password")).thenReturn(value);
+        when(request.getParameter("email")).thenReturn(value);
+
+        new RegisterController().register(request, response);
+
+        final var users = new UserDao(DataSourceConfig.getInstance()).findAll();
+        assertThat(users).hasSize(1);
+        assertThat(users.get(0).getAccount()).isEqualTo(value);
+        assertThat(users.get(0).getPassword()).isEqualTo(value);
+        assertThat(users.get(0).getEmail()).isEqualTo(value);
+        verify(response, never()).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    }
 }

@@ -19,12 +19,16 @@ public class RegisterController {
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(final HttpServletRequest request, final HttpServletResponse response) {
-        final var user = new User(
-                request.getParameter("account"),
-                request.getParameter("password"),
-                request.getParameter("email"));
         try {
+            final var user = new User(
+                    request.getParameter("account"),
+                    request.getParameter("password"),
+                    request.getParameter("email"));
             userDao.insert(user);
+        } catch (IllegalArgumentException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return new ModelAndView(new JspView("/register.jsp"))
+                    .addObject("errorMessage", e.getMessage());
         } catch (DuplicateKeyException e) {
             response.setStatus(HttpServletResponse.SC_CONFLICT);
             return new ModelAndView(new JspView("/register.jsp"))
