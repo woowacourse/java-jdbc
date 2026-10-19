@@ -3,17 +3,12 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -49,10 +44,6 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args) {
         final var results = query(sql, rowMapper, args);
-
-        if (results.size() > 1) { // 동일한 account가 존재하는 것을 예외로 잡지 않고 그냥 첫 사람으로 return 했습니다. 이유는 테스트코드가 그래서
-            return results.getFirst();
-        }
 
         if (results.isEmpty()) {
             return null;
