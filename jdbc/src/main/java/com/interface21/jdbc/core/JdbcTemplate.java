@@ -19,11 +19,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return executeQuery(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> findAll(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
+        return executeQuery(sql, pstmt -> {
             try (final var rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -35,7 +35,7 @@ public class JdbcTemplate {
     }
 
     public <T> T find(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
+        return executeQuery(sql, pstmt -> {
             try (final var rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
@@ -45,24 +45,31 @@ public class JdbcTemplate {
         }, args);
     }
 
-    private <T> T execute(
+    private <T> T executeQuery(
             final String sql,
             final PreparedStatementCallback<T> callback,
             final Object... args
     ) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        try (final var connection = dataSource.getConnection();
+             final var pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            final PreparedStatementSetter setter = createPreparedStatementSetter(args);
+            setter.setValues(pstmt);
 
             return callback.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     @FunctionalInterface
