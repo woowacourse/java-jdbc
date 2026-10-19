@@ -31,12 +31,8 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
-        try(Connection connection = dataSource.getConnection()) {
+        try (final Connection connection = dataSource.getConnection()) {
             return execute(connection, sql, callback, args);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -59,6 +55,14 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
+    }
+
+    public int insert (final Connection connection, final String sql, final Object... args) {
+        return update(connection, sql, args);
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <R> R queryForObject(final String sql, final RowMapper<R> mapper, final Object... args) {
