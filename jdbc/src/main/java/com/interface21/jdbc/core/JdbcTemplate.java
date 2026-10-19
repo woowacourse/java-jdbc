@@ -31,6 +31,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, statement -> bindParameters(statement, args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
+                             final PreparedStatementSetter statementSetter) {
         return execute(sql, statement -> {
             try (final ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
@@ -41,10 +46,15 @@ public class JdbcTemplate {
 
                 return results;
             }
-        }, args);
+        }, statementSetter);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, rowMapper, statement -> bindParameters(statement, args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter statementSetter) {
         return execute(sql, statement -> {
             try (final ResultSet resultSet = statement.executeQuery()) {
                 if (!resultSet.next()) {
@@ -59,11 +69,7 @@ public class JdbcTemplate {
 
                 return result;
             }
-        }, args);
-    }
-
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
-        return execute(sql, callback, statement -> bindParameters(statement, args));
+        }, statementSetter);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback,
