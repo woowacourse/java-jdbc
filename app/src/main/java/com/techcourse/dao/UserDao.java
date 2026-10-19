@@ -30,20 +30,10 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
     public void insert(final Connection conn, final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail());
-    }
-
-    public void update(final User user) {
-        String sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public void update(final Connection conn, final User user) {
@@ -51,33 +41,18 @@ public class UserDao {
         jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
-    }
-
     public List<User> findAll(Connection conn) {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        return jdbcTemplate.query(conn, sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Connection conn, final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id).orElse(null);  // TODO: DAO 반환 정책 결정
-    }
-
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id).orElse(null);  // TODO: DAO 반환 정책 결정
+        return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id).orElse(null);  // TODO: DAO 반환 정책 결정
     }
 
     public User findByAccount(final Connection conn, final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account).orElse(null);  // TODO: DAO 반환 정책 결정
-    }
-
-    public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account).orElse(null);  // TODO: DAO 반환 정책 결정
+        return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, account).orElse(null);  // TODO: DAO 반환 정책 결정
     }
 }

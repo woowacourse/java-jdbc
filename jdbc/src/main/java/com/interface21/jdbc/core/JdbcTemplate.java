@@ -23,40 +23,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... args) {
-        return update(sql, createSetter(args));
-    }
-
-    public int update(final String sql, final PreparedStatementSetter pss) {
-        return execute(sql, pss, PreparedStatement::executeUpdate);
-    }
-
     public int update(final Connection conn, final String sql, final Object... args) {
         return update(conn, sql, createSetter(args));
     }
 
     public int update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
         return execute(conn, sql, pss, PreparedStatement::executeUpdate);
-    }
-
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryForObject(sql, rowMapper, createSetter(args));
-    }
-
-    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        final List<T> results = query(sql, rowMapper, pss);
-        if (results.size() > 1) {
-            throw new DataAccessException("결과가 1건이어야 하지만 " + results.size() + "건 조회됨: " + sql);
-        }
-        return results.stream().findFirst();
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, rowMapper, createSetter(args));
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        return execute(sql, pss, pstmt -> mapRows(pstmt, rowMapper));
     }
 
     public <T> Optional<T> queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -78,17 +50,6 @@ public class JdbcTemplate {
     private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
         log.debug("query : {}", sql);
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pss.setValues(pstmt);
-            return action.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행 실패: " + sql, e);
-        }
-    }
-
-    private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
-        log.debug("query : {}", sql);
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
