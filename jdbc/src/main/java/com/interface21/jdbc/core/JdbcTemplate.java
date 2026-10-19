@@ -32,7 +32,6 @@ public class JdbcTemplate {
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             if ("23505".equals(e.getSQLState())) {
                 throw new DuplicateKeyException(e);
             }
@@ -71,7 +70,6 @@ public class JdbcTemplate {
                 return results;
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
