@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -16,7 +17,9 @@ class UserDaoTest {
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table users restart identity");
+        userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -25,7 +28,8 @@ class UserDaoTest {
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(1);
+        assertThat(users.get(0).getAccount()).isEqualTo("gugu");
     }
 
     @Test
@@ -41,6 +45,17 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void missingUser() {
+        assertThat(userDao.findById(999L)).isNull();
+        assertThat(userDao.findByAccount("missing")).isNull();
+    }
+
+    @Test
+    void accountIsBoundAsAParameter() {
+        assertThat(userDao.findByAccount("gugu' OR '1'='1")).isNull();
     }
 
     @Test
