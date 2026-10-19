@@ -1,10 +1,12 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -30,12 +32,20 @@ public class UserDao {
     public void insert(User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail()
-        );
+        try {
+            jdbcTemplate.update(
+                    sql,
+                    user.getAccount(),
+                    user.getPassword(),
+                    user.getEmail()
+            );
+        } catch (DataAccessException e) {
+            if (e.getCause() instanceof SQLException sqlException
+                    && "23505".equals(sqlException.getSQLState())) {
+                throw new DuplicateAccountException(user.getAccount(), e);
+            }
+            throw e;
+        }
     }
 
     public void update(User user) {

@@ -77,4 +77,28 @@ class UserPersistenceTest {
         assertThat(user.get("email")).isEqualTo("moka@example.com");
         assertThat(user.containsKey("password")).isFalse();
     }
+
+    @Test
+    void duplicateAccountCannotBeRegistered() {
+        userDao.insert(new User("moka", "oldPassword", "moka@example.com"));
+
+        final var request = mock(HttpServletRequest.class);
+        final var response = mock(HttpServletResponse.class);
+
+        when(request.getParameter("account")).thenReturn("moka");
+        when(request.getParameter("password")).thenReturn("newPassword");
+        when(request.getParameter("email")).thenReturn("new@example.com");
+
+        final var modelAndView = new RegisterController(userDao)
+                .register(request, response);
+
+        verify(response).setStatus(HttpServletResponse.SC_CONFLICT);
+
+        assertThat(modelAndView.getObject("errorMessage"))
+                .isEqualTo("이미 사용 중인 아이디입니다.");
+
+        assertThat(userDao.findAll()).hasSize(1);
+        assertThat(userDao.findByAccount("moka").getPassword())
+                .isEqualTo("oldPassword");
+    }
 }

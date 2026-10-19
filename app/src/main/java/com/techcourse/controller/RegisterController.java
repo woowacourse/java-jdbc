@@ -1,6 +1,7 @@
 package com.techcourse.controller;
 
 import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.DuplicateAccountException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
 import com.interface21.context.stereotype.Controller;
@@ -35,7 +36,14 @@ public class RegisterController {
                 request.getParameter("email")
         );
 
-        userDao.insert(user);
+        try {
+            userDao.insert(user);
+        } catch (DuplicateAccountException e) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+
+            return new ModelAndView(new JspView("/register.jsp"))
+                    .addObject("errorMessage", "이미 사용 중인 아이디입니다.");
+        }
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
