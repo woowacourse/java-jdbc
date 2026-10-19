@@ -22,21 +22,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            if ("23505".equals(e.getSQLState())) {
-                throw new DuplicateKeyException(e);
-            }
-            throw new RuntimeException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -53,14 +39,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -69,7 +48,23 @@ public class JdbcTemplate {
 
                 return results;
             }
+        }, args);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
+            if ("23505".equals(e.getSQLState())) {
+                throw new DuplicateKeyException(e);
+            }
             throw new RuntimeException(e);
         }
     }

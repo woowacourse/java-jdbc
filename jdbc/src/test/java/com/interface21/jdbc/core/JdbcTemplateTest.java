@@ -13,7 +13,9 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -142,6 +144,58 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
                 .isInstanceOf(RuntimeException.class)
                 .hasCause(exception);
+
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void closesConnectionWhenStatementCreationFails() throws SQLException {
+        final var exception = new SQLException("Cannot prepare statement");
+        when(connection.prepareStatement(anyString())).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .hasCause(exception);
+
+        verify(connection).close();
+    }
+
+    @Test
+    void closesResourcesWhenBindingFails() throws SQLException {
+        final var exception = new SQLException("Cannot bind parameter");
+        doThrow(exception).when(pstmt).setObject(1, "gugu");
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users where account = ?",
+                row -> row.getString("account"), "gugu"))
+                .hasCause(exception);
+
+        verify(pstmt, never()).executeQuery();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void closesResourcesWhenQueryExecutionFails() throws SQLException {
+        final var exception = new SQLException("Cannot execute query");
+        when(pstmt.executeQuery()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
+                .hasCause(exception);
+
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void closesResourcesWhenMapperThrowsUncheckedException() throws SQLException {
+        final var exception = new IllegalArgumentException("Invalid row");
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> {
+            throw exception;
+        })).isSameAs(exception);
 
         verify(rs).close();
         verify(pstmt).close();
