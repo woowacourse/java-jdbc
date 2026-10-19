@@ -45,8 +45,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,8 +59,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,26 +69,27 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      */
+    // SUPPORTS = 실행 중인 트랜잭션 있으면 합류, 없으면 트랜잭션 없이 실행
     @Test
     void testSupports() {
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithSupports");
     }
 
     /**
@@ -96,14 +97,15 @@ class Stage2Test {
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
      */
+    // mandatory = 이미 진행 중인 트랜잭션이 반드시 있어야함. 스스로 새 트랜잭션 생성 X
     @Test
     void testMandatory() {
         final var actual = firstUserService.saveFirstTransactionWithMandatory();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
@@ -113,14 +115,15 @@ class Stage2Test {
      *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
      */
+    // 기존 트랜잭션을 잠시 중단하고, 해당 서비스 메서드를 트랜잭션 없이 실행
     @Test
     void testNotSupported() {
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+//                .hasSize(2)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
@@ -133,8 +136,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+//                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -146,7 +149,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+//                .hasSize(0)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }
