@@ -3,12 +3,14 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
+    public static final String USER_UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -20,9 +22,8 @@ public class UserDao {
         jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
-        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(connection, USER_UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
