@@ -176,3 +176,9 @@ tomcat.*/**
 
 # IDE compile output (Eclipse/VSCode Java LS)
 **/bin/
+
+# Runtime H2 database files
+data/java-jdbc*.mv.db
+data/java-jdbc*.trace.db
+data/java-jdbc*.lock.db
+data/java-jdbc*.temp.db

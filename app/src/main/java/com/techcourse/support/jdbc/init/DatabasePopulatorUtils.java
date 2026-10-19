@@ -1,44 +1,26 @@
 package com.techcourse.support.jdbc.init;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.interface21.dao.DataAccessException;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.sql.Connection;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class DatabasePopulatorUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
-
     public static void execute(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
-            statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
+        try (final var input = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql")) {
+            if (input == null) {
+                throw new IOException("schema.sql was not found on the classpath");
+            }
+            final var sql = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            try (final var connection = dataSource.getConnection();
+                 final var statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+        } catch (IOException | SQLException e) {
+            throw new DataAccessException("Failed to initialize the database", e);
         }
     }
 
