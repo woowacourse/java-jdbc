@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -58,5 +60,47 @@ class JdbcTemplateTest {
 
         assertThat(accounts).containsExactly("gugu", "dongkey");
         verify(connection).prepareStatement(sql);
+    }
+
+    @Test
+    void queryForObject() throws SQLException {
+        final String sql = "select account from users where id = ?";
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final String account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(statement).setObject(1, 1L);
+    }
+
+    @Test
+    void queryForObjectWithoutResults() throws SQLException {
+        when(resultSet.next()).thenReturn(false);
+
+        final String account = jdbcTemplate.queryForObject("select account from users", row -> row.getString("account"));
+
+        assertThat(account).isNull();
+    }
+
+    @Test
+    void queryForObjectWithMultipleResults() throws SQLException {
+        final String sql = "select account from users";
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void sqlException() throws SQLException {
+        final SQLException exception = new SQLException("쿼리 실행 실패");
+        when(statement.executeUpdate()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "newPassword"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+        verify(statement).close();
+        verify(connection).close();
     }
 }
