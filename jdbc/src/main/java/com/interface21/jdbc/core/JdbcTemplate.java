@@ -23,7 +23,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, statement -> bindParameters(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter statementSetter) {
+        return execute(sql, PreparedStatement::executeUpdate, statementSetter);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -59,11 +63,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        return execute(sql, callback, statement -> bindParameters(statement, args));
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback,
+                         final PreparedStatementSetter statementSetter) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            bindParameters(statement, args);
+            statementSetter.setValues(statement);
 
             return callback.execute(statement);
         } catch (SQLException e) {
