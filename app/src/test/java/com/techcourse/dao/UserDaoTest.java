@@ -23,10 +23,14 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("저장된 회원 목록을 돌려준다")
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(1);
+        assertThat(users.get(0).getAccount()).isEqualTo("gugu");
+        assertThat(users.get(0).getPassword()).isEqualTo("password");
+        assertThat(users.get(0).getEmail()).isEqualTo("hkkang@woowahan.com");
     }
 
     @Test
