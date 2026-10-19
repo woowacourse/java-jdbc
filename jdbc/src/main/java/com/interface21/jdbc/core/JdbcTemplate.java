@@ -22,122 +22,60 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for(int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
+            setParameters(params, pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public List<Object> query(String sql, RowMapper rowMapper, Object... params) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        List<Object> objects = new ArrayList<>();
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            for(int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
-
-            rs = pstmt.executeQuery();
-
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            while (rs.next()) {
-                objects.add(rowMapper.mapRow(rs));
+            setParameters(params, pstmt);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<Object> objects = new ArrayList<>();
+                while (rs.next()) {
+                    objects.add(rowMapper.mapRow(rs));
+                }
+                return objects;
             }
-            return objects;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
     public Object queryForObject(String sql, RowMapper rowMapper, Object... params) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            for(int i = 1; i <= params.length; i++) {
-                pstmt.setObject(i, params[i - 1]);
-            }
-
-            rs = pstmt.executeQuery();
-
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
-                return rowMapper.mapRow(rs);
+            setParameters(params, pstmt);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
             }
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
+        }
+    }
 
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
+    private static void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
+        for(int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
         }
     }
 }
