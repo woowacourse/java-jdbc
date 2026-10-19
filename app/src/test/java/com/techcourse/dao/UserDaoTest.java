@@ -77,6 +77,7 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("변경된 회원 정보를 DB에 저장한다")
     void update() {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
