@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,25 +22,14 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            bindParameters(pstmt, args);
+        execute(sql, args, pstmt -> {
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+            return null;
+        });
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            bindParameters(pstmt, args);
-
+        return execute(sql, args, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 int rowNum = 0;
@@ -48,9 +38,20 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <R> R execute(String sql, Object[] args, PreparedStatementCallback<R> callback) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            bindParameters(pstmt, args);
+
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -58,5 +59,10 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<R> {
+        R doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
     }
 }
