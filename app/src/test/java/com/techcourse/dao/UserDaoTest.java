@@ -60,16 +60,36 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void update() throws SQLException {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            userDao.update(connection, user);
+        }
 
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    // 넘겨받은 Connection으로 실행해야 호출한 쪽의 트랜잭션에 묶인다. 롤백하면 변경이 남지 않아야 한다.
+    @Test
+    void updateParticipatesInCallerTransaction() throws SQLException {
+        final var originalPassword = userDao.findById(1L).getPassword();
+        final var user = userDao.findById(1L);
+        user.changePassword("password99");
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            userDao.update(connection, user);
+            connection.rollback();
+        }
+
+        final var actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 
     // 인메모리 DB가 테스트 간에 공유되므로, 매 테스트마다 행을 비우고 id를 1부터 다시 시작시킨다.
