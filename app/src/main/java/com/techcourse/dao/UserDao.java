@@ -27,7 +27,10 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
+        final int updatedCount = jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
+        if (updatedCount == 0) {
+            throw new IllegalArgumentException("[ERROR] 존재하지 않는 사용자입니다. id: " + user.getId());
+        }
     }
 
     public List<User> findAll() {
