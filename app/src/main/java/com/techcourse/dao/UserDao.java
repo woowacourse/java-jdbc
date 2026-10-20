@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -29,65 +30,137 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.executeUpdate();
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
+                if (preparedStatement != null) {
+                    preparedStatement.close();
                 }
             } catch (SQLException ignored) {}
 
             try {
-                if (conn != null) {
-                    conn.close();
+                if (connection != null) {
+                    connection.close();
                 }
             } catch (SQLException ignored) {}
         }
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        try {
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+
+            log.debug("query : {}", sql);
+
+            preparedStatement.setString(1, user.getAccount());
+            preparedStatement.setString(2, user.getPassword());
+            preparedStatement.setString(3, user.getEmail());
+            preparedStatement.setLong(4, user.getId());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (preparedStatement != null) {
+                    preparedStatement.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+            resultSet = preparedStatement.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            final List<User> users = new ArrayList<>();
+            while (resultSet.next()) {
+                users.add(new User(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4)));
+            }
+            return users;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (preparedStatement != null) {
+                    preparedStatement.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
         try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setLong(1, id);
+            resultSet = preparedStatement.executeQuery();
 
             log.debug("query : {}", sql);
 
-            if (rs.next()) {
+            if (resultSet.next()) {
                 return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4));
             }
             return null;
         } catch (SQLException e) {
@@ -95,27 +168,68 @@ public class UserDao {
             throw new RuntimeException(e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
+                if (resultSet != null) {
+                    resultSet.close();
                 }
             } catch (SQLException ignored) {}
 
             try {
-                if (pstmt != null) {
-                    pstmt.close();
+                if (preparedStatement != null) {
+                    preparedStatement.close();
                 }
             } catch (SQLException ignored) {}
 
             try {
-                if (conn != null) {
-                    conn.close();
+                if (connection != null) {
+                    connection.close();
                 }
             } catch (SQLException ignored) {}
         }
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = dataSource.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, account);
+            resultSet = preparedStatement.executeQuery();
+
+            log.debug("query : {}", sql);
+
+            if (resultSet.next()) {
+                return new User(
+                        resultSet.getLong(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4));
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (preparedStatement != null) {
+                    preparedStatement.close();
+                }
+            } catch (SQLException ignored) {}
+
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException ignored) {}
+        }
     }
 }
