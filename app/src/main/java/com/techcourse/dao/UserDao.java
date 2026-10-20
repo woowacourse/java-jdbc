@@ -42,8 +42,18 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select * from users";
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        log.debug("query : {}", sql);
+
+        RowMapper<User> rowMapper = rs -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4));
+
+        return jdbcTemplate.findAll(sql, rowMapper);
     }
 
     public User findById(final Long id) {
