@@ -7,6 +7,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
@@ -132,5 +134,43 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void 외부_연결로_사용자를_수정하고_커밋하면_변경이_저장된다() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var newPassword = "password99";
+        user.changePassword(newPassword);
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+
+            connection.commit();
+        }
+
+        final var actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void 외부_연결로_사용자를_수정하고_롤백하면_기존_비밀번호가_유지된다() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var originalPassword = user.getPassword();
+        user.changePassword("password99");
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+
+            connection.rollback();
+        }
+
+        final var actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 }
