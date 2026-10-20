@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -81,6 +82,35 @@ class JdbcTemplateTest {
         order.verify(statement).executeUpdate();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    @Test
+    void 단일_null_인자를_Object로_전달해_설정한다() throws SQLException {
+        final String sql = "update sample_items set description = ?";
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(sql, (Object) null);
+
+        assertThat(affectedRows).isEqualTo(1);
+        final var order = inOrder(statement);
+        order.verify(statement).setObject(1, null);
+        order.verify(statement).executeUpdate();
+    }
+
+    @Test
+    void 설정자의_setNull로_SQL_타입을_지정해_null을_설정한다() throws SQLException {
+        final String sql = "update sample_items set description = ?";
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(
+                sql,
+                preparedStatement -> preparedStatement.setNull(1, Types.VARCHAR)
+        );
+
+        assertThat(affectedRows).isEqualTo(1);
+        final var order = inOrder(statement);
+        order.verify(statement).setNull(1, Types.VARCHAR);
+        order.verify(statement).executeUpdate();
     }
 
     @Test
