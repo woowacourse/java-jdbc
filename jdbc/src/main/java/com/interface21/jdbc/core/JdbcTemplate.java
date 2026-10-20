@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class JdbcTemplate {
 
@@ -19,7 +20,7 @@ public class JdbcTemplate {
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
     }
 
     public int update(final String sql, final Object... args) {
@@ -35,6 +36,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        Objects.requireNonNull(rowMapper, "rowMapper must not be null");
         return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 return mapRows(resultSet, rowMapper);
@@ -58,6 +60,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
+        Objects.requireNonNull(setter, "setter must not be null");
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);

@@ -24,18 +24,79 @@ import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @Test
+    void constructorRejectsNullDataSource() {
+        assertThatThrownBy(() -> new JdbcTemplate(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("dataSource must not be null");
+    }
+
+    @Test
+    void updateRejectsNullSetterBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "update users set email = ?", (PreparedStatementSetter) null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("setter must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryRejectsNullRowMapperBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("rowMapper must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryRejectsNullSetterBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.query(
+                "select account from users where id = ?",
+                row -> row.getString("account"),
+                (PreparedStatementSetter) null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("setter must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryForObjectRejectsNullRowMapperBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users where id = ?", null, 42L))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("rowMapper must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryForObjectRejectsNullSetterBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users where id = ?",
+                row -> row.getString("account"),
+                (PreparedStatementSetter) null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("setter must not be null");
+
+        verify(dataSource, never()).getConnection();
     }
 
     @Test
