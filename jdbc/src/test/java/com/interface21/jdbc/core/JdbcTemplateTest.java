@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +69,53 @@ class JdbcTemplateTest {
             when(pstmt.executeUpdate()).thenThrow(new SQLException());
 
             assertThatThrownBy(() -> jdbcTemplate.update(SQL, "password99", 1L))
+                    .isInstanceOf(DataAccessException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("query 메서드")
+    class Query {
+
+        private static final String SQL = "select account from users where email = ?";
+        private static final RowMapper<String> ROW_MAPPER = (rs, rowNum) -> rs.getString("account");
+
+        private ResultSet rs;
+
+        @BeforeEach
+        void setUp() throws SQLException {
+            rs = mock(ResultSet.class);
+            when(pstmt.executeQuery()).thenReturn(rs);
+        }
+
+        @Test
+        @DisplayName("인자를 바인딩해 조회 결과를 RowMapper로 변환한다.")
+        void bindArgsAndMapRows() throws SQLException {
+            when(rs.next()).thenReturn(true, true, false);
+            when(rs.getString("account")).thenReturn("gugu", "brown");
+
+            final var accounts = jdbcTemplate.query(SQL, ROW_MAPPER, "hkkang@woowahan.com");
+
+            verify(pstmt).setObject(1, "hkkang@woowahan.com");
+            assertThat(accounts).containsExactly("gugu", "brown");
+        }
+
+        @Test
+        @DisplayName("query 후 자원을 반납한다.")
+        void closeResources() throws SQLException {
+            jdbcTemplate.query(SQL, ROW_MAPPER, "hkkang@woowahan.com");
+
+            verify(rs).close();
+            verify(pstmt).close();
+            verify(conn).close();
+        }
+
+        @Test
+        @DisplayName("쿼리 실패 시 DataAccessException이 발생한다.")
+        void throwDataAccessException() throws SQLException {
+            when(pstmt.executeQuery()).thenThrow(new SQLException());
+
+            assertThatThrownBy(() -> jdbcTemplate.query(SQL, ROW_MAPPER, "hkkang@woowahan.com"))
                     .isInstanceOf(DataAccessException.class);
         }
     }
