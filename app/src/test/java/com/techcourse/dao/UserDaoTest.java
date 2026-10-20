@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -118,6 +119,18 @@ class UserDaoTest {
 
         assertThat(user).usingRecursiveComparison()
                 .isEqualTo(new User(2L, "o'connor", "quotedPassword", "quoted@example.com"));
+    }
+
+    @Test
+    @DisplayName("전달한 JdbcTemplate으로 사용자를 저장하고 조회한다")
+    void useProvidedJdbcTemplate() {
+        final var template = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var dao = new UserDao(template);
+
+        dao.insert(new User("template", "templatePassword", "template@example.com"));
+
+        assertThat(dao.findByAccount("template")).usingRecursiveComparison()
+                .isEqualTo(new User(2L, "template", "templatePassword", "template@example.com"));
     }
 
     private void clearUsers() throws SQLException {
