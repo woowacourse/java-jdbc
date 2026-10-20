@@ -26,26 +26,17 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        return executeQuery(sql, resultSet -> {
+                    List<T> results = new ArrayList<>();
 
-            log.debug("query : {}", sql);
+                    while (resultSet.next()) {
+                        results.add(rowMapper.mapRow(resultSet));
+                    }
 
-            setParameters(pstmt, params);
-
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-
-                return results;
-            }
-
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
-        }
+                    return results;
+                },
+                params
+        );
     }
 
     public <T> T queryForObject(
@@ -53,28 +44,21 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        return executeQuery(sql, resultSet -> {
+                    if (!resultSet.next()) {
+                        throw new DataAccessException("조회 결과가 없습니다.");
+                    }
 
-            log.debug("query : {}, sql");
-            setParameters(pstmt, params);
+                    T result = rowMapper.mapRow(resultSet);
 
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                if (!resultSet.next()) {
-                    throw new DataAccessException("조회 결과가 없습니다.");
-                }
+                    if (resultSet.next()) {
+                        throw new DataAccessException("조회 결과는 1행이어야 합니다. 2행 이상 조회되었습니다.");
+                    }
 
-                T result = rowMapper.mapRow(resultSet);
-
-                if (resultSet.next()) {
-                    throw new DataAccessException("조회 결과는 1행이여야 합니다. 2행 이상 조회되었습니다.");
-                }
-
-                return result;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
-        }
+                    return result;
+                },
+                params
+        );
     }
 
     public int update(final String sql, final Object... params) {
@@ -86,6 +70,26 @@ public class JdbcTemplate {
             setParameters(pstmt, params);
 
             return pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
+        }
+    }
+
+    private <T> T executeQuery(
+            final String sql,
+            final ResultSetExtractor<T> extractor,
+            final Object... params
+    ) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+            setParameters(pstmt, params);
+
+            try (ResultSet resultSet = pstmt.executeQuery()) {
+                return extractor.extractData(resultSet);
+            }
 
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행 실패 : " + sql, e);
