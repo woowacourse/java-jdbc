@@ -35,7 +35,7 @@ public class JdbcTemplate {
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new IllegalStateException("UPDATE query failed");
+            throw new IllegalStateException("UPDATE query failed", e);
         }
     }
 
@@ -54,7 +54,7 @@ public class JdbcTemplate {
                 }
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("SELECT for multiple entities query failed");
+            throw new IllegalStateException("SELECT for multiple entities query failed", e);
         }
 
         return Optional.empty();
@@ -76,7 +76,7 @@ public class JdbcTemplate {
                 }
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("SELECT for multiple entities query failed");
+            throw new IllegalStateException("SELECT for multiple entities query failed", e);
         }
 
         return result;
