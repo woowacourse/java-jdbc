@@ -33,7 +33,12 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ?";
+
+        log.debug("query : {}", sql);
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
@@ -54,11 +59,20 @@ public class UserDao {
                 rs.getString(4));
 
         return jdbcTemplate.find(sql, rowMapper, id);
-
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        log.debug("query : {}", sql);
+
+        RowMapper<User> rowMapper = rs -> new User(
+                rs.getLong(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4));
+
+        return jdbcTemplate.find(sql, rowMapper, account);
     }
 }
