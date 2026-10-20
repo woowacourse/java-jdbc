@@ -1,6 +1,7 @@
 package com.techcourse.controller;
 
 import com.techcourse.config.AppConfig;
+import com.techcourse.controller.dto.UserResponse;
 import com.techcourse.dao.UserDao;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,7 +39,7 @@ public class UserController {
         final var user = Optional.ofNullable(userDao.findByAccount(account))
                 .orElseThrow();
 
-        modelAndView.addObject("user", user);
+        modelAndView.addObject("user", UserResponse.from(user));
         return modelAndView;
     }
 }
