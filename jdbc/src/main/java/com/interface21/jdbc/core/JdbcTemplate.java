@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -35,7 +37,7 @@ public class JdbcTemplate {
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -65,10 +67,15 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
+    /**
+     * Returns the mapped value of exactly one row.
+     *
+     * @throws IncorrectResultSizeDataAccessException if the query returns zero or multiple rows
+     */
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
@@ -76,8 +83,8 @@ public class JdbcTemplate {
     ) {
         List<T> results = query(sql, rowMapper, params);
 
-        if (results.isEmpty()) {
-            return null;
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
 
         return results.get(0);

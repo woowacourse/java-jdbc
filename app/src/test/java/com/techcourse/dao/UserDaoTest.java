@@ -1,22 +1,32 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        final var dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        try (
+                final var connection = dataSource.getConnection();
+                final var statement = connection.createStatement()
+        ) {
+            statement.execute("truncate table users restart identity");
+        }
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -41,6 +51,35 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByIdThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findById(2L))
+                .isInstanceOfSatisfying(IncorrectResultSizeDataAccessException.class, exception -> {
+                    assertThat(exception.getExpectedSize()).isEqualTo(1);
+                    assertThat(exception.getActualSize()).isZero();
+                });
+    }
+
+    @Test
+    void findByAccountThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findByAccount("missing"))
+                .isInstanceOfSatisfying(IncorrectResultSizeDataAccessException.class, exception -> {
+                    assertThat(exception.getExpectedSize()).isEqualTo(1);
+                    assertThat(exception.getActualSize()).isZero();
+                });
+    }
+
+    @Test
+    void findByAccountThrowsWhenMultipleUsersHaveTheSameAccount() {
+        userDao.insert(new User("gugu", "other-password", "other@example.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOfSatisfying(IncorrectResultSizeDataAccessException.class, exception -> {
+                    assertThat(exception.getExpectedSize()).isEqualTo(1);
+                    assertThat(exception.getActualSize()).isEqualTo(2);
+                });
     }
 
     @Test
