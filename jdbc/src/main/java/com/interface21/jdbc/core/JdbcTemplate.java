@@ -63,7 +63,7 @@ public class JdbcTemplate {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다", e);
         }
     }
 
