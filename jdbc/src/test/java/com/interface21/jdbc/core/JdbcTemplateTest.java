@@ -121,7 +121,7 @@ class JdbcTemplateTest {
     @Test
     void 결과가_있으면_queryForObject_시_RowMapper로_변환한_객체를_반환한다() throws SQLException {
         //given
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true, false);
         when(rs.getString("account")).thenReturn("gugu");
 
         //when
@@ -161,7 +161,7 @@ class JdbcTemplateTest {
     @Test
     void 조회가_끝나면_queryForObject_후_ResultSet_PreparedStatement_Connection_순서로_닫힌다() throws SQLException {
         //given
-        when(rs.next()).thenReturn(true);
+        when(rs.next()).thenReturn(true, false);
 
         //when
         jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L);
