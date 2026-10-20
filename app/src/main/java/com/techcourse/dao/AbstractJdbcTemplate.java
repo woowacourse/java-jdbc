@@ -1,28 +1,31 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class InsertJdbcTemplate {
+public abstract class AbstractJdbcTemplate {
 
     private final DataSource dataSource;
 
-    public InsertJdbcTemplate(final DataSource dataSource) {
+    protected AbstractJdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    public void insert(final User user, final UserDao userDao) {
+    public int update() {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(userDao.createQueryForInsert())) {
-            userDao.setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
+             PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
+            setValues(pstmt);
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
+
+    protected abstract String createQuery();
+
+    protected abstract void setValues(final PreparedStatement pstmt) throws SQLException;
 }

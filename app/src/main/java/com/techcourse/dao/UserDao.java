@@ -19,8 +19,6 @@ public class UserDao {
             rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
-    private final InsertJdbcTemplate insertJdbcTemplate;
-    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
@@ -28,40 +26,44 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.insertJdbcTemplate = new InsertJdbcTemplate(jdbcTemplate.getDataSource());
-        this.updateJdbcTemplate = new UpdateJdbcTemplate(jdbcTemplate.getDataSource());
     }
 
     public void insert(final User user) {
-        insertJdbcTemplate.insert(user, this);
-    }
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
 
-    public String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    public void setValuesForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
+            @Override
+            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        };
+        template.update();
     }
 
     public void update(final User user) {
-        final int updatedRows = updateJdbcTemplate.update(user, this);
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
+            @Override
+            protected String createQuery() {
+                return "update users set account = ?, password = ?, email = ? where id = ?";
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+        };
+        final int updatedRows = template.update();
         if (updatedRows == 0) {
             throw new DataAccessException("수정할 사용자가 존재하지 않습니다. id = " + user.getId());
         }
-    }
-
-    public String createQueryForUpdate() {
-        return "update users set account = ?, password = ?, email = ? where id = ?";
-    }
-
-    public void setValuesForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
     }
 
     public List<User> findAll() {
