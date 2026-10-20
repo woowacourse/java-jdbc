@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,7 +34,7 @@ public class JdbcTemplate {
             statement.executeUpdate();
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
         }
     }
 
@@ -60,7 +61,7 @@ public class JdbcTemplate {
             return parsing.parse(resultSet);
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
         }
     }
 
