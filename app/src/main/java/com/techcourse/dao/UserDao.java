@@ -38,10 +38,9 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
-                .orElseThrow(() -> new IllegalArgumentException("[ERROR] 존재하지 않는 사용자입니다. id: " + id));
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public Optional<User> findByAccount(final String account) {
