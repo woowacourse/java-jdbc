@@ -1,5 +1,6 @@
 package com.interface21.jdbc.datasource;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 
@@ -23,7 +24,7 @@ public abstract class DataSourceUtils {
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             return connection;
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
+            throw new CannotGetJdbcConnectionException("JDBC 커넥션을 얻는 데 실패했습니다.", ex);
         }
     }
 
@@ -31,7 +32,7 @@ public abstract class DataSourceUtils {
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new DataAccessException("JDBC 커넥션을 닫는 데 실패했습니다.", ex);
         }
     }
 }
