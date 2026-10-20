@@ -160,4 +160,21 @@ class JdbcTemplateTest {
         verify(preparedStatement).close();
         verify(connection).close();
     }
+
+    @Test
+    @DisplayName("PreparedStatementSetter가 null이면 바인딩 없이 실행한다")
+    void updateWithNullPreparedStatementSetter() throws SQLException {
+        jdbcTemplate.update("delete from users", (PreparedStatementSetter) null);
+
+        verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    @DisplayName("null 하나를 바인딩하려면 Object로 캐스팅해 가변인자 메서드를 호출한다")
+    void updateBindsSingleNullArgument() throws SQLException {
+        jdbcTemplate.update("update users set email = ?", (Object) null);
+
+        verify(preparedStatement).setObject(1, null);
+        verify(preparedStatement).executeUpdate();
+    }
 }

@@ -72,7 +72,9 @@ public class JdbcTemplate {
         log.debug("query : {}", sql);
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pss.setValues(pstmt);
+            if(pss!=null) {
+                pss.setValues(pstmt);
+            }
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
