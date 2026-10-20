@@ -3,7 +3,10 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 
 import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,26 +19,12 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameters(pstmt, params);
-            return pstmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public <T> List<T> query(
-            String sql, RowMapper<T> rowMapper, Object... params) {
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameters(pstmt, params);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, statement -> {
+            try (ResultSet rs = statement.executeQuery()) {
                 List<T> results = new ArrayList<>();
 
                 while (rs.next()) {
@@ -44,24 +33,55 @@ public class JdbcTemplate {
 
                 return results;
             }
+        }, params);
+    }
+
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(sql, statement -> {
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+
+                T result = rowMapper.mapRow(rs);
+
+                if (rs.next()) {
+                    throw new DataAccessException("조회 결과가 여러 건입니다.");
+                }
+
+                return result;
+            }
+        }, params);
+    }
+
+    private <T> T execute(
+            String sql,
+            PreparedStatementCallback<T> callback,
+            Object... params) {
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            setParameters(statement, params);
+            return callback.execute(statement);
 
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(
-            String sql, RowMapper<T> rowMapper, Object... params) {
-
-        List<T> results = query(sql, rowMapper, params);
-        return results.isEmpty() ? null : results.get(0);
-    }
-
     private void setParameters(
-            PreparedStatement pstmt, Object... params) throws SQLException {
+            PreparedStatement statement,
+            Object... params) throws SQLException {
 
         for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
+            statement.setObject(i + 1, params[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
