@@ -1,0 +1,168 @@
+package com.techcourse.controller;
+
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
+import com.techcourse.domain.User;
+import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.sql.SQLException;
+import java.util.NoSuchElementException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class UserControllerTest {
+
+    private final HttpServletRequest request = mock(HttpServletRequest.class);
+    private final HttpServletResponse response = mock(HttpServletResponse.class);
+    private final HttpSession session = mock(HttpSession.class);
+
+    @BeforeEach
+    void setup() throws SQLException {
+        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        try (final var connection = DataSourceConfig.getInstance().getConnection();
+             final var statement = connection.createStatement()) {
+            statement.execute("truncate table users restart identity");
+        }
+        when(request.getSession()).thenReturn(session);
+    }
+
+    @Test
+    void registerAndShowUseDatabase() {
+        registerUser();
+
+        final var saved = new UserDao(DataSourceConfig.getInstance()).findByAccount("db-user").orElseThrow();
+        assertThat(saved.getId()).isEqualTo(1L);
+
+        final var modelAndView = new UserController().show(request, response);
+        final var actual = (User) modelAndView.getObject("user");
+
+        assertThat(actual.getId()).isEqualTo(saved.getId());
+        assertThat(actual.getAccount()).isEqualTo("db-user");
+        assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(actual.getEmail()).isEqualTo("db@example.com");
+    }
+
+    @Test
+    void duplicateRegistrationShowsErrorAndPreservesLogin() throws Exception {
+        registerUser();
+        when(request.getParameter("password")).thenReturn("other-password");
+
+        final var modelAndView = new RegisterController().register(request, response);
+        final var dispatcher = mock(RequestDispatcher.class);
+        when(request.getRequestDispatcher("/register.jsp")).thenReturn(dispatcher);
+        modelAndView.getView().render(modelAndView.getModel(), request, response);
+
+        verify(response).setStatus(HttpServletResponse.SC_CONFLICT);
+        verify(request).setAttribute("errorMessage", "이미 사용 중인 계정입니다.");
+        verify(dispatcher).forward(request, response);
+        assertThat(new UserDao(DataSourceConfig.getInstance()).findAll()).hasSize(1);
+
+        when(request.getParameter("password")).thenReturn("password");
+        new LoginController().login(request, response);
+        verify(session).setAttribute(eq(UserSession.SESSION_KEY), any(User.class));
+    }
+
+    @Test
+    void loginWithRegisteredUser() throws Exception {
+        registerUser();
+
+        final var modelAndView = new LoginController().login(request, response);
+        modelAndView.getView().render(modelAndView.getModel(), request, response);
+
+        final var user = ArgumentCaptor.forClass(User.class);
+        verify(session).setAttribute(eq(UserSession.SESSION_KEY), user.capture());
+        assertThat(user.getValue().getAccount()).isEqualTo("db-user");
+        assertThat(user.getValue().getId()).isEqualTo(1L);
+        verify(response).sendRedirect("/index.jsp");
+    }
+
+    @Test
+    void loginRejectsWrongPasswordAndUnknownAccount() throws Exception {
+        registerUser();
+        final var controller = new LoginController();
+        when(request.getParameter("password")).thenReturn("wrong-password");
+
+        final var wrongPassword = controller.login(request, response);
+        wrongPassword.getView().render(wrongPassword.getModel(), request, response);
+
+        when(request.getParameter("account")).thenReturn("unknown");
+        when(request.getParameter("password")).thenReturn("password");
+        final var unknownAccount = controller.login(request, response);
+        unknownAccount.getView().render(unknownAccount.getModel(), request, response);
+
+        verify(response, times(2)).sendRedirect("/401.jsp");
+        verify(session, never()).setAttribute(eq(UserSession.SESSION_KEY), any());
+    }
+
+    @Test
+    void showRejectsUnknownAccount() {
+        when(request.getParameter("account")).thenReturn("unknown");
+
+        assertThatThrownBy(() -> new UserController().show(request, response))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    private void registerUser() {
+        when(request.getParameter("account")).thenReturn("db-user");
+        when(request.getParameter("password")).thenReturn("password");
+        when(request.getParameter("email")).thenReturn("db@example.com");
+        new RegisterController().register(request, response);
+    }
+
+    @Test
+    void invalidRegistrationShowsErrorWithoutSavingUser() throws Exception {
+        final var controller = new RegisterController();
+        final var dispatcher = mock(RequestDispatcher.class);
+        when(request.getRequestDispatcher("/register.jsp")).thenReturn(dispatcher);
+
+        for (final var field : new String[]{"account", "password", "email"}) {
+            for (final var invalidValue : new String[]{null, "a".repeat(101)}) {
+                when(request.getParameter("account")).thenReturn("db-user");
+                when(request.getParameter("password")).thenReturn("password");
+                when(request.getParameter("email")).thenReturn("db@example.com");
+                when(request.getParameter(field)).thenReturn(invalidValue);
+
+                final var result = controller.register(request, response);
+                assertThat(result.getObject("errorMessage")).isInstanceOf(String.class);
+                result.getView().render(result.getModel(), request, response);
+
+                assertThat(new UserDao(DataSourceConfig.getInstance()).findAll()).isEmpty();
+            }
+        }
+
+        verify(response, times(6)).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        verify(dispatcher, times(6)).forward(request, response);
+    }
+
+    @Test
+    void registrationAcceptsFieldsAtColumnLength() {
+        final var value = "a".repeat(100);
+        when(request.getParameter("account")).thenReturn(value);
+        when(request.getParameter("password")).thenReturn(value);
+        when(request.getParameter("email")).thenReturn(value);
+
+        new RegisterController().register(request, response);
+
+        final var users = new UserDao(DataSourceConfig.getInstance()).findAll();
+        assertThat(users).hasSize(1);
+        assertThat(users.get(0).getAccount()).isEqualTo(value);
+        assertThat(users.get(0).getPassword()).isEqualTo(value);
+        assertThat(users.get(0).getEmail()).isEqualTo(value);
+        verify(response, never()).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    }
+}

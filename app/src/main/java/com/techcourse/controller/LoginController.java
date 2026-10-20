@@ -1,7 +1,8 @@
 package com.techcourse.controller;
 
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
-import com.techcourse.repository.InMemoryUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JspView;
@@ -16,6 +17,8 @@ import org.slf4j.LoggerFactory;
 public class LoginController {
 
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+
+    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ModelAndView view(final HttpServletRequest request, final HttpServletResponse response) {
@@ -33,7 +36,7 @@ public class LoginController {
             return redirect("/index.jsp");
         }
 
-        return InMemoryUserRepository.findByAccount(request.getParameter("account"))
+        return userDao.findByAccount(request.getParameter("account"))
                 .map(user -> {
                     log.info("User : {}", user);
                     return login(request, user);

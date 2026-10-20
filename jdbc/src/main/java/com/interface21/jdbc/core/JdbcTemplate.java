@@ -1,9 +1,15 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DuplicateKeyException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -13,5 +19,53 @@ public class JdbcTemplate {
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public int update(final String sql, final Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final var results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        if (results.size() > 1) {
+            throw new IllegalStateException("Expected at most one result but found " + results.size());
+        }
+
+        return results.get(0);
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+
+                return results;
+            }
+        }, args);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            if ("23505".equals(e.getSQLState())) {
+                throw new DuplicateKeyException(e);
+            }
+            throw new RuntimeException(e);
+        }
     }
 }
