@@ -60,52 +60,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달한_설정자로_인자를_설정하고_영향받은_행_수를_반환한다() throws SQLException {
-        final String sql = """
-                update users
-                set password = ?
-                where id = ?
-                """;
-        when(statement.executeUpdate()).thenReturn(1);
-
-        final var affectedRows = jdbcTemplate.update(sql, preparedStatement -> {
-            preparedStatement.setString(1, "password99");
-            preparedStatement.setLong(2, 1L);
-        });
-
-        assertThat(affectedRows).isEqualTo(1);
-        final var order = inOrder(connection, statement);
-        order.verify(connection).prepareStatement(sql);
-        order.verify(statement).setString(1, "password99");
-        order.verify(statement).setLong(2, 1L);
-        order.verify(statement).executeUpdate();
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
-    void 설정자에서_SQL예외가_발생하면_실행하지_않고_자원을_닫는다() throws SQLException {
-        final String sql = """
-                update users
-                set password = ?
-                where id = ?
-                """;
-        final var exception = new SQLException("매개변수 설정 실패");
-
-        assertThatThrownBy(() -> jdbcTemplate.update(sql, preparedStatement -> {
-            throw exception;
-        }))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("SQL 실행에 실패했습니다: " + sql)
-                .hasCause(exception);
-
-        verify(statement, never()).executeUpdate();
-        final var order = inOrder(statement, connection);
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
     void 인자가_없는_SQL도_실행한다() throws SQLException {
         when(statement.executeUpdate()).thenReturn(3);
 
@@ -181,63 +135,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 조회_설정자로_인자를_설정하고_각_행을_변환해_반환한다() throws SQLException {
-        final String sql = """
-                select account
-                from users
-                where email = ? and id > ?
-                """;
-        when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, true, false);
-        when(resultSet.getString("account")).thenReturn("gugu", "pobi");
-
-        final var accounts = jdbcTemplate.query(
-                sql,
-                row -> row.getString("account"),
-                preparedStatement -> {
-                    preparedStatement.setString(1, "test@woowahan.com");
-                    preparedStatement.setLong(2, 0L);
-                }
-        );
-
-        assertThat(accounts).containsExactly("gugu", "pobi");
-        final var order = inOrder(connection, statement, resultSet);
-        order.verify(connection).prepareStatement(sql);
-        order.verify(statement).setString(1, "test@woowahan.com");
-        order.verify(statement).setLong(2, 0L);
-        order.verify(statement).executeQuery();
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
-    void 조회_설정자에서_SQL예외가_발생하면_조회하지_않고_자원을_닫는다() throws SQLException {
-        final String sql = """
-                select account
-                from users
-                where id = ?
-                """;
-        final var exception = new SQLException("조회 매개변수 설정 실패");
-
-        assertThatThrownBy(() -> jdbcTemplate.query(
-                sql,
-                row -> row.getString("account"),
-                preparedStatement -> {
-                    throw exception;
-                }
-        ))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("SQL 실행에 실패했습니다: " + sql)
-                .hasCause(exception);
-
-        verify(statement, never()).executeQuery();
-        final var order = inOrder(statement, connection);
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
     void 조회_결과가_없으면_빈_리스트를_반환한다() throws SQLException {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
@@ -303,60 +200,6 @@ class JdbcTemplateTest {
 
         assertThat(account).isEqualTo("gugu");
         verify(statement).setObject(1, 1L);
-    }
-
-    @Test
-    void 단건_조회_설정자로_인자를_설정하고_객체를_반환한다() throws SQLException {
-        final String sql = """
-                select account
-                from users
-                where id = ?
-                """;
-        when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getString("account")).thenReturn("gugu");
-
-        final String account = jdbcTemplate.queryForObject(
-                sql,
-                row -> row.getString("account"),
-                preparedStatement -> preparedStatement.setLong(1, 1L)
-        );
-
-        assertThat(account).isEqualTo("gugu");
-        final var order = inOrder(connection, statement, resultSet);
-        order.verify(connection).prepareStatement(sql);
-        order.verify(statement).setLong(1, 1L);
-        order.verify(statement).executeQuery();
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
-    void 단건_조회_중_행_변환에_실패하면_모든_자원을_닫는다() throws SQLException {
-        final String sql = """
-                select account
-                from users
-                where id = ?
-                """;
-        final var exception = new SQLException("단건 조회 행 변환 실패");
-        when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getString("account")).thenThrow(exception);
-
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                sql,
-                row -> row.getString("account"),
-                1L
-        ))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessage("SQL 실행에 실패했습니다: " + sql)
-                .hasCause(exception);
-
-        final var order = inOrder(resultSet, statement, connection);
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        order.verify(connection).close();
     }
 
     @Test

@@ -27,10 +27,7 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final String sql = """
-                insert into users (account, password, email)
-                values (?, ?, ?)
-                """;
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
@@ -52,20 +49,13 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final String sql = """
-                select id, account, password, email
-                from users
-                """;
+        final String sql = "select id, account, password, email from users";
 
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
-        final String sql = """
-                select id, account, password, email
-                from users
-                where id = ?
-                """;
+        final String sql = "select id, account, password, email from users where id = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }

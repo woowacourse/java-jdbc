@@ -23,67 +23,47 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return update(sql, statement -> bindParameters(statement, args));
-    }
-
-    public int update(final String sql, final PreparedStatementSetter statementSetter) {
-        return execute(sql, PreparedStatement::executeUpdate, statementSetter);
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, rowMapper, statement -> bindParameters(statement, args));
-    }
+        return execute(sql, statement -> {
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
-                             final PreparedStatementSetter statementSetter) {
-        return executeQuery(sql, resultSet -> {
-            final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
 
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
+                return results;
             }
-
-            return results;
-        }, statementSetter);
+        }, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryForObject(sql, rowMapper, statement -> bindParameters(statement, args));
-    }
-
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
-                                final PreparedStatementSetter statementSetter) {
-        return executeQuery(sql, resultSet -> {
-            if (!resultSet.next()) {
-                return null;
-            }
-
-            final T result = rowMapper.mapRow(resultSet);
-
-            if (resultSet.next()) {
-                throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
-            }
-
-            return result;
-        }, statementSetter);
-    }
-
-    private <T> T executeQuery(final String sql, final ResultSetExtractor<T> resultSetExtractor,
-                              final PreparedStatementSetter statementSetter) {
         return execute(sql, statement -> {
             try (final ResultSet resultSet = statement.executeQuery()) {
-                return resultSetExtractor.extractData(resultSet);
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                final T result = rowMapper.mapRow(resultSet);
+
+                if (resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
+                }
+
+                return result;
             }
-        }, statementSetter);
+        }, args);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback,
-                         final PreparedStatementSetter statementSetter) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            statementSetter.setValues(statement);
+            bindParameters(statement, args);
 
             return callback.execute(statement);
         } catch (SQLException e) {
@@ -101,11 +81,5 @@ public class JdbcTemplate {
     private interface PreparedStatementCallback<T> {
 
         T execute(PreparedStatement statement) throws SQLException;
-    }
-
-    @FunctionalInterface
-    private interface ResultSetExtractor<T> {
-
-        T extractData(ResultSet resultSet) throws SQLException;
     }
 }
