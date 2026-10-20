@@ -43,7 +43,10 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most 1 result, but found " + results.size());
         }
-        return results.isEmpty() ? null : results.get(0);
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
     }
 
     private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
