@@ -3,7 +3,10 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,6 +68,37 @@ class JdbcTemplateTest {
         );
 
         assertThat(account).isNull();
+    }
+
+    @Test
+    void 수정할_값을_SQL_매개변수_순서대로_설정한다() throws SQLException {
+        when(pstmt.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update(
+                "update users set password = ? where id = ?", "new-password", 1L
+        );
+
+        assertThat(updatedRows).isEqualTo(1);
+        final var executionOrder = inOrder(pstmt);
+        executionOrder.verify(pstmt).setObject(1, "new-password");
+        executionOrder.verify(pstmt).setObject(2, 1L);
+        executionOrder.verify(pstmt).executeUpdate();
+    }
+
+    @Test
+    void 매개변수_설정에_실패하면_예외를_변환하고_자원을_해제한다() throws SQLException {
+        final SQLException failure = new SQLException("binding failed");
+        doThrow(failure).when(pstmt).setObject(1, "new-password");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "update users set password = ? where id = ?", "new-password", 1L
+        ))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(pstmt, never()).executeUpdate();
+        verify(pstmt).close();
+        verify(connection).close();
     }
 
     @Test

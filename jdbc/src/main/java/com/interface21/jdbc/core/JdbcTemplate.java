@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        return execute(sql, PreparedStatement::executeUpdate, params);
+        return execute(sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(
@@ -30,14 +30,14 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        return execute(sql, pstmt -> {
+        return execute(sql, createPreparedStatementSetter(params), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
                 }
                 return null;
             }
-        }, params);
+        });
     }
 
     public <T> List<T> query(
@@ -45,7 +45,7 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        return execute(sql, pstmt -> {
+        return execute(sql, createPreparedStatementSetter(params), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
 
@@ -54,20 +54,20 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, params);
+        });
     }
 
     private <T> T execute(
             final String sql,
-            final PreparedStatementCallback<T> callback,
-            final Object... params
+            final PreparedStatementSetter statementSetter,
+            final PreparedStatementCallback<T> callback
     ) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)
         ) {
             log.debug("query : {}", sql);
 
-            bindParameters(pstmt, params);
+            statementSetter.setValues(pstmt);
             return callback.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -75,12 +75,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void bindParameters(
-            final PreparedStatement pstmt,
-            final Object... params
-    ) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            pstmt.setObject(i + 1, params[i]);
-        }
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... params) {
+        return pstmt -> {
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+        };
     }
 }
