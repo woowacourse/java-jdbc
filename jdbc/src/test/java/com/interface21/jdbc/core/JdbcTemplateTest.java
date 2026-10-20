@@ -61,6 +61,63 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void 외부_연결로_수정하고_연결을_닫지_않는다() throws SQLException {
+        final String sql = """
+                update users
+                set password = ?
+                where id = ?
+                """;
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(connection, sql, "password99", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        final var order = inOrder(connection, statement);
+        order.verify(connection).prepareStatement(sql);
+        order.verify(statement).setObject(1, "password99");
+        order.verify(statement).setObject(2, 1L);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 외부_연결의_실행에_실패해도_구문만_닫고_원인_예외를_보존한다() throws SQLException {
+        final String sql = """
+                delete from users
+                """;
+        final var exception = new SQLException("쿼리 실행 실패");
+        when(statement.executeUpdate()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 실행에 실패했습니다: " + sql)
+                .hasCause(exception);
+
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 외부_연결의_구문_준비에_실패해도_연결을_닫지_않는다() throws SQLException {
+        final String sql = """
+                delete from users
+                """;
+        final var exception = new SQLException("구문 준비 실패");
+        when(connection.prepareStatement(sql)).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 실행에 실패했습니다: " + sql)
+                .hasCause(exception);
+
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
     void 전달한_설정자로_인자를_설정하고_영향받은_행_수를_반환한다() throws SQLException {
         final String sql = """
                 update users
