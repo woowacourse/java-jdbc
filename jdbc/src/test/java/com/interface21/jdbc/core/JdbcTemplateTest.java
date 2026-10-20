@@ -108,7 +108,9 @@ class JdbcTemplateTest {
                 rs -> rs.getString("account")
         ))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("resultSize=2");
+                .hasMessageContaining("조회 결과가 여러 건입니다.");
+
+        verify(resultSet, times(1)).getString("account");
     }
 
     @Test

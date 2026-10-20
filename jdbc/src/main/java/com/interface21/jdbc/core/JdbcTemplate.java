@@ -37,19 +37,21 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
+        return execute(sql, statement -> {
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
 
-        if (results.isEmpty()) {
-            return null;
-        }
+                T result = rowMapper.mapRow(rs);
 
-        if (results.size() > 1) {
-            throw new DataAccessException(
-                    "조회 결과가 여러 건입니다. resultSize=" + results.size()
-            );
-        }
+                if (rs.next()) {
+                    throw new DataAccessException("조회 결과가 여러 건입니다.");
+                }
 
-        return results.get(0);
+                return result;
+            }
+        }, params);
     }
 
     private <T> T execute(
