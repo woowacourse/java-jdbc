@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
+    public int update(final String sql, final Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -35,7 +35,7 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, args[i]);
             }
 
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
