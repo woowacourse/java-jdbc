@@ -57,6 +57,9 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             return null;
         }
+        if (results.size() > 1) {
+            throw new DataAccessException("조회 결과가 1건이어야 하지만 " + results.size() + "건입니다.");
+        }
         return results.getFirst();
     }
 
