@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
@@ -60,12 +61,36 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set password = ? where id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, user.getPassword());
+            statement.setLong(2, user.getId());
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            final List<User> users = new ArrayList<>();
+            while (resultSet.next()) {
+                users.add(new User(
+                        resultSet.getLong("id"),
+                        resultSet.getString("account"),
+                        resultSet.getString("password"),
+                        resultSet.getString("email")));
+            }
+            return users;
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     public User findById(final Long id) {
@@ -115,7 +140,24 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, account);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new User(
+                            resultSet.getLong("id"),
+                            resultSet.getString("account"),
+                            resultSet.getString("password"),
+                            resultSet.getString("email"));
+                }
+                return null;
+            }
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 }
