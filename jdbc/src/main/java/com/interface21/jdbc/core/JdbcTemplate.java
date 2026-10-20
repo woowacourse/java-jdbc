@@ -36,13 +36,9 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, setter, statement -> {
-            final List<T> results = new ArrayList<>();
             try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
+                return mapRows(resultSet, rowMapper);
             }
-            return results;
         });
     }
 
@@ -72,6 +68,14 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> mapRows(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
