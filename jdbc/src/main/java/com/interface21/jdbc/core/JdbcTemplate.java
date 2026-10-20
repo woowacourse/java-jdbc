@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,8 +42,8 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object ... parameters) {
         List<T> results = query(sql, rowMapper, parameters);
 
-        if (results.isEmpty()) {
-            return null;
+        if (results.size() != 1) {
+            throw new DataAccessException("결과가 1건이어야 하지만 " + results.size() + "건입니다.");
         }
 
         return results.getFirst();

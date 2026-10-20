@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -132,21 +133,30 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 결과가_없으면_queryForObject_시_null을_반환한다() throws SQLException {
+    void 결과가_없으면_queryForObject_시_예외가_발생한다() throws SQLException {
         //given
         when(rs.next()).thenReturn(false);
 
-        //when
-        String account = jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L);
+        //when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class);
+    }
 
-        //then
-        assertThat(account).isNull();
+    @Test
+    void 결과가_2건_이상이면_queryForObject_시_예외가_발생한다() throws SQLException {
+        //given
+        when(rs.next()).thenReturn(true, true, false);
+
+        //when & then
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, ACCOUNT_ROW_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
     void 파라미터가_주어지면_queryForObject_시_1번_인덱스부터_순서대로_바인딩된다() throws SQLException {
         //given
         String sql = "select account from users where id = ? and email = ?";
+        when(rs.next()).thenReturn(true, false);
 
         //when
         jdbcTemplate.queryForObject(sql, ACCOUNT_ROW_MAPPER, 1L, "hkkang@woowahan.com");
