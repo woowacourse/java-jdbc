@@ -62,15 +62,21 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
+        return execute(sql, PreparedStatement::executeUpdate, params);
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementCallback<T> callback,
+            final Object... params
+    ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
-
             setParameters(pstmt, params);
 
-            return pstmt.executeUpdate();
-
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행 실패 : " + sql, e);
         }
@@ -81,19 +87,13 @@ public class JdbcTemplate {
             final ResultSetExtractor<T> extractor,
             final Object... params
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-            setParameters(pstmt, params);
-
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                return extractor.extractData(resultSet);
-            }
-
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
-        }
+        return execute(sql, pstmt -> {
+                    try (ResultSet resultSet = pstmt.executeQuery()) {
+                        return extractor.extractData(resultSet);
+                    }
+                },
+                params
+        );
     }
 
     private void setParameters(
