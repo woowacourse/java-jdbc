@@ -1,5 +1,6 @@
 package aop.stage1;
 
+import aop.Transactional;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 
 import java.lang.reflect.Method;
@@ -9,11 +10,13 @@ import java.lang.reflect.Method;
  * TransactionPointcut 클래스는 메서드를 대상으로 조인 포인트를 찾는다.
  *
  * 조인 포인트(join point). 어드바이스가 적용될 위치
+ *
+ * 적용 대상 판단: 이 메서드에 트랜잭션을 적용할까?
  */
 public class TransactionPointcut extends StaticMethodMatcherPointcut {
 
     @Override
     public boolean matches(final Method method, final Class<?> targetClass) {
-        return false;
+        return method.isAnnotationPresent(Transactional.class);
     }
 }
