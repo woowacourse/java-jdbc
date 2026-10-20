@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
 
 public class UserDao {
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
@@ -16,10 +15,6 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
