@@ -45,19 +45,19 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.findAll(sql, UserDao::mapUser);
+        return jdbcTemplate.query(sql, UserDao::mapUser);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.find(sql, UserDao::mapUser, id);
+        return jdbcTemplate.queryForObject(sql, UserDao::mapUser, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.find(sql, UserDao::mapUser, account);
+        return jdbcTemplate.queryForObject(sql, UserDao::mapUser, account);
     }
 
     private static User mapUser(final ResultSet rs) throws SQLException {
