@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 public class UserDao {
@@ -41,10 +42,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id)
+                .orElseThrow(() -> new IllegalArgumentException("[ERROR] 존재하지 않는 사용자입니다. id: " + id));
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
