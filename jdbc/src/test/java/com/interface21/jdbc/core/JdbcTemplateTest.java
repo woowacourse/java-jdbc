@@ -119,4 +119,62 @@ class JdbcTemplateTest {
                     .isInstanceOf(DataAccessException.class);
         }
     }
+
+    @Nested
+    @DisplayName("queryForObject 메서드")
+    class QueryForObject {
+
+        private static final String SQL = "select account from users where id = ?";
+        private static final RowMapper<String> ROW_MAPPER = (rs, rowNum) -> rs.getString("account");
+
+        private ResultSet rs;
+
+        @BeforeEach
+        void setUp() throws SQLException {
+            rs = mock(ResultSet.class);
+            when(pstmt.executeQuery()).thenReturn(rs);
+        }
+
+        @Test
+        @DisplayName("인자를 바인딩해 조회 결과 한 건을 RowMapper로 변환한다.")
+        void bindArgsAndMapRow() throws SQLException {
+            when(rs.next()).thenReturn(true, false);
+            when(rs.getString("account")).thenReturn("gugu");
+
+            final var account = jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L);
+
+            verify(pstmt).setObject(1, 1L);
+            assertThat(account).isEqualTo("gugu");
+        }
+
+        @Test
+        @DisplayName("조회 결과가 없으면 DataAccessException이 발생한다.")
+        void throwDataAccessExceptionWhenEmpty() throws SQLException {
+            when(rs.next()).thenReturn(false);
+
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L))
+                    .isInstanceOf(DataAccessException.class);
+        }
+
+        @Test
+        @DisplayName("조회 결과가 두 건 이상이면 DataAccessException이 발생한다.")
+        void throwDataAccessExceptionWhenMultiple() throws SQLException {
+            when(rs.next()).thenReturn(true, true, false);
+
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L))
+                    .isInstanceOf(DataAccessException.class);
+        }
+
+        @Test
+        @DisplayName("queryForObject 후 자원을 반납한다.")
+        void closeResources() throws SQLException {
+            when(rs.next()).thenReturn(true, false);
+
+            jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L);
+
+            verify(rs).close();
+            verify(pstmt).close();
+            verify(conn).close();
+        }
+    }
 }

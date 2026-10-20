@@ -57,4 +57,31 @@ public class JdbcTemplate {
             throw new DataAccessException(e);
         }
     }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new DataAccessException("조회 결과가 없습니다.");
+                }
+
+                T result = rowMapper.mapRow(rs, rs.getRow());
+
+                if (rs.next()) {
+                    throw new DataAccessException("조회 결과가 두 건 이상입니다.");
+                }
+                return result;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 }
