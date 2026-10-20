@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -106,7 +107,7 @@ class JdbcTemplateTest {
             when(resultSet.getString("name")).thenThrow(exception);
 
             assertThatThrownBy(() -> jdbcTemplate.select(sql, currentResultSet -> currentResultSet.getString("name")))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(DataAccessException.class)
                     .hasCause(exception);
             verify(statement).close();
             verify(connection).close();
