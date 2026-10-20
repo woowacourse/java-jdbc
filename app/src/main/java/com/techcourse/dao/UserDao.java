@@ -3,14 +3,18 @@ package com.techcourse.dao;
 import com.interface21.dao.DataAccessException;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
+
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -23,117 +27,64 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final AbstractJdbcTemplate<Void> template = new AbstractJdbcTemplate<>(jdbcTemplate.getDataSource()) {
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
             @Override
             protected String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            }
-
-            @Override
-            protected Void mapRow(final ResultSet rs) {
-                return null;
-            }
         };
-        template.update();
+        template.update(pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
-        final AbstractJdbcTemplate<Void> template = new AbstractJdbcTemplate<>(jdbcTemplate.getDataSource()) {
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
             @Override
             protected String createQuery() {
                 return "update users set account = ?, password = ?, email = ? where id = ?";
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-                pstmt.setLong(4, user.getId());
-            }
-
-            @Override
-            protected Void mapRow(final ResultSet rs) {
-                return null;
-            }
         };
-        final int updatedRows = template.update();
+        final int updatedRows = template.update(pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        });
         if (updatedRows == 0) {
             throw new DataAccessException("수정할 사용자가 존재하지 않습니다. id = " + user.getId());
         }
     }
 
     public List<User> findAll() {
-        final AbstractJdbcTemplate<User> template = new AbstractJdbcTemplate<>(jdbcTemplate.getDataSource()) {
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users";
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) {
-            }
-
-            @Override
-            protected User mapRow(final ResultSet rs) throws SQLException {
-                return mapUser(rs);
-            }
         };
-        return template.query();
+        return template.query(USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
-        final AbstractJdbcTemplate<User> template = new AbstractJdbcTemplate<>(jdbcTemplate.getDataSource()) {
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setLong(1, id);
-            }
-
-            @Override
-            protected User mapRow(final ResultSet rs) throws SQLException {
-                return mapUser(rs);
-            }
         };
-        return template.queryForObject();
+        return template.queryForObject(USER_ROW_MAPPER, pstmt -> pstmt.setLong(1, id));
     }
 
     public User findByAccount(final String account) {
-        final AbstractJdbcTemplate<User> template = new AbstractJdbcTemplate<>(jdbcTemplate.getDataSource()) {
+        final AbstractJdbcTemplate template = new AbstractJdbcTemplate(jdbcTemplate.getDataSource()) {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where account = ?";
             }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, account);
-            }
-
-            @Override
-            protected User mapRow(final ResultSet rs) throws SQLException {
-                return mapUser(rs);
-            }
         };
-        return template.queryForObject();
-    }
-
-    private static User mapUser(final ResultSet rs) throws SQLException {
-        return new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"));
+        return template.queryForObject(USER_ROW_MAPPER, pstmt -> pstmt.setString(1, account));
     }
 }

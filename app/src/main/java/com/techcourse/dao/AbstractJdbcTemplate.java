@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.PreparedStatementSetter;
+import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -10,7 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractJdbcTemplate<T> {
+public abstract class AbstractJdbcTemplate {
 
     private final DataSource dataSource;
 
@@ -18,24 +20,29 @@ public abstract class AbstractJdbcTemplate<T> {
         this.dataSource = dataSource;
     }
 
-    public int update() {
+    public int update(final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
-            setValues(pstmt);
+            pss.setValues(pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public List<T> query() {
+    public <T> List<T> query(final RowMapper<T> rowMapper) {
+        return query(rowMapper, pstmt -> {
+        });
+    }
+
+    public <T> List<T> query(final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(createQuery())) {
-            setValues(pstmt);
+            pss.setValues(pstmt);
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
-                    results.add(mapRow(rs));
+                    results.add(rowMapper.mapRow(rs));
                 }
                 return results;
             }
@@ -44,8 +51,8 @@ public abstract class AbstractJdbcTemplate<T> {
         }
     }
 
-    public T queryForObject() {
-        List<T> results = query();
+    public <T> T queryForObject(final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        List<T> results = query(rowMapper, pss);
         if (results.size() != 1) {
             throw new DataAccessException("조회 결과가 1개가 아닙니다. size = " + results.size());
         }
@@ -53,8 +60,4 @@ public abstract class AbstractJdbcTemplate<T> {
     }
 
     protected abstract String createQuery();
-
-    protected abstract void setValues(final PreparedStatement pstmt) throws SQLException;
-
-    protected abstract T mapRow(final ResultSet rs) throws SQLException;
 }
