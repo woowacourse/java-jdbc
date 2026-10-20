@@ -62,19 +62,24 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        return execute(sql, PreparedStatement::executeUpdate, params);
+        return update(sql, pstmt -> setParameters(pstmt, params));
     }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql,  PreparedStatement::executeUpdate, setter);
+    }
+
 
     private <T> T execute(
             final String sql,
             final PreparedStatementCallback<T> callback,
-            final Object... params
-    ) {
+            final PreparedStatementSetter setter
+            ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
-            setParameters(pstmt, params);
+            setter.setValues(pstmt);
 
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
@@ -92,7 +97,7 @@ public class JdbcTemplate {
                         return extractor.extractData(resultSet);
                     }
                 },
-                params
+                pstmt -> setParameters(pstmt, params)
         );
     }
 
