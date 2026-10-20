@@ -1,7 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +24,8 @@ public class JdbcTemplate {
     public void update(final String sql, final Object... args) {
         log.debug("query : {}", sql);
 
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, args);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -34,12 +36,12 @@ public class JdbcTemplate {
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         log.debug("query : {}", sql);
 
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
+        try (final Connection connection = dataSource.getConnection();
+             final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, args);
 
-            try (final var resultSet = statement.executeQuery()) {
-                final var results = new ArrayList<T>();
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
                     results.add(rowMapper.mapRow(resultSet));
                 }
@@ -51,7 +53,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final var results = query(sql, rowMapper, args);
+        final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             return null;
         }
