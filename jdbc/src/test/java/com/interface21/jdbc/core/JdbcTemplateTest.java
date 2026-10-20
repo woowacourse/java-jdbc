@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -30,6 +31,48 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @Test
+    void queryForObjectReturnsNullWhenNoRowsAreReturned() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final String result = jdbcTemplate.queryForObject(
+                "select account from users", row -> row.getString("account"));
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void queryForObjectReturnsObjectWhenOneRowIsReturned() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final String result = jdbcTemplate.queryForObject(
+                "select account from users", row -> row.getString("account"));
+
+        assertThat(result).isEqualTo("gugu");
+    }
+
+    @Test
+    void queryForObjectThrowsWhenMultipleRowsAreReturned() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "another-user");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users", row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("Expected at most 1 result, but found 2");
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test

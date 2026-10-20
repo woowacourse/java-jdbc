@@ -40,6 +40,9 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
+        if (results.size() > 1) {
+            throw new DataAccessException("Expected at most 1 result, but found " + results.size());
+        }
         return results.isEmpty() ? null : results.get(0);
     }
 

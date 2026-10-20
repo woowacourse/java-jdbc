@@ -3,11 +3,13 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -45,6 +47,15 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccountThrowsWhenMultipleUsersHaveTheSameAccount() {
+        userDao.insert(new User("gugu", "another-password", "another@example.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("Expected at most 1 result, but found 2");
     }
 
     @Test
