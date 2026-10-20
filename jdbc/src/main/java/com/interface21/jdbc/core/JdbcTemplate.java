@@ -23,20 +23,22 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
+    }
 
-        try(Connection connection = dataSource.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object ... parameters) {
+        return execute(sql, preparedStatement -> {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                List<T> result = new ArrayList<>();
+                int rowNum = 0;
 
-            for (int i = 0; i < parameters.length; i++) {
-                preparedStatement.setObject(i + 1, parameters[i]);
+                while (resultSet.next()) {
+                    result.add(rowMapper.map(resultSet, rowNum++));
+                }
+
+                return result;
             }
-
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        }, parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object ... parameters) {
@@ -49,28 +51,24 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object ... parameters) {
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
         try (Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
             for (int i = 0; i < parameters.length; i++) {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
 
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                log.debug("query : {}", sql);
-
-                List<T> result = new ArrayList<>();
-                int rowNum = 0;
-
-                while (resultSet.next()) {
-                    result.add(rowMapper.map(resultSet, rowNum++));
-                }
-
-                return result;
-            }
+            return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
     }
 }
