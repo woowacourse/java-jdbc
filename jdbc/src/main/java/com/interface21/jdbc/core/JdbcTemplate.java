@@ -22,12 +22,9 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
 
+        try(Connection connection = dataSource.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < parameters.length; i++) {
@@ -38,18 +35,6 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (preparedStatement != null) {
-                    preparedStatement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
@@ -64,49 +49,27 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object ... parameters) {
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        try {
-            connection = dataSource.getConnection();
-            preparedStatement = connection.prepareStatement(sql);
-
+        try (Connection connection = dataSource.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             for (int i = 0; i < parameters.length; i++) {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
 
-            resultSet = preparedStatement.executeQuery();
-            log.debug("query : {}", sql);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                log.debug("query : {}", sql);
 
-            List<T> result = new ArrayList<>();
-            int rowNum = 0;
+                List<T> result = new ArrayList<>();
+                int rowNum = 0;
 
-            while (resultSet.next()) {
-                result.add(rowMapper.map(resultSet, rowNum++));
+                while (resultSet.next()) {
+                    result.add(rowMapper.map(resultSet, rowNum++));
+                }
+
+                return result;
             }
-
-            return result;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (resultSet != null) {
-                    resultSet.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (preparedStatement != null) {
-                    preparedStatement.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 }
