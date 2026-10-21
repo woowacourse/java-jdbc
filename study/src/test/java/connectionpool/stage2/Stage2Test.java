@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.zaxxer.hikari.util.UtilityElf.quietlySleep;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,11 +35,12 @@ class Stage2Test {
     void test() throws InterruptedException {
         final var hikariDataSource = (HikariDataSource) dataSource;
         final var hikariPool = getPool((HikariDataSource) dataSource);
+        final var failure = new AtomicReference<Exception>();
 
         // 설정한 커넥션 풀 최대값보다 더 많은 스레드를 생성해서 동시에 디비에 접근을 시도하면 어떻게 될까?
         final var threads = new Thread[20];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(getConnection());
+            threads[i] = new Thread(getConnection(failure));
         }
 
         for (final var thread : threads) {
@@ -49,6 +51,8 @@ class Stage2Test {
             thread.join();
         }
 
+        assertThat(failure.get()).isNull();
+
         // 동시에 많은 요청이 몰려도 최대 풀 사이즈를 유지한다.
         assertThat(hikariPool.getTotalConnections()).isEqualTo(DataSourceConfig.MAXIMUM_POOL_SIZE);
 
@@ -57,7 +61,7 @@ class Stage2Test {
     }
 
     // 데이터베이스에 연결만 하는 메서드. 커넥션 풀에 몇 개의 연결이 생기는지 확인하는 용도.
-    private Runnable getConnection() {
+    private Runnable getConnection(final AtomicReference<Exception> failure) {
         return () -> {
             try {
                 log.info("Before acquire ");
@@ -66,6 +70,7 @@ class Stage2Test {
                     quietlySleep(500); // Thread.sleep(500)과 동일한 기능
                 }
             } catch (Exception e) {
+                failure.compareAndSet(null, e);
             }
         };
     }

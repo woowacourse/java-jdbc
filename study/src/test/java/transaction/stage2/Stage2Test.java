@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.NestedTransactionNotSupportedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,8 +47,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -59,8 +60,10 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .containsExactlyInAnyOrder(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew"
+                );
     }
 
     /**
@@ -69,12 +72,12 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).isEmpty();
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -87,8 +90,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
@@ -98,12 +100,8 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
-        final var actual = firstUserService.saveFirstTransactionWithMandatory();
-
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
+                .isInstanceOf(IllegalTransactionStateException.class);
     }
 
     /**
@@ -119,8 +117,10 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .containsExactlyInAnyOrder(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported"
+                );
     }
 
     /**
@@ -129,12 +129,8 @@ class Stage2Test {
      */
     @Test
     void testNested() {
-        final var actual = firstUserService.saveFirstTransactionWithNested();
-
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNested())
+                .isInstanceOf(NestedTransactionNotSupportedException.class);
     }
 
     /**
@@ -142,11 +138,7 @@ class Stage2Test {
      */
     @Test
     void testNever() {
-        final var actual = firstUserService.saveFirstTransactionWithNever();
-
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNever())
+                .isInstanceOf(IllegalTransactionStateException.class);
     }
 }

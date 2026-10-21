@@ -83,14 +83,14 @@ class PoolingVsNoPoolingTest {
         config.setConnectionTimeout(1000);
         config.setAutoCommit(false);
         config.setReadOnly(false);
-        final var hikariDataSource = new HikariDataSource(config);
+        try (final var hikariDataSource = new HikariDataSource(config)) {
+            long start = ClockSource.currentTime();
+            connect(hikariDataSource);
+            long end = ClockSource.currentTime();
 
-        long start = ClockSource.currentTime();
-        connect(hikariDataSource);
-        long end = ClockSource.currentTime();
-
-        // 테스트 결과를 확인한다.
-        log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
+            // 테스트 결과를 확인한다.
+            log.info("Elapsed runtime: {}", ClockSource.elapsedDisplayString(start, end));
+        }
     }
 
     private static void connect(DataSource dataSource) throws SQLException {
