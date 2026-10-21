@@ -26,15 +26,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        log.debug("query : {}", sql);
-
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            setter.setValues(statement);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
-        }
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -70,15 +62,21 @@ public class JdbcTemplate {
 
     private <T> T executeQuery(final String sql, final PreparedStatementSetter setter,
                              final ResultSetExtractor<T> extractor) {
+        return execute(sql, setter, statement -> {
+            try (final var resultSet = statement.executeQuery()) {
+                return extractor.extract(resultSet);
+            }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                         final PreparedStatementCallback<T> callback) {
         log.debug("query : {}", sql);
 
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
-
-            try (final var resultSet = statement.executeQuery()) {
-                return extractor.extract(resultSet);
-            }
+            return callback.execute(statement);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
@@ -90,6 +88,12 @@ public class JdbcTemplate {
                 statement.setObject(i + 1, parameters[i]);
             }
         };
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 
     @FunctionalInterface

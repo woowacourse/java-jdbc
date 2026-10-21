@@ -14,6 +14,7 @@ import java.sql.Types;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -226,6 +227,66 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rs -> rs.getString("account")))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
+        verify(connection).close();
+    }
+
+    @Test
+    void varargsBindingFailureDoesNotExecuteAndClosesResources() throws SQLException {
+        final var cause = new SQLException("binding failed");
+        doThrow(cause).when(statement).setObject(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users where id = ?",
+                rs -> rs.getString("account"), 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement, never()).executeQuery();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryExecutionFailureIsTranslatedAndClosesResources() throws SQLException {
+        final var cause = new SQLException("query failed");
+        when(statement.executeQuery()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rs -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("select account from users")
+                .hasCause(cause);
+
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void customSetterRuntimeExceptionIsPreservedAndClosesResources() throws SQLException {
+        final var cause = new IllegalArgumentException("invalid parameter");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", ps -> {
+            throw cause;
+        })).isSameAs(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void executionFailureIsPreservedWhenClosingResourcesAlsoFails() throws SQLException {
+        final var cause = new SQLException("update failed");
+        final var statementCloseFailure = new SQLException("statement close failed");
+        final var connectionCloseFailure = new SQLException("connection close failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+        doThrow(statementCloseFailure).when(statement).close();
+        doThrow(connectionCloseFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        assertThat(cause.getSuppressed()).containsExactly(statementCloseFailure, connectionCloseFailure);
+        verify(statement).close();
         verify(connection).close();
     }
 
