@@ -49,6 +49,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         return jdbcTemplate.queryForObject(SELECT_BY_ACCOUNT_SQL, this::mapUser, account);
     }
+
     private User mapUser(final ResultSet resultSet, final int rowNum) throws SQLException {
         return new User(
                 resultSet.getLong("id"),
