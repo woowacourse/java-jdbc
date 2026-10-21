@@ -13,14 +13,14 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
@@ -28,7 +28,6 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
@@ -37,14 +36,12 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public List<User> findAll() {
         final var sql = "select * from users";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         log.debug("query : {}", sql);
 
         RowMapper<User> rowMapper = rs -> new User(
@@ -59,7 +56,6 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         log.debug("query : {}", sql);
 
         RowMapper<User> rowMapper = rs -> new User(
@@ -74,7 +70,6 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         log.debug("query : {}", sql);
 
         RowMapper<User> rowMapper = rs -> new User(
