@@ -1,12 +1,10 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +29,7 @@ public class JdbcTemplate {
 
             return rowMapper.mapRow(resultSet);
         } catch (SQLException e) {
-            throw new IllegalStateException("query failed", e);
+            throw new DataAccessException("query failed (sql=" + sql + ")", e);
         }
     }
 
@@ -42,7 +40,7 @@ public class JdbcTemplate {
         ) {
             executeUpdate(pstmtSetter, pstmt);
         } catch (SQLException e) {
-            throw new IllegalStateException("update failed", e);
+            throw new DataAccessException("update/insert failed (sql=" + sql + ")", e);
         }
     }
 

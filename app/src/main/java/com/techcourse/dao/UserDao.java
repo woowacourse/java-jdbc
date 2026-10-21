@@ -4,6 +4,7 @@ import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.exception.UserNotFoundException;
 import com.techcourse.repository.UserRowMapper;
 import com.techcourse.repository.UsersRowMapper;
 import java.util.ArrayList;
@@ -42,7 +43,6 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        // todo
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
         final PreparedStatementSetter pstmtSetter = preparedStatement -> {
             preparedStatement.setString(1, user.getAccount());
@@ -54,7 +54,6 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
         final String sql = "SELECT id, account, password, email from users";
         final PreparedStatementSetter pstmtSetter =
             preparedStatement -> {};
@@ -68,16 +67,15 @@ public class UserDao {
             preparedStatement -> preparedStatement.setObject(1, id);
 
         return jdbcTemplate.query(sql, pstmtSetter, USER_MAPPER)
-            .orElseThrow(() -> new IllegalArgumentException("user not found (id: " + id));
+            .orElseThrow(() -> new UserNotFoundException("user not found (id: " + id));
     }
 
     public User findByAccount(final String account) {
-        // todo
         final String sql = "SELECT id, account, password, email from users where account = ?";
         final PreparedStatementSetter pstmtSetter =
             preparedStatement -> preparedStatement.setObject(1, account);
 
         return jdbcTemplate.query(sql, pstmtSetter, USER_MAPPER)
-            .orElseThrow(() -> new IllegalArgumentException("user not found (account: " + account));
+            .orElseThrow(() -> new UserNotFoundException("user not found (account: " + account));
     }
 }
