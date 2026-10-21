@@ -21,9 +21,20 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
+        return query(
+                sql,
+                rowMapper,
+                statement -> bindParameters(statement, args));
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter setter
+    ) {
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)) {
-            bindParameters(statement, args);
+            setter.setValues(statement);
 
             try (final var resultSet = statement.executeQuery()) {
                 final var results = new ArrayList<T>();
@@ -43,7 +54,19 @@ public class JdbcTemplate {
             final String sql,
             final RowMapper<T> rowMapper,
             final Object... args) {
-        final var results = query(sql, rowMapper, args);
+        return queryForObject(
+                sql,
+                rowMapper,
+                statement -> bindParameters(statement, args)
+        );
+    }
+
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter setter
+    ) {
+        final var results = query(sql, rowMapper, setter);
 
         if (results.isEmpty()) {
             return null;
@@ -53,10 +76,14 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        return update(sql, statement -> bindParameters(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)
         ) {
-            bindParameters(statement, args);
+            setter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
@@ -66,7 +93,7 @@ public class JdbcTemplate {
     private void bindParameters(
             final PreparedStatement statement,
             final Object[] args
-            ) throws SQLException {
+    ) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
