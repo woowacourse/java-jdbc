@@ -1,17 +1,15 @@
 package com.interface21.jdbc.core;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -23,62 +21,45 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(final String sql, final List<Object> parameters) {
+    public <T> T query(final String sql, final PreparedStatementSetter pstmtSetter,
+        final RowMapper<T> rowMapper) {
         try (
             final Connection connection = dataSource.getConnection();
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+            final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
-            for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
-            }
+            final ResultSet resultSet = executeQuery(pstmtSetter, pstmt);
 
-            preparedStatement.executeUpdate();
+            return rowMapper.mapRow(resultSet);
         } catch (SQLException e) {
-            throw new IllegalStateException("UPDATE query failed", e);
+            throw new IllegalStateException("query failed", e);
         }
     }
 
-    public <T> Optional<T> executeSelect(final String sql, final EntityMapper<T> entityMapper, final List<Object> parameters) {
+    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
         try (
             final Connection connection = dataSource.getConnection();
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+            final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
-            for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
-            }
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(entityMapper.map(resultSet));
-                }
-            }
+            executeUpdate(pstmtSetter, pstmt);
         } catch (SQLException e) {
-            throw new IllegalStateException("SELECT for multiple entities query failed", e);
+            throw new IllegalStateException("update failed", e);
         }
-
-        return Optional.empty();
     }
 
-    public <T> List<T> executeSelectAll(final String sql, final EntityMapper<T> entityMapper, final List<Object> parameters) {
-        final List<T> result = new ArrayList<>();
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-            for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
-            }
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    result.add(entityMapper.map(resultSet));
-                }
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("SELECT for multiple entities query failed", e);
-        }
+    private ResultSet executeQuery(
+        final PreparedStatementSetter pstmtSetter,
+        final PreparedStatement pstmt
+    ) throws SQLException {
+        pstmtSetter.setValues(pstmt);
 
-        return result;
+        return pstmt.executeQuery();
+    }
+
+    private void executeUpdate(
+        final PreparedStatementSetter pstmtSetter,
+        final PreparedStatement pstmt
+    ) throws SQLException {
+        pstmtSetter.setValues(pstmt);
+        pstmt.executeUpdate();
     }
 }
