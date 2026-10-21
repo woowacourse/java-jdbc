@@ -22,11 +22,15 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
+        return update(sql, parameterSetter(parameters));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
         log.debug("query : {}", sql);
 
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)) {
-            setParameters(statement, parameters);
+            setter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
@@ -34,17 +38,25 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return executeQuery(sql, resultSet -> {
+        return query(sql, parameterSetter(parameters), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return executeQuery(sql, setter, resultSet -> {
             final List<T> results = new ArrayList<>();
             while (resultSet.next()) {
                 results.add(rowMapper.mapRow(resultSet));
             }
             return results;
-        }, parameters);
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return executeQuery(sql, resultSet -> {
+        return queryForObject(sql, parameterSetter(parameters), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return executeQuery(sql, setter, resultSet -> {
             if (!resultSet.next()) {
                 return null;
             }
@@ -53,15 +65,16 @@ public class JdbcTemplate {
                 throw new DataAccessException("Expected at most one row, but found at least 2");
             }
             return result;
-        }, parameters);
+        });
     }
 
-    private <T> T executeQuery(final String sql, final ResultSetExtractor<T> extractor, final Object[] parameters) {
+    private <T> T executeQuery(final String sql, final PreparedStatementSetter setter,
+                             final ResultSetExtractor<T> extractor) {
         log.debug("query : {}", sql);
 
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)) {
-            setParameters(statement, parameters);
+            setter.setValues(statement);
 
             try (final var resultSet = statement.executeQuery()) {
                 return extractor.extract(resultSet);
@@ -71,10 +84,12 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(final PreparedStatement statement, final Object[] parameters) throws SQLException {
-        for (int i = 0; i < parameters.length; i++) {
-            statement.setObject(i + 1, parameters[i]);
-        }
+    private PreparedStatementSetter parameterSetter(final Object[] parameters) {
+        return statement -> {
+            for (int i = 0; i < parameters.length; i++) {
+                statement.setObject(i + 1, parameters[i]);
+            }
+        };
     }
 
     @FunctionalInterface

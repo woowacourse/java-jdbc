@@ -9,11 +9,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +51,78 @@ class JdbcTemplateTest {
         verify(statement).setObject(1, "newPassword");
         verify(statement).setObject(2, null);
         verify(statement).setObject(3, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateUsesCustomSetterForTypedParameters() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update("update users set email = ? where id = ?", ps -> {
+            ps.setNull(1, Types.VARCHAR);
+            ps.setLong(2, 1L);
+        });
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setNull(1, Types.VARCHAR);
+        verify(statement).setLong(2, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryUsesCustomSetterAndMapsEveryRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "other");
+
+        final var accounts = jdbcTemplate.query("select account from users where id > ?",
+                ps -> ps.setLong(1, 0L), rs -> rs.getString("account"));
+
+        assertThat(accounts).containsExactly("gugu", "other");
+        verify(statement).setLong(1, 0L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryForObjectUsesCustomSetter() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject("select account from users where id = ?",
+                ps -> ps.setLong(1, 1L), rs -> rs.getString("account"));
+
+        assertThat(account).isEqualTo("gugu");
+        verify(statement).setLong(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateDoesNotExecuteWhenCustomSetterThrowsSqlException() throws SQLException {
+        final var cause = new SQLException("binding failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", ps -> {
+            throw cause;
+        })).isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryDoesNotExecuteWhenCustomSetterThrowsSqlException() throws SQLException {
+        final var cause = new SQLException("binding failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users where id = ?", ps -> {
+            throw cause;
+        }, rs -> rs.getString("account"))).isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement, never()).executeQuery();
         verify(statement).close();
         verify(connection).close();
     }
