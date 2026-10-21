@@ -21,7 +21,7 @@ public class UserHistoryDao {
     }
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.dataSource = jdbcTemplate.getDataSource();
     }
 
     public void log(final UserHistory userHistory) {
