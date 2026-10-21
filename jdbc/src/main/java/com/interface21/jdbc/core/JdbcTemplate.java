@@ -26,7 +26,7 @@ public class JdbcTemplate {
 
     public void update(
             String sql,
-            List<Object> params
+            Object... params
     ) {
         try (
                 Connection connection = dataSource.getConnection();
@@ -44,17 +44,10 @@ public class JdbcTemplate {
 
     public <T> Optional<T> selectOne(
             String sql,
-            RowMapper<T> rowMapper
+            RowMapper<T> rowMapper,
+            Object... params
     ) {
-        return selectOne(sql, List.of(), rowMapper);
-    }
-
-    public <T> Optional<T> selectOne(
-            String sql,
-            List<Object> params,
-            RowMapper<T> rowMapper
-    ) {
-        List<T> results = selectMany(sql, params, rowMapper);
+        List<T> results = selectMany(sql, rowMapper, params);
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row, but found " + results.size());
         }
@@ -63,15 +56,8 @@ public class JdbcTemplate {
 
     public <T> List<T> selectMany(
             String sql,
-            RowMapper<T> rowMapper
-    ) {
-        return selectMany(sql, List.of(), rowMapper);
-    }
-
-    public <T> List<T> selectMany(
-            String sql,
-            List<Object> params,
-            RowMapper<T> rowMapper
+            RowMapper<T> rowMapper,
+            Object... params
     ) {
         try (
                 Connection connection = dataSource.getConnection();
@@ -94,11 +80,11 @@ public class JdbcTemplate {
     }
 
     private void setParams(
-            List<Object> params,
+            Object[] params,
             PreparedStatement statement
     ) throws SQLException {
-        for (int i = 1; i <= params.size(); i++) {
-            statement.setObject(i, params.get(i - 1));
+        for (int i = 0; i < params.length; i++) {
+            statement.setObject(i + 1, params[i]);
         }
     }
 }

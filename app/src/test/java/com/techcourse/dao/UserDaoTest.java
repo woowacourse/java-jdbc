@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +17,7 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        new JdbcTemplate(DataSourceConfig.getInstance()).update("truncate table users restart identity", List.of());
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("truncate table users restart identity");
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -78,7 +77,7 @@ class UserDaoTest {
 
     @Test
     void findAllReturnsImmutableEmptyListWhenNotFound() {
-        new JdbcTemplate(DataSourceConfig.getInstance()).update("delete from users", List.of());
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("delete from users");
 
         final var users = userDao.findAll();
 

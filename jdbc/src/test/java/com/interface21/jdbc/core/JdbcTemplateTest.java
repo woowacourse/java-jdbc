@@ -49,22 +49,23 @@ class JdbcTemplateTest {
         void executeUpdateQuery() throws SQLException {
             String sql = "UPDATE users SET name = '피카츄'";
 
-            jdbcTemplate.update(sql, List.of());
+            jdbcTemplate.update(sql);
 
             verify(connection).prepareStatement(sql);
             verify(statement).executeUpdate();
         }
 
         @Test
-        @DisplayName("파라미터를 List 순서대로 인덱스에 바인딩한다")
-        void bindParametersToIndexesInListOrder() throws SQLException {
+        @DisplayName("파라미터를 전달한 순서대로 인덱스에 바인딩한다")
+        void bindParametersToIndexesInArgumentOrder() throws SQLException {
             String sql = "UPDATE users SET name = ? WHERE id = ?";
 
-            jdbcTemplate.update(sql, List.of("피카츄", 1L));
+            jdbcTemplate.update(sql, "피카츄", 1L);
 
             verify(statement).setObject(1, "피카츄");
             verify(statement).setObject(2, 1L);
         }
+
     }
 
     @Nested
@@ -116,11 +117,11 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("파라미터를 List 순서대로 인덱스에 바인딩한다")
-        void bindParametersToIndexesInListOrder() throws SQLException {
+        @DisplayName("파라미터를 전달한 순서대로 인덱스에 바인딩한다")
+        void bindParametersToIndexesInArgumentOrder() throws SQLException {
             String sql = "SELECT name FROM users WHERE age = ? AND id = ?";
 
-            jdbcTemplate.selectMany(sql, List.of(10, 1L), currentResultSet -> "피카츄");
+            jdbcTemplate.selectMany(sql, currentResultSet -> "피카츄", 10, 1L);
 
             verify(statement).setObject(1, 10);
             verify(statement).setObject(2, 1L);
@@ -167,8 +168,8 @@ class JdbcTemplateTest {
             when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getString("name")).thenReturn("피카츄");
 
-            Optional<String> actual = jdbcTemplate.selectOne(sql, List.of(10, 1L),
-                    currentResultSet -> currentResultSet.getString("name"));
+            Optional<String> actual = jdbcTemplate.selectOne(sql,
+                    currentResultSet -> currentResultSet.getString("name"), 10, 1L);
 
             assertThat(actual).contains("피카츄");
             verify(statement).setObject(1, 10);

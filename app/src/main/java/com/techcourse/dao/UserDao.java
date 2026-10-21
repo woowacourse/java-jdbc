@@ -22,14 +22,14 @@ public class UserDao {
     public void insert(final User user) {
         jdbcTemplate.update(
                 "insert into users (account, password, email) values (?, ?, ?)",
-                List.of(user.getAccount(), user.getPassword(), user.getEmail())
+                user.getAccount(), user.getPassword(), user.getEmail()
         );
     }
 
     public void update(final User user) {
         jdbcTemplate.update(
                 "update users set account = ?, password = ?, email = ? where id = ?",
-                List.of(user.getAccount(), user.getPassword(), user.getEmail(), user.getId())
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
         );
     }
 
@@ -43,16 +43,16 @@ public class UserDao {
     public User findById(final Long id) {
         return jdbcTemplate.selectOne(
                 "select id, account, password, email from users where id = ?",
-                List.of(id),
-                this::parseUser
+                this::parseUser,
+                id
         ).orElse(null);
     }
 
     public User findByAccount(final String account) {
         return jdbcTemplate.selectMany(
                 "select id, account, password, email from users where account = ?",
-                List.of(account),
-                this::parseUser
+                this::parseUser,
+                account
         ).stream().findFirst().orElse(null);
     }
 
