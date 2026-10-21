@@ -32,10 +32,14 @@ public class JdbcTemplate {
     ) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
+                if (!rs.next()) {
+                    return null;
                 }
-                return null;
+                T result = rowMapper.mapRow(rs);
+                if (rs.next()) {
+                    throw new DataAccessException("단건 조회 결과는 최대 1건이어야 합니다.");
+                }
+                return result;
             }
         }, args);
     }
