@@ -122,6 +122,32 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("조회 결과를 읽다가 실패해도 원인 오류를 담고 모든 자원을 닫는다")
+    void queryWrapsMappingFailureAndClosesResources() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var resultSet = mock(ResultSet.class);
+        final var sqlException = new SQLException("Mapping failed");
+        final var sql = "select name from users";
+        final var template = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        final var exception = assertThrows(DataAccessException.class,
+                () -> template.query(sql, rs -> {
+                    throw sqlException;
+                }));
+
+        assertThat(exception.getCause()).isSameAs(sqlException);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     @DisplayName("DB 연결을 얻지 못하면 연결 예외를 던진다")
     void updateThrowsConnectionExceptionWhenConnectionCannotBeObtained() throws SQLException {
         final var dataSource = mock(DataSource.class);
