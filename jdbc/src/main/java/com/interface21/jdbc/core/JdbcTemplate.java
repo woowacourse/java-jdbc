@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public class JdbcTemplate {
@@ -25,18 +24,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다." + sql, e);
-        }
+        return update(sql, createSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, createSetter(args));
+    }
+
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        final List<T> results = query(sql, rowMapper, pss);
         if (results.size() > 1) {
             throw new DataAccessException("결과가 1건이어야 하지만 " + results.size() + "건 조회됨: " + sql);
         }
@@ -44,10 +44,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, args);
+        return query(sql, rowMapper, createSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pss, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 int rowNum = 0;
@@ -56,17 +57,28 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
+        log.debug("query : {}", sql);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pss.setValues(pstmt);
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다." + sql, e);
+            throw new DataAccessException("SQL 실행 실패: " + sql, e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        if (args == null) {
-            return;
-        }
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter createSetter(final Object... args) {
+        return pstmt -> {
+            if (args == null) {
+                return;
+            }
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
