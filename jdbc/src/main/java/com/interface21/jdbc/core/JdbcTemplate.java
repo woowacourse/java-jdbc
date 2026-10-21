@@ -23,15 +23,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
-            return pstmt.executeUpdate();
-        });
+        return update(sql, argumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
-            setParameters(pstmt, args);
+        return query(sql, rowMapper, argumentSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pss, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -43,26 +47,39 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, argumentSetter(args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        List<T> results = query(sql, rowMapper, pss);
         if (results.size() != 1) {
             throw new DataAccessException("조회 결과가 1개가 아닙니다. size = " + results.size());
         }
         return results.get(0);
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+    private <T> T execute(final String sql, final PreparedStatementSetter pss,
+                          final PreparedStatementCallback<T> callback) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
+            if (pss != null) {
+                pss.setValues(pstmt);
+            }
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter argumentSetter(final Object... args) {
+        return pstmt -> {
+            if (args == null) {
+                return;
+            }
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
