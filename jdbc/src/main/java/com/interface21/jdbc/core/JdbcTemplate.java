@@ -22,15 +22,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다.", e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(
@@ -38,20 +30,14 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
                 }
                 return null;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다.", e);
-        }
+        }, args);
     }
 
     public <T> List<T> query(
@@ -59,20 +45,35 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        List<T> result = new ArrayList<>();
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+        return execute(sql, pstmt -> {
+            List<T> result = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     result.add(rowMapper.mapRow(rs));
                 }
                 return result;
             }
+        }, args);
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            bindParameters(pstmt, args);
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다.", e);
         }
+    }
+
+    private void bindParameters(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
     }
 }
