@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,46 +20,39 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object ... args)  {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
             executeSql(args, pstmt);
-
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            closeStatement(pstmt);
-            closeConnection(conn);
         }
+    }
+
+    public <T> T query(String sql, TransactionalQuery<T> handler, Object ... args) {
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
+            setArgs(args, pstmt);
+            try(ResultSet rs = pstmt.executeQuery()) {
+                return handler.execute(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection conn, String sql) throws SQLException {
+        log.debug("query : {}", sql);
+        return conn.prepareStatement(sql);
     }
 
     private void executeSql(Object[] args, PreparedStatement pstmt) throws SQLException {
-        for(int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+        setArgs(args, pstmt);
         pstmt.executeUpdate();
     }
 
-    private void closeConnection(Connection conn) {
-        try {
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException ignored) {}
-    }
-
-    private void closeStatement(PreparedStatement pstmt) {
-        try {
-            if (pstmt != null) {
-                pstmt.close();
-            }
-        } catch (SQLException ignored) {}
+    private void setArgs(Object[] args, PreparedStatement pstmt) throws SQLException {
+        for(int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
     }
 }
