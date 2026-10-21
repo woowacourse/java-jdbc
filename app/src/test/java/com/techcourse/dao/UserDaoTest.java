@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -15,6 +16,8 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table users restart identity");
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -33,6 +36,18 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdWithJdbcTemplate() {
+        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var userDaoWithJdbcTemplate = new UserDao(jdbcTemplate);
+
+        final var user = userDaoWithJdbcTemplate.findById(1L);
+
+        assertThat(user)
+                .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
+                .containsExactly(1L, "gugu", "password", "hkkang@woowahan.com");
     }
 
     @Test
