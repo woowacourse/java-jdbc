@@ -19,13 +19,13 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T query(final String sql, final PreparedStatementSetter pstmtSetter,
-        final RowMapper<T> rowMapper) {
+    public <T> T query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
             final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            final ResultSet resultSet = executeQuery(pstmtSetter, pstmt);
+            newArgPreparedStatementSetter(args).setValues(pstmt);
+            final ResultSet resultSet = pstmt.executeQuery();
 
             return rowMapper.mapRow(resultSet);
         } catch (SQLException e) {
@@ -33,31 +33,19 @@ public class JdbcTemplate {
         }
     }
 
-    public void update(final String sql, final PreparedStatementSetter pstmtSetter) {
+    public void update(final String sql, final Object... args) {
         try (
             final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            executeUpdate(pstmtSetter, pstmt);
+            newArgPreparedStatementSetter(args).setValues(pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("update/insert failed (sql=" + sql + ")", e);
         }
     }
 
-    private ResultSet executeQuery(
-        final PreparedStatementSetter pstmtSetter,
-        final PreparedStatement pstmt
-    ) throws SQLException {
-        pstmtSetter.setValues(pstmt);
-
-        return pstmt.executeQuery();
-    }
-
-    private void executeUpdate(
-        final PreparedStatementSetter pstmtSetter,
-        final PreparedStatement pstmt
-    ) throws SQLException {
-        pstmtSetter.setValues(pstmt);
-        pstmt.executeUpdate();
+    private PreparedStatementSetter newArgPreparedStatementSetter(final Object[] args) {
+        return new ArgumentPreparedStatementSetter(args);
     }
 }
