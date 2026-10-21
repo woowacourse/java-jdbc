@@ -82,6 +82,9 @@ public class JdbcTemplate {
 
     private PreparedStatementSetter argumentSetter(final Object... args) {
         return pstmt -> {
+            if (args == null) {
+                return;
+            }
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }

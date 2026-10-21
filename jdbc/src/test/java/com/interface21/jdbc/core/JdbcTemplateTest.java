@@ -170,6 +170,14 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("가변인자 배열이 null이면 바인딩 없이 실행한다")
+    void updateWithNullArgumentArray() throws SQLException {
+        jdbcTemplate.update("delete from users", (Object[]) null);
+
+        verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
     @DisplayName("null 하나를 바인딩하려면 Object로 캐스팅해 가변인자 메서드를 호출한다")
     void updateBindsSingleNullArgument() throws SQLException {
         jdbcTemplate.update("update users set email = ?", (Object) null);
