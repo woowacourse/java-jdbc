@@ -78,6 +78,87 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 조회 결과가 없으면 null을 돌려주고 자원을 닫는다")
+    void queryForObjectReturnsNullWhenNoRows() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var resultSet = mock(ResultSet.class);
+        final var sql = "select name from users";
+        final var mappedRows = new AtomicInteger();
+        final RowMapper<String> rowMapper = rs -> {
+            mappedRows.incrementAndGet();
+            return rs.getString(1);
+        };
+        final var template = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final var result = template.queryForObject(sql, rowMapper);
+
+        assertThat(result).isNull();
+        assertThat(mappedRows.get()).isZero();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회 결과가 한 건이면 매핑한 값을 돌려주고 자원을 닫는다")
+    void queryForObjectReturnsMappedRowWhenOneRow() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var resultSet = mock(ResultSet.class);
+        final var sql = "select name from users";
+        final var template = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString(1)).thenReturn("only-user");
+
+        final var result = template.queryForObject(sql, rs -> rs.getString(1));
+
+        assertThat(result).isEqualTo("only-user");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회 결과가 여러 건이면 예외를 던지고 자원을 닫는다")
+    void queryForObjectThrowsWhenMultipleRows() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var resultSet = mock(ResultSet.class);
+        final var sql = "select name from users";
+        final var mappedRows = new AtomicInteger();
+        final RowMapper<String> rowMapper = rs -> {
+            mappedRows.incrementAndGet();
+            return rs.getString(1);
+        };
+        final var template = new JdbcTemplate(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true);
+        when(resultSet.getString(1)).thenReturn("first-user");
+
+        final var exception = assertThrows(DataAccessException.class,
+                () -> template.queryForObject(sql, rowMapper));
+
+        assertThat(exception).hasMessageContaining("multiple rows");
+        assertThat(mappedRows.get()).isOne();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     @DisplayName("값을 순서대로 SQL에 넣고 변경된 행 수를 돌려준다")
     void updateBindsValuesAndReturnsUpdatedRowCount() throws SQLException {
         final var dataSource = mock(DataSource.class);
