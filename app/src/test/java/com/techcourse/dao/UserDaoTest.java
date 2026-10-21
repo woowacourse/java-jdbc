@@ -1,12 +1,12 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -32,7 +32,13 @@ class UserDaoTest {
     void findById() {
         final var user = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user).isPresent();
+        assertThat(user.orElseThrow().getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdWhenNotFound() {
+        assertThat(userDao.findById(999L)).isEmpty();
     }
 
     @Test
@@ -40,7 +46,8 @@ class UserDaoTest {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user).isPresent();
+        assertThat(user.orElseThrow().getAccount()).isEqualTo(account);
     }
 
     @Test
@@ -49,7 +56,7 @@ class UserDaoTest {
         final var user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
+        final var actual = userDao.findById(2L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -57,12 +64,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(1L);
+        final var user = userDao.findById(1L).orElseThrow();
         user.changePassword(newPassword);
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
+        final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
