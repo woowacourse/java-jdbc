@@ -39,6 +39,22 @@ public class JdbcTemplate {
         });
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, args, statement -> {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                final var result = rowMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("Expected at most one row, but found multiple rows");
+                }
+                return result;
+            }
+        });
+    }
+
     private <T> T execute(final String sql, final Object[] args, final StatementCallback<T> callback) {
         try (Connection connection = getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
