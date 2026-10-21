@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -26,6 +25,8 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table user_history restart identity");
+        jdbcTemplate.update("truncate table users restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -42,9 +43,16 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+
+        final var historyPasswords = jdbcTemplate.query(
+                "select password from user_history where user_id = ? and created_by = ?",
+                rs -> rs.getString("password"), 1L, createBy);
+
+        assertThat(historyPasswords).containsExactly(newPassword);
     }
 
     @Test
+    @Disabled("트랜잭션 단계에서 롤백 기능 구현 후 활성화")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);

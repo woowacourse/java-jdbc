@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DuplicateKeyException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -65,7 +66,7 @@ public class JdbcTemplate {
             if ("23505".equals(e.getSQLState())) {
                 throw new DuplicateKeyException(e);
             }
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 }

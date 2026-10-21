@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DuplicateKeyException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(pstmt).close();
@@ -142,7 +143,7 @@ class JdbcTemplateTest {
         when(rs.getString("account")).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(rs).close();
@@ -156,6 +157,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(connection).close();
@@ -168,6 +170,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users where account = ?",
                 row -> row.getString("account"), "gugu"))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(pstmt, never()).executeQuery();
@@ -181,6 +184,7 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(pstmt).close();
