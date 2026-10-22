@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class JdbcTemplate {
 
@@ -19,27 +20,50 @@ public class JdbcTemplate {
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
     }
 
+    /**
+     * SQL을 실행하고 영향을 받은 행 수를 반환한다.
+     *
+     * <p>SQL 값 하나가 {@code null}이면 타입을 {@code Object}로 지정한다.
+     * {@code update(sql, null)}은 setter를 받는 메서드와 구분할 수 없어 컴파일되지 않는다.
+     * <pre>{@code
+     * jdbcTemplate.update("update users set email = ?", (Object) null);
+     * }</pre>
+     *
+     * @param sql 실행할 SQL
+     * @param args SQL 매개변수에 순서대로 넣을 값. 각 값은 {@code null}일 수 있지만 배열 자체는 {@code null}일 수 없다.
+     * @return 영향을 받은 행 수
+     * @throws NullPointerException args 배열 자체가 {@code null}인 경우
+     */
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
-            final List<T> results = new ArrayList<>();
+        return query(sql, rowMapper, createPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        Objects.requireNonNull(rowMapper, "rowMapper must not be null");
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
+                return mapRows(resultSet, rowMapper);
             }
-            return results;
-        }, args);
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, createPreparedStatementSetter(args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        final List<T> results = query(sql, rowMapper, setter);
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most 1 result, but found " + results.size());
         }
@@ -49,20 +73,35 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
+        Objects.requireNonNull(setter, "setter must not be null");
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                statement.setObject(i + 1, args[i]);
-            }
-
+            setter.setValues(statement);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> mapRows(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
+        }
+        return results;
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
+        Objects.requireNonNull(args, "args must not be null");
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     private interface StatementCallback<T> {

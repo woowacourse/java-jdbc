@@ -5,6 +5,7 @@ import aop.domain.User;
 
 public interface UserService {
 
+
     User findById(final long id);
     void insert(final User user);
 
