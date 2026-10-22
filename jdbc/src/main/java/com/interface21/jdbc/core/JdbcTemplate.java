@@ -27,6 +27,10 @@ public class JdbcTemplate {
         return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, args, PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -40,24 +44,40 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, args, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
+        return execute(sql, args, statement -> queryForObject(statement, rowMapper));
+    }
 
-                final var result = rowMapper.mapRow(resultSet);
-                if (resultSet.next()) {
-                    throw new DataAccessException("Expected at most one row, but found multiple rows");
-                }
-                return result;
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return execute(connection, sql, args, statement -> queryForObject(statement, rowMapper));
+    }
+
+    private <T> T queryForObject(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            if (!resultSet.next()) {
+                return null;
             }
-        });
+
+            final var result = rowMapper.mapRow(resultSet);
+            if (resultSet.next()) {
+                throw new DataAccessException("Expected at most one row, but found multiple rows");
+            }
+            return result;
+        }
     }
 
     private <T> T execute(final String sql, final Object[] args, final StatementCallback<T> callback) {
-        try (Connection connection = getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = getConnection()) {
+            return execute(connection, sql, args, callback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final Object[] args,
+                          final StatementCallback<T> callback) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(statement, args);
             return callback.execute(statement);
