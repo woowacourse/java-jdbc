@@ -21,6 +21,7 @@ dependencies {
 
     implementation 'org.springframework:spring-tx:6.2.10'
     implementation 'org.springframework:spring-jdbc:6.2.10'
+    implementation 'org.springframework:spring-aop:6.2.10'
 
     implementation 'org.apache.tomcat.embed:tomcat-embed-core:11.0.10'
     implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:11.0.10'
