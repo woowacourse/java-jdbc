@@ -443,6 +443,56 @@ class JdbcTemplateTest {
         verifyNoInteractions(dataSource, connection, statement, resultSet);
     }
 
+    @Test
+    @DisplayName("null SQL은 setter·가변 인자 API 모두 DB 연결 전에 거부한다")
+    void nullSqlIsRejectedBeforeOpeningAConnection() {
+        final PreparedStatementSetter setter = ignored -> {};
+        final RowMapper<String> mapper = row -> row.getString("name");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(null, setter)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query(null, setter, mapper)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(null, setter, mapper))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query(null, mapper)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(null, mapper)).isInstanceOf(NullPointerException.class);
+
+        verifyNoInteractions(dataSource, connection, statement, resultSet);
+    }
+
+    @Test
+    @DisplayName("null setter는 세 API 모두 DB 연결 전에 거부한다")
+    void nullSetterIsRejectedBeforeOpeningAConnection() {
+        final var sql = "select name from sample";
+        final RowMapper<String> mapper = row -> row.getString("name");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, (PreparedStatementSetter) null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, (PreparedStatementSetter) null, mapper))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (PreparedStatementSetter) null, mapper))
+                .isInstanceOf(NullPointerException.class);
+
+        verifyNoInteractions(dataSource, connection, statement, resultSet);
+    }
+
+    @Test
+    @DisplayName("null mapper는 두 조회 API의 setter·가변 인자 방식 모두 DB 연결 전에 거부한다")
+    void nullMapperIsRejectedBeforeOpeningAConnection() {
+        final var sql = "select name from sample";
+        final PreparedStatementSetter setter = ignored -> {};
+
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, setter, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, setter, null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, (RowMapper<String>) null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, (RowMapper<String>) null))
+                .isInstanceOf(NullPointerException.class);
+
+        verifyNoInteractions(dataSource, connection, statement, resultSet);
+    }
+
     private void verifyQueryResourcesClosed() throws SQLException {
         final var order = inOrder(resultSet, statement, connection);
         order.verify(resultSet).close();
