@@ -20,10 +20,6 @@ public class UserHistoryDao {
         this.dataSource = dataSource;
     }
 
-//    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-//        this.dataSource = null;
-//    }
-
     public void log(final UserHistory userHistory) {
         final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
