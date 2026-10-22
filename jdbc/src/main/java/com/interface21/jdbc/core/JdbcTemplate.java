@@ -22,7 +22,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void insert(String query, Object... objects) {
+    public void update(String query, Object... objects) {
         Connection conn = null;
         PreparedStatement pstmt = null;
 
