@@ -1,12 +1,13 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
@@ -14,7 +15,15 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute("TRUNCATE TABLE users RESTART IDENTITY");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -22,10 +31,21 @@ class UserDaoTest {
     }
 
     @Test
-    void findAll() {
+    void findAll1() {
         final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
+    }
+
+    @Test
+    void findAll2() {
+        final var user = new User("gugu1", "password", "hkkang@woowahan.com");
+        userDao.insert(user);
+        final var user2 = new User("gugu2", "password", "hkkang@woowahan.com");
+        userDao.insert(user2);
+
+        final var users = userDao.findAll();
+        assertThat(users.size()).isEqualTo(3);
     }
 
     @Test
