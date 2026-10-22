@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
@@ -25,12 +24,6 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        PreparedStatementSetter setter = pstmt -> {
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-        };
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
@@ -38,17 +31,17 @@ public class UserDao {
             }
         };
 
-        jdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(
+                sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail()
+        );
     }
 
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
 
-        PreparedStatementSetter setter = pstmt -> {
-            pstmt.setString(1, user.getPassword());
-            pstmt.setLong(2, user.getId());
-        };
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
@@ -56,15 +49,17 @@ public class UserDao {
             }
         };
 
-        jdbcTemplate.update(sql, setter);
+        jdbcTemplate.update(
+                sql,
+                user.getPassword(),
+                user.getId()
+        );
     }
 
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        PreparedStatementSetter setter = pstmt -> {};
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
@@ -72,16 +67,12 @@ public class UserDao {
             }
         };
 
-        return jdbcTemplate.query(sql, setter, userRowMapper);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        PreparedStatementSetter setter = pstmt -> {
-            pstmt.setLong(1, id);
-        };
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
@@ -89,7 +80,7 @@ public class UserDao {
             }
         };
 
-        List<User> result = jdbcTemplate.query(sql, setter, userRowMapper);
+        List<User> result = jdbcTemplate.query(sql, userRowMapper, id);
 
         if (result.isEmpty()) {
             return null;
@@ -101,10 +92,6 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        PreparedStatementSetter setter = pstmt -> {
-            pstmt.setString(1, account);
-        };
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
@@ -112,7 +99,7 @@ public class UserDao {
             }
         };
 
-        List<User> result = jdbcTemplate.query(sql, setter, userRowMapper);
+        List<User> result = jdbcTemplate.query(sql, userRowMapper, account);
 
         if (result.isEmpty()) {
             return null;

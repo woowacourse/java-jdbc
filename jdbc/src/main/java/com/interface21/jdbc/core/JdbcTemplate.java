@@ -16,6 +16,10 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    public final void update(String sql, Object... args) {
+        update(sql, pstmt -> setValues(pstmt, args));
+    }
+
     public final void update(String sql, PreparedStatementSetter setter) {
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -45,6 +49,10 @@ public abstract class JdbcTemplate {
         }
     }
 
+    public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, pstmt -> setValues(pstmt, args), rowMapper);
+    }
+
     public final <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -66,6 +74,12 @@ public abstract class JdbcTemplate {
     private ResultSet executeQuery(PreparedStatementSetter setter, PreparedStatement pstmt) throws SQLException {
         setter.setValues(pstmt);
         return pstmt.executeQuery();
+    }
+
+    private void setValues(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
     }
 
     protected abstract DataSource getDataSource();
