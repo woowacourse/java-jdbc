@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,21 +24,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... params) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> List<T> query(
@@ -44,16 +32,7 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        try (
-                Connection conn = dataSource.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
 
@@ -63,12 +42,36 @@ public class JdbcTemplate {
 
                 return results;
             }
+        }, params);
+    }
+
+    private <R> R execute(
+            final String sql,
+            final JdbcOperation<R> operation,
+            final Object... params
+    ) {
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+
+            return operation.execute(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
+    /**
+     * Returns the mapped value of exactly one row.
+     *
+     * @throws IncorrectResultSizeDataAccessException if the query returns zero or multiple rows
+     */
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
@@ -76,10 +79,15 @@ public class JdbcTemplate {
     ) {
         List<T> results = query(sql, rowMapper, params);
 
-        if (results.isEmpty()) {
-            return null;
+        if (results.size() != 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
 
         return results.get(0);
+    }
+
+    @FunctionalInterface
+    private interface JdbcOperation<R> {
+        R execute(PreparedStatement pstmt) throws SQLException;
     }
 }
