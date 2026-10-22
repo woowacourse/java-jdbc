@@ -1,15 +1,18 @@
 package com.techcourse.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class UserDaoTest {
 
+    private static final Logger log = LoggerFactory.getLogger(UserDaoTest.class);
     private UserDao userDao;
 
     @BeforeEach
@@ -39,6 +42,8 @@ class UserDaoTest {
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
+//        테스트 시 간헐적으로 5개의 결과가 나와서 실패할 때가 있다. 뭐지
+        log.debug("user: {}", user);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
