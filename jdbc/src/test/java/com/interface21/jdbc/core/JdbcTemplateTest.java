@@ -148,12 +148,13 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("조회 결과가 없으면 DataAccessException이 발생한다.")
-        void throwDataAccessExceptionWhenEmpty() throws SQLException {
+        @DisplayName("조회 결과가 없으면 null을 반환한다.")
+        void returnNullWhenEmpty() throws SQLException {
             when(rs.next()).thenReturn(false);
 
-            assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L))
-                    .isInstanceOf(DataAccessException.class);
+            final var account = jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L);
+
+            assertThat(account).isNull();
         }
 
         @Test

@@ -69,7 +69,7 @@ public class JdbcTemplate {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) {
-                    throw new DataAccessException("조회 결과가 없습니다.");
+                    return null;
                 }
 
                 T result = rowMapper.mapRow(rs, rs.getRow());
