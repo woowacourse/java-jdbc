@@ -69,7 +69,7 @@ public class UserDao {
 
     public void update(final User user) {
         // todo
-        final var sql = "update users set account = ?, password = ?, email = ?";
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -82,6 +82,7 @@ public class UserDao {
             pstmt.setString(1, user.getAccount());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -111,7 +112,7 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(sql, userRowMapper, id).getFirst();
+        return jdbcTemplate.queryObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
