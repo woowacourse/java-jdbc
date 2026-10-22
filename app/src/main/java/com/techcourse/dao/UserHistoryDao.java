@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
