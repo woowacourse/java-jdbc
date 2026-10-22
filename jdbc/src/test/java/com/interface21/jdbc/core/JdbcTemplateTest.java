@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -99,6 +100,65 @@ class JdbcTemplateTest {
                 .isExactlyInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateReturnsAffectedRowCountAndBindsParameters() throws SQLException {
+        String updateSql = "update users set email = ? where id = ?";
+        when(connection.prepareStatement(updateSql)).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(3);
+
+        int affectedRows = jdbcTemplate.update(updateSql, EMAIL, 1L);
+
+        assertThat(affectedRows).isEqualTo(3);
+        verify(statement).setObject(1, EMAIL);
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryMapsAllRowsAndClosesResources() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "other");
+
+        var accounts = jdbcTemplate.query(SQL, rowMapper, EMAIL);
+
+        assertThat(accounts).containsExactly("gugu", "other");
+        verify(statement).setObject(1, EMAIL);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void bindingFailurePreservesCauseAndClosesResources() throws SQLException {
+        String updateSql = "update users set email = ? where id = ?";
+        SQLException cause = new SQLException("Binding failed");
+        when(connection.prepareStatement(updateSql)).thenReturn(statement);
+        doThrow(cause).when(statement).setObject(1, EMAIL);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(updateSql, EMAIL, 1L))
+                .isExactlyInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void mappingFailurePreservesCauseAndClosesAllResources() throws SQLException {
+        SQLException cause = new SQLException("Mapping failed");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, rowMapper, EMAIL))
+                .isExactlyInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }
