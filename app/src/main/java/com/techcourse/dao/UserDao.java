@@ -48,7 +48,11 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        final List<User> users = jdbcTemplate.query(sql, USER_ROW_MAPPER, account);
+        if (users.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 계정입니다. account: " + account);
+        }
+        return users.getFirst();
     }
 }
