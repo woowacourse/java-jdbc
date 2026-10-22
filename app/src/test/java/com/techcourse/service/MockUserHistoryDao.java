@@ -15,6 +15,7 @@ public class MockUserHistoryDao extends UserHistoryDao {
 
     @Override
     public void log(final Connection connection, final UserHistory userHistory) {
-        throw new DataAccessException();
+        super.log(connection, userHistory);
+        throw new DataAccessException("Failure after history insert");
     }
 }
