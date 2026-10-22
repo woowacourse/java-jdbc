@@ -30,7 +30,6 @@ public class JdbcTemplate {
             }
             return pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
@@ -54,7 +53,6 @@ public class JdbcTemplate {
                 return results;
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
@@ -81,7 +79,6 @@ public class JdbcTemplate {
                 return result;
             }
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
