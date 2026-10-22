@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -166,7 +167,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void update_ExecutionFails_ThrowsRuntimeExceptionAndClosesResources() throws SQLException {
+    void update_ExecutionFails_ThrowsDataAccessExceptionAndClosesResources() throws SQLException {
         final var sql = "update users set password = ? where id = ?";
         final var exception = new SQLException("SQL execution failed");
         when(dataSource.getConnection()).thenReturn(connection);
@@ -178,7 +179,7 @@ class JdbcTemplateTest {
         };
 
         assertThatThrownBy(() -> jdbcTemplate.update(sql, setter))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(statement).close();
@@ -186,7 +187,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void query_RowMappingFails_ThrowsRuntimeExceptionAndClosesResources() throws SQLException {
+    void query_RowMappingFails_ThrowsDataAccessExceptionAndClosesResources() throws SQLException {
         final var sql = "select account from users";
         final var exception = new SQLException("Row mapping failed");
         when(dataSource.getConnection()).thenReturn(connection);
@@ -196,7 +197,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenThrow(exception);
 
         assertThatThrownBy(() -> jdbcTemplate.query(sql, noOpSetter, accountRowMapper))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
         verify(resultSet).close();
