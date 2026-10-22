@@ -77,8 +77,19 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+
+        List<User> queryResult = jdbcTemplate.select(
+                sql,
+                stmt -> stmt.setString(1, account),
+                parseToUser()
+        );
+
+        if (queryResult.isEmpty()) {
+            return null;
+        }
+
+        return queryResult.getFirst();
     }
 
     private RowMapper<User> parseToUser() {
