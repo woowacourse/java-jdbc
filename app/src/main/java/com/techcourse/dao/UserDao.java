@@ -1,23 +1,16 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
     private final DataSource dataSource;
-//    private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> userRowMapper = (resultSet) -> new User(
-            resultSet.getLong("id"),
-            resultSet.getString("account"),
-            resultSet.getString("password"),
-            resultSet.getString("email")
-    );
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -70,18 +63,106 @@ public class UserDao {
 
 
     public List<User> findAll() {
-//        final var sql = "select id, account, password, email from users";
-        return null;
+        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                );
+            }
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users";
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {}
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+        };
+
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(final Long id) {
-//        final var sql = "select id, account, password, email from users where id = ?";
-        return null;
+        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                );
+            }
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where id = ?";
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setObject(1, id);
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+        };
+
+        List<User> result = (List<User>) jdbcTemplate.query();
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
     }
 
     public User findByAccount(final String account) {
-//        final var sql = "select id, account, password, email from users where account = ?";
-        return null;
+        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return new User(
+                        rs.getLong("id"),
+                        rs.getString("account"),
+                        rs.getString("password"),
+                        rs.getString("email")
+                );
+            }
+
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where account = ?";
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setObject(1, account);
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+        };
+
+        List<User> result = (List<User>) jdbcTemplate.query();
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
     }
 
     private DataSource getDataSource() {
