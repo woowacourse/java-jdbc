@@ -2,9 +2,11 @@ package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -18,6 +20,12 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        try (var connection = DataSourceConfig.getInstance().getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute("truncate table users restart identity");
+        } catch (SQLException exception) {
+            throw new DataAccessException("테이블 생성에 실패했습니다: ", exception);
+        }
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -42,8 +50,6 @@ class UserDaoTest {
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
-//        테스트 시 간헐적으로 5개의 결과가 나와서 실패할 때가 있다. 뭐지
-        log.debug("user: {}", user);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
