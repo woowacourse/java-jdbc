@@ -60,14 +60,14 @@ class UserDaoTest {
 
     @Test
     void update() {
-        final String newPassword = "password99";
-        final User user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        final User user = new User(1L, "updated-gugu", "password99", "updated@woowahan.com");
 
         userDao.update(user);
 
         final User actual = userDao.findById(1L);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.getAccount()).isEqualTo(user.getAccount());
+        assertThat(actual.getPassword()).isEqualTo(user.getPassword());
+        assertThat(actual.getEmail()).isEqualTo(user.getEmail());
     }
 }
