@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,14 +22,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
-        log.debug("query : {}", sql);
-        try (final var connection = getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setParameters(preparedStatement);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL update", e);
-        }
+        execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
     public void update(final String sql, final Object... parameters) {
@@ -37,10 +31,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final PreparedStatementSetter preparedStatementSetter) {
-        log.debug("query : {}", sql);
-        try (final var connection = getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatementSetter.setParameters(preparedStatement);
+        return execute(sql, preparedStatementSetter, preparedStatement -> {
             try (final var resultSet = preparedStatement.executeQuery()) {
                 final var results = new ArrayList<T>();
                 while (resultSet.next()) {
@@ -48,9 +39,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL query", e);
-        }
+        });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -70,6 +59,18 @@ public class JdbcTemplate {
         return queryForObject(sql, rowMapper, createPreparedStatementSetter(parameters));
     }
 
+    private <R> R execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
+                          final JdbcOperation<R> operation) {
+        log.debug("query : {}", sql);
+        try (final var connection = getConnection();
+             final var preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatementSetter.setParameters(preparedStatement);
+            return operation.execute(preparedStatement);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
     private Connection getConnection() {
         try {
             return dataSource.getConnection();
@@ -84,5 +85,11 @@ public class JdbcTemplate {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
         };
+    }
+
+    @FunctionalInterface
+    private interface JdbcOperation<R> {
+
+        R execute(PreparedStatement preparedStatement) throws SQLException;
     }
 }
