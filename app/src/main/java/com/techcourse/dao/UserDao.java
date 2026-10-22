@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
@@ -55,13 +56,7 @@ public class UserDao {
         return jdbcTemplate.select(sql,
                 stmt -> {
                 },
-                resultSet ->
-                        new User(
-                                resultSet.getLong("id"),
-                                resultSet.getString("account"),
-                                resultSet.getString("password"),
-                                resultSet.getString("email")
-                        )
+                parseToUser()
         );
     }
 
@@ -70,15 +65,8 @@ public class UserDao {
 
         List<User> queryResult = jdbcTemplate.select(
                 sql,
-                stmt -> {
-                    stmt.setLong(1, id);
-                },
-                resultSet -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                )
+                stmt -> stmt.setLong(1, id),
+                parseToUser()
         );
 
         if (queryResult.isEmpty()) {
@@ -91,5 +79,14 @@ public class UserDao {
     public User findByAccount(final String account) {
         // todo
         return null;
+    }
+
+    private RowMapper<User> parseToUser() {
+        return resultSet -> new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        );
     }
 }
