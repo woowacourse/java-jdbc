@@ -101,6 +101,16 @@ class JdbcTemplateTest {
         }
 
         @Test
+        @DisplayName("RowMapper에 1부터 시작하는 행 번호를 넘긴다.")
+        void passRowNumFromOne() throws SQLException {
+            when(rs.next()).thenReturn(true, true, false);
+
+            final var rowNums = jdbcTemplate.query(SQL, (rs, rowNum) -> rowNum, "hkkang@woowahan.com");
+
+            assertThat(rowNums).containsExactly(1, 2);
+        }
+
+        @Test
         @DisplayName("query 후 자원을 반납한다.")
         void closeResources() throws SQLException {
             jdbcTemplate.query(SQL, ROW_MAPPER, "hkkang@woowahan.com");

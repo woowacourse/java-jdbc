@@ -47,8 +47,9 @@ public class JdbcTemplate {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
+                int rowNum = 1;
                 while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rs.getRow()));
+                    results.add(rowMapper.mapRow(rs, rowNum++));
                 }
                 return results;
             }
@@ -72,7 +73,7 @@ public class JdbcTemplate {
                     return null;
                 }
 
-                T result = rowMapper.mapRow(rs, rs.getRow());
+                T result = rowMapper.mapRow(rs, 1);
 
                 if (rs.next()) {
                     throw new DataAccessException("조회 결과가 두 건 이상입니다.");
