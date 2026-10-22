@@ -134,6 +134,16 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithSingleNullValueBindsOneParameter() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update("update users set email = ?", (Object) null);
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(statement).setObject(1, null);
+    }
+
+    @Test
     void updateWithSetterSupportsExplicitSqlTypes() throws SQLException {
         when(statement.executeUpdate()).thenReturn(1);
 

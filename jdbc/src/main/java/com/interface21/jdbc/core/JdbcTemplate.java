@@ -23,6 +23,20 @@ public class JdbcTemplate {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
     }
 
+    /**
+     * SQL을 실행하고 영향을 받은 행 수를 반환한다.
+     *
+     * <p>SQL 값 하나가 {@code null}이면 타입을 {@code Object}로 지정한다.
+     * {@code update(sql, null)}은 setter를 받는 메서드와 구분할 수 없어 컴파일되지 않는다.
+     * <pre>{@code
+     * jdbcTemplate.update("update users set email = ?", (Object) null);
+     * }</pre>
+     *
+     * @param sql 실행할 SQL
+     * @param args SQL 매개변수에 순서대로 넣을 값. 각 값은 {@code null}일 수 있지만 배열 자체는 {@code null}일 수 없다.
+     * @return 영향을 받은 행 수
+     * @throws NullPointerException args 배열 자체가 {@code null}인 경우
+     */
     public int update(final String sql, final Object... args) {
         return update(sql, createPreparedStatementSetter(args));
     }
