@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
@@ -24,8 +25,9 @@ class JdbcTemplateTest {
     private PreparedStatement statement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
-    private RowMapper<String> accountRowMapper = (resultSet) ->
+    private final RowMapper accountRowMapper = (resultSet) ->
             resultSet.getString("account");
+    private final PreparedStatementSetter noOpSetter = pstmt -> {};
 
     @BeforeEach
     void setUp() {
@@ -33,19 +35,27 @@ class JdbcTemplateTest {
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+        };
     }
 
     @Test
     void update_MultipleParameters_BindsParametersAndExecutesUpdate() throws SQLException {
         // given: JDBC 객체 사이의 연결을 설정한다.
         final var sql = "update users set password = ? where id = ?";
-        Object[] params = {"password", 3L};
+        PreparedStatementSetter setter = pstmt -> {
+            pstmt.setObject(1, "password");
+            pstmt.setObject(2, 3L);
+        };
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(statement);
 
         // when: 실제 테스트 대상 메서드를 실행한다.
-        jdbcTemplate.update(sql, params);
+        jdbcTemplate.update(sql, setter);
 
         // then: 각 인자의 바인딩 위치와 SQL 실행 여부를 확인한다.
         verify(statement).setObject(1, "password");
@@ -54,36 +64,41 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObject_OneRow_ReturnsMappedObject() throws SQLException {
+    void query_OneRow_ReturnsSingleMappedObjectInList() throws SQLException {
         final var sql = "select id, account, password, email from users where id = ?";
         final var param = 1L;
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        String result = jdbcTemplate.queryForObject(sql, accountRowMapper, param);
+        PreparedStatementSetter setter = pstmt -> pstmt.setObject(1, param);
+
+        List<?> result = (List<?>) jdbcTemplate.query(sql, setter, accountRowMapper);
 
         verify(statement).setObject(1, 1L);
         verify(statement).executeQuery();
-        assertThat(result).isEqualTo("gugu");
+        assertThat(result.toArray()).containsExactly("gugu");
     }
 
     @Test
-    void queryForObject_NoRows_ReturnsNull() throws SQLException {
+    void query_NoRows_DoesNotInvokeRowMapper() throws SQLException {
         final var sql = "select id, account, password, email from users where id = ?";
         final var param = 1L;
+        final var rowMapper = mock(RowMapper.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        String result = jdbcTemplate.queryForObject(sql, accountRowMapper, param);
+        PreparedStatementSetter setter = pstmt -> pstmt.setObject(1, param);
+
+        jdbcTemplate.query(sql, setter, rowMapper);
 
         verify(statement).setObject(1, 1L);
         verify(statement).executeQuery();
-        assertThat(result).isNull();
+        verifyNoInteractions(rowMapper);
     }
 
     @Test
@@ -95,10 +110,10 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "Ethan");
 
-        List<String> result = jdbcTemplate.query(sql, accountRowMapper);
+        List<?> result = (List<?>) jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
 
         verify(statement).executeQuery();
-        assertThat(result).containsExactly("gugu", "Ethan");
+        assertThat(result.toArray()).containsExactly("gugu", "Ethan");
     }
 
     @Test
@@ -109,7 +124,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<String> result = jdbcTemplate.query(sql, accountRowMapper);
+        List<?> result = (List<?>) jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
 
         verify(statement).executeQuery();
         assertThat(result).isEmpty();
@@ -125,7 +140,9 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        List<String> result = jdbcTemplate.query(sql, accountRowMapper, param);
+        PreparedStatementSetter setter = pstmt -> pstmt.setObject(1, param);
+
+        List<?> result = (List<?>) jdbcTemplate.query(sql, setter, accountRowMapper);
 
         verify(statement).setObject(1, 1L);
         verify(statement).executeQuery();
@@ -141,7 +158,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        jdbcTemplate.query(sql, accountRowMapper);
+        jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
 
         verify(resultSet).close();
         verify(statement).close();
@@ -155,8 +172,12 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(statement.executeUpdate()).thenThrow(exception);
+        PreparedStatementSetter setter = pstmt -> {
+            pstmt.setObject(1, "password");
+            pstmt.setObject(2, 1L);
+        };
 
-        assertThatThrownBy(() -> jdbcTemplate.update(sql, "password", 1L))
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, setter))
                 .isInstanceOf(RuntimeException.class)
                 .hasCause(exception);
 
@@ -174,7 +195,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("account")).thenThrow(exception);
 
-        assertThatThrownBy(() -> jdbcTemplate.query(sql, accountRowMapper))
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, noOpSetter, accountRowMapper))
                 .isInstanceOf(RuntimeException.class)
                 .hasCause(exception);
 
