@@ -6,6 +6,7 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -16,6 +17,8 @@ public class UserDao {
             rs.getString("password"),
             rs.getString("email")
     );
+
+    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -33,8 +36,16 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final int updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final int updatedRows = jdbcTemplate.update(UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        validateUpdated(updatedRows, user);
+    }
+
+    public void update(final Connection conn, final User user) {
+        final int updatedRows = jdbcTemplate.update(conn, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        validateUpdated(updatedRows, user);
+    }
+
+    private void validateUpdated(final int updatedRows, final User user) {
         if (updatedRows == 0) {
             throw new DataAccessException("id가 " + user.getId() + "인 사용자가 없어 수정하지 못했습니다.");
         }

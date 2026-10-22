@@ -30,6 +30,10 @@ public class JdbcTemplate {
         return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return execute(conn, sql, argumentSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentSetter(args));
     }
@@ -68,9 +72,18 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> callback) {
+        try (final Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("커넥션을 다루는 중 실패했습니다.", e);
+        }
+    }
+
+    // 밖에서 받은 커넥션은 호출한 쪽이 트랜잭션을 마무리해야 하므로 닫지 않는다.
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
+                          final PreparedStatementCallback<T> callback) {
         log.debug("query : {}", sql);
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             if (pss != null) {
                 pss.setValues(pstmt);
             }
