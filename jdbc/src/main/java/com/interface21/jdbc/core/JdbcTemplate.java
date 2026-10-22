@@ -22,11 +22,15 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
+        update(sql, statement -> setParameters(statement, args));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter statementSetter) {
         log.debug("query : {}", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
+            statementSetter.setValues(statement);
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute update", e);
@@ -34,11 +38,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, statement -> setParameters(statement, args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
+                             final RowMapper<T> rowMapper) {
         log.debug("query : {}", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
+            statementSetter.setValues(statement);
 
             try (final ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
@@ -54,6 +63,15 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
+        return firstOrNull(results);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter statementSetter,
+                                final RowMapper<T> rowMapper) {
+        return firstOrNull(query(sql, statementSetter, rowMapper));
+    }
+
+    private <T> T firstOrNull(final List<T> results) {
         if (results.isEmpty()) {
             return null;
         }

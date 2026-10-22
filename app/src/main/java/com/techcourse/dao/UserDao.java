@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
@@ -22,67 +23,40 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        new JdbcOperationTemplate(jdbcTemplate) {
-            @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            protected Object[] createParameters() {
-                return new Object[]{user.getAccount(), user.getPassword(), user.getEmail()};
-            }
-        }.update();
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final PreparedStatementSetter statementSetter = statement -> {
+            statement.setString(1, user.getAccount());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getEmail());
+        };
+        jdbcTemplate.update(sql, statementSetter);
     }
 
     public void update(final User user) {
-        new JdbcOperationTemplate(jdbcTemplate) {
-            @Override
-            protected String createQuery() {
-                return "update users set account = ?, password = ?, email = ? where id = ?";
-            }
-
-            @Override
-            protected Object[] createParameters() {
-                return new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
-            }
-        }.update();
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final PreparedStatementSetter statementSetter = statement -> {
+            statement.setString(1, user.getAccount());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getEmail());
+            statement.setLong(4, user.getId());
+        };
+        jdbcTemplate.update(sql, statementSetter);
     }
 
     public List<User> findAll() {
-        return new JdbcOperationTemplate(jdbcTemplate) {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users";
-            }
-        }.query(USER_ROW_MAPPER);
+        final var sql = "select id, account, password, email from users";
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
-        return new JdbcOperationTemplate(jdbcTemplate) {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
-
-            @Override
-            protected Object[] createParameters() {
-                return new Object[]{id};
-            }
-        }.queryForObject(USER_ROW_MAPPER);
+        final var sql = "select id, account, password, email from users where id = ?";
+        final PreparedStatementSetter statementSetter = statement -> statement.setLong(1, id);
+        return jdbcTemplate.queryForObject(sql, statementSetter, USER_ROW_MAPPER);
     }
 
     public User findByAccount(final String account) {
-        return new JdbcOperationTemplate(jdbcTemplate) {
-            @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
-
-            @Override
-            protected Object[] createParameters() {
-                return new Object[]{account};
-            }
-        }.queryForObject(USER_ROW_MAPPER);
+        final var sql = "select id, account, password, email from users where account = ?";
+        final PreparedStatementSetter statementSetter = statement -> statement.setString(1, account);
+        return jdbcTemplate.queryForObject(sql, statementSetter, USER_ROW_MAPPER);
     }
 }
