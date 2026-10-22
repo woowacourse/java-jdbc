@@ -4,11 +4,14 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,6 +68,29 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo("password");
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ?",
+                rs -> rs.getLong(1), 1L);
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void rollsBackPasswordAndHistoryWhenFailureOccursAfterHistoryInsert() {
+        final var exception = new DataAccessException("이력 저장 후 실패");
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
+            @Override
+            public void log(final Connection connection, final UserHistory userHistory) {
+                super.log(connection, userHistory);
+                throw exception;
+            }
+        };
+        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+
+        final var actualException = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actualException).isSameAs(exception);
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
         final var historyCount = jdbcTemplate.queryForObject(
                 "select count(*) from user_history where user_id = ?",
                 rs -> rs.getLong(1), 1L);
