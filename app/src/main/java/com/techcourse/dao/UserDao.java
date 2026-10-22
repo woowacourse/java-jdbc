@@ -2,7 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.util.ArrayList;
+import com.interface21.jdbc.core.RowMapper;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,12 @@ public class UserDao {
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
+
+    private final RowMapper<User> userRowMapper = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -42,47 +48,18 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select * from users";
 
-        return jdbcTemplate.query(sql, rs -> {
-            List<User> users = new ArrayList<>();
-
-            while(rs.next()){
-                users.add(new User(
-                        rs.getLong("id"),
-                        rs.getString("account"),
-                        rs.getString("password"),
-                        rs.getString("email")));
-            }
-            return users;
-        });
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, rs -> {
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        }, id);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, rs -> {
-            if (rs.next()) {
-                return new User(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getString(4));
-            }
-            return null;
-        }, account);
+        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
     }
 }
