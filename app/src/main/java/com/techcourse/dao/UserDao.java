@@ -5,10 +5,13 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
+
+    private static final String UPDATE_SQL = "update users set password = ? where id = ?";
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
@@ -33,9 +36,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set password = ? where id = ?";
+        jdbcTemplate.update(UPDATE_SQL, user.getPassword(), user.getId());
+    }
 
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(connection, UPDATE_SQL, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {
