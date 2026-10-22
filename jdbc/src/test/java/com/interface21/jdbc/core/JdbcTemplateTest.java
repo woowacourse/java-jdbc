@@ -176,7 +176,8 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                 "select account from users", rs -> rs.getString("account")))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("found at least 2");
+                .hasMessageContaining("found at least 2")
+                .hasMessageContaining("SQL: select account from users");
         verify(resultSet, times(2)).next();
         verify(resultSet).getString("account");
         verify(resultSet).close();

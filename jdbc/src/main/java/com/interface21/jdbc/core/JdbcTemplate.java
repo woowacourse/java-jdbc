@@ -54,7 +54,7 @@ public class JdbcTemplate {
             }
             final T result = rowMapper.mapRow(resultSet);
             if (resultSet.next()) {
-                throw new DataAccessException("Expected at most one row, but found at least 2");
+                throw new DataAccessException("Expected at most one row, but found at least 2. SQL: " + sql);
             }
             return result;
         });
