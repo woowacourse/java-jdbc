@@ -8,7 +8,6 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +51,6 @@ class UserServiceTest {
     }
 
     @Test
-    @Disabled("트랜잭션 단계에서 롤백 기능 구현 후 활성화")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
@@ -66,6 +64,10 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo("password");
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ?",
+                rs -> rs.getLong(1), 1L);
+        assertThat(historyCount).isZero();
     }
 }
