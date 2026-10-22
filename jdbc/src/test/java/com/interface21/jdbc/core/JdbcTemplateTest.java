@@ -35,12 +35,7 @@ class JdbcTemplateTest {
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
-        jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
+        jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @Test

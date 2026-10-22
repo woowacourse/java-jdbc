@@ -9,7 +9,7 @@ import java.util.List;
 
 public class UserDao {
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
     private final RowMapper<User> userRowMapper = (resultSet) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
@@ -18,18 +18,11 @@ public class UserDao {
     );
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
 
         jdbcTemplate.update(
                 sql,
@@ -42,13 +35,6 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.getDataSource();
-            }
-        };
-
         jdbcTemplate.update(
                 sql,
                 user.getPassword(),
@@ -60,25 +46,11 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.dataSource;
-            }
-        };
-
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.dataSource;
-            }
-        };
 
         List<User> result = jdbcTemplate.query(sql, userRowMapper, id);
 
@@ -92,13 +64,6 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return UserDao.this.dataSource;
-            }
-        };
-
         List<User> result = jdbcTemplate.query(sql, userRowMapper, account);
 
         if (result.isEmpty()) {
@@ -106,9 +71,5 @@ public class UserDao {
         }
 
         return result.getFirst();
-    }
-
-    private DataSource getDataSource() {
-        return dataSource;
     }
 }

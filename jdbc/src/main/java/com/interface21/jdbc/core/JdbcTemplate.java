@@ -12,9 +12,15 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+
+    private final DataSource dataSource;
+
+    public JdbcTemplate(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public final void update(String sql, Object... args) {
         update(sql, pstmt -> setValues(pstmt, args));
@@ -24,7 +30,7 @@ public abstract class JdbcTemplate {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
-            conn = getDataSource().getConnection();
+            conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
@@ -54,7 +60,7 @@ public abstract class JdbcTemplate {
     }
 
     public final <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
-        try (Connection conn = getDataSource().getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -81,6 +87,4 @@ public abstract class JdbcTemplate {
             pstmt.setObject(i + 1, args[i]);
         }
     }
-
-    protected abstract DataSource getDataSource();
 }
