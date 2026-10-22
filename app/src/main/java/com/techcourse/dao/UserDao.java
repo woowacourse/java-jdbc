@@ -19,6 +19,11 @@ public class UserDao {
     public void insert(final User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
+
+            @Override
             protected String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
             }
@@ -42,6 +47,11 @@ public class UserDao {
     public void update(final User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
+
+            @Override
             protected String createQuery() {
                 return "update users set password = ? where id = ?";
             }
@@ -56,6 +66,8 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return UserDao.this.getDataSource();
             }
+
+
         };
 
         jdbcTemplate.update();
@@ -63,7 +75,7 @@ public class UserDao {
 
 
     public List<User> findAll() {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected Object mapRow(ResultSet rs) throws SQLException {
                 return new User(
@@ -92,7 +104,7 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected Object mapRow(ResultSet rs) throws SQLException {
                 return new User(
@@ -129,7 +141,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected Object mapRow(ResultSet rs) throws SQLException {
                 return new User(
