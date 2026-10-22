@@ -60,27 +60,15 @@
 <details>
 <summary>Step 2</summary>
 
-- [ ] RowMapper에 제네릭을 적용해 결과 캐스팅을 제거한다.
-- [ ] 가변 인자로 SQL 인자 전달을 편리하게 만든다.
-- [ ] 람다와 try-with-resources를 활용해 코드를 정리한다.
-- [ ] SQLException을 커스텀 Unchecked Exception으로 변환한다.
 
 </details>
 
 <details>
 <summary>Step 3</summary>
 
-- [ ] UserServiceTest의 @Disabled를 제거한다.
-- [ ] 비밀번호 변경과 이력 저장에 동일한 Connection을 전달한다.
-- [ ] 성공 시 커밋하고 실패 시 롤백하여 원자성을 보장한다.
-
 </details>
 
 <details>
 <summary>Step 4</summary>
-
-- [ ] DataSourceUtils와 TransactionSynchronizationManager로 Connection을 공유한다.
-- [ ] DAO에 Connection을 파라미터로 전달하지 않도록 변경한다.
-- [ ] AppUserService와 TxUserService로 비즈니스 로직과 트랜잭션 처리를 분리한다.
 
 </details>
