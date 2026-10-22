@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.techcourse.domain.User;
 
 public abstract class JdbcOperationTemplate {
 
@@ -11,11 +10,11 @@ public abstract class JdbcOperationTemplate {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public final void update(final User user) {
-        jdbcTemplate.update(createQuery(), createParameters(user));
+    public final void update() {
+        jdbcTemplate.update(createQuery(), createParameters());
     }
 
     protected abstract String createQuery();
 
-    protected abstract Object[] createParameters(User user);
+    protected abstract Object[] createParameters();
 }

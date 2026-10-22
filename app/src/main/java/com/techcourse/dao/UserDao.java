@@ -12,8 +12,6 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
-    private final JdbcOperationTemplate insertJdbcTemplate;
-    private final JdbcOperationTemplate updateJdbcTemplate;
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs ->
             new User(
@@ -26,36 +24,34 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.insertJdbcTemplate = new JdbcOperationTemplate(jdbcTemplate) {
+    }
+
+    public void insert(final User user) {
+        new JdbcOperationTemplate(jdbcTemplate) {
             @Override
             protected String createQuery() {
                 return "insert into users (account, password, email) values (?, ?, ?)";
             }
 
             @Override
-            protected Object[] createParameters(final User user) {
+            protected Object[] createParameters() {
                 return new Object[]{user.getAccount(), user.getPassword(), user.getEmail()};
             }
-        };
-        this.updateJdbcTemplate = new JdbcOperationTemplate(jdbcTemplate) {
+        }.update();
+    }
+
+    public void update(final User user) {
+        new JdbcOperationTemplate(jdbcTemplate) {
             @Override
             protected String createQuery() {
                 return "update users set account = ?, password = ?, email = ? where id = ?";
             }
 
             @Override
-            protected Object[] createParameters(final User user) {
+            protected Object[] createParameters() {
                 return new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
             }
-        };
-    }
-
-    public void insert(final User user) {
-        insertJdbcTemplate.update(user);
-    }
-
-    public void update(final User user) {
-        updateJdbcTemplate.update(user);
+        }.update();
     }
 
     public List<User> findAll() {
