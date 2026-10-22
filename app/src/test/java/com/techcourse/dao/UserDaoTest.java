@@ -8,6 +8,8 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -90,5 +92,27 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void findByIdWithConnectionReadsUncommittedUpdate() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                final var user = userDao.findById(connection, 1L);
+                user.changePassword("changed-password");
+
+                userDao.update(connection, user);
+
+                assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("changed-password");
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+            } finally {
+                connection.rollback();
+            }
+
+            assertThat(connection.isClosed()).isFalse();
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
     }
 }

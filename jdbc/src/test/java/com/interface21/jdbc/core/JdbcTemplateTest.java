@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -311,5 +312,176 @@ class JdbcTemplateTest {
                 .hasCause(failure);
 
         verify(connection).close();
+    }
+
+    @Test
+    void updateWithConnectionAndVarargsLeavesConnectionOpen() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update(
+                connection, "update users set email = ? where id = ?", null, 42L);
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(statement).setObject(1, null);
+        verify(statement).setObject(2, 42L);
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void updateWithConnectionAndSetterLeavesConnectionOpen() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update(
+                connection, "update users set email = ? where id = ?", preparedStatement -> {
+                    preparedStatement.setNull(1, Types.VARCHAR);
+                    preparedStatement.setLong(2, 42L);
+                });
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(statement).setNull(1, Types.VARCHAR);
+        verify(statement).setLong(2, 42L);
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void queryWithConnectionReturnsRowsAndLeavesConnectionOpen() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "gugu2");
+
+        final List<String> accounts = jdbcTemplate.query(
+                connection, "select account from users where account like ?",
+                row -> row.getString("account"), "gugu%");
+
+        assertThat(accounts).containsExactly("gugu", "gugu2");
+        verify(statement).setObject(1, "gugu%");
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void queryForObjectWithConnectionReturnsNullWhenNoRowsAreReturned() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        final String account = jdbcTemplate.queryForObject(
+                connection, "select account from users where id = ?",
+                row -> row.getString("account"), 42L);
+
+        assertThat(account).isNull();
+        verify(statement).setObject(1, 42L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void queryForObjectWithConnectionAndSetterReturnsObjectAndLeavesConnectionOpen() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final String account = jdbcTemplate.queryForObject(
+                connection, "select account from users where id = ?",
+                row -> row.getString("account"),
+                preparedStatement -> preparedStatement.setLong(1, 42L));
+
+        assertThat(account).isEqualTo("gugu");
+        verify(statement).setLong(1, 42L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void queryForObjectWithConnectionThrowsWhenMultipleRowsAreReturned() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "another-user");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                connection, "select account from users", row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("Expected at most 1 result, but found 2");
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void updateWithConnectionLeavesConnectionOpenWhenUpdateFails() throws SQLException {
+        final SQLException failure = new SQLException("Update failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                connection, "update users set email = ?", "gugu@example.com"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void updateWithConnectionLeavesConnectionOpenWhenSetterFails() throws SQLException {
+        final SQLException failure = new SQLException("Parameter binding failed");
+        final PreparedStatementSetter setter = preparedStatement -> {
+            throw failure;
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                connection, "update users set email = ?", setter))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void queryWithConnectionLeavesConnectionOpenWhenMappingFails() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        final IllegalStateException failure = new IllegalStateException("Mapping failed");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        final RowMapper<String> rowMapper = row -> {
+            throw failure;
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, "select account from users", rowMapper))
+                .isSameAs(failure);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void updateWithConnectionLeavesConnectionOpenWhenStatementCreationFails() throws SQLException {
+        final SQLException failure = new SQLException("Statement creation failed");
+        when(connection.prepareStatement(anyString())).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "invalid sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verifyConnectionRemainsCallerManaged();
+    }
+
+    private void verifyConnectionRemainsCallerManaged() throws SQLException {
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verify(connection, never()).setAutoCommit(anyBoolean());
     }
 }

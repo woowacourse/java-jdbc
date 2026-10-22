@@ -13,6 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * SQL 실행과 조회 결과 변환을 처리한다.
+ *
+ * <p>{@link Connection}을 받는 메서드는 연결을 새로 얻거나 닫지 않는다.
+ * 전달한 연결의 커밋, 롤백과 종료는 호출한 곳에서 처리한다.
+ */
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
@@ -45,17 +51,32 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return update(connection, sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
+        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, createPreparedStatementSetter(args));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         Objects.requireNonNull(rowMapper, "rowMapper must not be null");
-        return execute(sql, setter, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return mapRows(resultSet, rowMapper);
-            }
-        });
+        return execute(sql, setter, statement -> executeQuery(statement, rowMapper));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                           final Object... args) {
+        return query(connection, sql, rowMapper, createPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                           final PreparedStatementSetter setter) {
+        Objects.requireNonNull(rowMapper, "rowMapper must not be null");
+        return execute(connection, sql, setter, statement -> executeQuery(statement, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -63,20 +84,34 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
-        final List<T> results = query(sql, rowMapper, setter);
-        if (results.size() > 1) {
-            throw new DataAccessException("Expected at most 1 result, but found " + results.size());
-        }
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.get(0);
+        return singleResult(query(sql, rowMapper, setter));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return queryForObject(connection, sql, rowMapper, createPreparedStatementSetter(args));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter setter) {
+        return singleResult(query(connection, sql, rowMapper, setter));
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
         Objects.requireNonNull(setter, "setter must not be null");
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
+        Objects.requireNonNull(connection, "connection must not be null");
+        Objects.requireNonNull(setter, "setter must not be null");
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             setter.setValues(statement);
@@ -85,6 +120,23 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> List<T> executeQuery(final PreparedStatement statement, final RowMapper<T> rowMapper)
+            throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            return mapRows(resultSet, rowMapper);
+        }
+    }
+
+    private <T> T singleResult(final List<T> results) {
+        if (results.size() > 1) {
+            throw new DataAccessException("Expected at most 1 result, but found " + results.size());
+        }
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
     }
 
     private <T> List<T> mapRows(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
