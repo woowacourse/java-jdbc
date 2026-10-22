@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,10 +29,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pss, PreparedStatement::executeUpdate);
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, argumentSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -72,14 +69,14 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> callback) {
-        try (final Connection conn = dataSource.getConnection()) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, pss, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("커넥션을 다루는 중 실패했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    // 밖에서 받은 커넥션은 호출한 쪽이 트랜잭션을 마무리해야 하므로 닫지 않는다.
     private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> callback) {
         log.debug("query : {}", sql);
