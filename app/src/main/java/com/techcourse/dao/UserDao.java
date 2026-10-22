@@ -49,11 +49,11 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        return jdbcTemplate.selectMany(
+        return jdbcTemplate.selectOne(
                 "select id, account, password, email from users where account = ?",
                 this::parseUser,
                 account
-        ).stream().findFirst().orElse(null);
+        ).orElse(null);
     }
 
     private User parseUser(ResultSet resultSet) throws SQLException {

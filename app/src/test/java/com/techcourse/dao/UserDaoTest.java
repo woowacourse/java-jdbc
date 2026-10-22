@@ -1,9 +1,11 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,11 +58,14 @@ class UserDaoTest {
     }
 
     @Test
-    void findByAccountReturnsFirstUserWhenAccountsAreDuplicated() {
-        userDao.insert(new User("gugu", "other-password", "other@example.com"));
+    void insertRejectsDuplicateAccount() {
+        assertThatThrownBy(() -> userDao.insert(new User("gugu", "other-password", "other@example.com")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLIntegrityConstraintViolationException.class);
 
         final var user = userDao.findByAccount("gugu");
 
+        assertThat(userDao.findAll()).hasSize(1);
         assertThat(user.getId()).isEqualTo(1L);
         assertThat(user.getPassword()).isEqualTo("password");
     }
