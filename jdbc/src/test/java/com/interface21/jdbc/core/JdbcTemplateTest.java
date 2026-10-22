@@ -100,6 +100,40 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateRejectsNullArgumentArrayBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "update users set email = ?", (Object[]) null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("args must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryRejectsNullArgumentArrayBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.query(
+                "select account from users where id = ?",
+                row -> row.getString("account"),
+                (Object[]) null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("args must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryForObjectRejectsNullArgumentArrayBeforeOpeningConnection() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users where id = ?",
+                row -> row.getString("account"),
+                (Object[]) null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("args must not be null");
+
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
     void updateWithSetterSupportsExplicitSqlTypes() throws SQLException {
         when(statement.executeUpdate()).thenReturn(1);
 
