@@ -11,7 +11,7 @@ import java.util.List;
 public class UserDao {
 
     private final DataSource dataSource;
-    private final RowMapper userRowMapper = (resultSet) -> new User(
+    private final RowMapper<User> userRowMapper = (resultSet) -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
@@ -72,7 +72,7 @@ public class UserDao {
             }
         };
 
-        return (List<User>) jdbcTemplate.query(sql, setter, userRowMapper);
+        return jdbcTemplate.query(sql, setter, userRowMapper);
     }
 
     public User findById(final Long id) {
@@ -89,7 +89,7 @@ public class UserDao {
             }
         };
 
-        List<User> result = (List<User>) jdbcTemplate.query(sql, setter, userRowMapper);
+        List<User> result = jdbcTemplate.query(sql, setter, userRowMapper);
 
         if (result.isEmpty()) {
             return null;
@@ -112,7 +112,7 @@ public class UserDao {
             }
         };
 
-        List<User> result = (List<User>) jdbcTemplate.query(sql, setter, userRowMapper);
+        List<User> result = jdbcTemplate.query(sql, setter, userRowMapper);
 
         if (result.isEmpty()) {
             return null;

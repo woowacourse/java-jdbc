@@ -45,12 +45,12 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public final Object query(String sql, PreparedStatementSetter setter, RowMapper rowMapper) {
+    public final <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
         try (Connection conn = getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            List<Object> results = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             try(ResultSet rs = executeQuery(setter, pstmt)) {
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));

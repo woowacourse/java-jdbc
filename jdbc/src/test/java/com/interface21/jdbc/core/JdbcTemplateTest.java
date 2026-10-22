@@ -26,7 +26,7 @@ class JdbcTemplateTest {
     private PreparedStatement statement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
-    private final RowMapper accountRowMapper = (resultSet) ->
+    private final RowMapper<String> accountRowMapper = (resultSet) ->
             resultSet.getString("account");
     private final PreparedStatementSetter noOpSetter = pstmt -> {};
 
@@ -76,18 +76,18 @@ class JdbcTemplateTest {
 
         PreparedStatementSetter setter = pstmt -> pstmt.setObject(1, param);
 
-        List<?> result = (List<?>) jdbcTemplate.query(sql, setter, accountRowMapper);
+        List<String> result = jdbcTemplate.query(sql, setter, accountRowMapper);
 
         verify(statement).setObject(1, 1L);
         verify(statement).executeQuery();
-        assertThat(result.toArray()).containsExactly("gugu");
+        assertThat(result).containsExactly("gugu");
     }
 
     @Test
     void query_NoRows_DoesNotInvokeRowMapper() throws SQLException {
         final var sql = "select id, account, password, email from users where id = ?";
         final var param = 1L;
-        final var rowMapper = mock(RowMapper.class);
+        final RowMapper<?> rowMapper = mock(RowMapper.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
@@ -111,10 +111,10 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "Ethan");
 
-        List<?> result = (List<?>) jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
+        List<String> result = jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
 
         verify(statement).executeQuery();
-        assertThat(result.toArray()).containsExactly("gugu", "Ethan");
+        assertThat(result).containsExactly("gugu", "Ethan");
     }
 
     @Test
@@ -125,7 +125,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<?> result = (List<?>) jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
+        List<String> result = jdbcTemplate.query(sql, noOpSetter, accountRowMapper);
 
         verify(statement).executeQuery();
         assertThat(result).isEmpty();
@@ -143,7 +143,7 @@ class JdbcTemplateTest {
 
         PreparedStatementSetter setter = pstmt -> pstmt.setObject(1, param);
 
-        List<?> result = (List<?>) jdbcTemplate.query(sql, setter, accountRowMapper);
+        List<String> result = jdbcTemplate.query(sql, setter, accountRowMapper);
 
         verify(statement).setObject(1, 1L);
         verify(statement).executeQuery();
