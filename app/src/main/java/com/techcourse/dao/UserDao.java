@@ -46,8 +46,7 @@ public class UserDao {
     }
 
     private User findOne(final String sql, final Object parameter) {
-        final var users = jdbcTemplate.query(sql, UserDao::mapUser, parameter);
-        return users.isEmpty() ? null : users.get(0);
+        return jdbcTemplate.queryForObject(sql, UserDao::mapUser, parameter);
     }
 
     private static User mapUser(final ResultSet resultSet) throws SQLException {
