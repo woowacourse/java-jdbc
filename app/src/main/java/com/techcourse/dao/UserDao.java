@@ -12,6 +12,8 @@ public class UserDao {
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private final InsertJdbcTemplate insertJdbcTemplate;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs ->
             new User(
@@ -24,30 +26,16 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.insertJdbcTemplate = new InsertJdbcTemplate(jdbcTemplate);
+        this.updateJdbcTemplate = new UpdateJdbcTemplate(jdbcTemplate);
     }
 
     public void insert(final User user) {
-        jdbcTemplate.update(createQueryForInsert(), createParametersForInsert(user));
+        insertJdbcTemplate.insert(user);
     }
 
     public void update(final User user) {
-        jdbcTemplate.update(createQueryForUpdate(), createParametersForUpdate(user));
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private Object[] createParametersForInsert(final User user) {
-        return new Object[]{user.getAccount(), user.getPassword(), user.getEmail()};
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set account = ?, password = ?, email = ? where id = ?";
-    }
-
-    private Object[] createParametersForUpdate(final User user) {
-        return new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
