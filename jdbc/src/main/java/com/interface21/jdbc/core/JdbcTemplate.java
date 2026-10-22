@@ -47,11 +47,28 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... params
     ) {
-        List<T> results = selectMany(sql, rowMapper, params);
-        if (results.size() > 1) {
-            throw new DataAccessException("Expected at most one row, but found " + results.size());
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            setParams(params, statement);
+            log.debug("query : {}", sql);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return Optional.empty();
+                }
+
+                T result = Objects.requireNonNull(rowMapper.mapRow(resultSet));
+                if (resultSet.next()) {
+                    throw new DataAccessException("Expected at most one row, but found more than one");
+                }
+                return Optional.of(result);
+            }
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
         }
-        return results.stream().findFirst();
     }
 
     public <T> List<T> selectMany(

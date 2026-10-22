@@ -187,5 +187,33 @@ class JdbcTemplateTest {
             verify(statement).close();
             verify(connection).close();
         }
+
+        @Test
+        @DisplayName("매퍼가 null을 반환하면 예외를 던지고 자원을 닫는다")
+        void rejectNullMappedRow() throws SQLException {
+            when(resultSet.next()).thenReturn(true, false);
+
+            assertThatThrownBy(() -> jdbcTemplate.selectOne("SELECT name FROM users", currentResultSet -> null))
+                    .isInstanceOf(NullPointerException.class);
+            verify(resultSet).close();
+            verify(statement).close();
+            verify(connection).close();
+        }
+
+        @Test
+        @DisplayName("결과 변환 중 SQL 예외가 발생하면 감싸서 던지고 자원을 닫는다")
+        void closeResourcesWhenResultTransformationFails() throws SQLException {
+            SQLException exception = new SQLException("결과 변환 실패");
+            when(resultSet.next()).thenReturn(true);
+            when(resultSet.getString("name")).thenThrow(exception);
+
+            assertThatThrownBy(() -> jdbcTemplate.selectOne("SELECT name FROM users",
+                    currentResultSet -> currentResultSet.getString("name")))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCause(exception);
+            verify(resultSet).close();
+            verify(statement).close();
+            verify(connection).close();
+        }
     }
 }
