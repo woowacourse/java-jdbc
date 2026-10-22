@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 
@@ -8,11 +9,16 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final SelectJdbcTemplate selectJdbcTemplate;
+    private static final RowMapper<User> USER_ROW_MAPPER = rs ->
+            new User(
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
+            );
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.selectJdbcTemplate = new SelectJdbcTemplate(jdbcTemplate);
     }
 
     public void insert(final User user) {
@@ -44,14 +50,39 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        return selectJdbcTemplate.findAll();
+        return new JdbcOperationTemplate(jdbcTemplate) {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users";
+            }
+        }.query(USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
-        return selectJdbcTemplate.findById(id);
+        return new JdbcOperationTemplate(jdbcTemplate) {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where id = ?";
+            }
+
+            @Override
+            protected Object[] createParameters() {
+                return new Object[]{id};
+            }
+        }.queryForObject(USER_ROW_MAPPER);
     }
 
     public User findByAccount(final String account) {
-        return selectJdbcTemplate.findByAccount(account);
+        return new JdbcOperationTemplate(jdbcTemplate) {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where account = ?";
+            }
+
+            @Override
+            protected Object[] createParameters() {
+                return new Object[]{account};
+            }
+        }.queryForObject(USER_ROW_MAPPER);
     }
 }
