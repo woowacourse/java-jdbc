@@ -1,10 +1,15 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +26,7 @@ public class JdbcTemplate {
 
     public void update(
             String sql,
-            List<Object> params
+            Object... params
     ) {
         try (
                 Connection connection = dataSource.getConnection();
@@ -33,21 +38,14 @@ public class JdbcTemplate {
             statement.executeUpdate();
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
         }
     }
 
-    public <T> T select(
+    public <T> Optional<T> selectOne(
             String sql,
-            ResultSetParsing<T> parsing
-    ) {
-        return select(sql, List.of(), parsing);
-    }
-
-    public <T> T select(
-            String sql,
-            List<Object> params,
-            ResultSetParsing<T> parsing
+            RowMapper<T> rowMapper,
+            Object... params
     ) {
         try (
                 Connection connection = dataSource.getConnection();
@@ -56,25 +54,54 @@ public class JdbcTemplate {
             setParams(params, statement);
             log.debug("query : {}", sql);
 
-            ResultSet resultSet = statement.executeQuery();
-            return parsing.parse(resultSet);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return Optional.empty();
+                }
+
+                T result = Objects.requireNonNull(rowMapper.mapRow(resultSet));
+                if (resultSet.next()) {
+                    throw new DataAccessException("Expected at most one row, but found more than one");
+                }
+                return Optional.of(result);
+            }
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
-            throw new RuntimeException(exception);
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public <T> List<T> selectMany(
+            String sql,
+            RowMapper<T> rowMapper,
+            Object... params
+    ) {
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            setParams(params, statement);
+            log.debug("query : {}", sql);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(Objects.requireNonNull(rowMapper.mapRow(resultSet)));
+                }
+                return Collections.unmodifiableList(results);
+            }
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
         }
     }
 
     private void setParams(
-            List<Object> params,
+            Object[] params,
             PreparedStatement statement
     ) throws SQLException {
-        for (int i = 1; i <= params.size(); i++) {
-            statement.setObject(i, params.get(i - 1));
+        for (int i = 0; i < params.length; i++) {
+            statement.setObject(i + 1, params[i]);
         }
-    }
-
-    @FunctionalInterface
-    public interface ResultSetParsing<T> {
-        T parse(ResultSet resultSet) throws SQLException;
     }
 }
