@@ -6,7 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,12 +19,8 @@ class UserHistoryDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        userHistoryDao = new UserHistoryDao(jdbcTemplate);
-    }
-
-    @AfterEach
-    void clear() {
         jdbcTemplate.update("truncate table user_history restart identity");
+        userHistoryDao = new UserHistoryDao(jdbcTemplate);
     }
 
     @Test
