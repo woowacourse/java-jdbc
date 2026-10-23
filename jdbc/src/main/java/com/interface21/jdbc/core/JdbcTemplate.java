@@ -18,20 +18,16 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter pss) throws DataAccessException {
+    public void update(final String sql, final Object... parameters) {
         try (
                 final var conn = dataSource.getConnection();
                 final var pstmt = conn.prepareStatement(sql)
         ) {
-            pss.setParameters(pstmt);
+            createPreparedStatementSetter(parameters).setParameters(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
-    }
-
-    public void update(final String sql, final Object... parameters) {
-        update(sql, createPreparedStatementSetter(parameters));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
