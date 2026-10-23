@@ -1,8 +1,5 @@
 package com.techcourse.support.jdbc.init;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
@@ -13,32 +10,19 @@ import java.sql.Statement;
 
 public class DatabasePopulatorUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabasePopulatorUtils.class);
-
     public static void execute(final DataSource dataSource) {
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
-            connection = dataSource.getConnection();
-            statement = connection.createStatement();
-            statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-            } catch (SQLException ignored) {}
+        final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
 
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException ignored) {}
+        if (url == null) {
+            throw new IllegalStateException("schema.sql 파일을 찾을 수 없습니다.");
+        }
+
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            final var sql = Files.readString(new File(url.getFile()).toPath());
+            statement.execute(sql);
+        } catch (IOException | SQLException e) {
+            throw new IllegalStateException("스키마 초기화에 실패했습니다.", e);
         }
     }
 

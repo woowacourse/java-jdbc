@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,7 +53,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... parameters) {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -63,7 +64,15 @@ public class JdbcTemplate {
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다", e);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new CannotGetJdbcConnectionException("JDBC 커넥션을 얻는 데 실패했습니다.", e);
         }
     }
 
