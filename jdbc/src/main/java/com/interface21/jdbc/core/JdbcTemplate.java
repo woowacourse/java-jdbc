@@ -24,37 +24,51 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, args, PreparedStatement::executeUpdate);
+        return update(sql, argumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, args, pstmt -> mapRows(pstmt, rowMapper));
+        return query(sql, rowMapper, argumentSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pss, pstmt -> mapRows(pstmt, rowMapper));
     }
 
     public <T> Optional<T> queryForOptional(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForOptional(sql, rowMapper, argumentSetter(args));
+    }
+
+    public <T> Optional<T> queryForOptional(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        final List<T> results = query(sql, rowMapper, pss);
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.stream().findFirst();
     }
 
-    private <T> T execute(final String sql, final Object[] args, final PreparedStatementCallback<T> action) {
+    private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter argumentSetter(final Object[] args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
