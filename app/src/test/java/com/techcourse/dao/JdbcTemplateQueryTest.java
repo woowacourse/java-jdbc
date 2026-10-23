@@ -22,14 +22,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-class SelectJdbcTemplateTest {
+class JdbcTemplateQueryTest {
 
     private static final String SQL = "select account from users where id >= ?";
 
     private Connection connection;
     private PreparedStatement statement;
     private ResultSet resultSet;
-    private SelectJdbcTemplate jdbcTemplate;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -41,7 +41,7 @@ class SelectJdbcTemplateTest {
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
 
-        jdbcTemplate = new SelectJdbcTemplate() {
+        jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return SQL;

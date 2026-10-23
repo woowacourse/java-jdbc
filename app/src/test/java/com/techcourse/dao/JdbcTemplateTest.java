@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,11 @@ class JdbcTemplateTest {
             @Override
             protected DataSource getDataSource() {
                 return dataSource;
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) {
+                return null;
             }
 
             @Override

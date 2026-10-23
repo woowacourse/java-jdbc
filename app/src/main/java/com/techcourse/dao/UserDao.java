@@ -24,6 +24,11 @@ public class UserDao {
             }
 
             @Override
+            protected Object mapRow(final ResultSet resultSet) {
+                return null;
+            }
+
+            @Override
             protected DataSource getDataSource() {
                 return UserDao.this.getDataSource();
             }
@@ -47,6 +52,11 @@ public class UserDao {
             }
 
             @Override
+            protected Object mapRow(final ResultSet resultSet) {
+                return null;
+            }
+
+            @Override
             protected DataSource getDataSource() {
                 return UserDao.this.getDataSource();
             }
@@ -62,7 +72,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users";
@@ -87,7 +97,7 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -114,7 +124,7 @@ public class UserDao {
     }
 
     public User findByAccount(final String account) {
-        final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where account = ?";
