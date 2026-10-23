@@ -11,7 +11,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,13 +44,41 @@ class JdbcTemplateTest {
             }
         };
 
-        setter = new PreparedStatementSetter() {
-            @Override
-            public void setValues(final PreparedStatement statement) throws SQLException {
-                statement.setString(1, "password");
-                statement.setLong(2, 1L);
-            }
+        setter = statement -> {
+            statement.setString(1, "password");
+            statement.setLong(2, 1L);
         };
+    }
+
+    @Test
+    @DisplayName("가변 인자를 순서대로 바인딩하며 null 값도 전달한다")
+    void updateWithParameters() throws SQLException {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+
+        jdbcTemplate.update(sql, "gugu", "password", null);
+
+        final var order = inOrder(statement, connection);
+        order.verify(statement).setObject(1, "gugu");
+        order.verify(statement).setObject(2, "password");
+        order.verify(statement).setObject(3, null);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("가변 인자가 없어도 SQL을 실행한다")
+    void updateWithoutParameters() throws SQLException {
+        final var sql = "delete from users";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+
+        jdbcTemplate.update(sql);
+
+        verify(statement, never()).setObject(anyInt(), any());
+        verify(statement).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test

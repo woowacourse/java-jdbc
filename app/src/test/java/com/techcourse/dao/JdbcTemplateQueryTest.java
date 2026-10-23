@@ -31,7 +31,7 @@ class JdbcTemplateQueryTest {
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
     private PreparedStatementSetter setter;
-    private RowMapper rowMapper;
+    private RowMapper<String> rowMapper;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -50,19 +50,8 @@ class JdbcTemplateQueryTest {
             }
         };
 
-        rowMapper = new RowMapper() {
-            @Override
-            public Object mapRow(final ResultSet resultSet) throws SQLException {
-                return resultSet.getString("account");
-            }
-        };
-
-        setter = new PreparedStatementSetter() {
-            @Override
-            public void setValues(final PreparedStatement statement) throws SQLException {
-                statement.setLong(1, 1L);
-            }
-        };
+        rowMapper = resultSet -> resultSet.getString("account");
+        setter = statement -> statement.setLong(1, 1L);
     }
 
     @Test
@@ -71,15 +60,31 @@ class JdbcTemplateQueryTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "pobi");
 
-        final var results = jdbcTemplate.query(SQL, setter, rowMapper);
+        final List<String> results = jdbcTemplate.query(SQL, setter, rowMapper);
 
-        assertThat(results).isEqualTo(List.of("gugu", "pobi"));
+        assertThat(results).containsExactly("gugu", "pobi");
         final var order = inOrder(statement, resultSet, connection);
         order.verify(statement).setLong(1, 1L);
         order.verify(statement).executeQuery();
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("가변 인자로 조회 조건을 전달하고 캐스팅 없이 결과를 반환받는다")
+    void queryWithParameters() throws SQLException {
+        final var sql = "select account from users where id >= ? and account <> ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final List<String> results = jdbcTemplate.query(sql, rowMapper, 1L, "excluded");
+
+        assertThat(results).containsExactly("gugu");
+        verify(statement).setObject(1, 1L);
+        verify(statement).setObject(2, "excluded");
+        verify(statement).executeQuery();
     }
 
     @Test

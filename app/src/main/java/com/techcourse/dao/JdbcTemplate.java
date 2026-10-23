@@ -16,6 +16,10 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
+    public final void update(final String sql, final Object... args) {
+        update(sql, statement -> bindParameters(statement, args));
+    }
+
     public final void update(final String sql, final PreparedStatementSetter setter) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -30,12 +34,17 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public final Object query(final String sql, final PreparedStatementSetter setter, final RowMapper rowMapper) {
+    public final <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, statement -> bindParameters(statement, args), rowMapper);
+    }
+
+    public final <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+                                 final RowMapper<T> rowMapper) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            final List<Object> results = new ArrayList<>();
+            final List<T> results = new ArrayList<>();
             try (ResultSet resultSet = executeQuery(setter, statement)) {
                 while (resultSet.next()) {
                     results.add(rowMapper.mapRow(resultSet));
@@ -53,6 +62,13 @@ public abstract class JdbcTemplate {
             setter.setValues(statement);
         }
         return statement.executeQuery();
+    }
+
+    private static void bindParameters(final PreparedStatement statement, final Object... args)
+            throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            statement.setObject(i + 1, args[i]);
+        }
     }
 
     protected abstract DataSource getDataSource();
