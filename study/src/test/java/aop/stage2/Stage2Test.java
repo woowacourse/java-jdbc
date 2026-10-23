@@ -3,6 +3,7 @@ package aop.stage2;
 import aop.DataAccessException;
 import aop.StubUserHistoryDao;
 import aop.domain.User;
+import aop.repository.UserHistoryDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -22,10 +23,14 @@ class Stage2Test {
     private UserService userService;
 
     @Autowired
+    private UserHistoryDao userHistoryDao;
+
+    @Autowired
     private StubUserHistoryDao stubUserHistoryDao;
 
     @BeforeEach
     void setUp() {
+        userService.setUserHistoryDao(userHistoryDao);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userService.insert(user);
     }

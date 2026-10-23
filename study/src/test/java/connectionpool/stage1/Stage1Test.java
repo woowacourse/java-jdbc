@@ -64,7 +64,7 @@ class Stage1Test {
         hikariConfig.setJdbcUrl(H2_URL);
         hikariConfig.setUsername(USER);
         hikariConfig.setPassword(PASSWORD);
-        hikariConfig.setMaximumPoolSize(5);
+        hikariConfig.setMaximumPoolSize(5); // 최대 5개의 물리적인 DB 커넥션을 풀에서 관리할 수 있다.
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");

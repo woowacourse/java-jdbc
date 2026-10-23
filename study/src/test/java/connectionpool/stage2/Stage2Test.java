@@ -51,6 +51,10 @@ class Stage2Test {
 
         // 동시에 많은 요청이 몰려도 최대 풀 사이즈를 유지한다.
         assertThat(hikariPool.getTotalConnections()).isEqualTo(DataSourceConfig.MAXIMUM_POOL_SIZE);
+        /*
+        getTotalConnections()는 현재 풀에 존재하는 물리적인 커넥션의 전체 개수.
+        Total Connections = Active Connections + Idle Connections
+         */
 
         // DataSourceConfig 클래스에서 직접 생성한 커넥션 풀.
         assertThat(hikariDataSource.getPoolName()).isEqualTo("gugu");

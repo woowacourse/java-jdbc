@@ -7,17 +7,27 @@ import org.springframework.aop.PointcutAdvisor;
 /**
  * 어드바이저(advisor). 포인트컷과 어드바이스를 하나씩 갖고 있는 객체.
  * AOP의 애스팩트(aspect)에 해당되는 클래스다.
+ *
+ * 두 역할 연결: Pointcut과 Advice를 한 쌍으로 묶기
  */
 public class TransactionAdvisor implements PointcutAdvisor {
 
+    private final Pointcut pointcut;
+    private final Advice advice;
+
+    public TransactionAdvisor(final Pointcut pointcut, final Advice advice) {
+        this.pointcut = pointcut;
+        this.advice = advice;
+    }
+
     @Override
     public Pointcut getPointcut() {
-        return null;
+        return pointcut;
     }
 
     @Override
     public Advice getAdvice() {
-        return null;
+        return advice;
     }
 
     @Override
