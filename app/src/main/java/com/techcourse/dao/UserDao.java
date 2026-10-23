@@ -38,14 +38,14 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
+            protected void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, user.getAccount());
                 statement.setString(2, user.getPassword());
                 statement.setString(3, user.getEmail());
             }
         };
 
-        jdbcTemplate.update(user);
+        jdbcTemplate.update();
     }
 
     public void update(final User user) {
@@ -61,13 +61,13 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
+            protected void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, user.getPassword());
                 statement.setLong(2, user.getId());
             }
         };
 
-        jdbcTemplate.update(user);
+        jdbcTemplate.update();
     }
 
     public List<User> findAll() {

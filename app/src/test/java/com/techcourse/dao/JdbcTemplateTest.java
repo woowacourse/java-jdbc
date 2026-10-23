@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,9 +45,9 @@ class JdbcTemplateTest {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
-                statement.setString(1, user.getPassword());
-                statement.setLong(2, user.getId());
+            protected void setValues(final PreparedStatement statement) throws SQLException {
+                statement.setString(1, "password");
+                statement.setLong(2, 1L);
             }
         };
     }
@@ -57,10 +56,9 @@ class JdbcTemplateTest {
     @DisplayName("값 설정에 실패하면 실행하지 않고 자원을 닫으며 원인 예외를 보존한다")
     void updateFailsDuringBinding() throws SQLException {
         final var cause = new SQLException("값 설정 실패");
-        final var user = new User(1L, "gugu", "password", "gugu@example.com");
-        doThrow(cause).when(statement).setString(1, user.getPassword());
+        doThrow(cause).when(statement).setString(1, "password");
 
-        assertThatThrownBy(() -> jdbcTemplate.update(user))
+        assertThatThrownBy(() -> jdbcTemplate.update())
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
@@ -73,10 +71,9 @@ class JdbcTemplateTest {
     @DisplayName("Statement 정리에 실패해도 연결을 닫고 정리 실패를 전달한다")
     void updateFailsWhenClosingStatement() throws SQLException {
         final var cause = new SQLException("Statement 정리 실패");
-        final var user = new User(1L, "gugu", "password", "gugu@example.com");
         doThrow(cause).when(statement).close();
 
-        assertThatThrownBy(() -> jdbcTemplate.update(user))
+        assertThatThrownBy(() -> jdbcTemplate.update())
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
