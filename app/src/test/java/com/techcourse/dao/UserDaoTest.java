@@ -39,11 +39,8 @@ class UserDaoTest {
     }
 
     @Test
-    void findByIdWithJdbcTemplate() {
-        final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        final var userDaoWithJdbcTemplate = new UserDao(jdbcTemplate);
-
-        final var user = userDaoWithJdbcTemplate.findById(1L);
+    void findByIdReturnsAllFields() {
+        final var user = userDao.findById(1L);
 
         assertThat(user)
                 .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
