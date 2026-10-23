@@ -27,15 +27,31 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = createQueryForInsert();
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(sql, createParametersForInsert(user));
     }
 
     public void update(final User user) {
-        final var sql = "update users set password = ? where id = ?";
+        final var sql = createQueryForUpdate();
 
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
+        jdbcTemplate.update(sql, createParametersForUpdate(user));
+    }
+
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set password = ? where id = ?";
+    }
+
+    private Object[] createParametersForInsert(final User user) {
+        return new Object[]{user.getAccount(), user.getPassword(), user.getEmail()};
+    }
+
+    private Object[] createParametersForUpdate(final User user) {
+        return new Object[]{user.getPassword(), user.getId()};
     }
 
     public List<User> findAll() {
