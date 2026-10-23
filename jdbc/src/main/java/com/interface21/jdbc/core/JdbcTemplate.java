@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,21 +44,24 @@ public class JdbcTemplate {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {
+            } catch (SQLException exception) {
+                throw new DataAccessException();
             }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {
+            } catch (SQLException exception) {
+                throw new DataAccessException();
             }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {
+            } catch (SQLException exception) {
+                throw new DataAccessException();
             }
         }
     }
@@ -90,19 +94,25 @@ public class JdbcTemplate {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException exception) {
+                throw new DataAccessException();
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException exception) {
+                throw new DataAccessException();
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException exception) {
+                throw new DataAccessException();
+            }
         }
     }
 
@@ -140,19 +150,25 @@ public class JdbcTemplate {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException exception) {
+                throw new DataAccessException();
+            }
 
             try {
                 if (pstmt != null) {
                     pstmt.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException exception) {
+                throw new DataAccessException();
+            }
 
             try {
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ignored) {}
+            } catch (SQLException exception) {
+                throw new DataAccessException();
+            }
         }
     }
 }
