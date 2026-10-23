@@ -63,8 +63,8 @@ public class JdbcTemplate {
 
     public Object queryForObject(String sql, Object[] params, RowMapper rowMapper) {
         List<Object> results = query(sql, params, rowMapper);
-        if (results.isEmpty()) {
-            return null;
+        if (results.size() != 1) {
+            throw new IllegalStateException("Expected 1 row but found " + results.size());
         }
         return results.get(0);
     }

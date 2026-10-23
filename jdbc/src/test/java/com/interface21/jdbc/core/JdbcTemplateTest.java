@@ -61,8 +61,29 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectReturnsNullWhenEmpty() throws SQLException {
-        assertThat(jdbcTemplate.queryForObject("sql", new Object[0], rowMapper)).isNull();
+    void queryForObjectRejectsEmptyResult() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("sql", new Object[0], rowMapper))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Expected 1 row but found 0");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectReturnsSingleRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet)).thenReturn("only row");
+
+        assertThat(jdbcTemplate.queryForObject("sql", new Object[0], rowMapper)).isEqualTo("only row");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectRejectsMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("sql", new Object[0], rowMapper))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Expected 1 row but found 2");
         verifyQueryResourcesClosed();
     }
 

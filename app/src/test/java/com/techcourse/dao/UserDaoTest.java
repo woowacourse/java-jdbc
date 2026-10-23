@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -84,9 +85,22 @@ class UserDaoTest {
     }
 
     @Test
-    void missingUserReturnsNull() {
-        assertThat(userDao.findById(999L)).isNull();
-        assertThat(userDao.findByAccount("missing")).isNull();
+    void missingUserThrowsException() {
+        assertThatThrownBy(() -> userDao.findById(999L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Expected 1 row but found 0");
+        assertThatThrownBy(() -> userDao.findByAccount("missing"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Expected 1 row but found 0");
+    }
+
+    @Test
+    void duplicateAccountThrowsException() {
+        userDao.insert(new User("gugu", "other-password", "other@example.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Expected 1 row but found 2");
     }
 
     @Test
