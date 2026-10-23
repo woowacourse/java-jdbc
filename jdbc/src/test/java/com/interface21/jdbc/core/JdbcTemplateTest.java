@@ -114,6 +114,21 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void PreparedStatementSetter에서_예외가_발생하면_쿼리를_실행하지_않고_자원을_닫는다() throws SQLException {
+        final var sqlException = new SQLException("bind failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, pstmt -> {
+            throw sqlException;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(sqlException);
+
+        verify(preparedStatement, never()).executeUpdate();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
     void 단건_조회_결과가_없으면_빈_Optional을_반환한다() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
