@@ -1,16 +1,14 @@
 package com.interface21.jdbc.core;
 
-import java.sql.Connection;
+import com.interface21.dao.DataAccessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
 
@@ -22,56 +20,50 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(
-                sql,
-                pstmt -> {
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        List<T> results = new ArrayList<>();
-                        while (rs.next()) {
-                            results.add(rowMapper.map(rs));
-                        }
-                        return results;
-                    }
-                },
-                params
-        );
+    public int update(final String sql, final Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(
-                sql,
-                pstmt -> {
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        if (rs.next()) {
-                            return rowMapper.map(rs);
-                        }
-                        return null;
-                    }
-                },
-                params
-        );
-    }
-
-    public int update(String sql, Object... params) {
-        return execute(sql, PreparedStatement::executeUpdate, params);
-    }
-
-    private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, statement -> {
+            try (var resultSet = statement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                int rowNum = 0;
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet, rowNum++));
+                }
+                return results;
             }
-            return action.doInPreparedStatement(pstmt);
+        }, args);
+    }
+
+    /**
+     * Returns null when no row matches, and rejects results containing multiple rows.
+     */
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final var results = query(sql, rowMapper, args);
+        if (results.size() > 1) {
+            throw new DataAccessException("Expected at most one row but found " + results.size());
+        }
+        return results.isEmpty() ? null : results.getFirst();
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        log.debug("query : {}", sql);
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+            return callback.execute(statement);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
     }
 
     @FunctionalInterface
     private interface PreparedStatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement pstmt) throws SQLException;
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }

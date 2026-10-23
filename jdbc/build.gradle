@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    testImplementation 'com.h2database:h2:2.3.232'
     implementation 'org.reflections:reflections:0.10.2'
     implementation 'ch.qos.logback:logback-classic:1.5.7'
     implementation 'org.apache.commons:commons-lang3:3.14.0'
