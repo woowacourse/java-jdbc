@@ -4,7 +4,7 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -18,10 +18,6 @@ public class UserDao {
 
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -41,17 +37,26 @@ public class UserDao {
         }
     }
 
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        int updated = jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+
+        if (updated == 0) {
+            throw new IllegalArgumentException("존재하지 않는 사용자입니다. id: " + user.getId());
+        }
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public User getById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public User getByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
