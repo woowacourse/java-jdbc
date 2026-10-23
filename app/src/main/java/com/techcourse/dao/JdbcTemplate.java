@@ -16,31 +16,29 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public final void update() {
-        final var sql = createQuery();
-
+    public final void update(final String sql, final PreparedStatementSetter setter) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setValues(statement);
+            if (setter != null) {
+                setter.setValues(statement);
+            }
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 
-    public final Object query() {
-        final var sql = createQuery();
-
+    public final Object query(final String sql, final PreparedStatementSetter setter, final RowMapper rowMapper) {
         try (Connection connection = getDataSource().getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             final List<Object> results = new ArrayList<>();
-            try (ResultSet resultSet = executeQuery(statement)) {
+            try (ResultSet resultSet = executeQuery(setter, statement)) {
                 while (resultSet.next()) {
-                    results.add(mapRow(resultSet));
+                    results.add(rowMapper.mapRow(resultSet));
                 }
             }
             return results;
@@ -49,16 +47,13 @@ public abstract class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(final PreparedStatement statement) throws SQLException {
-        setValues(statement);
+    private ResultSet executeQuery(final PreparedStatementSetter setter, final PreparedStatement statement)
+            throws SQLException {
+        if (setter != null) {
+            setter.setValues(statement);
+        }
         return statement.executeQuery();
     }
 
-    protected abstract String createQuery();
-
     protected abstract DataSource getDataSource();
-
-    protected abstract Object mapRow(ResultSet resultSet) throws SQLException;
-
-    protected abstract void setValues(PreparedStatement statement) throws SQLException;
 }

@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,6 +24,7 @@ class JdbcTemplateTest {
     private Connection connection;
     private PreparedStatement statement;
     private JdbcTemplate jdbcTemplate;
+    private PreparedStatementSetter setter;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -36,22 +36,14 @@ class JdbcTemplateTest {
 
         jdbcTemplate = new JdbcTemplate() {
             @Override
-            protected String createQuery() {
-                return SQL;
-            }
-
-            @Override
             protected DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        setter = new PreparedStatementSetter() {
             @Override
-            protected Object mapRow(final ResultSet resultSet) {
-                return null;
-            }
-
-            @Override
-            protected void setValues(final PreparedStatement statement) throws SQLException {
+            public void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, "password");
                 statement.setLong(2, 1L);
             }
@@ -64,7 +56,7 @@ class JdbcTemplateTest {
         final var cause = new SQLException("값 설정 실패");
         doThrow(cause).when(statement).setString(1, "password");
 
-        assertThatThrownBy(() -> jdbcTemplate.update())
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, setter))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
@@ -79,7 +71,7 @@ class JdbcTemplateTest {
         final var cause = new SQLException("Statement 정리 실패");
         doThrow(cause).when(statement).close();
 
-        assertThatThrownBy(() -> jdbcTemplate.update())
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, setter))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 

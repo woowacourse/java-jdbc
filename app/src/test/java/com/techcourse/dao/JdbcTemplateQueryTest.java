@@ -30,6 +30,8 @@ class JdbcTemplateQueryTest {
     private PreparedStatement statement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
+    private PreparedStatementSetter setter;
+    private RowMapper rowMapper;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -43,22 +45,21 @@ class JdbcTemplateQueryTest {
 
         jdbcTemplate = new JdbcTemplate() {
             @Override
-            protected String createQuery() {
-                return SQL;
-            }
-
-            @Override
             protected DataSource getDataSource() {
                 return dataSource;
             }
+        };
 
+        rowMapper = new RowMapper() {
             @Override
-            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+            public Object mapRow(final ResultSet resultSet) throws SQLException {
                 return resultSet.getString("account");
             }
+        };
 
+        setter = new PreparedStatementSetter() {
             @Override
-            protected void setValues(final PreparedStatement statement) throws SQLException {
+            public void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setLong(1, 1L);
             }
         };
@@ -70,7 +71,7 @@ class JdbcTemplateQueryTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "pobi");
 
-        final var results = jdbcTemplate.query();
+        final var results = jdbcTemplate.query(SQL, setter, rowMapper);
 
         assertThat(results).isEqualTo(List.of("gugu", "pobi"));
         final var order = inOrder(statement, resultSet, connection);
@@ -82,12 +83,29 @@ class JdbcTemplateQueryTest {
     }
 
     @Test
+    @DisplayName("조회 인자가 없으면 setter 없이 조회하고 결과를 변환한다")
+    void queryWithoutSetter() throws SQLException {
+        final var sql = "select account from users";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var results = jdbcTemplate.query(sql, null, rowMapper);
+
+        assertThat(results).isEqualTo(List.of("gugu"));
+        verify(statement, never()).setLong(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     @DisplayName("값 설정에 실패하면 조회를 실행하지 않고 자원을 닫는다")
     void queryFailsDuringBinding() throws SQLException {
         final var cause = new SQLException("값 설정 실패");
         doThrow(cause).when(statement).setLong(1, 1L);
 
-        assertThatThrownBy(() -> jdbcTemplate.query())
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, setter, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
@@ -103,7 +121,7 @@ class JdbcTemplateQueryTest {
         final var cause = new SQLException("조회 실행 실패");
         when(statement.executeQuery()).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.query())
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, setter, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
@@ -119,7 +137,7 @@ class JdbcTemplateQueryTest {
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("account")).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.query())
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, setter, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
