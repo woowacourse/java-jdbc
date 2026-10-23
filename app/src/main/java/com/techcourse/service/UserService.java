@@ -46,19 +46,27 @@ public class UserService {
 
             connection.commit();
         } catch (SQLException | DataAccessException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                e.addSuppressed(ex);
-            }
+            rollback(e, connection);
             throw new DataAccessException(e.getMessage());
         } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException ex) {
-                    throw new DataAccessException(ex.getMessage());
-                }
+            close(connection);
+        }
+    }
+
+    private void rollback(Exception e, Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            e.addSuppressed(ex);
+        }
+    }
+
+    private void close(Connection connection) {
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException ex) {
+                throw new DataAccessException(ex.getMessage());
             }
         }
     }
