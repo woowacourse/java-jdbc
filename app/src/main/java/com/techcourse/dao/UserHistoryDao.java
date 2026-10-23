@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.UserHistory;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,25 @@ public class UserHistoryDao {
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
+    }
+
+    public void log(final Connection connection, final UserHistory userHistory) {
+        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
+
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            statement.setLong(1, userHistory.getUserId());
+            statement.setString(2, userHistory.getAccount());
+            statement.setString(3, userHistory.getPassword());
+            statement.setString(4, userHistory.getEmail());
+            statement.setObject(5, userHistory.getCreatedAt());
+            statement.setString(6, userHistory.getCreateBy());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("Failed to insert user history", e);
+        }
     }
 
     public void log(final UserHistory userHistory) {
