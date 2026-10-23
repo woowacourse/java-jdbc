@@ -7,7 +7,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,5 +100,118 @@ class JdbcTemplateTest {
 
         assertThat(dataSource.getActiveConnections()).isZero();
         assertThat(jdbcTemplate.update("insert into users (id, account) values (?, ?)", 1L, "gugu")).isEqualTo(1);
+    }
+
+    @Test
+    void queryMapsEveryRowWithItsRowNumber() {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
+
+        final var accounts = jdbcTemplate.query("select account from users where id >= ? order by id",
+                (rs, rowNum) -> rowNum + ":" + rs.getString("account"), 1L);
+
+        assertThat(accounts).containsExactly("0:gugu", "1:brown");
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void queryReturnsEmptyListWhenNoRowsMatch() {
+        final var accounts = jdbcTemplate.query("select account from users", (rs, rowNum) -> rs.getString("account"));
+
+        assertThat(accounts).isEmpty();
+    }
+
+    @Test
+    void queryTreatsArgumentsAsValues() {
+        final var account = "gugu' OR '1'='1";
+        jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, account, 2L, "brown");
+
+        final var accounts = jdbcTemplate.query("select account from users where account = ?",
+                (rs, rowNum) -> rs.getString("account"), account);
+
+        assertThat(accounts).containsExactly(account);
+    }
+
+    @Test
+    void queryForObjectReturnsMappedRow() {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?)", 1L, "gugu");
+
+        final var account = jdbcTemplate.queryForObject("select account from users where id = ?",
+                (rs, rowNum) -> rs.getString("account"), 1L);
+
+        assertThat(account).isEqualTo("gugu");
+    }
+
+    @Test
+    void queryForObjectReturnsNullWhenNoRowsMatch() {
+        final var account = jdbcTemplate.queryForObject("select account from users where id = ?",
+                (rs, rowNum) -> rs.getString("account"), 1L);
+
+        assertThat(account).isNull();
+    }
+
+    @Test
+    void queryForObjectRejectsMultipleRows() {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select account from users",
+                (rs, rowNum) -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class);
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void queryClosesResultSetAndStatement() throws SQLException {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?)", 1L, "gugu");
+        final var resultSet = new AtomicReference<ResultSet>();
+        final var statement = new AtomicReference<Statement>();
+
+        jdbcTemplate.query("select account from users", (rs, rowNum) -> {
+            resultSet.set(rs);
+            statement.set(rs.getStatement());
+            return rs.getString("account");
+        });
+
+        assertThat(resultSet.get().isClosed()).isTrue();
+        assertThat(statement.get().isClosed()).isTrue();
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void queryTranslatesSqlExceptionFromMapperAndClosesResources() throws SQLException {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?)", 1L, "gugu");
+        final var failure = new SQLException("mapping failed");
+        final var resultSet = new AtomicReference<ResultSet>();
+        final var statement = new AtomicReference<Statement>();
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", (rs, rowNum) -> {
+            resultSet.set(rs);
+            statement.set(rs.getStatement());
+            throw failure;
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        assertThat(resultSet.get().isClosed()).isTrue();
+        assertThat(statement.get().isClosed()).isTrue();
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void queryPreservesRuntimeExceptionFromMapperAndReleasesConnection() {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?)", 1L, "gugu");
+        final var failure = new IllegalArgumentException("mapping failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", (rs, rowNum) -> {
+            throw failure;
+        })).isSameAs(failure);
+
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void queryTranslatesInvalidSqlAndReleasesConnection() {
+        assertThatThrownBy(() -> jdbcTemplate.query("select * from missing_table", (rs, rowNum) -> rs.getLong("id")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLException.class);
+
+        assertThat(dataSource.getActiveConnections()).isZero();
     }
 }
