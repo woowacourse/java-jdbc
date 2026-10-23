@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
+    public int update(final String sql, final Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -34,7 +34,7 @@ public class JdbcTemplate {
             for (int k = 0; k < args.length; k++) {
                 pstmt.setObject(k + 1, args[k]);
             }
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
