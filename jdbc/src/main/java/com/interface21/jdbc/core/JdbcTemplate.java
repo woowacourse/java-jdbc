@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        return execute(sql, pss, pstmt -> mapRows(pstmt, rowMapper));
+        return execute(sql, pss, pstmt -> {
+            try (final var rs = pstmt.executeQuery()) {
+                return mapRows(rs, rowMapper);
+            }
+        });
     }
 
     public <T> Optional<T> queryForOptional(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -71,15 +76,13 @@ public class JdbcTemplate {
         };
     }
 
-    private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
-        try (final var rs = pstmt.executeQuery()) {
-            final List<T> results = new ArrayList<>();
-            int rowNum = 0;
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs, rowNum++));
-            }
-            return results;
+    private <T> List<T> mapRows(final ResultSet rs, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        int rowNum = 0;
+        while (rs.next()) {
+            results.add(rowMapper.mapRow(rs, rowNum++));
         }
+        return results;
     }
 
     @FunctionalInterface
