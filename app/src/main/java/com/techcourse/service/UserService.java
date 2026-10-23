@@ -22,8 +22,8 @@ public class UserService {
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
-        return userDao.findById(id);
+    public User getById(final long id) {
+        return userDao.getById(id);
     }
 
     public void insert(final User user) {
@@ -31,7 +31,7 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        final var user = getById(id);
         user.changePassword(newPassword);
 
         try (Connection connection = dataSource.getConnection()) {
