@@ -17,6 +17,8 @@ public class UserDao {
     );
 
     private final JdbcTemplate jdbcTemplate;
+    private final InsertJdbcTemplate insertJdbcTemplate;
+    private final UpdateJdbcTemplate updateJdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
@@ -24,34 +26,16 @@ public class UserDao {
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.insertJdbcTemplate = new InsertJdbcTemplate(jdbcTemplate);
+        this.updateJdbcTemplate = new UpdateJdbcTemplate(jdbcTemplate);
     }
 
     public void insert(final User user) {
-        final var sql = createQueryForInsert();
-
-        jdbcTemplate.update(sql, createParametersForInsert(user));
+        insertJdbcTemplate.insert(user);
     }
 
     public void update(final User user) {
-        final var sql = createQueryForUpdate();
-
-        jdbcTemplate.update(sql, createParametersForUpdate(user));
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set password = ? where id = ?";
-    }
-
-    private Object[] createParametersForInsert(final User user) {
-        return new Object[]{user.getAccount(), user.getPassword(), user.getEmail()};
-    }
-
-    private Object[] createParametersForUpdate(final User user) {
-        return new Object[]{user.getPassword(), user.getId()};
+        updateJdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
