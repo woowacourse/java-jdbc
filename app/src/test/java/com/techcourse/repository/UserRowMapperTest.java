@@ -1,14 +1,11 @@
 package com.techcourse.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.techcourse.domain.User;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Optional;
-import org.h2.jdbc.JdbcResultSet;
 import org.junit.jupiter.api.Test;
 
 class UserRowMapperTest {
