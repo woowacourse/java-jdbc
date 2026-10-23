@@ -2,9 +2,12 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +18,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +58,47 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void update_WhenPreparedStatementSetter_ThenBindBySetter() throws SQLException {
+        String sql = "insert into users (account, password) values (?, ?)";
+
+        jdbcTemplate.update(sql, ps -> {
+            ps.setString(1, "gugu");
+            ps.setString(2, "password");
+        });
+
+        final InOrder inOrder = inOrder(preparedStatement);
+        inOrder.verify(preparedStatement).setString(1, "gugu");
+        inOrder.verify(preparedStatement).setString(2, "password");
+        inOrder.verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    void update_WhenSetterThrowsSQLException_ThenThrowDataAccessExceptionAndCloseResources() throws SQLException {
+        String sql = "insert into users (account) values (?)";
+        final SQLException cause = new SQLException("bind failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, ps -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(preparedStatement, never()).executeUpdate();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void query_WhenNoArgs_ThenNotBindAnyParameter() throws SQLException {
+        String sql = "select account from users";
+
+        jdbcTemplate.query(sql, rowMapper);
+
+        verify(preparedStatement).executeQuery();
+        verify(preparedStatement, never()).setObject(anyInt(), any());
+    }
+
+    @Test
     void query_ThenCloseResourcesInReverseOrder() throws SQLException {
         String sql = "select 1 from users";
 
@@ -75,6 +120,18 @@ class JdbcTemplateTest {
 
         assertThat(result).isEqualTo("gugu");
         verify(preparedStatement).setObject(1, 1L);
+    }
+
+    @Test
+    void queryForObject_WhenPreparedStatementSetter_ThenReturnSingleRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+        String sql = "select account from users where id = ?";
+
+        final String result = jdbcTemplate.queryForObject(sql, rowMapper, ps -> ps.setLong(1, 1L));
+
+        assertThat(result).isEqualTo("gugu");
+        verify(preparedStatement).setLong(1, 1L);
     }
 
     @Test
