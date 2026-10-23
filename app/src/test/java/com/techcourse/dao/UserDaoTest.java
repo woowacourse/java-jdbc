@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,10 +14,14 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        try (var connection = DataSourceConfig.getInstance().getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute("truncate table users restart identity");
+        }
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -25,7 +30,7 @@ class UserDaoTest {
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).extracting(User::getAccount).containsExactly("gugu");
     }
 
     @Test
@@ -65,5 +70,19 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void findMissingUser() {
+        assertThat(userDao.findById(999L)).isNull();
+        assertThat(userDao.findByAccount("missing")).isNull();
+    }
+
+    @Test
+    void findByAccountWithSqlCharacters() {
+        userDao.insert(new User("gugu' or '1'='1", "password", "other@example.com"));
+
+        assertThat(userDao.findByAccount("gugu' or '1'='1").getEmail())
+                .isEqualTo("other@example.com");
     }
 }

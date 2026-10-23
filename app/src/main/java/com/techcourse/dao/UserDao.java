@@ -1,32 +1,27 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
 
-    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        dataSource = null;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -41,40 +36,17 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(
-                sql,
-                (resultSet) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ));
+        final var sql = "select id, account, password, email from users order by id";
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(
-                sql,
-                (resultSet) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ),
-                id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(
-                sql,
-                (resultSet) -> new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("account"),
-                        resultSet.getString("password"),
-                        resultSet.getString("email")
-                ),
-                account);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
