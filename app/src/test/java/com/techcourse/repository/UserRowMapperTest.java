@@ -27,15 +27,12 @@ class UserRowMapperTest {
             User expected = new User(1L, "user1", "password", "user1@test.com");
 
             // when
-            Optional<User> actual = rowMapper.mapRow(resultSet);
+            User actual = rowMapper.mapRow(resultSet);
 
             // then
-            assertAll(
-                () -> assertThat(actual).isPresent(),
-                () -> assertThat(actual)
-                    .usingRecursiveComparison()
-                    .isEqualTo(expected)
-            );
+            assertThat(actual)
+                .usingRecursiveComparison()
+                .isEqualTo(expected);
 
 
         } catch (SQLException e) {
