@@ -26,10 +26,22 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter statementSetter) {
+        try (final Connection connection = dataSource.getConnection()) {
+            update(connection, sql, statementSetter);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute update", e);
+        }
+    }
+
+    public void update(final Connection connection, final String sql, final Object... args) {
+        update(connection, sql, statement -> setParameters(statement, args));
+    }
+
+    public void update(final Connection connection, final String sql,
+                       final PreparedStatementSetter statementSetter) {
         log.debug("query : {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             statementSetter.setValues(statement);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -43,10 +55,24 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
                              final RowMapper<T> rowMapper) {
+        try (final Connection connection = dataSource.getConnection()) {
+            return query(connection, sql, statementSetter, rowMapper);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute query", e);
+        }
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final Object... args) {
+        return query(connection, sql, statement -> setParameters(statement, args), rowMapper);
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql,
+                             final PreparedStatementSetter statementSetter,
+                             final RowMapper<T> rowMapper) {
         log.debug("query : {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             statementSetter.setValues(statement);
 
             try (final ResultSet resultSet = statement.executeQuery()) {
@@ -69,6 +95,17 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final PreparedStatementSetter statementSetter,
                                 final RowMapper<T> rowMapper) {
         return singleResult(query(sql, statementSetter, rowMapper));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... args) {
+        return singleResult(query(connection, sql, rowMapper, args));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final PreparedStatementSetter statementSetter,
+                                final RowMapper<T> rowMapper) {
+        return singleResult(query(connection, sql, statementSetter, rowMapper));
     }
 
     private <T> T singleResult(final List<T> results) {
