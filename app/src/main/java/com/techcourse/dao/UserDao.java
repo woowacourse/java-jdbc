@@ -1,28 +1,19 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
-            resultSet.getLong("id"),
-            resultSet.getString("account"),
-            resultSet.getString("password"),
-            resultSet.getString("email")
-    );
-
     private final DataSource dataSource;
-    private final com.interface21.jdbc.core.JdbcTemplate queryJdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.queryJdbcTemplate = new com.interface21.jdbc.core.JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
@@ -71,21 +62,91 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select id, account, password, email from users";
+        final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users";
+            }
 
-        return queryJdbcTemplate.query(sql, USER_ROW_MAPPER);
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+                return mapUser(resultSet);
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement statement) {
+            }
+        };
+
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where id = ?";
+            }
 
-        return queryJdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+                return mapUser(resultSet);
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement statement) throws SQLException {
+                statement.setObject(1, id);
+            }
+        };
+
+        final List<?> users = (List<?>) jdbcTemplate.query();
+        return users.isEmpty() ? null : (User) users.getFirst();
     }
 
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+        final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where account = ?";
+            }
 
-        return queryJdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+            @Override
+            protected DataSource getDataSource() {
+                return UserDao.this.getDataSource();
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+                return mapUser(resultSet);
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement statement) throws SQLException {
+                statement.setString(1, account);
+            }
+        };
+
+        final List<?> users = (List<?>) jdbcTemplate.query();
+        return users.isEmpty() ? null : (User) users.getFirst();
+    }
+
+    private User mapUser(final ResultSet resultSet) throws SQLException {
+        return new User(
+                resultSet.getLong("id"),
+                resultSet.getString("account"),
+                resultSet.getString("password"),
+                resultSet.getString("email")
+        );
     }
 
     private DataSource getDataSource() {
