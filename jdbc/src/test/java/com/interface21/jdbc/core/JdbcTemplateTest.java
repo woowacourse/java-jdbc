@@ -50,6 +50,37 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithProvidedConnectionDoesNotCloseIt() throws SQLException {
+        when(pstmt.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(connection,
+                "update users set password = ? where id = ?", "password99", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(pstmt).setObject(1, "password99");
+        verify(pstmt).setObject(2, 1L);
+        verify(pstmt).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void keepsProvidedConnectionOpenWhenExecutionFails() throws SQLException {
+        final var exception = new SQLException("SQL execution failed");
+        when(pstmt.executeUpdate()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+
+        verify(pstmt).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
     void closesResourcesWhenExecutionFails() throws SQLException {
         final var exception = new SQLException("SQL execution failed");
         when(pstmt.executeUpdate()).thenThrow(exception);
