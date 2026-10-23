@@ -118,6 +118,59 @@ class JdbcTemplateTest {
         assertConnectionReturnedAndReusable();
     }
 
+    @Test
+    void updateWithPreparedStatementSetter() {
+        final int updated = jdbcTemplate.update("update users set email = ? where id = ?", statement -> {
+            statement.setString(1, "changed@example.com");
+            statement.setLong(2, 1L);
+        });
+
+        final String email = jdbcTemplate.queryForObject("select email from users where id = ?",
+                (rs, rowNum) -> rs.getString("email"), 1L);
+        assertThat(updated).isEqualTo(1);
+        assertThat(email).isEqualTo("changed@example.com");
+    }
+
+    @Test
+    void queryWithPreparedStatementSetter() {
+        final var accounts = jdbcTemplate.query("select account from users where id = ?",
+                statement -> statement.setLong(1, 2L),
+                (rs, rowNum) -> rs.getString("account"));
+
+        assertThat(accounts).containsExactly("second");
+    }
+
+    @Test
+    void queryForObjectWithPreparedStatementSetter() {
+        final String account = jdbcTemplate.queryForObject("select account from users where id = ?",
+                statement -> statement.setLong(1, 1L),
+                (rs, rowNum) -> rs.getString("account"));
+
+        assertThat(account).isEqualTo("first");
+    }
+
+    @Test
+    void bindingFailurePreservesCauseAndReturnsConnection() {
+        final SQLException failure = new SQLException("binding failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", statement -> {
+            throw failure;
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        assertConnectionReturnedAndReusable();
+    }
+
+    @Test
+    void uncheckedMappingFailureReturnsConnection() {
+        final IllegalStateException failure = new IllegalStateException("mapping failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", (rs, rowNum) -> {
+            throw failure;
+        })).isSameAs(failure);
+
+        assertConnectionReturnedAndReusable();
+    }
+
     private void assertConnectionReturnedAndReusable() {
         assertThat(dataSource.getActiveConnections()).isZero();
         final Long count = jdbcTemplate.queryForObject("select count(*) from users",

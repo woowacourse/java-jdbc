@@ -24,11 +24,20 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, statement -> statement.executeUpdate(), args);
+        return update(sql, argumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
+        return query(sql, argumentSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+                             final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -36,24 +45,39 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, args);
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
+                                final RowMapper<T> rowMapper) {
+        return singleResult(query(sql, setter, rowMapper));
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row but found " + results.size());
         }
         return results.isEmpty() ? null : results.get(0);
     }
 
-    private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+    private PreparedStatementSetter argumentSetter(final Object[] args) {
+        return statement -> {
             for (int index = 0; index < args.length; index++) {
                 statement.setObject(index + 1, args[index]);
             }
+        };
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.setValues(statement);
             return callback.execute(statement);
         } catch (SQLException exception) {
             throw new DataAccessException("Failed to execute SQL: " + sql, exception);
