@@ -50,9 +50,9 @@ public class UserDao {
         );
     }
 
-    public User findByAccount(final String account) {
+    public List<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(
+        return jdbcTemplate.query(
                 sql,
                 (rs, rowNum) -> new User(
                         rs.getLong("id"),

@@ -42,7 +42,7 @@ class UserDaoTest {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.get(0).getAccount()).isEqualTo(account);
     }
 
     @Test
