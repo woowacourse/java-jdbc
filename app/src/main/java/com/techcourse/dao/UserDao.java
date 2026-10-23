@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -18,40 +19,45 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.command(
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail()
-        );
+        jdbcTemplate.command(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.command(
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
+        jdbcTemplate.command(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {
-        final var sql = "select * from users";
+        String sql = "select * from users";
+
         return jdbcTemplate.query(sql, new UserRowMapper());
     }
 
-    public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
+    public Optional<User> findById(final Long id) {
+        String sql = "select id, account, password, email from users where id = ?";
+
+        return jdbcTemplate.queryForObject(sql,
+                new UserRowMapper(),
+                pstmt -> pstmt.setLong(1, id));
     }
 
-    public User findByAccount(final String account) {
-        final var sql = "select * from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, new UserRowMapper(), account);
+    public Optional<User> findByAccount(final String account) {
+        String sql = "select * from users where account = ?";
+
+        return jdbcTemplate.queryForObject(sql,
+                new UserRowMapper(),
+                pstmt -> pstmt.setString(1, account));
     }
 }
