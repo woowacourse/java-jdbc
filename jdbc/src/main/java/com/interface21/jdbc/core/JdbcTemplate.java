@@ -1,17 +1,14 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -23,62 +20,55 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void executeUpdate(final String sql, final List<Object> parameters) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
             final Connection connection = dataSource.getConnection();
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+            final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
-            for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
-            }
+            final ResultSet resultSet = executeQuery(args, pstmt);
 
-            preparedStatement.executeUpdate();
+            return newRowMapperRsExtractor(rowMapper).extractData(resultSet);
         } catch (SQLException e) {
-            throw new IllegalStateException("UPDATE query failed", e);
+            throw new DataAccessException("query for multiple entity failed (sql=" + sql + ")", e);
         }
     }
 
-    public <T> Optional<T> executeSelect(final String sql, final EntityMapper<T> entityMapper, final List<Object> parameters) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         try (
             final Connection connection = dataSource.getConnection();
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+            final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
-            for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
-            }
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(entityMapper.map(resultSet));
-                }
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("SELECT for multiple entities query failed", e);
-        }
+            final ResultSet resultSet = executeQuery(args, pstmt);
+            final List<T> mapped = newRowMapperRsExtractor(rowMapper).extractData(resultSet);
 
-        return Optional.empty();
+            return DataAccessUtils.singleResult(mapped);
+        } catch (SQLException e) {
+            throw new DataAccessException("query for single entity failed (sql=" + sql + ")", e);
+        }
     }
 
-    public <T> List<T> executeSelectAll(final String sql, final EntityMapper<T> entityMapper, final List<Object> parameters) {
-        final List<T> result = new ArrayList<>();
+    private ResultSet executeQuery(final Object[] args, final PreparedStatement pstmt) throws SQLException {
+        newArgPreparedStatementSetter(args).setValues(pstmt);
+        return pstmt.executeQuery();
+    }
+
+    public void update(final String sql, final Object... args) {
         try (
             final Connection connection = dataSource.getConnection();
-            final PreparedStatement preparedStatement = connection.prepareStatement(sql)
+            final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
-            log.debug("query : {}", sql);
-            for (int parameterIndex = 1; parameterIndex <= parameters.size(); parameterIndex++) {
-                preparedStatement.setObject(parameterIndex, parameters.get(parameterIndex - 1));
-            }
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    result.add(entityMapper.map(resultSet));
-                }
-            }
+            newArgPreparedStatementSetter(args).setValues(pstmt);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            throw new IllegalStateException("SELECT for multiple entities query failed", e);
+            throw new DataAccessException("update/insert failed (sql=" + sql + ")", e);
         }
+    }
 
-        return result;
+    private PreparedStatementSetter newArgPreparedStatementSetter(final Object[] args) {
+        return new ArgumentPreparedStatementSetter(args);
+    }
+
+    private <T> RowMapperResultSetExtractor<T> newRowMapperRsExtractor(final RowMapper<T> rowMapper) {
+        return new RowMapperResultSetExtractor<>(rowMapper);
     }
 }
