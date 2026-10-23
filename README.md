@@ -39,7 +39,8 @@
 
 - `update(sql, params)`가 저장, 수정 등 변경 SQL을 실행한다.
 - `query(sql, params, rowMapper)`가 각 행을 변환해 목록으로 반환한다.
-- `queryForObject(sql, params, rowMapper)`는 첫 번째 결과를 반환하며 결과가 없으면 `null`을 반환한다.
+- `queryForObject(sql, params, rowMapper)`는 정확히 1건일 때 결과를 반환한다. 0건 또는 2건 이상이면 예상 건수와 실제 건수를 담은 `IllegalStateException`을 발생시킨다.
+- UserHistoryDao의 이력 저장도 `update()`를 사용하며, DataSource 또는 JdbcTemplate을 주입받을 수 있다.
 - UserDao는 SQL, 인자, ResultSet에서 User로 변환하는 방법만 담당한다.
 - JdbcTemplate은 연결, 인자 설정, SQL 실행, 결과 순회, 예외 처리, 자원 정리를 담당한다.
 - 현재는 `Object[]`와 Object를 반환하는 RowMapper를 사용한다. 제네릭, 가변 인자, 람다 등의 개선은 2단계에서 진행한다.
@@ -50,7 +51,8 @@
 ./gradlew :jdbc:test :app:test --rerun-tasks --console=plain
 ```
 
-- UserDaoTest 9개, JdbcTemplateTest 7개 통과.
+- UserDaoTest 10개, UserHistoryDaoTest 2개, JdbcTemplateTest 9개로 총 21개 통과.
+- 단건 조회의 0건, 1건, 여러 건 처리와 자원 정리, 이력 DAO의 두 생성자 및 전체 저장 필드를 검증한다.
 - UserDaoTest는 각 테스트 전에 사용자 테이블과 ID를 초기화하여 실행 순서에 의존하지 않는다.
 - 3단계 대상인 UserServiceTest 2개는 기존 `@Disabled` 상태를 유지한다.
 - study 모듈의 커넥션 풀, 트랜잭션, AOP 실습은 이번 검증과 제출 범위에서 제외한다.
