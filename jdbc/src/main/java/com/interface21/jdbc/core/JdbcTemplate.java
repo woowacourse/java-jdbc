@@ -22,17 +22,14 @@ public class JdbcTemplate {
         jdbcCommand.execute(sql, setter);
     }
 
-    public void command(String sql, Object... params) {
-        command(sql, createSetter(params));
+    public void command(String sql) {
+        JdbcCommand jdbcCommand = new JdbcCommand(dataSource);
+        jdbcCommand.execute(sql);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
         JdbcQuery<T> jdbcQuery = new JdbcQuery<>(dataSource, rowMapper);
         return jdbcQuery.execute(sql, setter);
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return query(sql, rowMapper, createSetter(params));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
@@ -61,15 +58,4 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        return queryForObject(sql, rowMapper, createSetter(params));
-    }
-
-    private PreparedStatementSetter createSetter(Object[] params) {
-        return pstmt -> {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-        };
-    }
 }

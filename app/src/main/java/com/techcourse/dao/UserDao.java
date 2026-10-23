@@ -21,13 +21,22 @@ public class UserDao {
     public void insert(final User user) {
         String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.command(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.command(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.command(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.command(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setLong(4, user.getId());
+        });
     }
 
     public List<User> findAll() {
@@ -41,7 +50,7 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql,
                 new UserRowMapper(),
-                id);
+                pstmt -> pstmt.setLong(1, id));
     }
 
     public Optional<User> findByAccount(final String account) {
@@ -49,6 +58,6 @@ public class UserDao {
 
         return jdbcTemplate.queryForObject(sql,
                 new UserRowMapper(),
-                account);
+                pstmt -> pstmt.setString(1, account));
     }
 }
