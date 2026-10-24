@@ -9,10 +9,21 @@ import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
+
+    private static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<>() {
+        @Override
+        public User mapRow(final ResultSet rs) throws SQLException {
+            return new User(
+                    rs.getLong("id"),
+                    rs.getString("account"),
+                    rs.getString("password"),
+                    rs.getString("email")
+            );
+        }
+    };
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -51,66 +62,29 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return (List<User>) jdbcTemplate.query(sql, new PreparedStatementSetter() {
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, new PreparedStatementSetter() {
             @Override
             public void setValues(final PreparedStatement pstmt) {
-            }
-        }, new RowMapper() {
-            @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
-                final List<User> users = new ArrayList<>();
-                while (rs.next()) {
-                    users.add(new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4)));
-                }
-                return users;
             }
         });
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.query(sql, new PreparedStatementSetter() {
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, new PreparedStatementSetter() {
             @Override
             public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
-            }
-        }, new RowMapper() {
-            @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
-                if (rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4));
-                }
-                return null;
             }
         });
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return (User) jdbcTemplate.query(sql, new PreparedStatementSetter() {
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, new PreparedStatementSetter() {
             @Override
             public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
-            }
-        }, new RowMapper() {
-            @Override
-            public Object mapRow(final ResultSet rs) throws SQLException {
-                if (rs.next()) {
-                    return new User(
-                            rs.getLong(1),
-                            rs.getString(2),
-                            rs.getString(3),
-                            rs.getString(4));
-                }
-                return null;
             }
         });
     }
