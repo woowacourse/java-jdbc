@@ -60,8 +60,7 @@ public class JdbcTemplate {
             setParameters(pstmt, args);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            throw new DataAccessException("SQL 실행에 실패했습니다. sql: " + sql, e);
         }
     }
 
