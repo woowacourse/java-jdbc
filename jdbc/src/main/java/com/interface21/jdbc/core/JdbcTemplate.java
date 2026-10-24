@@ -24,32 +24,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public int update(final String sql, final Object... args) {
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
+        return execute(sql, pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -57,10 +37,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        }, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -72,5 +49,25 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.get(0);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            setParameters(pstmt, args);
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
+        }
     }
 }
