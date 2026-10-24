@@ -21,11 +21,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, createArgumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
+        return query(sql, rowMapper, createArgumentSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pss, pstmt -> {
             try (final var rs = pstmt.executeQuery()) {
                 final var results = new ArrayList<T>();
                 while (rs.next()) {
@@ -33,36 +41,43 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, args);
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final var results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, createArgumentSetter(args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        final var results = query(sql, rowMapper, pss);
         if (results.isEmpty()) {
             return null;
         }
         if (results.size() > 1) {
-            throw new DataAccessException("조회 결과가 1개보다 많습니다. size: " + results.size());
+            throw new DataAccessException("조회 결과가 1개보다 많습니다. size: " + results.size() + ", sql: " + sql);
         }
         return results.getFirst();
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            final var message = "SQL 실행 중 오류가 발생했습니다. sql: " + sql;
+            log.error(message, e);
+            throw new DataAccessException(message, e);
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter createArgumentSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
