@@ -1,5 +1,6 @@
 package com.techcourse.controller;
 
+import com.interface21.dao.DuplicateKeyException;
 import com.techcourse.domain.User;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
@@ -14,7 +15,15 @@ import com.interface21.web.bind.annotation.RequestMethod;
 @Controller
 public class RegisterController {
 
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao;
+
+    public RegisterController() {
+        this(new UserDao(DataSourceConfig.getInstance()));
+    }
+
+    public RegisterController(final UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(final HttpServletRequest request, final HttpServletResponse response) {
@@ -25,7 +34,11 @@ public class RegisterController {
         if (userDao.findByAccount(user.getAccount()) != null) {
             return new ModelAndView(new JspView("redirect:/register"));
         }
-        userDao.insert(user);
+        try {
+            userDao.insert(user);
+        } catch (DuplicateKeyException e) {
+            return new ModelAndView(new JspView("redirect:/register"));
+        }
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }
