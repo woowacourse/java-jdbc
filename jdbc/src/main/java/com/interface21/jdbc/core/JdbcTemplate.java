@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +21,11 @@ public class JdbcTemplate {
     public void command(String sql, PreparedStatementSetter setter) {
         JdbcCommand jdbcCommand = new JdbcCommand(dataSource);
         jdbcCommand.execute(sql, setter);
+    }
+
+    public void command(Connection connection, String sql, PreparedStatementSetter setter) {
+        JdbcCommand jdbcCommand = new JdbcCommand(dataSource);
+        jdbcCommand.execute(connection, sql, setter);
     }
 
     public void command(String sql) {
@@ -40,6 +46,22 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, PreparedStatementSetter setter) {
         List<T> results = query(sql, rowMapper, setter);
 
+        return singleResult(results);
+    }
+
+    public <T> Optional<T> queryForObject(Connection connection, String sql, RowMapper<T> rowMapper,
+                                          PreparedStatementSetter setter) {
+        JdbcQuery<T> jdbcQuery = new JdbcQuery<>(dataSource, rowMapper);
+        return singleResult(jdbcQuery.execute(connection, sql, setter));
+    }
+
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper) {
+        return queryForObject(sql, rowMapper, pstmt -> {
+        });
+    }
+
+    private <T> Optional<T> singleResult(List<T> results) {
+
         if (results.isEmpty()) {
             return Optional.empty();
         }
@@ -51,11 +73,6 @@ public class JdbcTemplate {
         }
 
         return Optional.ofNullable(results.getFirst());
-    }
-
-    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper) {
-        return queryForObject(sql, rowMapper, pstmt -> {
-        });
     }
 
 }
