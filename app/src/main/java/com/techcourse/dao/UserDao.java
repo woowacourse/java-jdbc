@@ -1,6 +1,9 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
+import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
@@ -14,16 +17,11 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
+        this(new JdbcTemplate(dataSource));
     }
 
-    public UserDao(final com.interface21.jdbc.core.JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = null;
+    public UserDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
