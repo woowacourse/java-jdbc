@@ -41,7 +41,7 @@ public class JdbcTemplate {
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
-            throw new DataAccessException("단건 조회 결과가 여러 건입니다: " + results.size());
+            throw new DataAccessException(failureMessage("단건 조회 결과가 여러 건입니다(" + results.size() + "건)", sql));
         }
         return results.stream().findFirst();
     }
@@ -53,8 +53,12 @@ public class JdbcTemplate {
             bindParameters(statement, args);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+            throw new DataAccessException(failureMessage("SQL 실행에 실패했습니다", sql), e);
         }
+    }
+
+    private String failureMessage(final String reason, final String sql) {
+        return reason + ": " + sql;
     }
 
     private void bindParameters(PreparedStatement preparedStatement, Object[] args) throws SQLException {

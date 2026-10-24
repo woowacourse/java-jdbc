@@ -4,6 +4,7 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.techcourse.domain.UserNotFoundException;
 
 public class UserService {
 
@@ -17,7 +18,7 @@ public class UserService {
 
     public User findById(final long id) {
         return userDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다. id=" + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     public void insert(final User user) {
