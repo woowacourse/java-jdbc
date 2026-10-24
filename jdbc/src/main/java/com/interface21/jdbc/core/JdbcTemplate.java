@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,23 +20,12 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setter.setValues(pstmt);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                              final RowMapper<T> rowMapper) {
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setter.setValues(pstmt);
+        return execute(sql, setter, pstmt -> {
             try (var rs = pstmt.executeQuery()) {
                 final var results = new ArrayList<T>();
                 while (rs.next()) {
@@ -43,21 +33,25 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
                                 final RowMapper<T> rowMapper) {
+        return execute(sql, setter, pstmt -> {
+            try (var rs = pstmt.executeQuery()) {
+                return rs.next() ? rowMapper.mapRow(rs) : null;
+            }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
         try (var conn = dataSource.getConnection();
              var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(pstmt);
-            try (var rs = pstmt.executeQuery()) {
-                return rs.next() ? rowMapper.mapRow(rs) : null;
-            }
+            return callback.doInStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
