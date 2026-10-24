@@ -1,7 +1,6 @@
 package com.techcourse.dao;
 
 import com.techcourse.domain.User;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,16 +22,53 @@ public class UserDao {
         this.dataSource = dataSource;
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
+    public UserDao(final com.interface21.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.dataSource = null;
     }
 
     public void insert(final User user) {
-        new InsertJdbcTemplate().insert(user, this);
+        final var jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            protected void setValues(final User user, final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
     public void update(final User user) {
-        new UpdateJdbcTemplate().update(user, this);
+        final var jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "update users set account = ?, password = ?, email = ? where id = ?";
+            }
+
+            @Override
+            protected void setValues(final User user, final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setLong(4, user.getId());
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+        };
+        jdbcTemplate.update(user);
     }
 
     public List<User> findAll() {
@@ -171,9 +207,5 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
-    }
-
-    DataSource getDataSource() {
-        return dataSource;
     }
 }
