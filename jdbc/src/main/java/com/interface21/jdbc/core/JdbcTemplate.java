@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +22,8 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... args) {
-        execute(sql, args, PreparedStatement::executeUpdate);
+    public int update(final String sql, final Object... args) {
+        return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -37,12 +38,12 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
             throw new DataAccessException("단건 조회 결과가 여러 건입니다: " + results.size());
         }
-        return results.isEmpty() ? null : results.getFirst();
+        return results.stream().findFirst();
     }
 
     private <T> T execute(final String sql, final Object[] args, final StatementCallback<T> callback) {
