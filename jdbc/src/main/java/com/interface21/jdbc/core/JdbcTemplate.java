@@ -29,41 +29,84 @@ public class JdbcTemplate {
         update(sql, createPreparedStatementSetter(parameters));
     }
 
+    public void update(final Connection connection, final String sql,
+                       final PreparedStatementSetter preparedStatementSetter) {
+        execute(connection, sql, preparedStatementSetter, PreparedStatement::executeUpdate);
+    }
+
+    public void update(final Connection connection, final String sql, final Object... parameters) {
+        update(connection, sql, createPreparedStatementSetter(parameters));
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper,
                              final PreparedStatementSetter preparedStatementSetter) {
-        return execute(sql, preparedStatementSetter, preparedStatement -> {
-            try (final var resultSet = preparedStatement.executeQuery()) {
-                final var results = new ArrayList<T>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
-        });
+        return execute(sql, preparedStatementSetter, statement -> mapRows(statement, rowMapper));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return query(sql, rowMapper, createPreparedStatementSetter(parameters));
     }
 
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final PreparedStatementSetter preparedStatementSetter) {
+        return execute(connection, sql, preparedStatementSetter, statement -> mapRows(statement, rowMapper));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final Object... parameters) {
+        return query(connection, sql, rowMapper, createPreparedStatementSetter(parameters));
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter preparedStatementSetter) {
-        final var results = query(sql, rowMapper, preparedStatementSetter);
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.get(0);
+        return singleResult(query(sql, rowMapper, preparedStatementSetter));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return queryForObject(sql, rowMapper, createPreparedStatementSetter(parameters));
     }
 
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final PreparedStatementSetter preparedStatementSetter) {
+        return singleResult(query(connection, sql, rowMapper, preparedStatementSetter));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... parameters) {
+        return queryForObject(connection, sql, rowMapper, createPreparedStatementSetter(parameters));
+    }
+
+    private <T> T singleResult(final List<T> results) {
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.get(0);
+    }
+
+    private <T> List<T> mapRows(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper)
+            throws SQLException {
+        try (final var resultSet = preparedStatement.executeQuery()) {
+            final var results = new ArrayList<T>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
+        }
+    }
+
     private <R> R execute(final String sql, final PreparedStatementSetter preparedStatementSetter,
                           final JdbcOperation<R> operation) {
+        try (final var connection = getConnection()) {
+            return execute(connection, sql, preparedStatementSetter, operation);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    private <R> R execute(final Connection connection, final String sql,
+                          final PreparedStatementSetter preparedStatementSetter, final JdbcOperation<R> operation) {
         log.debug("query : {}", sql);
-        try (final var connection = getConnection();
-             final var preparedStatement = connection.prepareStatement(sql)) {
+        try (final var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setParameters(preparedStatement);
             return operation.execute(preparedStatement);
         } catch (SQLException e) {

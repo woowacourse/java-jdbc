@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -141,6 +142,50 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, "kaki", 1L))
                 .isInstanceOf(CannotGetJdbcConnectionException.class)
                 .hasCause(failure);
+    }
+
+    @Test
+    void updateWithSuppliedConnectionClosesOnlyStatement() throws SQLException {
+        jdbcTemplate.update(connection, UPDATE_SQL, statement -> {
+            statement.setString(1, "kaki");
+            statement.setLong(2, 1L);
+        });
+
+        verify(preparedStatement).executeUpdate();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryWithSuppliedConnectionClosesResultSetAndStatement() throws SQLException {
+        final var resultSet = mock(ResultSet.class);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("kaki");
+
+        final var names = jdbcTemplate.query(connection, SELECT_SQL, row -> row.getString("name"),
+                statement -> statement.setLong(1, 0L));
+
+        assertThat(names).containsExactly("kaki");
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void executionFailureLeavesSuppliedConnectionOpenForRollback() throws SQLException {
+        final var failure = new SQLException("execution failed");
+        when(preparedStatement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, UPDATE_SQL, "kaki", 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     private void assertStatementAndConnectionClosed() throws SQLException {

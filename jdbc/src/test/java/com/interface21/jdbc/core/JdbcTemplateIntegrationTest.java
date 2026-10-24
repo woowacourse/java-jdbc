@@ -113,6 +113,25 @@ class JdbcTemplateIntegrationTest {
         assertThat(members).containsExactly(new Member(1L, "kaki"), new Member(2L, "gugu"));
     }
 
+    @Test
+    void suppliedConnectionKeepsChangesInOneTransactionUntilRollback() throws SQLException {
+        databaseConnection.setAutoCommit(false);
+        jdbcTemplate.update(databaseConnection, INSERT_SQL, 1L, "kaki");
+
+        final var member = jdbcTemplate.queryForObject(databaseConnection,
+                "select id, name from members where id = ?", MEMBER_ROW_MAPPER, 1L);
+        final Long committedCount = jdbcTemplate.queryForObject("select count(*) from members",
+                row -> row.getLong(1));
+
+        assertThat(member).isEqualTo(new Member(1L, "kaki"));
+        assertThat(committedCount).isZero();
+
+        databaseConnection.rollback();
+
+        assertThat(jdbcTemplate.query("select id, name from members", MEMBER_ROW_MAPPER)).isEmpty();
+        databaseConnection.setAutoCommit(true);
+    }
+
     private record Member(long id, String name) {
     }
 }
