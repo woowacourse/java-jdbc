@@ -23,11 +23,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, args, PreparedStatement::executeUpdate);
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, args, statement -> {
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -46,11 +54,11 @@ public class JdbcTemplate {
         return results.stream().findFirst();
     }
 
-    private <T> T execute(final String sql, final Object[] args, final StatementCallback<T> callback) {
+    private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            bindParameters(statement, args);
+            setter.setValues(statement);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
             throw new DataAccessException(failureMessage("SQL 실행에 실패했습니다", sql), e);
@@ -59,12 +67,6 @@ public class JdbcTemplate {
 
     private String failureMessage(final String reason, final String sql) {
         return reason + ": " + sql;
-    }
-
-    private void bindParameters(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
-        }
     }
 
     @FunctionalInterface
