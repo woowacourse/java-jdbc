@@ -36,6 +36,11 @@ public class UserDao {
             }
 
             @Override
+            protected Object mapRow(final ResultSet rs) {
+                return null;
+            }
+
+            @Override
             protected DataSource getDataSource() {
                 return dataSource;
             }
@@ -59,6 +64,11 @@ public class UserDao {
             }
 
             @Override
+            protected Object mapRow(final ResultSet rs) {
+                return null;
+            }
+
+            @Override
             protected DataSource getDataSource() {
                 return dataSource;
             }
@@ -67,7 +77,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var selectJdbcTemplate = new SelectJdbcTemplate() {
+        final var jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users";
@@ -95,11 +105,11 @@ public class UserDao {
                 return dataSource;
             }
         };
-        return (List<User>) selectJdbcTemplate.query();
+        return (List<User>) jdbcTemplate.query();
     }
 
     public User findById(final Long id) {
-        final var selectJdbcTemplate = new SelectJdbcTemplate() {
+        final var jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where id = ?";
@@ -127,11 +137,11 @@ public class UserDao {
                 return dataSource;
             }
         };
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 
     public User findByAccount(final String account) {
-        final var selectJdbcTemplate = new SelectJdbcTemplate() {
+        final var jdbcTemplate = new JdbcTemplate() {
             @Override
             protected String createQuery() {
                 return "select id, account, password, email from users where account = ?";
@@ -159,6 +169,6 @@ public class UserDao {
                 return dataSource;
             }
         };
-        return (User) selectJdbcTemplate.query();
+        return (User) jdbcTemplate.query();
     }
 }
