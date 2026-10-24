@@ -28,86 +28,11 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = createQueryForInsert();
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            setValuesForInsert(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private void setValuesForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
+        new InsertJdbcTemplate().insert(user, this);
     }
 
     public void update(final User user) {
-        final var sql = createQueryForUpdate();
-
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            log.debug("query : {}", sql);
-
-            setValuesForUpdate(user, pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
-        }
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set account = ?, password = ?, email = ? where id = ?";
-    }
-
-    private void setValuesForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
+        new UpdateJdbcTemplate().update(user, this);
     }
 
     public List<User> findAll() {
@@ -246,5 +171,9 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    DataSource getDataSource() {
+        return dataSource;
     }
 }
