@@ -79,6 +79,34 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateClosesResourcesWhenFailed() throws SQLException {
+        final var cause = new SQLException();
+        when(pstmt.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "password"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryClosesResourcesWhenRowMapperFailed() throws SQLException {
+        final var rs = mock(ResultSet.class);
+        final var cause = new SQLException();
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getString("account")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", ACCOUNT_MAPPER))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
     void query() throws SQLException {
         final var rs = mock(ResultSet.class);
         when(pstmt.executeQuery()).thenReturn(rs);
