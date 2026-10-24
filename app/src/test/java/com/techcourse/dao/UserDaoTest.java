@@ -3,10 +3,11 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,8 +25,11 @@ class UserDaoTest {
     }
 
     @AfterEach
-    void tearDown() {
-        new JdbcTemplate(DataSourceConfig.getInstance()).update("truncate table users restart identity");
+    void tearDown() throws SQLException {
+        try (final var conn = DataSourceConfig.getInstance().getConnection();
+             final var stmt = conn.createStatement()) {
+            stmt.execute("truncate table users restart identity");
+        }
     }
 
     @Test
