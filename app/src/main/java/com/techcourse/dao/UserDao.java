@@ -1,7 +1,5 @@
 package com.techcourse.dao;
 
-import com.interface21.jdbc.core.JdbcTemplate;
-import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -9,21 +7,21 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
+    private final JdbcTemplate jdbcTemplate;
+    private final RowMapper<User> userRowMapper = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
             resultSet.getString("email")
     );
 
-    private final JdbcTemplate jdbcTemplate;
-
     public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = new JdbcTemplate() {
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+        };
     }
 
     public void insert(final User user) {
@@ -41,18 +39,20 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        final var users = jdbcTemplate.query(sql, userRowMapper, id);
+        return users.isEmpty() ? null : users.getFirst();
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        final var users = jdbcTemplate.query(sql, userRowMapper, account);
+        return users.isEmpty() ? null : users.getFirst();
     }
 }
