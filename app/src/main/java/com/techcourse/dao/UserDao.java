@@ -28,7 +28,7 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var sql = createQueryForInsert();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -38,9 +38,7 @@ public class UserDao {
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
+            setValuesForInsert(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -60,8 +58,18 @@ public class UserDao {
         }
     }
 
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private void setValuesForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final var sql = createQueryForUpdate();
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -71,10 +79,7 @@ public class UserDao {
 
             log.debug("query : {}", sql);
 
-            pstmt.setString(1, user.getAccount());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setLong(4, user.getId());
+            setValuesForUpdate(user, pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -92,6 +97,17 @@ public class UserDao {
                 }
             } catch (SQLException ignored) {}
         }
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set account = ?, password = ?, email = ? where id = ?";
+    }
+
+    private void setValuesForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.setLong(4, user.getId());
     }
 
     public List<User> findAll() {
