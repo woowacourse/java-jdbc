@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        update(sql, statement -> setParameters(statement, args));
+        update(sql, createStatementSetter(args));
     }
 
     public void update(final String sql, final PreparedStatementSetter statementSetter) {
@@ -34,7 +34,7 @@ public class JdbcTemplate {
     }
 
     public void update(final Connection connection, final String sql, final Object... args) {
-        update(connection, sql, statement -> setParameters(statement, args));
+        update(connection, sql, createStatementSetter(args));
     }
 
     public void update(final Connection connection, final String sql,
@@ -50,7 +50,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, statement -> setParameters(statement, args), rowMapper);
+        return query(sql, createStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
@@ -64,7 +64,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
                              final Object... args) {
-        return query(connection, sql, statement -> setParameters(statement, args), rowMapper);
+        return query(connection, sql, createStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final Connection connection, final String sql,
@@ -121,5 +121,9 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    private PreparedStatementSetter createStatementSetter(final Object... args) {
+        return statement -> setParameters(statement, args);
     }
 }
