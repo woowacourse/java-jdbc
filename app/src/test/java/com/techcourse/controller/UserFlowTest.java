@@ -118,6 +118,19 @@ class UserFlowTest {
     }
 
     @Test
+    void missingPasswordRedirectsToRegisterWithoutSaving() throws Exception {
+        when(request.getParameter("account")).thenReturn("first");
+        when(request.getParameter("password")).thenReturn(null);
+        when(request.getParameter("email")).thenReturn("first@example.com");
+
+        final var registration = new RegisterController().register(request, response);
+        registration.getView().render(registration.getModel(), request, response);
+
+        verify(response).sendRedirect("/register");
+        assertThat(new UserDao(DataSourceConfig.getInstance()).findAll()).isEmpty();
+    }
+
+    @Test
     void missingUserKeepsExistingFailureBehavior() {
         when(request.getParameter("account")).thenReturn("missing");
         assertThatThrownBy(() -> new UserController().show(request, response))
