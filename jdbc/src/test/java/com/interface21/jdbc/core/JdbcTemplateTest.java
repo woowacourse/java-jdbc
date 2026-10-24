@@ -57,6 +57,38 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithGivenConnectionDoesNotOpenOrCloseConnection() throws SQLException {
+        final var givenConnection = mock(Connection.class);
+        when(givenConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(givenConnection,
+                "update users set password = ? where id = ?", "newPassword", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setObject(1, "newPassword");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(givenConnection, never()).close();
+    }
+
+    @Test
+    void updateWithGivenConnectionTranslatesFailureWithoutClosingConnection() throws SQLException {
+        final var givenConnection = mock(Connection.class);
+        final var cause = new SQLException("update failed");
+        when(givenConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(givenConnection, "update users set password = ?", "newPassword"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("update users set password = ?")
+                .hasCause(cause);
+        verify(statement).close();
+        verify(givenConnection, never()).close();
+    }
+
+    @Test
     void updateUsesCustomSetterForTypedParameters() throws SQLException {
         when(statement.executeUpdate()).thenReturn(1);
 
