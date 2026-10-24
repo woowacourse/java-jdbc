@@ -5,6 +5,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import java.util.List;
+import java.util.Objects;
 
 public class UserDao {
 
@@ -17,7 +18,7 @@ public class UserDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate must not be null");
     }
 
     public void insert(final User user) {

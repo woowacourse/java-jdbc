@@ -3,12 +3,14 @@ package com.techcourse.dao;
 import com.techcourse.domain.UserHistory;
 import com.interface21.jdbc.core.JdbcTemplate;
 
+import java.util.Objects;
+
 public class UserHistoryDao {
 
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate must not be null");
     }
 
     public void log(final UserHistory userHistory) {
