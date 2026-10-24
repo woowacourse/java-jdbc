@@ -72,8 +72,10 @@ class JdbcTemplateTest {
     void updateThrowsDataAccessException() throws SQLException {
         when(pstmt.executeUpdate()).thenThrow(new SQLException());
 
-        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "password"))
-                .isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "secret"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("update users set password = ?")
+                .hasMessageNotContaining("secret");
     }
 
     @Test
@@ -136,6 +138,7 @@ class JdbcTemplateTest {
         when(rs.next()).thenReturn(true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select account from users", ACCOUNT_MAPPER))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("select account from users");
     }
 }

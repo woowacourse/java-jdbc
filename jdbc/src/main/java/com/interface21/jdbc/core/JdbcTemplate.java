@@ -54,7 +54,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new DataAccessException("조회 결과가 1개보다 많습니다. size: " + results.size());
+            throw new DataAccessException("조회 결과가 1개보다 많습니다. size: " + results.size() + ", sql: " + sql);
         }
         return results.getFirst();
     }
@@ -67,8 +67,9 @@ public class JdbcTemplate {
             pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            final var message = "SQL 실행 중 오류가 발생했습니다. sql: " + sql;
+            log.error(message, e);
+            throw new DataAccessException(message, e);
         }
     }
 
