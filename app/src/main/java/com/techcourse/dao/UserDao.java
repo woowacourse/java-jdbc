@@ -1,8 +1,8 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import com.interface21.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -21,41 +21,55 @@ public class UserDao {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql,
+        jdbcTemplate.update(
+                sql,
                 user.getAccount(),
                 user.getPassword(),
-                user.getEmail());
+                user.getEmail()
+        );
     }
 
     public void update(final User user) {
         final var sql = "update users set password = ? where id = ?";
 
-        jdbcTemplate.update(sql,
+        jdbcTemplate.update(
+                sql,
                 user.getPassword(),
-                user.getId());
+                user.getId()
+        );
     }
+
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
+
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.queryForObject(sql, userRowMapper, id);
+        List<User> result = jdbcTemplate.query(sql, userRowMapper, id);
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, userRowMapper, account);
+        List<User> result = jdbcTemplate.query(sql, userRowMapper, account);
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
     }
 }
