@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.DuplicateKeyException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import java.util.List;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String DUPLICATE_KEY_SQL_STATE = "23505";
 
     private final DataSource dataSource;
 
@@ -61,8 +64,14 @@ public class JdbcTemplate {
             setter.setValues(pstmt);
             return callback.doInStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw translate(sql, e);
         }
+    }
+
+    private DataAccessException translate(final String sql, final SQLException e) {
+        if (DUPLICATE_KEY_SQL_STATE.equals(e.getSQLState())) {
+            return new DuplicateKeyException("Duplicate key for SQL [" + sql + "]", e);
+        }
+        return new DataAccessException("Failed to execute SQL [" + sql + "]", e);
     }
 }
