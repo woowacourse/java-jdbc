@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,24 +22,20 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(
-                sql)) {
-            log.debug("query: {}", sql);
-            bindParameters(preparedStatement, args);
-            preparedStatement.executeUpdate();
-        } catch (SQLException exception) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, exception);
-        }
+    public int update(final String sql, final Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
 
-            bindParameters(statement, args);
-
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -46,22 +43,35 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
-        }
+        });
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
-            throw new DataAccessException("단건 조회 결과가 여러 건입니다: " + results.size());
+            throw new DataAccessException(failureMessage("단건 조회 결과가 여러 건입니다(" + results.size() + "건)", sql));
         }
-        return results.isEmpty() ? null : results.getFirst();
+        return results.stream().findFirst();
     }
 
-    private void bindParameters(PreparedStatement preparedStatement, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
+    private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.setValues(statement);
+            return callback.doInStatement(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException(failureMessage("SQL 실행에 실패했습니다", sql), e);
         }
+    }
+
+    private String failureMessage(final String reason, final String sql) {
+        return reason + ": " + sql;
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+
+        T doInStatement(PreparedStatement statement) throws SQLException;
     }
 }
