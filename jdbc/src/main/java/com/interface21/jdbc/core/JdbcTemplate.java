@@ -21,17 +21,25 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final PreparedStatementSetter pss) {
+    public int update(final String sql, final Object... args) {
+        return update(sql, createArgumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
         try (final var conn = dataSource.getConnection();
              final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setValues(pstmt);
-            pstmt.executeUpdate();
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, createArgumentSetter(args));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
@@ -51,6 +59,10 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, rowMapper, createArgumentSetter(args));
+    }
+
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         final var results = query(sql, rowMapper, pss);
         if (results.isEmpty()) {
@@ -65,5 +77,16 @@ public class JdbcTemplate {
     private ResultSet executeQuery(final PreparedStatementSetter pss, final PreparedStatement pstmt) throws SQLException {
         pss.setValues(pstmt);
         return pstmt.executeQuery();
+    }
+
+    private PreparedStatementSetter createArgumentSetter(final Object... args) {
+        return new PreparedStatementSetter() {
+            @Override
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
+                for (int i = 0; i < args.length; i++) {
+                    pstmt.setObject(i + 1, args[i]);
+                }
+            }
+        };
     }
 }
