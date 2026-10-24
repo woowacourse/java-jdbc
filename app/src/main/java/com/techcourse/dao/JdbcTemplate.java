@@ -13,9 +13,7 @@ public abstract class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    public void update() {
-        final var sql = createQuery();
-
+    public void update(final String sql, final PreparedStatementSetter pss) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         try {
@@ -24,7 +22,7 @@ public abstract class JdbcTemplate {
 
             log.debug("query : {}", sql);
 
-            setValues(pstmt);
+            pss.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -44,20 +42,18 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public Object query() {
-        final var sql = createQuery();
-
+    public Object query(final String sql, final PreparedStatementSetter pss, final RowMapper rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             conn = getDataSource().getConnection();
             pstmt = conn.prepareStatement(sql);
-            rs = executeQuery(pstmt);
+            rs = executeQuery(pss, pstmt);
 
             log.debug("query : {}", sql);
 
-            return mapRow(rs);
+            return rowMapper.mapRow(rs);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
@@ -82,16 +78,10 @@ public abstract class JdbcTemplate {
         }
     }
 
-    private ResultSet executeQuery(final PreparedStatement pstmt) throws SQLException {
-        setValues(pstmt);
+    private ResultSet executeQuery(final PreparedStatementSetter pss, final PreparedStatement pstmt) throws SQLException {
+        pss.setValues(pstmt);
         return pstmt.executeQuery();
     }
-
-    protected abstract String createQuery();
-
-    protected abstract void setValues(final PreparedStatement pstmt) throws SQLException;
-
-    protected abstract Object mapRow(final ResultSet rs) throws SQLException;
 
     protected abstract DataSource getDataSource();
 }

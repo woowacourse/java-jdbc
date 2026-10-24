@@ -11,84 +11,55 @@ import java.util.List;
 
 public class UserDao {
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public UserDao(final com.interface21.jdbc.core.JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
-    }
-
-    public void insert(final User user) {
-        final var jdbcTemplate = new JdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
-                pstmt.setString(1, user.getAccount());
-                pstmt.setString(2, user.getPassword());
-                pstmt.setString(3, user.getEmail());
-            }
-
-            @Override
-            protected Object mapRow(final ResultSet rs) {
-                return null;
-            }
-
+        this.jdbcTemplate = new JdbcTemplate() {
             @Override
             protected DataSource getDataSource() {
                 return dataSource;
             }
         };
-        jdbcTemplate.update();
+    }
+
+    public UserDao(final com.interface21.jdbc.core.JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = null;
+    }
+
+    public void insert(final User user) {
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        jdbcTemplate.update(sql, new PreparedStatementSetter() {
+            @Override
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, user.getAccount());
+                pstmt.setString(2, user.getPassword());
+                pstmt.setString(3, user.getEmail());
+            }
+        });
     }
 
     public void update(final User user) {
-        final var jdbcTemplate = new JdbcTemplate() {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, new PreparedStatementSetter() {
             @Override
-            protected String createQuery() {
-                return "update users set account = ?, password = ?, email = ? where id = ?";
-            }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
-
-            @Override
-            protected Object mapRow(final ResultSet rs) {
-                return null;
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-        jdbcTemplate.update();
+        });
     }
 
     public List<User> findAll() {
-        final var jdbcTemplate = new JdbcTemplate() {
+        final var sql = "select id, account, password, email from users";
+        return (List<User>) jdbcTemplate.query(sql, new PreparedStatementSetter() {
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users";
+            public void setValues(final PreparedStatement pstmt) {
             }
-
+        }, new RowMapper() {
             @Override
-            protected void setValues(final PreparedStatement pstmt) {
-            }
-
-            @Override
-            protected Object mapRow(final ResultSet rs) throws SQLException {
+            public Object mapRow(final ResultSet rs) throws SQLException {
                 final List<User> users = new ArrayList<>();
                 while (rs.next()) {
                     users.add(new User(
@@ -99,29 +70,19 @@ public class UserDao {
                 }
                 return users;
             }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-        return (List<User>) jdbcTemplate.query();
+        });
     }
 
     public User findById(final Long id) {
-        final var jdbcTemplate = new JdbcTemplate() {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return (User) jdbcTemplate.query(sql, new PreparedStatementSetter() {
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where id = ?";
-            }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setLong(1, id);
             }
-
+        }, new RowMapper() {
             @Override
-            protected Object mapRow(final ResultSet rs) throws SQLException {
+            public Object mapRow(final ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     return new User(
                             rs.getLong(1),
@@ -131,29 +92,19 @@ public class UserDao {
                 }
                 return null;
             }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-        return (User) jdbcTemplate.query();
+        });
     }
 
     public User findByAccount(final String account) {
-        final var jdbcTemplate = new JdbcTemplate() {
+        final var sql = "select id, account, password, email from users where account = ?";
+        return (User) jdbcTemplate.query(sql, new PreparedStatementSetter() {
             @Override
-            protected String createQuery() {
-                return "select id, account, password, email from users where account = ?";
-            }
-
-            @Override
-            protected void setValues(final PreparedStatement pstmt) throws SQLException {
+            public void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, account);
             }
-
+        }, new RowMapper() {
             @Override
-            protected Object mapRow(final ResultSet rs) throws SQLException {
+            public Object mapRow(final ResultSet rs) throws SQLException {
                 if (rs.next()) {
                     return new User(
                             rs.getLong(1),
@@ -163,12 +114,6 @@ public class UserDao {
                 }
                 return null;
             }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        };
-        return (User) jdbcTemplate.query();
+        });
     }
 }
