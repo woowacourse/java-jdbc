@@ -20,12 +20,16 @@ public class UserHistory {
     }
 
     public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final String createBy) {
+        this(id, userId, account, password, email, LocalDateTime.now(), createBy);
+    }
+
+    public UserHistory(final Long id, final long userId, final String account, final String password, final String email, final LocalDateTime createdAt, final String createBy) {
         this.id = id;
         this.userId = userId;
         this.account = account;
         this.password = password;
         this.email = email;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = createdAt;
         this.createBy = createBy;
     }
 
