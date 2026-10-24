@@ -53,6 +53,17 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new IllegalStateException("Expected at most one row, but found " + results.size());
+        }
+        return results.get(0);
+    }
+
     private void bindParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
