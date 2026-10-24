@@ -14,6 +14,8 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -55,6 +57,45 @@ class JdbcTemplateTest {
         order.verify(statement).executeUpdate();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    @Test
+    void updateWithVarargsBindsEachValueInOrder() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var count = jdbcTemplate.update(SQL, "changed", 1L);
+
+        assertThat(count).isEqualTo(1);
+        final var order = inOrder(statement, connection);
+        order.verify(statement).setObject(1, "changed");
+        order.verify(statement).setObject(2, 1L);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    void queryWithoutArgsBindsNothing() throws SQLException {
+        when(rows.next()).thenReturn(true, false);
+        when(rows.getString("email")).thenReturn("first@example.com");
+
+        final var result = jdbcTemplate.query(QUERY, rs -> rs.getString("email"));
+
+        assertThat(result).containsExactly("first@example.com");
+        verify(statement, never()).setObject(anyInt(), any());
+    }
+
+    @Test
+    void queryForObjectWithVarargsBindsBeforeQuery() throws SQLException {
+        when(rows.next()).thenReturn(true, false);
+        when(rows.getString("email")).thenReturn("first@example.com");
+
+        final var result = jdbcTemplate.queryForObject(QUERY, rs -> rs.getString("email"), 7L);
+
+        assertThat(result).isEqualTo("first@example.com");
+        final var order = inOrder(statement);
+        order.verify(statement).setObject(1, 7L);
+        order.verify(statement).executeQuery();
     }
 
     @Test
