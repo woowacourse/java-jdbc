@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -15,19 +16,20 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (var connection = dataSource.getConnection();
-             var statement = connection.prepareStatement(sql)) {
-            bind(statement, args);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to execute JDBC update", e);
-        }
+        return update(sql, statement -> bind(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (var connection = dataSource.getConnection();
-             var statement = connection.prepareStatement(sql)) {
-            bind(statement, args);
+        return query(sql, statement -> bind(statement, args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+                            final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (var resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -35,9 +37,23 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement(sql)) {
+            setter.setValues(statement);
+            return callback.execute(statement);
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to execute JDBC query", e);
+            throw new DataAccessException("Failed to execute JDBC statement", e);
         }
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+        T execute(PreparedStatement statement) throws SQLException;
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {

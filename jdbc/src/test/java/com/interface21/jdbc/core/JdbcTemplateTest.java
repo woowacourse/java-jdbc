@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
@@ -56,9 +57,59 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true);
         var cause = new SQLException("mapping failed");
         assertThatThrownBy(() -> template.query("select value from test", (rs, row) -> { throw cause; }))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }
+    @Test
+    void updateAcceptsCustomParameterSetter() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+        assertThat(template.update("update test set value = ?", ps -> ps.setString(1, "value")))
+                .isEqualTo(1);
+        verify(statement).setString(1, "value");
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryAcceptsCustomParameterSetter() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        assertThat(template.query("select value from test where id = ?", ps -> ps.setLong(1, 7L),
+                (rs, row) -> row)).containsExactly(0);
+        verify(statement).setLong(1, 7L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void bindingFailureClosesResourcesAndPreservesCause() throws SQLException {
+        var cause = new SQLException("binding failed");
+        assertThatThrownBy(() -> template.update("update test set value = ?", ps -> { throw cause; }))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void executionFailureClosesResourcesAndPreservesCause() throws SQLException {
+        var cause = new SQLException("execution failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+        assertThatThrownBy(() -> template.update("delete from test"))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionFailureIsTranslated() throws SQLException {
+        var cause = new SQLException("connection failed");
+        when(dataSource.getConnection()).thenThrow(cause);
+        assertThatThrownBy(() -> template.update("delete from test"))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+    }
+
 }
