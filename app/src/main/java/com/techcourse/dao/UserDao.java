@@ -34,7 +34,7 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement pstmt) throws SQLException {
+            protected void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
@@ -45,7 +45,7 @@ public class UserDao {
                 return dataSource;
             }
         };
-        jdbcTemplate.update(user);
+        jdbcTemplate.update();
     }
 
     public void update(final User user) {
@@ -56,7 +56,7 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement pstmt) throws SQLException {
+            protected void setValues(final PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
@@ -68,7 +68,7 @@ public class UserDao {
                 return dataSource;
             }
         };
-        jdbcTemplate.update(user);
+        jdbcTemplate.update();
     }
 
     public List<User> findAll() {
