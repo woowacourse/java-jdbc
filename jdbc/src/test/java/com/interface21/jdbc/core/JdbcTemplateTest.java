@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -133,15 +134,29 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectOnlyMapsFirstRow() throws SQLException {
-        when(rows.next()).thenReturn(true, true, false);
-        when(rows.getString("email")).thenReturn("first@example.com", "second@example.com");
+    void queryForObjectReturnsSingleRow() throws SQLException {
+        when(rows.next()).thenReturn(true, false);
+        when(rows.getString("email")).thenReturn("first@example.com");
 
         final var result = jdbcTemplate.queryForObject(QUERY, pstmt -> {}, rs -> rs.getString("email"));
 
         assertThat(result).isEqualTo("first@example.com");
-        verify(rows, times(1)).next();
+        verify(rows, times(2)).next();
         verify(rows, times(1)).getString("email");
+        verify(rows).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryForObjectRejectsMultipleRows() throws SQLException {
+        when(rows.next()).thenReturn(true, true, false);
+        when(rows.getString("email")).thenReturn("first@example.com", "second@example.com");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(QUERY, pstmt -> {}, rs -> rs.getString("email")))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessageContaining("expected 1");
+
         verify(rows).close();
         verify(statement).close();
         verify(connection).close();

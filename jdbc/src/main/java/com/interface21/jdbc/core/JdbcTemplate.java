@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,14 @@ public class JdbcTemplate {
                                 final RowMapper<T> rowMapper) {
         return execute(sql, setter, pstmt -> {
             try (var rs = pstmt.executeQuery()) {
-                return rs.next() ? rowMapper.mapRow(rs) : null;
+                if (!rs.next()) {
+                    return null;
+                }
+                final var result = rowMapper.mapRow(rs);
+                if (rs.next()) {
+                    throw new IncorrectResultSizeDataAccessException(1, 2);
+                }
+                return result;
             }
         });
     }
