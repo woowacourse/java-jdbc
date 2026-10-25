@@ -38,7 +38,16 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> rows = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
+        final List<T> rows = execute(connection, sql, createSetter(args),
+                preparedStatement -> extractRows(preparedStatement, rowMapper));
+        return singleResult(rows);
+    }
+
+    private <T> T singleResult(List<T> rows) {
         if (rows.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
         }

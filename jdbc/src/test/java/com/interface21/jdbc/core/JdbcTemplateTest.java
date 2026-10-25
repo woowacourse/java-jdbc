@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
@@ -108,6 +109,21 @@ class JdbcTemplateTest {
                     assertThat(exception.getExpectedSize()).isEqualTo(1);
                     assertThat(exception.getActualSize()).isEqualTo(2);
                 });
+    }
+
+    @Test
+    @DisplayName("전달받은 커넥션으로 queryForObject하면 해당 커넥션을 사용하고 닫지 않는다")
+    void queryForObjectWithConnection() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("name")).willReturn("gugu");
+
+        final String result = jdbcTemplate.queryForObject(connection, "select name from users where id = ?", NAME_ROW_MAPPER, 1L);
+
+        assertThat(result).isEqualTo("gugu");
+        verify(statement).setObject(1, 1L);
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     @Test

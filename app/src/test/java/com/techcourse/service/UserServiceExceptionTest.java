@@ -36,7 +36,7 @@ class UserServiceExceptionTest {
         userHistoryDao = mock(UserHistoryDao.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(1L))
+        when(userDao.findById(connection, 1L))
                 .thenReturn(Optional.of(new User(1L, "gugu", "password", "gugu@example.com")));
 
         userService = new UserService(dataSource, userDao, userHistoryDao);

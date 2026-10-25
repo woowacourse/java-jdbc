@@ -35,7 +35,8 @@ public class UserService {
             connection.setAutoCommit(false);
 
             try {
-                final var user = findById(id);
+                final var user = userDao.findById(connection, id)
+                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다. id: " + id));
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
