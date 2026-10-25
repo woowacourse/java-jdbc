@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,6 +59,16 @@ class JdbcTemplateTest {
         verify(pstmt).setString(1, "password");
         verify(pstmt).setLong(2, 1L);
         verify(pstmt).executeUpdate();
+    }
+
+    @Test
+    void updateWithConnectionDoesNotCloseConnection() throws SQLException {
+        jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password", 1L);
+
+        verify(pstmt).setObject(1, "password");
+        verify(pstmt).setObject(2, 1L);
+        verify(pstmt).close();
+        verify(connection, never()).close();
     }
 
     @Test

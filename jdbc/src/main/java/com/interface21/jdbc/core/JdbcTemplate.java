@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,6 +27,10 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pss, PreparedStatement::executeUpdate);
+    }
+
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return execute(conn, sql, createArgumentSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -60,17 +65,30 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        try (final var conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, action);
+        } catch (SQLException e) {
+            throw toDataAccessException(sql, e);
+        }
+    }
+
+    // 전달받은 커넥션은 트랜잭션을 시작한 쪽에서 닫아야 하므로 여기서 닫지 않는다.
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
+                          final PreparedStatementCallback<T> action) {
+        try (final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            final var message = "SQL 실행 중 오류가 발생했습니다. sql: " + sql;
-            log.error(message, e);
-            throw new DataAccessException(message, e);
+            throw toDataAccessException(sql, e);
         }
+    }
+
+    private DataAccessException toDataAccessException(final String sql, final SQLException e) {
+        final var message = "SQL 실행 중 오류가 발생했습니다. sql: " + sql;
+        log.error(message, e);
+        return new DataAccessException(message, e);
     }
 
     private PreparedStatementSetter createArgumentSetter(final Object... args) {
