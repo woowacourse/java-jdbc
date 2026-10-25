@@ -5,7 +5,6 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import org.junit.jupiter.api.Test;
 
-import javax.sql.DataSource;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -22,8 +21,7 @@ class UserServiceLookupTest {
 
     private final UserDao userDao = mock(UserDao.class);
     private final UserHistoryDao userHistoryDao = mock(UserHistoryDao.class);
-    private final DataSource dataSource = mock(DataSource.class);
-    private final UserService userService = new UserService(userDao, userHistoryDao, dataSource);
+    private final UserService userService = new AppUserService(userDao, userHistoryDao);
 
     @Test
     void returnsExistingUser() {
@@ -50,6 +48,6 @@ class UserServiceLookupTest {
                 .isInstanceOf(NoSuchElementException.class);
 
         verify(userDao, never()).update(any(User.class));
-        verifyNoInteractions(userHistoryDao, dataSource);
+        verifyNoInteractions(userHistoryDao);
     }
 }
