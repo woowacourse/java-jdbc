@@ -5,6 +5,9 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -32,14 +35,20 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final var connection = dataSource.getConnection()) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("Transaction already active for dataSource");
+        }
+        final Connection connection = getConnection();
+        Throwable failure = null;
+        try {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             final boolean autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             try {
-                final var user = userDao.findById(connection, id);
+                final var user = userDao.findById(id);
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
                 connection.commit();
             } catch (SQLException | RuntimeException | Error e) {
                 rollbackAndRestoreAutoCommit(connection, autoCommit, e);
@@ -47,7 +56,29 @@ public class UserService {
             }
             connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
+            failure = e;
             throw new DataAccessException(e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure == null) {
+                    throw cleanupFailure;
+                }
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return DataSourceUtils.getConnection(dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DataAccessException(e.getCause());
         }
     }
 

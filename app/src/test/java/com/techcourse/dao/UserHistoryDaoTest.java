@@ -6,6 +6,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,20 +53,30 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void logWithConnectionCommitsAlongWithPasswordChange() throws SQLException {
+    void logWithSynchronizedConnectionCommitsAlongWithPasswordChange() throws SQLException {
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
             try {
-                final var user = userDao.findById(connection, 1L);
+                final var user = userDao.findById(1L);
                 user.changePassword("changed-password");
-                userDao.update(connection, user);
+                userDao.update(user);
 
-                userHistoryDao.log(connection, new UserHistory(user, "support"));
+                userHistoryDao.log(new UserHistory(user, "support"));
 
-                assertThat(countHistoryRows()).isZero();
-                assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+                assertThat(countHistoryRows()).isEqualTo(1L);
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo("changed-password");
+                try (final var independentConnection = DataSourceConfig.getInstance().getConnection()) {
+                    final var committedCount = jdbcTemplate.queryForObject(independentConnection,
+                            "select count(*) from user_history", row -> row.getLong(1));
+                    assertThat(committedCount).isZero();
+                    final var committedPassword = jdbcTemplate.queryForObject(independentConnection,
+                            "select password from users where id = ?", row -> row.getString("password"), 1L);
+                    assertThat(committedPassword).isEqualTo("password");
+                }
                 connection.commit();
             } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
                 connection.rollback();
             }
         }
@@ -77,21 +88,22 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void logWithConnectionRollsBackAlongWithPasswordChange() throws SQLException {
+    void logWithSynchronizedConnectionRollsBackAlongWithPasswordChange() throws SQLException {
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
             try {
-                final var user = userDao.findById(connection, 1L);
+                final var user = userDao.findById(1L);
                 user.changePassword("changed-password");
-                userDao.update(connection, user);
+                userDao.update(user);
 
-                userHistoryDao.log(connection, new UserHistory(user, "support"));
+                userHistoryDao.log(new UserHistory(user, "support"));
 
-                final var historyCount = jdbcTemplate.queryForObject(
-                        connection, "select count(*) from user_history", row -> row.getLong(1));
+                final var historyCount = countHistoryRows();
                 assertThat(historyCount).isEqualTo(1L);
-                assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("changed-password");
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo("changed-password");
             } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
                 connection.rollback();
             }
         }
@@ -104,17 +116,19 @@ class UserHistoryDaoTest {
     void logFailureLeavesConnectionAvailableForRollback() throws SQLException {
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
             try {
-                final var user = userDao.findById(connection, 1L);
+                final var user = userDao.findById(1L);
                 user.changePassword("changed-password");
-                userDao.update(connection, user);
+                userDao.update(user);
                 final var history = new UserHistory(user, "g".repeat(101));
 
-                assertThatThrownBy(() -> userHistoryDao.log(connection, history))
+                assertThatThrownBy(() -> userHistoryDao.log(history))
                         .isInstanceOf(DataAccessException.class)
                         .hasCauseInstanceOf(SQLException.class);
                 assertThat(connection.isClosed()).isFalse();
             } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
                 connection.rollback();
             }
         }

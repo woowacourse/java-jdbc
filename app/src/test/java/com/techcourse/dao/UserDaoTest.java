@@ -5,6 +5,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -95,18 +96,25 @@ class UserDaoTest {
     }
 
     @Test
-    void findByIdWithConnectionReadsUncommittedUpdate() throws SQLException {
+    void findByIdWithSynchronizedConnectionReadsUncommittedUpdate() throws SQLException {
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
             try {
-                final var user = userDao.findById(connection, 1L);
+                final var user = userDao.findById(1L);
                 user.changePassword("changed-password");
 
-                userDao.update(connection, user);
+                userDao.update(user);
 
-                assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("changed-password");
-                assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo("changed-password");
+                try (final var independentConnection = DataSourceConfig.getInstance().getConnection()) {
+                    final var password = new JdbcTemplate(DataSourceConfig.getInstance()).queryForObject(
+                            independentConnection, "select password from users where id = ?",
+                            row -> row.getString("password"), 1L);
+                    assertThat(password).isEqualTo("password");
+                }
             } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
                 connection.rollback();
             }
 
