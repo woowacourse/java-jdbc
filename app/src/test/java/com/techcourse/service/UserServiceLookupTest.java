@@ -6,7 +6,6 @@ import com.techcourse.domain.User;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -50,7 +49,7 @@ class UserServiceLookupTest {
         assertThatThrownBy(() -> userService.changePassword(999L, "new-password", "admin"))
                 .isInstanceOf(NoSuchElementException.class);
 
-        verify(userDao, never()).update(any(Connection.class), any(User.class));
+        verify(userDao, never()).update(any(User.class));
         verifyNoInteractions(userHistoryDao, dataSource);
     }
 }
