@@ -17,13 +17,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class JdbcTemplateTest {
 
     private final RowMapper<String> accountMapper = resultSet -> resultSet.getString("account");
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
@@ -31,7 +34,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -158,5 +161,46 @@ class JdbcTemplateTest {
                 .hasCause(cause);
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void 전달받은_Connection으로_update하면_Connection을_닫지_않는다() throws SQLException {
+        given(preparedStatement.executeUpdate()).willReturn(1);
+
+        final var updatedRows = jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password", 1L);
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(preparedStatement).setObject(1, "password");
+        verify(preparedStatement).setObject(2, 1L);
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void 전달받은_Connection으로_queryForObject하면_Connection을_닫지_않는다() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("account")).willReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject(
+                connection, "select account from users where id = ?", accountMapper, 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void 전달받은_Connection에서_SQLException이_발생해도_Connection을_닫지_않는다() throws SQLException {
+        final var cause = new SQLException("syntax error");
+        given(preparedStatement.executeUpdate()).willThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
     }
 }
