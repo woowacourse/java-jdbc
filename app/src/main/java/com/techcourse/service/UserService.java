@@ -36,7 +36,9 @@ public class UserService {
             try {
                 final var user = userDao.findById(connection, id);
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
+                if (userDao.update(connection, user) != 1) {
+                    throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
+                }
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
             } catch (RuntimeException e) {

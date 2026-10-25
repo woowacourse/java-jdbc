@@ -10,6 +10,9 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,12 +42,25 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
+        final var startedAt = LocalDateTime.now().minusSeconds(1);
         userService.changePassword(1L, newPassword, createBy);
+        final var finishedAt = LocalDateTime.now().plusSeconds(1);
 
         final var actual = userService.findById(1L);
+        final var history = jdbcTemplate.queryForObject(
+                "select user_id, password, created_by, created_at from user_history",
+                resultSet -> new HistoryRecord(
+                        resultSet.getLong("user_id"),
+                        resultSet.getString("password"),
+                        resultSet.getString("created_by"),
+                        resultSet.getTimestamp("created_at").toLocalDateTime()));
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
-        assertThat(historyCount()).isEqualTo(1);
+        assertThat(history).isNotNull();
+        assertThat(history.userId()).isEqualTo(1L);
+        assertThat(history.password()).isEqualTo(newPassword);
+        assertThat(history.createdBy()).isEqualTo(createBy);
+        assertThat(history.createdAt()).isBetween(startedAt, finishedAt);
     }
 
     @Test
@@ -65,7 +81,29 @@ class UserServiceTest {
         assertThat(historyCount()).isZero();
     }
 
+    @Test
+    void testTransactionRollsBackWhenUserUpdateAffectsNoRows() {
+        final var userDaoWithNoUpdatedRows = new UserDao(jdbcTemplate) {
+            @Override
+            public int update(final Connection connection, final User user) {
+                jdbcTemplate.update(connection, "delete from users where id = ?", user.getId());
+                return 0;
+            }
+        };
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(dataSource, userDaoWithNoUpdatedRows, userHistoryDao);
+
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "support-agent"));
+
+        final var actual = userDao.findById(1L);
+        assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(historyCount()).isZero();
+    }
+
     private int historyCount() {
         return jdbcTemplate.queryForObject("select count(*) from user_history", resultSet -> resultSet.getInt(1));
     }
+
+    private record HistoryRecord(long userId, String password, String createdBy, LocalDateTime createdAt) {}
 }
