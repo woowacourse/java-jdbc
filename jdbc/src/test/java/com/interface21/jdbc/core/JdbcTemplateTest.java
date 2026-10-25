@@ -49,6 +49,18 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithPreparedStatementSetter() throws SQLException {
+        jdbcTemplate.update("update users set password = ? where id = ?", pstmt -> {
+            pstmt.setString(1, "password");
+            pstmt.setLong(2, 1L);
+        });
+
+        verify(pstmt).setString(1, "password");
+        verify(pstmt).setLong(2, 1L);
+        verify(pstmt).executeUpdate();
+    }
+
+    @Test
     void updateClosesResources() throws SQLException {
         jdbcTemplate.update("update users set password = ? where id = ?", "password", 1L);
 
@@ -60,8 +72,38 @@ class JdbcTemplateTest {
     void updateThrowsDataAccessException() throws SQLException {
         when(pstmt.executeUpdate()).thenThrow(new SQLException());
 
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "secret"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("update users set password = ?")
+                .hasMessageNotContaining("secret");
+    }
+
+    @Test
+    void updateClosesResourcesWhenFailed() throws SQLException {
+        final var cause = new SQLException();
+        when(pstmt.executeUpdate()).thenThrow(cause);
+
         assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "password"))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryClosesResourcesWhenRowMapperFailed() throws SQLException {
+        final var rs = mock(ResultSet.class);
+        final var cause = new SQLException();
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getString("account")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", ACCOUNT_MAPPER))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection).close();
     }
 
     @Test
@@ -77,6 +119,20 @@ class JdbcTemplateTest {
         verify(rs).close();
         verify(pstmt).close();
         verify(connection).close();
+    }
+
+    @Test
+    void queryWithPreparedStatementSetter() throws SQLException {
+        final var rs = mock(ResultSet.class);
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getString("account")).thenReturn("gugu");
+
+        final var actual = jdbcTemplate.query("select account from users where id = ?", ACCOUNT_MAPPER,
+                pstmt -> pstmt.setLong(1, 1L));
+
+        assertThat(actual).containsExactly("gugu");
+        verify(pstmt).setLong(1, 1L);
     }
 
     @Test
@@ -110,6 +166,7 @@ class JdbcTemplateTest {
         when(rs.next()).thenReturn(true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select account from users", ACCOUNT_MAPPER))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("select account from users");
     }
 }
