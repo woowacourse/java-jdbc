@@ -42,20 +42,29 @@ public class UserService {
                                               final String createBy) {
         try {
             connection.setAutoCommit(false);
-            final var user = userDao.findById(connection, id);
-            user.changePassword(newPassword);
-            if (userDao.update(connection, user) != 1) {
-                throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
-            }
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            updatePasswordAndLogHistory(connection, id, newPassword, createBy);
             connection.commit();
         } catch (SQLException | RuntimeException e) {
-            rollback(connection, e);
-            if (e instanceof SQLException sqlException) {
-                throw new DataAccessException(sqlException);
-            }
-            throw (RuntimeException) e;
+            throw rollbackAndTranslate(connection, e);
         }
+    }
+
+    private void updatePasswordAndLogHistory(final Connection connection, final long id, final String newPassword,
+                                             final String createBy) throws SQLException {
+        final var user = userDao.findById(connection, id);
+        user.changePassword(newPassword);
+        if (userDao.update(connection, user) != 1) {
+            throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
+        }
+        userHistoryDao.log(connection, new UserHistory(user, createBy));
+    }
+
+    private RuntimeException rollbackAndTranslate(final Connection connection, final Exception cause) {
+        rollback(connection, cause);
+        if (cause instanceof SQLException sqlException) {
+            return new DataAccessException(sqlException);
+        }
+        return (RuntimeException) cause;
     }
 
     private void rollback(final Connection connection, final Exception cause) {
