@@ -49,12 +49,12 @@ public class UserService {
             }
             userHistoryDao.log(connection, new UserHistory(user, createBy));
             connection.commit();
-        } catch (RuntimeException e) {
+        } catch (SQLException | RuntimeException e) {
             rollback(connection, e);
-            throw e;
-        } catch (SQLException e) {
-            rollback(connection, e);
-            throw new DataAccessException(e);
+            if (e instanceof SQLException sqlException) {
+                throw new DataAccessException(sqlException);
+            }
+            throw (RuntimeException) e;
         }
     }
 
