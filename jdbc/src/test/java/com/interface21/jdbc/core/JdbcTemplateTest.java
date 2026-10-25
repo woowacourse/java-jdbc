@@ -119,45 +119,26 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithPreparedStatementSetter() {
-        final int updated = jdbcTemplate.update("update users set email = ? where id = ?", statement -> {
-            statement.setString(1, "changed@example.com");
-            statement.setLong(2, 1L);
-        });
-
-        final String email = jdbcTemplate.queryForObject("select email from users where id = ?",
-                (rs, rowNum) -> rs.getString("email"), 1L);
-        assertThat(updated).isEqualTo(1);
-        assertThat(email).isEqualTo("changed@example.com");
-    }
-
-    @Test
-    void queryWithPreparedStatementSetter() {
-        final var accounts = jdbcTemplate.query("select account from users where id = ?",
-                statement -> statement.setLong(1, 2L),
-                (rs, rowNum) -> rs.getString("account"));
-
-        assertThat(accounts).containsExactly("second");
-    }
-
-    @Test
-    void queryForObjectWithPreparedStatementSetter() {
-        final String account = jdbcTemplate.queryForObject("select account from users where id = ?",
-                statement -> statement.setLong(1, 1L),
-                (rs, rowNum) -> rs.getString("account"));
-
-        assertThat(account).isEqualTo("first");
-    }
-
-    @Test
-    void bindingFailurePreservesCauseAndReturnsConnection() {
-        final SQLException failure = new SQLException("binding failed");
-
-        assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", statement -> {
-            throw failure;
-        })).isInstanceOf(DataAccessException.class).hasCause(failure);
-
+    void bindingFailureReturnsConnection() {
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", "email", 1L))
+                .isInstanceOf(DataAccessException.class).hasCauseInstanceOf(SQLException.class);
         assertConnectionReturnedAndReusable();
+    }
+
+    @Test
+    void callerOwnsConnectionAndCanRollback() throws SQLException {
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection, "update users set email = ? where id = ?", "changed", 1L);
+            final String email = jdbcTemplate.queryForObject(connection,
+                    "select email from users where id = ?", (rs, rowNum) -> rs.getString(1), 1L);
+            assertThat(email).isEqualTo("changed");
+            assertThat(connection.isClosed()).isFalse();
+            connection.rollback();
+        }
+        final String email = jdbcTemplate.queryForObject("select email from users where id = ?",
+                (rs, rowNum) -> rs.getString(1), 1L);
+        assertThat(email).isEqualTo("first@example.com");
     }
 
     @Test
@@ -168,6 +149,18 @@ class JdbcTemplateTest {
             throw failure;
         })).isSameAs(failure);
 
+        assertConnectionReturnedAndReusable();
+    }
+
+    @Test
+    void sqlFailureDoesNotCloseCallerConnection() throws SQLException {
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            assertThatThrownBy(() -> jdbcTemplate.update(connection, "invalid SQL"))
+                    .isInstanceOf(DataAccessException.class);
+            assertThat(connection.isClosed()).isFalse();
+            connection.rollback();
+        }
         assertConnectionReturnedAndReusable();
     }
 

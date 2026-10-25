@@ -27,7 +27,7 @@ public class JdbcTemplate {
         return update(sql, argumentSetter(args));
     }
 
-    public int update(final String sql, final PreparedStatementSetter setter) {
+    private int update(final String sql, final PreparedStatementSetter setter) {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
@@ -35,26 +35,34 @@ public class JdbcTemplate {
         return query(sql, argumentSetter(args), rowMapper);
     }
 
-    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+    private <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                              final RowMapper<T> rowMapper) {
-        return execute(sql, setter, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, results.size()));
-                }
-                return results;
-            }
-        });
+        return execute(sql, setter, statement -> mapRows(statement, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return singleResult(query(sql, rowMapper, args));
     }
 
-    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
-                                final RowMapper<T> rowMapper) {
-        return singleResult(query(sql, setter, rowMapper));
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, argumentSetter(args), PreparedStatement::executeUpdate);
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... args) {
+        return singleResult(execute(connection, sql, argumentSetter(args),
+                statement -> mapRows(statement, rowMapper)));
+    }
+
+    private <T> List<T> mapRows(final PreparedStatement statement, final RowMapper<T> rowMapper)
+            throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, results.size()));
+            }
+            return results;
+        }
     }
 
     private <T> T singleResult(final List<T> results) {
@@ -74,8 +82,16 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException exception) {
+            throw new DataAccessException("Failed to obtain or close JDBC connection", exception);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementSetter setter, final StatementCallback<T> callback) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.execute(statement);
