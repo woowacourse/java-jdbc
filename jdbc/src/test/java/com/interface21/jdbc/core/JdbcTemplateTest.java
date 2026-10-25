@@ -102,6 +102,34 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateDoesNotExecuteWhenSetterFailed() throws SQLException {
+        final var cause = new SQLException();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", pstmt -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt, never()).executeUpdate();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryDoesNotExecuteWhenSetterFailed() throws SQLException {
+        final var cause = new SQLException();
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users where id = ?", ACCOUNT_MAPPER, pstmt -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt, never()).executeQuery();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
     void queryClosesResourcesWhenRowMapperFailed() throws SQLException {
         final var rs = mock(ResultSet.class);
         final var cause = new SQLException();
