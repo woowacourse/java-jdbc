@@ -38,12 +38,20 @@ public class UserService {
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
-            } catch (RuntimeException e) {
-                connection.rollback();
+            } catch (RuntimeException | SQLException e) {
+                rollback(connection, e);
                 throw e;
             }
         } catch (SQLException e) {
             throw new DataAccessException("트랜잭션 처리에 실패했습니다", e);
+        }
+    }
+
+    private void rollback(final Connection connection, final Exception cause) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackFailure) {
+            cause.addSuppressed(rollbackFailure);
         }
     }
 }
