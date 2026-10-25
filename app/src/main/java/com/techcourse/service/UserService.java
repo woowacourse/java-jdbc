@@ -32,23 +32,28 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                final var user = userDao.findById(connection, id);
-                user.changePassword(newPassword);
-                if (userDao.update(connection, user) != 1) {
-                    throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
-                }
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (RuntimeException e) {
-                rollback(connection, e);
-                throw e;
-            } catch (SQLException e) {
-                rollback(connection, e);
-                throw new DataAccessException(e);
-            }
+            changePasswordInTransaction(connection, id, newPassword, createBy);
         } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void changePasswordInTransaction(final Connection connection, final long id, final String newPassword,
+                                              final String createBy) {
+        try {
+            connection.setAutoCommit(false);
+            final var user = userDao.findById(connection, id);
+            user.changePassword(newPassword);
+            if (userDao.update(connection, user) != 1) {
+                throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
+            }
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            connection.commit();
+        } catch (RuntimeException e) {
+            rollback(connection, e);
+            throw e;
+        } catch (SQLException e) {
+            rollback(connection, e);
             throw new DataAccessException(e);
         }
     }
