@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
+import com.techcourse.support.DatabaseCleaner;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,10 +28,7 @@ class UserDaoTest {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.update("delete from user_history");
-        jdbcTemplate.update("delete from users");
-        jdbcTemplate.update("alter table user_history alter column id restart with 1");
-        jdbcTemplate.update("alter table users alter column id restart with 1");
+        DatabaseCleaner.clear(jdbcTemplate);
     }
 
     @Test

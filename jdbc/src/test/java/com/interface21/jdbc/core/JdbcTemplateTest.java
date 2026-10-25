@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -89,6 +90,17 @@ class JdbcTemplateTest {
         verify(pstmt).setObject(2, "password");
         verify(pstmt).setObject(3, "hkkang@woowahan.com");
         verify(pstmt).executeUpdate();
+    }
+
+    @Test
+    void 전달받은_커넥션으로_update하면_커넥션을_닫지_않는다() throws SQLException {
+        jdbcTemplate.update(connection, "update users set password = ? where id = ?",
+                "newPassword", 1L);
+
+        verify(pstmt).executeUpdate();
+        verify(pstmt).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     @Test
