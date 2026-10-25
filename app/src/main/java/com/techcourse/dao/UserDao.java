@@ -5,6 +5,7 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -37,6 +38,17 @@ public class UserDao {
 
         jdbcTemplate.update(
                 sql,
+                user.getPassword(),
+                user.getId()
+        );
+    }
+
+    public void update(final User user, Connection conn) {
+        final var sql = "update users set password = ? where id = ?";
+
+        jdbcTemplate.update(
+                sql,
+                conn,
                 user.getPassword(),
                 user.getId()
         );
