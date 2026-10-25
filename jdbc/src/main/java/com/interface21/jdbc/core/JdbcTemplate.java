@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -139,29 +140,33 @@ public class JdbcTemplate {
 
     private <T> PreparedStatementCallback<List<T>> createQueryCallback(final RowMapper<T> mapper) {
         Objects.requireNonNull(mapper, "mapper must not be null");
-        return statement -> {
-            try (final var resultSet = statement.executeQuery()) {
-                final var results = new ArrayList<T>();
-                while (resultSet.next()) {
-                    results.add(mapper.mapRow(resultSet));
-                }
-                return results;
+        return createResultSetCallback(resultSet -> {
+            final var results = new ArrayList<T>();
+            while (resultSet.next()) {
+                results.add(mapper.mapRow(resultSet));
             }
-        };
+            return results;
+        });
     }
 
     private <T> PreparedStatementCallback<T> createQueryForObjectCallback(final RowMapper<T> mapper) {
         Objects.requireNonNull(mapper, "mapper must not be null");
+        return createResultSetCallback(resultSet -> {
+            if (!resultSet.next()) {
+                return null;
+            }
+            final var result = mapper.mapRow(resultSet);
+            if (resultSet.next()) {
+                throw new DataAccessException("Expected at most one row, but found two or more");
+            }
+            return result;
+        });
+    }
+
+    private <T> PreparedStatementCallback<T> createResultSetCallback(final ResultSetExtractor<T> extractor) {
         return statement -> {
             try (final var resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
-                final var result = mapper.mapRow(resultSet);
-                if (resultSet.next()) {
-                    throw new DataAccessException("Expected at most one row, but found two or more");
-                }
-                return result;
+                return extractor.extractData(resultSet);
             }
         };
     }
@@ -179,5 +184,11 @@ public class JdbcTemplate {
     private interface PreparedStatementCallback<T> {
 
         T doInPreparedStatement(PreparedStatement statement) throws SQLException;
+    }
+
+    @FunctionalInterface
+    private interface ResultSetExtractor<T> {
+
+        T extractData(ResultSet resultSet) throws SQLException;
     }
 }
