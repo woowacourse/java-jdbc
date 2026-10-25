@@ -80,7 +80,7 @@ public class JdbcTemplate {
     }
 
     /**
-     * 조회 결과가 없으면 null, 여러 행이면 첫 번째 행을 반환한다.
+     * 조회 결과가 없으면 null, 한 행이면 변환한 객체를 반환한다. 두 행 이상이면 예외를 던진다.
      */
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
                                final RowMapper<T> mapper) {
@@ -88,7 +88,7 @@ public class JdbcTemplate {
     }
 
     /**
-     * 가변 인자를 바인딩하여 조회한다. 결과가 없으면 null, 여러 행이면 첫 번째 행을 반환한다.
+     * 가변 인자를 바인딩하여 조회한다. 결과가 없으면 null, 한 행이면 객체를 반환하고 두 행 이상이면 예외를 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... parameters) {
         return queryForObject(sql, createPreparedStatementSetter(parameters), mapper);
@@ -154,10 +154,14 @@ public class JdbcTemplate {
         Objects.requireNonNull(mapper, "mapper must not be null");
         return statement -> {
             try (final var resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return mapper.mapRow(resultSet);
+                if (!resultSet.next()) {
+                    return null;
                 }
-                return null;
+                final var result = mapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("Expected at most one row, but found two or more");
+                }
+                return result;
             }
         };
     }
