@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -475,6 +477,48 @@ class JdbcTemplateTest {
                 .hasCause(failure);
 
         verifyConnectionRemainsCallerManaged();
+    }
+
+    @Test
+    void reusesBoundConnectionAcrossUpdatesWithoutClosingIt() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            jdbcTemplate.update("update users set password = ?", "changed");
+            jdbcTemplate.update("insert into user_history (user_id) values (?)", 1L);
+
+            verifyConnectionRemainsCallerManaged();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void keepsBoundConnectionOpenWhenSqlFails() throws SQLException {
+        final var failure = new SQLException("Update failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "changed"))
+                    .isInstanceOf(DataAccessException.class).hasCause(failure);
+            verify(statement).close();
+            verifyConnectionRemainsCallerManaged();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void preservesSqlFailureWhenConnectionCloseAlsoFails() throws SQLException {
+        final var failure = new SQLException("Update failed");
+        final var closeFailure = new SQLException("Close failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "changed"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure)
+                .satisfies(thrown -> assertThat(thrown.getSuppressed())
+                        .extracting(Throwable::getCause).containsExactly(closeFailure));
     }
 
     private void verifyConnectionRemainsCallerManaged() throws SQLException {
