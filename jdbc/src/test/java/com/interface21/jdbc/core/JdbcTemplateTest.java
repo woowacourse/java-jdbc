@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,6 +53,44 @@ class JdbcTemplateTest {
         assertThat(updatedRows).isEqualTo(1);
         verify(preparedStatement).setObject(1, "password");
         verify(preparedStatement).setObject(2, 1L);
+    }
+
+    @Test
+    void update는_PreparedStatementSetter로_값을_직접_바인딩할_수_있다() throws SQLException {
+        jdbcTemplate.update("delete from users where id = ?", preparedStatement -> preparedStatement.setLong(1, 1L));
+
+        verify(preparedStatement).setLong(1, 1L);
+        verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    void 단일_null_인자는_Object로_캐스팅해서_넘기면_SQL_NULL로_바인딩한다() throws SQLException {
+        // update(sql, null)은 가변 인자와 PreparedStatementSetter 오버로드가 모호해 컴파일되지 않는다.
+        jdbcTemplate.update("update users set email = ? where id = 1", (Object) null);
+
+        verify(preparedStatement).setNull(1, Types.NULL);
+    }
+
+    @Test
+    void null의_SQL_타입을_지정하려면_PreparedStatementSetter로_넘긴다() throws SQLException {
+        jdbcTemplate.update("update users set email = ? where id = 1",
+                preparedStatement -> preparedStatement.setNull(1, Types.VARCHAR));
+
+        verify(preparedStatement).setNull(1, Types.VARCHAR);
+    }
+
+    @Test
+    void queryForObject는_PreparedStatementSetter로_조회_조건을_바인딩할_수_있다() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("account")).willReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject(
+                "select account from users where id = ?",
+                accountMapper,
+                preparedStatement -> preparedStatement.setLong(1, 1L));
+
+        assertThat(account).isEqualTo("gugu");
+        verify(preparedStatement).setLong(1, 1L);
     }
 
     @Test
