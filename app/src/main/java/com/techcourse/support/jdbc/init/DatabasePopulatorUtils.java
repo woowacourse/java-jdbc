@@ -4,9 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -20,12 +21,11 @@ public class DatabasePopulatorUtils {
         Statement statement = null;
         try {
             final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+            final var sql = Files.readString(Path.of(url.toURI()));
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);
-        } catch (NullPointerException | IOException | SQLException e) {
+        } catch (NullPointerException | IOException | URISyntaxException | SQLException e) {
             log.error(e.getMessage(), e);
         } finally {
             try {
