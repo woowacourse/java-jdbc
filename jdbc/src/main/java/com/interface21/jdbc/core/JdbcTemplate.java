@@ -7,10 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 public class JdbcTemplate {
 
@@ -22,26 +21,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(params, pstmt);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+    private static void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
+        for (int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
         }
     }
 
+    public int update(String sql, Object... params) {
+        return execute(sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(params, pstmt);
-
+        return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -49,10 +40,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        }, params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -63,9 +51,16 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private static void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
-        for(int i = 1; i <= params.length; i++) {
-            pstmt.setObject(i, params[i - 1]);
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            setParameters(params, pstmt);
+            return callback.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
     }
 }
