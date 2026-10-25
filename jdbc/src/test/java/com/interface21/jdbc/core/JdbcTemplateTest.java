@@ -1,5 +1,8 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.dao.DuplicateKeyException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +14,8 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -55,12 +60,51 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithVarargsBindsEachValueInOrder() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var count = jdbcTemplate.update(SQL, "changed", 1L);
+
+        assertThat(count).isEqualTo(1);
+        final var order = inOrder(statement, connection);
+        order.verify(statement).setObject(1, "changed");
+        order.verify(statement).setObject(2, 1L);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    void queryWithoutArgsBindsNothing() throws SQLException {
+        when(rows.next()).thenReturn(true, false);
+        when(rows.getString("email")).thenReturn("first@example.com");
+
+        final var result = jdbcTemplate.query(QUERY, rs -> rs.getString("email"));
+
+        assertThat(result).containsExactly("first@example.com");
+        verify(statement, never()).setObject(anyInt(), any());
+    }
+
+    @Test
+    void queryForObjectWithVarargsBindsBeforeQuery() throws SQLException {
+        when(rows.next()).thenReturn(true, false);
+        when(rows.getString("email")).thenReturn("first@example.com");
+
+        final var result = jdbcTemplate.queryForObject(QUERY, rs -> rs.getString("email"), 7L);
+
+        assertThat(result).isEqualTo("first@example.com");
+        final var order = inOrder(statement);
+        order.verify(statement).setObject(1, 7L);
+        order.verify(statement).executeQuery();
+    }
+
+    @Test
     void setterFailureClosesResourcesWithoutExecuting() throws SQLException {
         final var failure = new SQLException("binding failed");
 
         assertThatThrownBy(() -> jdbcTemplate.update(SQL, pstmt -> {
             throw failure;
-        })).isInstanceOf(RuntimeException.class).hasCause(failure);
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(statement, never()).executeUpdate();
         verify(statement).close();
@@ -73,7 +117,29 @@ class JdbcTemplateTest {
         when(statement.executeUpdate()).thenThrow(failure);
 
         assertThatThrownBy(() -> jdbcTemplate.update(SQL, pstmt -> {}))
-                .isInstanceOf(RuntimeException.class).hasCause(failure);
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void executionFailureMessageNamesTheSql() throws SQLException {
+        when(statement.executeUpdate()).thenThrow(new SQLException("execution failed"));
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, pstmt -> {}))
+                .isInstanceOf(DataAccessException.class)
+                .isNotInstanceOf(DuplicateKeyException.class)
+                .hasMessageContaining(SQL);
+    }
+
+    @Test
+    void uniqueViolationBecomesDuplicateKeyException() throws SQLException {
+        final var failure = new SQLException("unique index violated", "23505");
+        when(statement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, pstmt -> {}))
+                .isInstanceOf(DuplicateKeyException.class).hasCause(failure);
 
         verify(statement).close();
         verify(connection).close();
@@ -85,7 +151,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(SQL)).thenThrow(failure);
 
         assertThatThrownBy(() -> jdbcTemplate.update(SQL, pstmt -> {}))
-                .isInstanceOf(RuntimeException.class).hasCause(failure);
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(connection).close();
     }
@@ -96,7 +162,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenThrow(failure);
 
         assertThatThrownBy(() -> jdbcTemplate.update(SQL, pstmt -> {}))
-                .isInstanceOf(RuntimeException.class).hasCause(failure);
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(connection, never()).prepareStatement(SQL);
     }
@@ -133,15 +199,29 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectOnlyMapsFirstRow() throws SQLException {
-        when(rows.next()).thenReturn(true, true, false);
-        when(rows.getString("email")).thenReturn("first@example.com", "second@example.com");
+    void queryForObjectReturnsSingleRow() throws SQLException {
+        when(rows.next()).thenReturn(true, false);
+        when(rows.getString("email")).thenReturn("first@example.com");
 
         final var result = jdbcTemplate.queryForObject(QUERY, pstmt -> {}, rs -> rs.getString("email"));
 
         assertThat(result).isEqualTo("first@example.com");
-        verify(rows, times(1)).next();
+        verify(rows, times(2)).next();
         verify(rows, times(1)).getString("email");
+        verify(rows).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryForObjectRejectsMultipleRows() throws SQLException {
+        when(rows.next()).thenReturn(true, true, false);
+        when(rows.getString("email")).thenReturn("first@example.com", "second@example.com");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(QUERY, pstmt -> {}, rs -> rs.getString("email")))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessageContaining("expected 1");
+
         verify(rows).close();
         verify(statement).close();
         verify(connection).close();
@@ -168,7 +248,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.query(QUERY, pstmt -> {}, rs -> {
             throw failure;
-        })).isInstanceOf(RuntimeException.class).hasCause(failure);
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(rows).close();
         verify(statement).close();
@@ -182,7 +262,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(QUERY, pstmt -> {}, rs -> {
             throw failure;
-        })).isInstanceOf(RuntimeException.class).hasCause(failure);
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(rows).close();
         verify(statement).close();
@@ -195,7 +275,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenThrow(failure);
 
         assertThatThrownBy(() -> jdbcTemplate.query(QUERY, pstmt -> {}, rs -> rs.getString(1)))
-                .isInstanceOf(RuntimeException.class).hasCause(failure);
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(statement).close();
         verify(connection).close();
@@ -207,7 +287,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(QUERY, pstmt -> {
             throw failure;
-        }, rs -> rs.getString(1))).isInstanceOf(RuntimeException.class).hasCause(failure);
+        }, rs -> rs.getString(1))).isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(statement, never()).executeQuery();
         verify(statement).close();

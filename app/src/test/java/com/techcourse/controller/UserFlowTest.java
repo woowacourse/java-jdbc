@@ -1,5 +1,6 @@
 package com.techcourse.controller;
 
+import com.interface21.dao.DuplicateKeyException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.domain.User;
@@ -96,8 +97,37 @@ class UserFlowTest {
         register("first", "secret", "first@example.com");
         final var dao = new UserDao(DataSourceConfig.getInstance());
         assertThatThrownBy(() -> dao.insert(new User("first", "other", "other@example.com")))
-                .isInstanceOf(RuntimeException.class).hasCauseInstanceOf(SQLException.class);
+                .isInstanceOf(DuplicateKeyException.class).hasCauseInstanceOf(SQLException.class);
         assertThat(dao.findAll()).hasSize(1);
+    }
+
+    @Test
+    void duplicateInsertAfterPassingPreCheckRedirectsToRegister() throws Exception {
+        final var dao = mock(UserDao.class);
+        when(dao.findByAccount("first")).thenReturn(null);
+        doThrow(new DuplicateKeyException("duplicate", new SQLException("unique index violated", "23505")))
+                .when(dao).insert(any(User.class));
+        when(request.getParameter("account")).thenReturn("first");
+        when(request.getParameter("password")).thenReturn("secret");
+        when(request.getParameter("email")).thenReturn("first@example.com");
+
+        final var registration = new RegisterController(dao).register(request, response);
+        registration.getView().render(registration.getModel(), request, response);
+
+        verify(response).sendRedirect("/register");
+    }
+
+    @Test
+    void missingPasswordRedirectsToRegisterWithoutSaving() throws Exception {
+        when(request.getParameter("account")).thenReturn("first");
+        when(request.getParameter("password")).thenReturn(null);
+        when(request.getParameter("email")).thenReturn("first@example.com");
+
+        final var registration = new RegisterController().register(request, response);
+        registration.getView().render(registration.getModel(), request, response);
+
+        verify(response).sendRedirect("/register");
+        assertThat(new UserDao(DataSourceConfig.getInstance()).findAll()).isEmpty();
     }
 
     @Test
