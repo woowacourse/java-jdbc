@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -60,6 +61,22 @@ class JdbcTemplateTest {
 
         verify(preparedStatement).setLong(1, 1L);
         verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    void 단일_null_인자는_Object로_캐스팅해서_넘기면_SQL_NULL로_바인딩한다() throws SQLException {
+        // update(sql, null)은 가변 인자와 PreparedStatementSetter 오버로드가 모호해 컴파일되지 않는다.
+        jdbcTemplate.update("update users set email = ? where id = 1", (Object) null);
+
+        verify(preparedStatement).setNull(1, Types.NULL);
+    }
+
+    @Test
+    void null의_SQL_타입을_지정하려면_PreparedStatementSetter로_넘긴다() throws SQLException {
+        jdbcTemplate.update("update users set email = ? where id = 1",
+                preparedStatement -> preparedStatement.setNull(1, Types.VARCHAR));
+
+        verify(preparedStatement).setNull(1, Types.VARCHAR);
     }
 
     @Test
