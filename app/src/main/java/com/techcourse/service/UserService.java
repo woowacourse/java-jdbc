@@ -35,7 +35,7 @@ public class UserService {
                 connection.setAutoCommit(false);
                 final User user = findById(id);
                 user.changePassword(newPassword);
-                userDao.updateWithConnection(connection, user);
+                userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
             } catch (Exception e) {

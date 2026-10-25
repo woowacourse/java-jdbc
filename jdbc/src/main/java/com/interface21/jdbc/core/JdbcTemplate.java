@@ -63,7 +63,7 @@ public class JdbcTemplate {
         }
     }
 
-    public void updateWithConnection(final Connection connection, final String sql, final Object... args) {
+    public void update(final Connection connection, final String sql, final Object... args) {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             newArgPreparedStatementSetter(args).setValues(pstmt);
             pstmt.executeUpdate();
