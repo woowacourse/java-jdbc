@@ -3,7 +3,6 @@ package aop.stage0;
 import aop.DataAccessException;
 import aop.Transactional;
 import aop.service.AppUserService;
-import aop.service.UserService;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

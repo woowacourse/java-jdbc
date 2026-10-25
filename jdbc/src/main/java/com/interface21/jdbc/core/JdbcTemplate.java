@@ -53,10 +53,18 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (
-            final Connection connection = dataSource.getConnection();
+        try (final Connection connection = dataSource.getConnection();
             final PreparedStatement pstmt = connection.prepareStatement(sql)
         ) {
+            newArgPreparedStatementSetter(args).setValues(pstmt);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("update/insert failed (sql=" + sql + ")", e);
+        }
+    }
+
+    public void updateWithConnection(final Connection connection, final String sql, final Object... args) {
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             newArgPreparedStatementSetter(args).setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
