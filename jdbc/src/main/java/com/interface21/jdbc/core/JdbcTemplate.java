@@ -28,15 +28,19 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, preparedStatement -> mapRows(preparedStatement, rowMapper), args);
+        return executeQuery(sql, resultSet -> mapRows(resultSet, rowMapper), args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.size() != 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
-        }
-        return results.getFirst();
+        return executeQuery(sql, resultSet -> mapSingleRow(resultSet, rowMapper), args);
+    }
+
+    private <T> T executeQuery(final String sql, final ResultSetCallback<T> callback, final Object... args) {
+        return execute(sql, preparedStatement -> {
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                return callback.doInResultSet(resultSet);
+            }
+        }, args);
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
@@ -57,20 +61,34 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> List<T> mapRows(final PreparedStatement preparedStatement, final RowMapper<T> rowMapper)
-            throws SQLException {
-        try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-            final List<T> results = new ArrayList<>();
-            while (resultSet.next()) {
-                results.add(rowMapper.mapRow(resultSet));
-            }
-            return results;
+    private <T> List<T> mapRows(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        final List<T> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(rowMapper.mapRow(resultSet));
         }
+        return results;
+    }
+
+    private <T> T mapSingleRow(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        if (!resultSet.next()) {
+            throw new IncorrectResultSizeDataAccessException("조회 결과가 없습니다.", 1);
+        }
+        final T result = rowMapper.mapRow(resultSet);
+        if (resultSet.next()) {
+            throw new IncorrectResultSizeDataAccessException("조회 결과가 2건 이상입니다.", 1);
+        }
+        return result;
     }
 
     @FunctionalInterface
     private interface PreparedStatementCallback<T> {
 
         T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
+    }
+
+    @FunctionalInterface
+    private interface ResultSetCallback<T> {
+
+        T doInResultSet(ResultSet resultSet) throws SQLException;
     }
 }

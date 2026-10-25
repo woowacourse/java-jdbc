@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
@@ -82,19 +83,19 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                 "select account from users where id = ?", accountMapper, 1L))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class)
-                .extracting("actualSize")
-                .isEqualTo(0);
+                .hasMessageContaining("없습니다");
     }
 
     @Test
-    void queryForObject는_조회_결과가_여러_개면_예외가_발생한다() throws SQLException {
-        given(resultSet.next()).willReturn(true, true, false);
+    void queryForObject는_두_번째_행이_있으면_더_매핑하지_않고_예외가_발생한다() throws SQLException {
+        given(resultSet.next()).willReturn(true, true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                 "select account from users where account = ?", accountMapper, "gugu"))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class)
-                .extracting("actualSize")
-                .isEqualTo(2);
+                .hasMessageContaining("2건 이상");
+        verify(resultSet, times(2)).next();
+        verify(resultSet, times(1)).getString("account");
     }
 
     @Test
