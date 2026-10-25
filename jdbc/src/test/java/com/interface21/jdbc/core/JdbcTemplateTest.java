@@ -31,6 +31,7 @@ class JdbcTemplateTest {
     private static final String UPDATE_SQL = "update users set password = ? where id = ?";
     private static final RowMapper<String> ACCOUNT_ROW_MAPPER = (rs, rowNum) -> rs.getString("account");
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
@@ -38,7 +39,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -126,6 +127,15 @@ class JdbcTemplateTest {
         verify(preparedStatement, never()).executeUpdate();
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void 전달받은_Connection으로_갱신하면_새_Connection을_얻지_않고_닫지도_않는다() throws SQLException {
+        jdbcTemplate.update(connection, UPDATE_SQL, "password99", 1L);
+
+        verify(dataSource, never()).getConnection();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
     }
 
     @Test
