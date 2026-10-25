@@ -55,6 +55,28 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void update는_PreparedStatementSetter로_값을_직접_바인딩할_수_있다() throws SQLException {
+        jdbcTemplate.update("delete from users where id = ?", preparedStatement -> preparedStatement.setLong(1, 1L));
+
+        verify(preparedStatement).setLong(1, 1L);
+        verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    void queryForObject는_PreparedStatementSetter로_조회_조건을_바인딩할_수_있다() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("account")).willReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject(
+                "select account from users where id = ?",
+                accountMapper,
+                preparedStatement -> preparedStatement.setLong(1, 1L));
+
+        assertThat(account).isEqualTo("gugu");
+        verify(preparedStatement).setLong(1, 1L);
+    }
+
+    @Test
     void query는_모든_행을_RowMapper로_변환한다() throws SQLException {
         given(resultSet.next()).willReturn(true, true, false);
         given(resultSet.getString("account")).willReturn("gugu", "ludens");

@@ -24,40 +24,62 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
+        return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, resultSet -> mapRows(resultSet, rowMapper), args);
+        return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return executeQuery(sql, preparedStatementSetter, resultSet -> mapRows(resultSet, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, resultSet -> mapSingleRow(resultSet, rowMapper), args);
+        return queryForObject(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
 
-    private <T> T executeQuery(final String sql, final ResultSetCallback<T> callback, final Object... args) {
-        return execute(sql, preparedStatement -> {
+    public <T> T queryForObject(
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter preparedStatementSetter
+    ) {
+        return executeQuery(sql, preparedStatementSetter, resultSet -> mapSingleRow(resultSet, rowMapper));
+    }
+
+    private <T> T executeQuery(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final ResultSetCallback<T> callback
+    ) {
+        return execute(sql, preparedStatementSetter, preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return callback.doInResultSet(resultSet);
             }
-        }, args);
+        });
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> callback
+    ) {
         log.debug("query : {}", sql);
 
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            setArguments(preparedStatement, args);
+            preparedStatementSetter.setValues(preparedStatement);
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
-        }
-    }
-
-    private void setArguments(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            preparedStatement.setObject(i + 1, args[i]);
         }
     }
 
