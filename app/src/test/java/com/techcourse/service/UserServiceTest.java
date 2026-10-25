@@ -41,7 +41,7 @@ class UserServiceTest {
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
-        final var createBy = "gugu";
+        final var createBy = "support-agent";
         final var startedAt = LocalDateTime.now().minusSeconds(1);
         userService.changePassword(1L, newPassword, createBy);
         final var finishedAt = LocalDateTime.now().plusSeconds(1);
