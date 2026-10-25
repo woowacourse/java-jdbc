@@ -5,6 +5,7 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.exception.UserNotFoundException;
 import com.techcourse.repository.UserRowMapper;
+import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,12 @@ public class UserDao {
         final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) {
+        final String sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
