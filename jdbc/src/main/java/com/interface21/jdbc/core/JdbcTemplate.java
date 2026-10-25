@@ -33,6 +33,14 @@ public class JdbcTemplate {
         return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return update(conn, sql, argumentSetter(args));
+    }
+
+    public int update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
+        return execute(conn, sql, pss, PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentSetter(args));
     }
