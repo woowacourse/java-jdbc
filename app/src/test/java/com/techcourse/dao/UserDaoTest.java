@@ -3,11 +3,13 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -69,5 +71,13 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void updateWithUnknownId() {
+        final var user = new User(999L, "unknown", "password", "unknown@woowahan.com");
+
+        assertThatThrownBy(() -> userDao.update(user))
+                .isInstanceOf(DataAccessException.class);
     }
 }
