@@ -15,6 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -69,6 +70,47 @@ class JdbcTemplateTest {
         verify(statement).setString(1, "password");
         verify(statement).setLong(2, 3L);
         verify(statement).executeUpdate();
+    }
+
+    @Test
+    void update_ExternalConnection_ClosesStatementAndKeepsConnectionOpen() throws SQLException {
+        final var sql = "update users set password = ? where id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+
+        jdbcTemplate.update(sql, connection, "password", 3L);
+
+        verify(statement).setObject(1, "password");
+        verify(statement).setObject(2, 3L);
+        verify(statement).executeUpdate();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void update_ExternalConnectionExecutionFails_PreservesCauseAndKeepsConnectionOpen() throws SQLException {
+        final var sql = "update users set password = ? where id = ?";
+        final var failure = new SQLException("SQL execution failed");
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeUpdate()).thenThrow(failure);
+        PreparedStatementSetter setter = pstmt -> {
+            pstmt.setString(1, "password");
+            pstmt.setLong(2, 3L);
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, connection, setter))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement).setString(1, "password");
+        verify(statement).setLong(2, 3L);
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verifyNoInteractions(dataSource);
     }
 
     @Test
