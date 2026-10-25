@@ -21,12 +21,6 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    private static void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
-        for (int i = 1; i <= params.length; i++) {
-            pstmt.setObject(i, params[i - 1]);
-        }
-    }
-
     public int update(String sql, Object... params) {
         return execute(sql, PreparedStatement::executeUpdate, params);
     }
@@ -56,11 +50,17 @@ public class JdbcTemplate {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setParameters(params, pstmt);
+            setParameters(pstmt, params);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private static void setParameters(PreparedStatement pstmt, Object[] params) throws SQLException {
+        for (int i = 1; i <= params.length; i++) {
+            pstmt.setObject(i, params[i - 1]);
         }
     }
 }
