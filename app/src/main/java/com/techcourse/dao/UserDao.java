@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -41,6 +42,17 @@ public class UserDao {
         final var sql = "update users set password = ? where id = ?";
 
         jdbcTemplate.update(
+                sql,
+                user.getPassword(),
+                user.getId()
+        );
+    }
+
+    public void update(final Connection conn, final User user) {
+        final var sql = "update users set password = ? where id = ?";
+
+        jdbcTemplate.update(
+                conn,
                 sql,
                 user.getPassword(),
                 user.getId()
