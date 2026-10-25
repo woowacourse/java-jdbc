@@ -43,11 +43,11 @@ public class JdbcTemplate {
             setParameters(params, pstmt);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> objects = new ArrayList<>();
+                List<T> results = new ArrayList<>();
                 while (rs.next()) {
-                    objects.add(rowMapper.mapRow(rs));
+                    results.add(rowMapper.mapRow(rs));
                 }
-                return objects;
+                return results;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -56,22 +56,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            setParameters(params, pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        List<T> results = query(sql, rowMapper, params);
+        if (results.size() != 1) {
+            throw new DataAccessException("조회 결과 오류 : " + results.size());
         }
+        return results.getFirst();
     }
 
     private static void setParameters(Object[] params, PreparedStatement pstmt) throws SQLException {
