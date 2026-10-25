@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        return execute(sql, PreparedStatement::executeUpdate, params);
+        return execute(sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -34,7 +34,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, params);
+        }, pstmt -> setParameters(pstmt, params));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -45,12 +45,12 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter pstmtSetter) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            setParameters(pstmt, params);
+            pstmtSetter.setValues(pstmt);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
