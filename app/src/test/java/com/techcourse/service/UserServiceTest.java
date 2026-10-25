@@ -1,7 +1,7 @@
 package com.techcourse.service;
 
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
+import com.techcourse.config.UserServiceConfig;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
@@ -30,8 +30,7 @@ class UserServiceTest {
         dataSource.setLoginTimeout(1);
         DatabasePopulatorUtils.execute(dataSource);
         jdbcTemplate = new JdbcTemplate(dataSource);
-        final var userDao = new UserDao(jdbcTemplate);
-        userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        userService = UserServiceConfig.userService(dataSource);
         userService.insert(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
@@ -39,6 +38,7 @@ class UserServiceTest {
     void tearDown() {
         try {
             assertThat(dataSource.getActiveConnections()).isZero();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         } finally {
             dataSource.dispose();
         }

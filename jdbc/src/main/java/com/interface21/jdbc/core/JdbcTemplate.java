@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,16 +45,6 @@ public class JdbcTemplate {
         return singleResult(query(sql, rowMapper, args));
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, argumentSetter(args), PreparedStatement::executeUpdate);
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql,
-                                final RowMapper<T> rowMapper, final Object... args) {
-        return singleResult(execute(connection, sql, argumentSetter(args),
-                statement -> mapRows(statement, rowMapper)));
-    }
-
     private <T> List<T> mapRows(final PreparedStatement statement, final RowMapper<T> rowMapper)
             throws SQLException {
         try (ResultSet resultSet = statement.executeQuery()) {
@@ -82,10 +73,23 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException exception) {
-            throw new DataAccessException("Failed to obtain or close JDBC connection", exception);
+        } catch (RuntimeException | Error exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException closeFailure) {
+                if (failure != null) {
+                    failure.addSuppressed(closeFailure);
+                } else {
+                    throw closeFailure;
+                }
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -129,12 +130,14 @@ class JdbcTemplateTest {
     void callerOwnsConnectionAndCanRollback() throws SQLException {
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            jdbcTemplate.update(connection, "update users set email = ? where id = ?", "changed", 1L);
-            final String email = jdbcTemplate.queryForObject(connection,
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            jdbcTemplate.update("update users set email = ? where id = ?", "changed", 1L);
+            final String email = jdbcTemplate.queryForObject(
                     "select email from users where id = ?", (rs, rowNum) -> rs.getString(1), 1L);
             assertThat(email).isEqualTo("changed");
             assertThat(connection.isClosed()).isFalse();
             connection.rollback();
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
         final String email = jdbcTemplate.queryForObject("select email from users where id = ?",
                 (rs, rowNum) -> rs.getString(1), 1L);
@@ -156,10 +159,12 @@ class JdbcTemplateTest {
     void sqlFailureDoesNotCloseCallerConnection() throws SQLException {
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            assertThatThrownBy(() -> jdbcTemplate.update(connection, "invalid SQL"))
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            assertThatThrownBy(() -> jdbcTemplate.update("invalid SQL"))
                     .isInstanceOf(DataAccessException.class);
             assertThat(connection.isClosed()).isFalse();
             connection.rollback();
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
         assertConnectionReturnedAndReusable();
     }
