@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ public class JdbcTemplate {
         return update(sql, argumentSetter(args));
     }
 
-    public int update(final String sql, final PreparedStatementSetter setter) {
+    private int update(final String sql, final PreparedStatementSetter setter) {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
@@ -35,26 +36,24 @@ public class JdbcTemplate {
         return query(sql, argumentSetter(args), rowMapper);
     }
 
-    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+    private <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                              final RowMapper<T> rowMapper) {
-        return execute(sql, setter, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, results.size()));
-                }
-                return results;
-            }
-        });
+        return execute(sql, setter, statement -> mapRows(statement, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return singleResult(query(sql, rowMapper, args));
     }
 
-    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
-                                final RowMapper<T> rowMapper) {
-        return singleResult(query(sql, setter, rowMapper));
+    private <T> List<T> mapRows(final PreparedStatement statement, final RowMapper<T> rowMapper)
+            throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, results.size()));
+            }
+            return results;
+        }
     }
 
     private <T> T singleResult(final List<T> results) {
@@ -74,8 +73,29 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
+            return execute(connection, sql, setter, callback);
+        } catch (RuntimeException | Error exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException closeFailure) {
+                if (failure != null) {
+                    failure.addSuppressed(closeFailure);
+                } else {
+                    throw closeFailure;
+                }
+            }
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementSetter setter, final StatementCallback<T> callback) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.execute(statement);
