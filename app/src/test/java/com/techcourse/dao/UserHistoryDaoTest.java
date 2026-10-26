@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
@@ -37,8 +38,8 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    @DisplayName("외부 연결로 저장한 이력은 모든 값을 유지하고 호출자가 롤백하면 사라진다")
-    void savesEveryHistoryFieldOnTheCallerConnectionWithoutCommittingOrClosingIt() throws Exception {
+    @DisplayName("등록된 연결로 저장한 이력은 모든 값을 유지하고 호출자가 롤백하면 사라진다")
+    void savesEveryHistoryFieldOnTheBoundConnectionWithoutCommittingOrClosingIt() throws Exception {
         final var dataSource = DataSourceConfig.createDataSource("jdbc:h2:mem:history-" + UUID.randomUUID());
         try (final var connection = dataSource.getConnection()) {
             DatabasePopulatorUtils.execute(dataSource);
@@ -46,14 +47,19 @@ class UserHistoryDaoTest {
             final var history = new UserHistory(new User(7L, "gugu", "newPassword", "gugu@example.com"), "operator");
             connection.setAutoCommit(false);
 
-            new UserHistoryDao(jdbcTemplate).log(connection, history);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                new UserHistoryDao(jdbcTemplate).log(history);
 
-            assertThat(connection.isClosed()).isFalse();
-            final var saved = jdbcTemplate.queryForObject(connection, "select * from user_history", row ->
-                    new SavedHistory(row.getLong("user_id"), row.getString("account"), row.getString("password"),
-                            row.getString("email"), row.getTimestamp("created_at").toLocalDateTime(),
-                            row.getString("created_by")));
-            assertSavedHistory(saved, history);
+                assertThat(connection.isClosed()).isFalse();
+                final var saved = jdbcTemplate.queryForObject("select * from user_history", row ->
+                        new SavedHistory(row.getLong("user_id"), row.getString("account"), row.getString("password"),
+                                row.getString("email"), row.getTimestamp("created_at").toLocalDateTime(),
+                                row.getString("created_by")));
+                assertSavedHistory(saved, history);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
             assertThat(historyCount(jdbcTemplate)).isZero();
 
             connection.rollback();

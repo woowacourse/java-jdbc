@@ -5,11 +5,13 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
@@ -20,11 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UserDaoTest {
 
     private UserDao userDao;
+    private DataSource dataSource;
     private Connection databaseAnchor;
 
     @BeforeEach
     void setup() throws SQLException {
-        final var dataSource = DataSourceConfig.createDataSource(
+        dataSource = DataSourceConfig.createDataSource(
                 "jdbc:h2:mem:user-dao-" + UUID.randomUUID());
         databaseAnchor = dataSource.getConnection();
         DatabasePopulatorUtils.execute(dataSource);
@@ -87,22 +90,31 @@ class UserDaoTest {
     }
 
     @Test
-    @DisplayName("외부 연결의 수정은 모든 값을 바인딩하고 호출자가 롤백하거나 커밋할 때까지 연결을 유지한다")
-    void updateWithCallerConnectionLeavesTransactionCompletionToTheCaller() throws SQLException {
+    @DisplayName("등록된 연결로 수정하고 호출자가 롤백하거나 커밋할 때까지 연결을 유지한다")
+    void updateWithBoundConnectionLeavesTransactionCompletionToTheCaller() throws SQLException {
         final var original = userDao.findById(1L);
         final var changed = new User(1L, "changed-account", "password99", "changed@example.com");
         databaseAnchor.setAutoCommit(false);
 
-        userDao.update(databaseAnchor, changed);
-
-        assertThat(databaseAnchor.isClosed()).isFalse();
-        assertThat(userDao.findById(databaseAnchor, 1L)).usingRecursiveComparison().isEqualTo(changed);
+        TransactionSynchronizationManager.bindResource(dataSource, databaseAnchor);
+        try {
+            userDao.update(changed);
+            assertThat(databaseAnchor.isClosed()).isFalse();
+            assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(changed);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
         assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(original);
 
         databaseAnchor.rollback();
 
         assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(original);
-        userDao.update(databaseAnchor, changed);
+        TransactionSynchronizationManager.bindResource(dataSource, databaseAnchor);
+        try {
+            userDao.update(changed);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
         databaseAnchor.commit();
         assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(changed);
     }
