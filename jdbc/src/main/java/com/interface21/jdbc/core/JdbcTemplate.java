@@ -22,7 +22,7 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        update(sql, createStatementSetter(args));
+        update(sql, createPreparedStatementSetter(args));
     }
 
     public void update(final String sql, final PreparedStatementSetter statementSetter) {
@@ -34,7 +34,7 @@ public class JdbcTemplate {
     }
 
     public void update(final Connection connection, final String sql, final Object... args) {
-        update(connection, sql, createStatementSetter(args));
+        update(connection, sql, createPreparedStatementSetter(args));
     }
 
     public void update(final Connection connection, final String sql,
@@ -50,7 +50,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, createStatementSetter(args), rowMapper);
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
@@ -64,7 +64,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
                              final Object... args) {
-        return query(connection, sql, createStatementSetter(args), rowMapper);
+        return query(connection, sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final Connection connection, final String sql,
@@ -117,13 +117,11 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private void setParameters(final PreparedStatement statement, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
-        }
-    }
-
-    private PreparedStatementSetter createStatementSetter(final Object... args) {
-        return statement -> setParameters(statement, args);
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
+        return statement -> {
+            for (int i = 0; i < parameters.length; i++) {
+                statement.setObject(i + 1, parameters[i]);
+            }
+        };
     }
 }
