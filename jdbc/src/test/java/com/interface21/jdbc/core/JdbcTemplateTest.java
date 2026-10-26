@@ -112,4 +112,13 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
     }
 
+    @Test
+    void callerOwnsExplicitConnection() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+        assertThat(template.update(connection, "delete from test")).isEqualTo(1);
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
 }
