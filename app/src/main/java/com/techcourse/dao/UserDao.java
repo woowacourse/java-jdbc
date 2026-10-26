@@ -58,8 +58,7 @@ public class UserDao {
     public void update(User user) {
         int updatedRows = jdbcTemplate.update(
                 UPDATE_SQL,
-                user.getPassword(),
-                user.getId()
+                updateParameters(user)
         );
 
         validateUpdatedRows(user.getId(), updatedRows);
@@ -69,11 +68,14 @@ public class UserDao {
         int updatedRows = jdbcTemplate.update(
                 connection,
                 UPDATE_SQL,
-                user.getPassword(),
-                user.getId()
+                updateParameters(user)
         );
 
         validateUpdatedRows(user.getId(), updatedRows);
+    }
+
+    private Object[] updateParameters(User user) {
+        return new Object[]{user.getPassword(), user.getId()};
     }
 
     private void validateUpdatedRows(long id, int updatedRows) {
