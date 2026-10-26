@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String TOO_MANY_RESULTS_MESSAGE = "단건 조회 결과가 1개를 초과했습니다. size=%d";
 
     private final DataSource dataSource;
 
@@ -67,7 +68,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new DataAccessException("결과가 1개가 아닙니다. size=" + results.size());
+            throw new DataAccessException(TOO_MANY_RESULTS_MESSAGE.formatted(results.size()));
         }
         return results.get(0);
     }
