@@ -5,16 +5,12 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
-
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper rowMapper = rs -> new User(
+    private final RowMapper<User> rowMapper = rs -> new User(
             rs.getLong("id"),
             rs.getString("account"),
             rs.getString("password"),
@@ -40,18 +36,16 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, rowMapper).stream()
-                .map(object -> (User) object)
-                .toList();
+        return jdbcTemplate.query(sql, rowMapper);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return (User) jdbcTemplate.queryForObject(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(sql, rowMapper, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return (User) jdbcTemplate.queryForObject(sql, rowMapper, account);
+        return jdbcTemplate.queryForObject(sql, rowMapper, account);
     }
 }
