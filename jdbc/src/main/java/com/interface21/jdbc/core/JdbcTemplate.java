@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
+    private static final String TOO_MANY_RESULTS_MESSAGE = "단건 조회 결과가 1개를 초과했습니다. size=%d";
 
     private final DataSource dataSource;
 
@@ -22,53 +23,68 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        update(sql, argumentsSetter(args));
+    }
 
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public void update(final String sql, final PreparedStatementSetter pss) {
+        execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        return query(sql, rowMapper, argumentsSetter(args));
+    }
 
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
-                }
-                return result;
-            }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pss, pstmt -> mapRows(pstmt, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
             final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, argumentsSetter(args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+            final PreparedStatementSetter pss) {
+        final List<T> results = query(sql, rowMapper, pss);
         if (results.isEmpty()) {
             return null;
         }
         if (results.size() > 1) {
-            throw new DataAccessException("결과가 1개가 아닙니다. size=" + results.size());
+            throw new DataAccessException(TOO_MANY_RESULTS_MESSAGE.formatted(results.size()));
         }
         return results.get(0);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter pss,
+            final PreparedStatementCallback<T> action) {
+        try (final Connection conn = dataSource.getConnection();
+                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            pss.setValues(pstmt);
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet rs = pstmt.executeQuery()) {
+            final List<T> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(rowMapper.mapRow(rs));
+            }
+            return result;
+        }
+    }
+
+    private PreparedStatementSetter argumentsSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
