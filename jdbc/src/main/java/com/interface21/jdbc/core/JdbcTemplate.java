@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,10 +27,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter statementSetter) {
-        try (final Connection connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             update(connection, sql, statementSetter);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -55,10 +57,11 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
                              final RowMapper<T> rowMapper) {
-        try (final Connection connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return query(connection, sql, statementSetter, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute query", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
