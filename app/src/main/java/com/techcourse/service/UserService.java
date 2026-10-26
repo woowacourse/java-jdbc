@@ -43,7 +43,7 @@ public class UserService {
         }
     }
 
-    private static void commit(Connection connection) {
+    private static void commit(final Connection connection) {
         try {
             connection.commit();
         } catch (SQLException sqlException) {
@@ -51,7 +51,7 @@ public class UserService {
         }
     }
 
-    private static void rollback(RuntimeException exception, Connection connection) {
+    private static void rollback(final RuntimeException exception, final Connection connection) {
         try {
             connection.rollback();
         } catch (SQLException sqlException) {
