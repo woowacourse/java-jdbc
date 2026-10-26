@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class UserDaoTest {
 
@@ -27,16 +28,24 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("pobi", "pobi-password", "pobi@woowahan.com"));
+
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users)
+                .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
+                .containsExactlyInAnyOrder(
+                        tuple(1L, "gugu", "password", "hkkang@woowahan.com"),
+                        tuple(2L, "pobi", "pobi-password", "pobi@woowahan.com"));
     }
 
     @Test
     void findById() {
         final var user = userDao.findById(1L);
 
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThat(user)
+                .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
+                .containsExactly(1L, "gugu", "password", "hkkang@woowahan.com");
     }
 
     @Test
@@ -44,7 +53,9 @@ class UserDaoTest {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user)
+                .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
+                .containsExactly(1L, account, "password", "hkkang@woowahan.com");
     }
 
     @Test
