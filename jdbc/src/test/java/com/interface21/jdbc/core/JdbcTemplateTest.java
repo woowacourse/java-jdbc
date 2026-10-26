@@ -14,6 +14,7 @@ import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -113,16 +114,16 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단건 조회는 여러 행이 있어도 첫 번째 행만 읽고 반환한다")
-    void queryForObjectReturnsOnlyTheFirstRow() throws SQLException {
+    @DisplayName("단건 조회는 두 번째 행을 발견하면 추가 행을 읽거나 매핑하지 않고 실패한다")
+    void queryForObjectRejectsMultipleRowsWithoutReadingOrMappingTheRest() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getLong("id")).thenReturn(10L, 20L);
 
-        final var actual = jdbcTemplate.queryForObject("select id from sample order by id", ignored -> {},
-                row -> row.getLong("id"));
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select id from sample order by id", ignored -> {},
+                row -> row.getLong("id")))
+                .isInstanceOf(DataAccessException.class).hasMessageContaining("two or more").hasNoCause();
 
-        assertThat(actual).isEqualTo(10L);
-        verify(resultSet, times(1)).next();
+        verify(resultSet, times(2)).next();
         verify(resultSet, times(1)).getLong("id");
         verifyQueryResourcesClosed();
     }
@@ -385,7 +386,7 @@ class JdbcTemplateTest {
     @Test
     @DisplayName("단건 조회도 가변 인자를 먼저 바인딩하고 결과를 매핑한다")
     void queryForObjectVarargsBindBeforeExecutingAndMapping() throws SQLException {
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("name")).thenReturn("Alice");
 
         final var actual = jdbcTemplate.queryForObject("select name from sample where id = ? and age = ?",
@@ -491,6 +492,291 @@ class JdbcTemplateTest {
                 .isInstanceOf(NullPointerException.class);
 
         verifyNoInteractions(dataSource, connection, statement, resultSet);
+    }
+
+    @Test
+    @DisplayName("일반 연결의 setter 단건 조회는 한 행을 매핑한 뒤 결과가 끝났는지 확인한다")
+    void ownedSetterSingleQueryReturnsExactlyOneRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(10L);
+
+        final var actual = jdbcTemplate.queryForObject("select id from sample", ignored -> {},
+                row -> row.getLong("id"));
+
+        assertThat(actual).isEqualTo(10L);
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("일반 연결의 가변 인자 단건 조회도 빈 결과는 null로 반환한다")
+    void ownedVarargsSingleQueryReturnsNullForNoRows() throws SQLException {
+        final var actual = jdbcTemplate.queryForObject("select id from sample where id = ?",
+                row -> row.getLong("id"), 10L);
+
+        assertThat(actual).isNull();
+        verify(resultSet).next();
+        verify(resultSet, never()).getLong("id");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("일반 연결의 가변 인자 단건 조회도 여러 행을 거부한다")
+    void ownedVarargsSingleQueryRejectsMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select id from sample where id >= ?",
+                row -> row.getLong("id"), 10L))
+                .isInstanceOf(DataAccessException.class).hasMessageContaining("two or more");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 setter 단건 조회는 빈 결과를 null로 반환하고 연결은 유지한다")
+    void borrowedSetterSingleQueryReturnsNullForNoRows() throws SQLException {
+        final var actual = jdbcTemplate.queryForObject(connection, "select id from sample", ignored -> {},
+                row -> row.getLong("id"));
+
+        assertThat(actual).isNull();
+        verify(resultSet).next();
+        verify(resultSet, never()).getLong("id");
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 setter 단건 조회는 한 행을 반환하고 연결은 유지한다")
+    void borrowedSetterSingleQueryReturnsExactlyOneRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(10L);
+
+        final var actual = jdbcTemplate.queryForObject(connection, "select id from sample", ignored -> {},
+                row -> row.getLong("id"));
+
+        assertThat(actual).isEqualTo(10L);
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 setter 단건 조회는 다건 오류 후에도 호출자의 연결을 유지한다")
+    void borrowedSetterSingleQueryRejectsMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select id from sample", ignored -> {},
+                row -> row.getLong("id")))
+                .isInstanceOf(DataAccessException.class).hasMessageContaining("two or more");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 가변 인자 단건 조회는 빈 결과를 null로 반환하고 연결은 유지한다")
+    void borrowedVarargsSingleQueryReturnsNullForNoRows() throws SQLException {
+        final var actual = jdbcTemplate.queryForObject(connection, "select id from sample where id = ?",
+                row -> row.getLong("id"), 10L);
+
+        assertThat(actual).isNull();
+        verify(statement).setObject(1, 10L);
+        verify(resultSet).next();
+        verify(resultSet, never()).getLong("id");
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 가변 인자 단건 조회는 한 행을 반환하고 연결은 유지한다")
+    void borrowedVarargsSingleQueryReturnsExactlyOneRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getLong("id")).thenReturn(10L);
+
+        final var actual = jdbcTemplate.queryForObject(connection, "select id from sample where id = ?",
+                row -> row.getLong("id"), 10L);
+
+        assertThat(actual).isEqualTo(10L);
+        verify(statement).setObject(1, 10L);
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 가변 인자 단건 조회도 여러 행을 거부하고 연결은 유지한다")
+    void borrowedVarargsSingleQueryRejectsMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select id from sample where id >= ?",
+                row -> row.getLong("id"), 10L))
+                .isInstanceOf(DataAccessException.class).hasMessageContaining("two or more");
+
+        verify(statement).setObject(1, 10L);
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결을 사용하는 세 API는 결과와 Statement만 닫고 트랜잭션은 건드리지 않는다")
+    void borrowedConnectionOwnershipIsPreservedAcrossAllApis() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+        when(resultSet.next()).thenReturn(true, false, true, false);
+        when(resultSet.getString("name")).thenReturn("Alice");
+
+        assertThat(jdbcTemplate.update(connection, "update sample set name = ?", "Alice")).isEqualTo(1);
+        assertThat(jdbcTemplate.query(connection, "select name from sample", row -> row.getString("name")))
+                .containsExactly("Alice");
+        final var actual = jdbcTemplate.queryForObject(connection, "select name from sample", row -> row.getString("name"));
+        assertThat(actual).isEqualTo("Alice");
+
+        verify(statement, times(3)).close();
+        verify(resultSet, times(2)).close();
+        verifyCallerStillOwnsTheConnection();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 Statement 준비 실패도 호출자의 연결을 닫지 않는다")
+    void borrowedPreparationFailurePreservesTheCallerConnection() throws SQLException {
+        final var failure = new SQLException("cannot prepare");
+        when(connection.prepareStatement(anyString())).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "invalid sql"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verifyNoInteractions(statement, resultSet);
+        verifyCallerStillOwnsTheConnection();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 수정 SQL 실패는 원인을 보존하고 Statement만 닫는다")
+    void borrowedUpdateFailureClosesOnlyTheStatement() throws SQLException {
+        final var failure = new SQLException("cannot update");
+        when(statement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "update sample set name = ?", "Alice"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(statement).close();
+        verifyNoInteractions(resultSet);
+        verifyCallerStillOwnsTheConnection();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 목록 조회 SQL 실패는 미획득 ResultSet에 접근하지 않는다")
+    void borrowedQueryExecutionFailureDoesNotTouchUnacquiredResults() throws SQLException {
+        final var failure = new SQLException("cannot query");
+        when(statement.executeQuery()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, "select name from sample", row -> row.getString("name")))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(statement).close();
+        verifyNoInteractions(resultSet);
+        verifyCallerStillOwnsTheConnection();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 단건 조회 SQL 실패도 Statement만 닫는다")
+    void borrowedSingleQueryExecutionFailureClosesOnlyTheStatement() throws SQLException {
+        final var failure = new SQLException("cannot query one row");
+        when(statement.executeQuery()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select id from sample", row -> row.getLong("id")))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(statement).close();
+        verifyNoInteractions(resultSet);
+        verifyCallerStillOwnsTheConnection();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 목록 매핑 실패는 원래 런타임 예외와 연결 소유권을 보존한다")
+    void borrowedQueryMappingFailurePreservesTheFailureAndConnection() throws SQLException {
+        final var failure = new IllegalArgumentException("invalid mapped value");
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, "select name from sample", row -> {
+            throw failure;
+        })).isSameAs(failure);
+
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 단건 매핑 SQL 실패는 원인을 보존하고 조회 자원만 닫는다")
+    void borrowedSingleQueryMappingSqlFailurePreservesTheCauseAndConnection() throws SQLException {
+        final var failure = new SQLException("cannot map single row");
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select id from sample", row -> {
+            throw failure;
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verifyBorrowedQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("단건 여부를 확인하는 두 번째 커서 이동이 실패해도 SQL 원인과 자원 정리를 보존한다")
+    void secondRowCheckFailurePreservesTheSqlCause() throws SQLException {
+        final var failure = new SQLException("cannot check second row");
+        when(resultSet.next()).thenReturn(true).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select id from sample", row -> row.getLong("id")))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("다건 조회 예외가 발생한 뒤의 자원 종료 실패는 suppressed로 남긴다")
+    void cardinalityFailureIsNotReplacedByCleanupFailures() throws SQLException {
+        final var resultCloseFailure = new SQLException("cannot close result set");
+        final var statementCloseFailure = new SQLException("cannot close statement");
+        final var connectionCloseFailure = new SQLException("cannot close connection");
+        when(resultSet.next()).thenReturn(true, true, true);
+        doThrow(resultCloseFailure).when(resultSet).close();
+        doThrow(statementCloseFailure).when(statement).close();
+        doThrow(connectionCloseFailure).when(connection).close();
+
+        final var failure = assertThrows(DataAccessException.class,
+                () -> jdbcTemplate.queryForObject("select id from sample", row -> row.getLong("id")));
+
+        assertThat(failure).hasMessageContaining("two or more").hasNoCause();
+        assertThat(failure.getSuppressed())
+                .containsExactly(resultCloseFailure, statementCloseFailure, connectionCloseFailure);
+        verify(resultSet, times(2)).next();
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    @DisplayName("외부 연결의 null 매퍼도 SQL 실행이나 호출자 연결 접근 전에 거부한다")
+    void borrowedQueryNullMappersAreRejectedBeforeUsingTheConnection() {
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, "select id from sample", (RowMapper<Long>) null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select id from sample", (RowMapper<Long>) null))
+                .isInstanceOf(NullPointerException.class);
+
+        verifyNoInteractions(dataSource, connection, statement, resultSet);
+    }
+
+    private void verifyBorrowedQueryResourcesClosed() throws SQLException {
+        final var order = inOrder(resultSet, statement);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verifyCallerStillOwnsTheConnection();
+    }
+
+    private void verifyCallerStillOwnsTheConnection() throws SQLException {
+        verifyNoInteractions(dataSource);
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
