@@ -6,6 +6,10 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -14,9 +18,11 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
+        resetUsers(dataSource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -65,5 +71,14 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    private static void resetUsers(final DataSource dataSource) {
+        try (var connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute("truncate table users restart identity");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to reset users table for test", e);
+        }
     }
 }
