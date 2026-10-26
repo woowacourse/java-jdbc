@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +28,10 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final PreparedStatementSetter statementSetter) {
-        final var connection = DataSourceUtils.getConnection(dataSource);
-        try {
+        execute(connection -> {
             update(connection, sql, statementSetter);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+            return null;
+        });
     }
 
     public void update(final Connection connection, final String sql, final Object... args) {
@@ -57,12 +56,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
                              final RowMapper<T> rowMapper) {
-        final var connection = DataSourceUtils.getConnection(dataSource);
-        try {
-            return query(connection, sql, statementSetter, rowMapper);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        }
+        return execute(connection -> query(connection, sql, statementSetter, rowMapper));
     }
 
     public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
@@ -118,6 +112,15 @@ public class JdbcTemplate {
             );
         }
         return results.get(0);
+    }
+
+    private <T> T execute(final Function<Connection, T> action) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            return action.apply(connection);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
