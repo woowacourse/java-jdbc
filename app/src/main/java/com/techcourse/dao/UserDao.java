@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.RowMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -35,13 +34,11 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        jdbcTemplate.update(createQueryForInsert(), pstmt -> setValuesForInsert(user, pstmt));
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(createQueryForUpdate(), pstmt -> setValuesForUpdate(user, pstmt));
     }
 
     public List<User> findAll() {
@@ -61,5 +58,26 @@ public class UserDao {
                 select * from users where account = ?
                 """;
         return jdbcTemplate.query(sql, userRowMapper, account).getFirst();
+    }
+
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set account = ?, password = ?, email = ? where id = ?";
+    }
+
+    private void setValuesForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+    }
+
+    private void setValuesForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
+        pstmt.setString(1, user.getAccount());
+        pstmt.setString(2, user.getPassword());
+        pstmt.setString(3, user.getEmail());
+        pstmt.setLong(4, user.getId());
     }
 }
