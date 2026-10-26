@@ -3,15 +3,21 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +38,90 @@ class JdbcTemplateTest {
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
+    }
+
+    @Test
+    @DisplayName("가변 인자를 순서대로 바인딩하고 수정된 행 수를 반환한다")
+    void updateBindsArgumentsInOrder() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        int affectedRows = jdbcTemplate.update(
+                "update users set password = ? where id = ?", "password99", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        var order = inOrder(statement);
+        order.verify(statement).setObject(1, "password99");
+        order.verify(statement).setObject(2, 1L);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("setter로 SQL 타입을 지정해 바인딩하고 수정된 행 수를 반환한다")
+    void updateUsesCustomSetter() throws SQLException {
+        Date date = Date.valueOf("2026-01-01");
+        when(statement.executeUpdate()).thenReturn(2);
+
+        int affectedRows = jdbcTemplate.update(
+                "update events set description = ?, event_date = ?",
+                pstmt -> {
+                    pstmt.setNull(1, Types.VARCHAR);
+                    pstmt.setDate(2, date);
+                });
+
+        assertThat(affectedRows).isEqualTo(2);
+        var order = inOrder(statement);
+        order.verify(statement).setNull(1, Types.VARCHAR);
+        order.verify(statement).setDate(2, date);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("Statement 준비가 실패하면 원인을 보존하고 Connection을 닫는다")
+    void statementPreparationFailureClosesConnection() throws SQLException {
+        SQLException cause = new SQLException("Statement 준비 실패");
+        when(connection.prepareStatement(anyString())).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users where id = ?", 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(connection).close();
+        verifyNoInteractions(statement);
+    }
+
+    @Test
+    @DisplayName("가변 인자 바인딩이 실패하면 실행하지 않고 원인을 보존하며 자원을 닫는다")
+    void argumentBindingFailureClosesResources() throws SQLException {
+        SQLException cause = new SQLException("파라미터 바인딩 실패");
+        doThrow(cause).when(statement).setObject(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users where id = ?", 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("setter 바인딩이 실패하면 실행하지 않고 원인을 보존하며 자원을 닫는다")
+    void setterBindingFailureClosesResources() throws SQLException {
+        SQLException cause = new SQLException("setter 바인딩 실패");
+        doThrow(cause).when(statement).setLong(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "delete from users where id = ?", pstmt -> pstmt.setLong(1, 1L)))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
