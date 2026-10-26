@@ -33,7 +33,10 @@ public class JdbcTemplate {
             final PreparedStatementSetter setter,
             final RowMapper<T> rowMapper
             ) {
-        return executeQuery(sql, resultSet -> {
+        return executeQuery(
+                sql,
+                setter,
+                resultSet -> {
                     List<T> results = new ArrayList<>();
 
                     while (resultSet.next()) {
@@ -41,8 +44,7 @@ public class JdbcTemplate {
                     }
 
                     return results;
-                },
-                setter
+                }
         );
     }
 
@@ -62,7 +64,10 @@ public class JdbcTemplate {
             final PreparedStatementSetter setter,
             final RowMapper<T> rowMapper
             ) {
-        return executeQuery(sql, resultSet -> {
+        return executeQuery(
+                sql,
+                setter,
+                resultSet -> {
                     if (!resultSet.next()) {
                         throw new DataAccessException("조회 결과가 없습니다.");
                     }
@@ -74,8 +79,7 @@ public class JdbcTemplate {
                     }
 
                     return result;
-                },
-                setter
+                }
         );
     }
 
@@ -84,14 +88,14 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        return execute(sql,  PreparedStatement::executeUpdate, setter);
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
 
     private <T> T execute(
             final String sql,
-            final PreparedStatementCallback<T> callback,
-            final PreparedStatementSetter setter
+            final PreparedStatementSetter setter,
+            final PreparedStatementCallback<T> callback
             ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -107,15 +111,18 @@ public class JdbcTemplate {
 
     private <T> T executeQuery(
             final String sql,
-            final ResultSetExtractor<T> extractor,
-            final PreparedStatementSetter setter
-    ) {
-        return execute(sql, pstmt -> {
+            final PreparedStatementSetter setter,
+            final ResultSetExtractor<T> extractor
+            ) {
+        return execute(
+                sql,
+                setter,
+                pstmt -> {
                     try (ResultSet resultSet = pstmt.executeQuery()) {
                         return extractor.extractData(resultSet);
                     }
-                },
-                setter
+                }
+
         );
     }
 
