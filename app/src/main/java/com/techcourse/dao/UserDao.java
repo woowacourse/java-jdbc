@@ -6,7 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -58,24 +57,11 @@ public class UserDao {
     public void update(User user) {
         int updatedRows = jdbcTemplate.update(
                 UPDATE_SQL,
-                updateParameters(user)
+                user.getPassword(),
+                user.getId()
         );
 
         validateUpdatedRows(user.getId(), updatedRows);
-    }
-
-    public void update(Connection connection, User user) {
-        int updatedRows = jdbcTemplate.update(
-                connection,
-                UPDATE_SQL,
-                updateParameters(user)
-        );
-
-        validateUpdatedRows(user.getId(), updatedRows);
-    }
-
-    private Object[] updateParameters(User user) {
-        return new Object[]{user.getPassword(), user.getId()};
     }
 
     private void validateUpdatedRows(long id, int updatedRows) {
@@ -95,15 +81,6 @@ public class UserDao {
 
     public User findById(Long id) {
         return jdbcTemplate.queryForObject(
-                FIND_BY_ID_SQL,
-                USER_ROW_MAPPER,
-                id
-        );
-    }
-
-    public User findById(Connection connection, Long id) {
-        return jdbcTemplate.queryForObject(
-                connection,
                 FIND_BY_ID_SQL,
                 USER_ROW_MAPPER,
                 id

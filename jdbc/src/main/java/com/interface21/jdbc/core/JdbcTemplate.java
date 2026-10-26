@@ -23,30 +23,18 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public int update(Connection connection, String sql, Object... params) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, statement -> mapRows(statement, rowMapper), params);
-    }
-
-    public <T> List<T> query(Connection connection, String sql,
-                             RowMapper<T> rowMapper, Object... params) {
-        return execute(connection, sql, statement -> mapRows(statement, rowMapper), params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, statement -> mapSingleRow(statement, rowMapper), params);
     }
 
-    public <T> T queryForObject(Connection connection, String sql,
-                                RowMapper<T> rowMapper, Object... params) {
-        return execute(connection, sql, statement -> mapSingleRow(statement, rowMapper), params);
-    }
+    private <T> List<T> mapRows(
+            PreparedStatement statement,
+            RowMapper<T> rowMapper) throws SQLException {
 
-    private <T> List<T> mapRows(PreparedStatement statement,
-                                RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = statement.executeQuery()) {
             List<T> results = new ArrayList<>();
 
@@ -58,8 +46,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T mapSingleRow(PreparedStatement statement,
-                               RowMapper<T> rowMapper) throws SQLException {
+    private <T> T mapSingleRow(
+            PreparedStatement statement,
+            RowMapper<T> rowMapper) throws SQLException {
+
         try (ResultSet rs = statement.executeQuery()) {
             if (!rs.next()) {
                 return null;
@@ -75,9 +65,10 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(String sql,
-                          PreparedStatementCallback<T> callback,
-                          Object... params) {
+    private <T> T execute(
+            String sql,
+            PreparedStatementCallback<T> callback,
+            Object... params) {
 
         Connection connection = DataSourceUtils.getConnection(dataSource);
 
@@ -88,10 +79,12 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> T execute(Connection connection,
-                          String sql,
-                          PreparedStatementCallback<T> callback,
-                          Object... params) {
+    private <T> T execute(
+            Connection connection,
+            String sql,
+            PreparedStatementCallback<T> callback,
+            Object... params) {
+
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, params);
             return callback.execute(statement);
@@ -100,8 +93,10 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(PreparedStatement statement,
-                               Object... params) throws SQLException {
+    private void setParameters(
+            PreparedStatement statement,
+            Object... params) throws SQLException {
+
         for (int i = 0; i < params.length; i++) {
             statement.setObject(i + 1, params[i]);
         }
