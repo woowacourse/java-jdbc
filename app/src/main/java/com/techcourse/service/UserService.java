@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -35,15 +36,18 @@ public class UserService {
         user.changePassword(newPassword);
 
         try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
             try {
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                connection.setAutoCommit(false);
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
                 connection.commit();
             } catch (RuntimeException | SQLException | Error e) {
                 connection.rollback();
                 throw e;
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
             throw new DataAccessException("트랜잭션 처리 중 오류가 발생했습니다.", e);
