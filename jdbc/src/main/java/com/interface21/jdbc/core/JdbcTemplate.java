@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +30,24 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... parameters) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        update(conn, sql, createPreparedStatementSetter(parameters));
+        execute(conn -> {
+            update(conn, sql, createPreparedStatementSetter(parameters));
+            return null;
+        });
     }
 
-    public void update(final Connection connection, final String sql, final PreparedStatementSetter pss) {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rm, final Object... parameters) {
+        return execute(conn -> {
+            final List<T> results = query(conn, sql, rm, createPreparedStatementSetter(parameters));
+            return DataAccessUtils.nullableSingleResult(results);
+        });
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rm, final Object... parameters) {
+        return execute(conn -> query(conn, sql, rm, createPreparedStatementSetter(parameters)));
+    }
+
+    private void update(final Connection connection, final String sql, final PreparedStatementSetter pss) {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             pstmt.executeUpdate();
@@ -42,22 +56,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rm, final Object... parameters) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        return queryForObject(conn, sql, rm, createPreparedStatementSetter(parameters));
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
-        final List<T> results = query(connection, sql, rm, pss);
-        return DataAccessUtils.nullableSingleResult(results);
-    }
-
-    public <T> List<T> query(final String sql, final RowMapper<T> rm, final Object... parameters) {
-        Connection conn = DataSourceUtils.getConnection(dataSource);
-        return query(conn, sql, rm, createPreparedStatementSetter(parameters));
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
+    private  <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rm, final PreparedStatementSetter pss) {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pss.setParameters(pstmt);
             return mapResultSetToObject(rm, pstmt);
@@ -84,5 +83,14 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, parameters[i]);
             }
         };
+    }
+
+    private <T> T execute(final Function<Connection, T> action) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            return action.apply(conn);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        }
     }
 }
