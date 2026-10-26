@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,6 +31,14 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pss, PreparedStatement::executeUpdate);
+    }
+
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return update(conn, sql, argumentSetter(args));
+    }
+
+    public int update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
+        return execute(conn, sql, pss, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -57,8 +66,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
-        try (final var conn = dataSource.getConnection();
-             final var pstmt = conn.prepareStatement(sql)) {
+        try (final var conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, action);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
+        try (final var pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setValues(pstmt);

@@ -4,11 +4,13 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
 
+    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
     private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
@@ -27,8 +29,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection conn, final User user) {
+        jdbcTemplate.update(conn, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
