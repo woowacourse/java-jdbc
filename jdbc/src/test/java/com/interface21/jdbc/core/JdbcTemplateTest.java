@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +13,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,7 +74,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> rs.getString("name"), 7L))
-                .isInstanceOf(RuntimeException.class).hasCause(cause);
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(statement).close();
         verify(connection).close();
@@ -85,7 +87,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true);
 
         assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> { throw cause; }, 7L))
-                .isInstanceOf(RuntimeException.class).hasCause(cause);
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verifyQueryResourcesClosed();
     }
@@ -98,7 +100,7 @@ class JdbcTemplateTest {
         when(statement.executeUpdate()).thenThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.update(sql))
-                .isInstanceOf(RuntimeException.class).hasCause(cause);
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(statement).close();
         verify(connection).close();
@@ -113,6 +115,63 @@ class JdbcTemplateTest {
                 .hasCause(cause);
 
         verify(connection).close();
+    }
+
+    @Test
+    void connectionFailureIsTranslated() throws SQLException {
+        final var cause = new SQLException("connection failed");
+        when(dataSource.getConnection()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL))
+                .isInstanceOf(DataAccessException.class).hasCause(cause).hasMessageContaining(SQL);
+    }
+
+    @Test
+    void bindingFailureClosesResources() throws SQLException {
+        final var cause = new SQLException("binding failed");
+        doThrow(cause).when(statement).setObject(1, 7L);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateAcceptsCustomSetter() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(2);
+
+        assertThat(jdbcTemplate.update(SQL, pstmt -> pstmt.setLong(1, 7L))).isEqualTo(2);
+
+        verify(statement).setLong(1, 7L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryAcceptsCustomSetter() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.query(SQL, pstmt -> pstmt.setLong(1, 7L),
+                rs -> rs.getString("name"))).containsExactly("gugu");
+
+        verify(statement).setLong(1, 7L);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void mappingRuntimeFailureStillClosesResources() throws SQLException {
+        final var cause = new IllegalArgumentException("invalid row");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> { throw cause; }, 7L))
+                .isSameAs(cause);
+
+        verifyQueryResourcesClosed();
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
