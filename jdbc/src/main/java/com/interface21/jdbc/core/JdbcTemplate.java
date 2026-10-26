@@ -22,18 +22,11 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, PreparedStatementSetter setter) {
-        execute(sql, setter, pstmt -> {
-            pstmt.executeUpdate();
-            return null;
-        });
+        execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public void update(String sql, Object... args) {
         update(sql, pstmt -> bindParameters(pstmt, args));
-    }
-
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        return query(sql, pstmt -> {}, rowMapper);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {

@@ -11,14 +11,12 @@ public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
-        return new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email")
-        );
-    };
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     public UserDao(final DataSource dataSource) {
         this(new JdbcTemplate(dataSource));
