@@ -31,6 +31,10 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, new ArgumentPreparedStatementSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
@@ -40,7 +44,7 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final PreparedStatementSetter preparedStatementSetter
     ) {
-        return executeQuery(sql, preparedStatementSetter, resultSet -> mapRows(resultSet, rowMapper));
+        return execute(sql, preparedStatementSetter, queryCallback(resultSet -> mapRows(resultSet, rowMapper)));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -52,19 +56,25 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final PreparedStatementSetter preparedStatementSetter
     ) {
-        return executeQuery(sql, preparedStatementSetter, resultSet -> mapSingleRow(resultSet, rowMapper));
+        return execute(sql, preparedStatementSetter, queryCallback(resultSet -> mapSingleRow(resultSet, rowMapper)));
     }
 
-    private <T> T executeQuery(
+    public <T> T queryForObject(
+            final Connection connection,
             final String sql,
-            final PreparedStatementSetter preparedStatementSetter,
-            final ResultSetCallback<T> callback
+            final RowMapper<T> rowMapper,
+            final Object... args
     ) {
-        return execute(sql, preparedStatementSetter, preparedStatement -> {
+        return execute(connection, sql, new ArgumentPreparedStatementSetter(args),
+                queryCallback(resultSet -> mapSingleRow(resultSet, rowMapper)));
+    }
+
+    private <T> PreparedStatementCallback<T> queryCallback(final ResultSetCallback<T> callback) {
+        return preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
                 return callback.doInResultSet(resultSet);
             }
-        });
+        };
     }
 
     private <T> T execute(
@@ -72,10 +82,23 @@ public class JdbcTemplate {
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> callback
     ) {
+        try (final Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, preparedStatementSetter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("Connection 처리에 실패했습니다.", e);
+        }
+    }
+
+    // 전달받은 Connection은 호출한 쪽이 트랜잭션과 함께 관리하므로 닫지 않는다.
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter preparedStatementSetter,
+            final PreparedStatementCallback<T> callback
+    ) {
         log.debug("query : {}", sql);
 
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             return callback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
