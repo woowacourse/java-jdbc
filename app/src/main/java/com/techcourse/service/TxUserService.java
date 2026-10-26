@@ -47,7 +47,11 @@ public class TxUserService implements UserService {
 
                 conn.commit();
             } catch (SQLException | RuntimeException e) {
-                conn.rollback();
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackException) {
+                    e.addSuppressed(rollbackException);
+                }
                 throw e;
             } finally {
                 TransactionSynchronizationManager.unbindResource(dataSource);
