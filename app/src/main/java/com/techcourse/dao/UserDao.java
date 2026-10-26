@@ -60,21 +60,13 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        final List<Object> rows = jdbcTemplate.query(sql, new Object[]{id}, userRowMapper());
-        if (rows.isEmpty()) {
-            return null;
-        }
-        return (User) rows.getFirst();
+        return (User) jdbcTemplate.queryForObject(sql, new Object[]{id}, userRowMapper());
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        final List<Object> rows = jdbcTemplate.query(sql, new Object[]{account}, userRowMapper());
-        if (rows.isEmpty()) {
-            return null;
-        }
-        return (User) rows.getFirst();
+        return (User) jdbcTemplate.queryForObject(sql, new Object[]{account}, userRowMapper());
     }
 
     private RowMapper userRowMapper() {

@@ -48,6 +48,14 @@ public class JdbcTemplate {
         }
     }
 
+    public Object queryForObject(final String sql, final Object[] args, final RowMapper rowMapper) {
+        final List<Object> rows = query(sql, args, rowMapper);
+        if (rows.isEmpty()) {
+            return null;
+        }
+        return rows.getFirst();
+    }
+
     private void bindParameters(final PreparedStatement preparedStatement, final Object[] args)
             throws SQLException {
         for (int i = 0; i < args.length; i++) {
