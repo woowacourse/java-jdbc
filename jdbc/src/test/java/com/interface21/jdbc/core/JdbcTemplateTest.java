@@ -18,7 +18,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -150,5 +149,47 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rowMapper, 1L))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+    }
+
+    @Test
+    void update_WhenConnectionNotGiven_ThenCloseConnection() throws SQLException {
+        jdbcTemplate.update("update users set account = ? where id = ?", "gugu", 1L);
+
+        verify(preparedStatement).executeUpdate();
+        verify(preparedStatement).close();
+        verify(connection).close();
+        verify(dataSource).getConnection();
+    }
+
+    @Test
+    void update_WhenConnectionGiven_ThenNotCloseConnection() throws SQLException {
+        jdbcTemplate.update(connection, "update users set account = ? where id = ?", "gugu", 1L);
+
+        verify(preparedStatement).executeUpdate();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void update_WhenConnectionNotGivenAndExecuteFails_ThenCloseConnection() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenThrow(new SQLException("fail"));
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void update_WhenConnectionGivenAndExecuteFails_ThenNotCloseConnection() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenThrow(new SQLException("fail"));
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set account = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
     }
 }
