@@ -4,13 +4,20 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import com.interface21.dao.DataAccessException;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final DataSource dataSource, final UserDao userDao, final UserHistoryDao userHistoryDao) {
+        this.dataSource = dataSource;
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
@@ -24,9 +31,47 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+        try (Connection connection = dataSource.getConnection()) {
+            changePasswordInTransaction(connection, id, newPassword, createBy);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private void changePasswordInTransaction(final Connection connection, final long id, final String newPassword,
+                                              final String createBy) {
+        try {
+            connection.setAutoCommit(false);
+            updatePasswordAndLogHistory(connection, id, newPassword, createBy);
+            connection.commit();
+        } catch (SQLException | RuntimeException e) {
+            throw rollbackAndTranslate(connection, e);
+        }
+    }
+
+    private void updatePasswordAndLogHistory(final Connection connection, final long id, final String newPassword,
+                                             final String createBy) throws SQLException {
+        final var user = userDao.findById(connection, id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        if (userDao.update(connection, user) != 1) {
+            throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
+        }
+        userHistoryDao.log(connection, new UserHistory(user, createBy));
+    }
+
+    private RuntimeException rollbackAndTranslate(final Connection connection, final Exception cause) {
+        rollback(connection, cause);
+        if (cause instanceof SQLException sqlException) {
+            return new DataAccessException(sqlException);
+        }
+        return (RuntimeException) cause;
+    }
+
+    private void rollback(final Connection connection, final Exception cause) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            cause.addSuppressed(e);
+        }
     }
 }
