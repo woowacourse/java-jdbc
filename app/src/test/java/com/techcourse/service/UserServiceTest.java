@@ -8,11 +8,19 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class UserServiceTest {
 
@@ -96,5 +104,71 @@ class UserServiceTest {
         );
 
         assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void restoresAutoCommitBeforeClosingAfterCommit() throws SQLException {
+        verifyAutoCommitRestored(false, true);
+    }
+
+    @Test
+    void restoresAutoCommitBeforeClosingAfterRollback() throws SQLException {
+        verifyAutoCommitRestored(true, true);
+    }
+
+    @Test
+    void preservesInitiallyDisabledAutoCommit() throws SQLException {
+        verifyAutoCommitRestored(false, false);
+    }
+
+    @Test
+    void doesNotEnableAutoCommitWhenRollbackFails() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            final var borrowedConnection = spy(connection);
+            final var dataSource = mock(DataSource.class);
+            when(dataSource.getConnection()).thenReturn(borrowedConnection);
+            doAnswer(invocation -> null).when(borrowedConnection).close();
+            final var rollbackFailure = new SQLException("rollback failed");
+            doThrow(rollbackFailure).when(borrowedConnection).rollback();
+            final var service = new UserService(dataSource, userDao, new MockUserHistoryDao(jdbcTemplate));
+
+            final var failure = assertThrows(DataAccessException.class,
+                    () -> service.changePassword(userId, "newPassword", "gugu"));
+
+            assertThat(failure.getSuppressed()).containsExactly(rollbackFailure);
+            verify(borrowedConnection, never()).setAutoCommit(true);
+            verify(borrowedConnection).close();
+            connection.rollback();
+        }
+    }
+
+    private void verifyAutoCommitRestored(final boolean fails, final boolean originalAutoCommit) throws SQLException {
+        final var connection = spy(DataSourceConfig.getInstance().getConnection());
+        connection.setAutoCommit(originalAutoCommit);
+        final var dataSource = mock(DataSource.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        doAnswer(invocation -> {
+            assertThat(connection.getAutoCommit()).isEqualTo(originalAutoCommit);
+            return invocation.callRealMethod();
+        }).when(connection).close();
+        final UserHistoryDao historyDao = fails
+                ? new MockUserHistoryDao(jdbcTemplate)
+                : new UserHistoryDao(jdbcTemplate);
+        final var service = new UserService(dataSource, userDao, historyDao);
+
+        try {
+            if (fails) {
+                assertThrows(DataAccessException.class,
+                        () -> service.changePassword(userId, "newPassword", "gugu"));
+            } else {
+                service.changePassword(userId, "newPassword", "gugu");
+            }
+            verify(connection).close();
+        } finally {
+            if (!connection.isClosed()) {
+                connection.rollback();
+                connection.close();
+            }
+        }
     }
 }

@@ -31,7 +31,10 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
         try (final var connection = dataSource.getConnection()) {
+            final var originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
+            boolean transactionCompleted = false;
+            Throwable failure = null;
 
             try {
                 final var user = userDao.findById(connection, id);
@@ -41,22 +44,45 @@ public class UserService {
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
 
                 connection.commit();
+                transactionCompleted = true;
             } catch (SQLException | RuntimeException | Error e) {
-                rollback(connection, e);
+                failure = e;
+                transactionCompleted = rollback(connection, e);
                 throw e;
+            } finally {
+                if (transactionCompleted) {
+                    restoreAutoCommit(connection, originalAutoCommit, failure);
+                }
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private void rollback(
+    private boolean rollback(
             final Connection connection,
             final Throwable cause
     ) {
         try {
             connection.rollback();
+            return true;
         } catch (SQLException e) {
+            cause.addSuppressed(e);
+            return false;
+        }
+    }
+
+    private void restoreAutoCommit(
+            final Connection connection,
+            final boolean originalAutoCommit,
+            final Throwable cause
+    ) throws SQLException {
+        try {
+            connection.setAutoCommit(originalAutoCommit);
+        } catch (SQLException e) {
+            if (cause == null) {
+                throw e;
+            }
             cause.addSuppressed(e);
         }
     }
