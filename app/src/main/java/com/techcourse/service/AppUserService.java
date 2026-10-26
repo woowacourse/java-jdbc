@@ -1,17 +1,16 @@
 package com.techcourse.service;
 
-import com.interface21.transaction.annotation.Transactional;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
-public class UserServiceImpl implements UserService {
+public class AppUserService implements UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserServiceImpl(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public AppUserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
@@ -22,12 +21,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void insert(final User user) {
+    public void save(final User user) {
         userDao.insert(user);
     }
 
     @Override
-    @Transactional
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var user = findById(id);
         if (user == null) {

@@ -1,6 +1,7 @@
 package com.interface21.transaction.support;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.annotation.Transactional;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.AfterEach;
@@ -96,6 +97,54 @@ public class TransactionalProxyTest {
         });
 
         service.transactional();
+    }
+
+    @Test
+    void participatingTransactionReusesConnectionAndDoesNotCommitEarly() {
+        final var inner = proxy(() -> jdbcTemplate.update("insert into entries values (?)", 2));
+        final var outer = proxy(() -> {
+            final var connection = TransactionSynchronizationManager.getResource(dataSource);
+            jdbcTemplate.update("insert into entries values (?)", 1);
+            inner.transactional();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+            throw new IllegalStateException("outer failed");
+        });
+
+        assertThatThrownBy(outer::transactional).isInstanceOf(IllegalStateException.class);
+        assertCount(0L);
+    }
+
+    @Test
+    void participatingTransactionsCommitTogether() throws Exception {
+        final var inner = proxy(() -> jdbcTemplate.update("insert into entries values (?)", 2));
+        final var outer = proxy(() -> {
+            jdbcTemplate.update("insert into entries values (?)", 1);
+            inner.transactional();
+        });
+
+        outer.transactional();
+        assertCount(2L);
+    }
+
+    @Test
+    void caughtInnerFailureStillRollsBackOuterTransaction() {
+        final var inner = proxy(() -> {
+            jdbcTemplate.update("insert into entries values (?)", 2);
+            throw new IllegalArgumentException("inner failed");
+        });
+        final var outer = proxy(() -> {
+            jdbcTemplate.update("insert into entries values (?)", 1);
+            try {
+                inner.transactional();
+            } catch (IllegalArgumentException ignored) {
+                // 호출자가 예외를 잡더라도 안쪽 실패는 rollback-only로 남는다.
+            }
+        });
+
+        assertThatThrownBy(outer::transactional).isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("rollback-only");
+        assertCount(0L);
+        assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isFalse();
     }
 
     private TestService proxy(final Action action) {

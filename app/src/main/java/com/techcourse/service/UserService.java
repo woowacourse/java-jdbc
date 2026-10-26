@@ -4,6 +4,11 @@ import com.techcourse.domain.User;
 
 public interface UserService {
     User findById(long id);
-    void insert(User user);
+    void save(User user);
+
+    default void insert(final User user) {
+        save(user);
+    }
+
     void changePassword(long id, String newPassword, String createBy);
 }
