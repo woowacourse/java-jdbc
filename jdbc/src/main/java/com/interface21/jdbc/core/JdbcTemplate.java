@@ -44,7 +44,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
 
         if (results.size() != 1) {
