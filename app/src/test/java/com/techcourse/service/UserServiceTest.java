@@ -35,12 +35,11 @@ class UserServiceTest {
         h2DataSource.setUser("sa");
         h2DataSource.setPassword("");
 
-        this.dataSource = h2DataSource;
-
+        dataSource = h2DataSource;
         DatabasePopulatorUtils.execute(dataSource);
 
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.userDao = new UserDao(jdbcTemplate);
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        userDao = new UserDao(jdbcTemplate);
 
         userDao.insert(new User(
                 "gugu",
@@ -52,21 +51,18 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(
-                userDao,
-                userHistoryDao,
+
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, userHistoryDao),
                 dataSource
         );
 
         final var user = userDao.findByAccount("gugu");
-        final var newPassword = "qqqqq";
-        final var createdBy = "gugu";
 
-        userService.changePassword(user.getId(), newPassword, createdBy);
+        userService.changePassword(user.getId(), "qqqqq", "gugu");
 
         final var actual = userService.findById(user.getId());
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo("qqqqq");
 
         final var historyCount = jdbcTemplate.queryForObject(
                 """
@@ -77,8 +73,8 @@ class UserServiceTest {
                 """,
                 rs -> rs.getInt(1),
                 user.getId(),
-                newPassword,
-                createdBy
+                "qqqqq",
+                "gugu"
         );
 
         assertThat(historyCount).isEqualTo(1);
@@ -87,21 +83,20 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(
-                userDao,
-                userHistoryDao,
+
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, userHistoryDao),
                 dataSource
         );
 
         final var user = userDao.findByAccount("gugu");
         final var originalPassword = user.getPassword();
-        final var newPassword = "newPassword";
 
         assertThrows(
                 DataAccessException.class,
                 () -> userService.changePassword(
                         user.getId(),
-                        newPassword,
+                        "newPassword",
                         "gugu"
                 )
         );
@@ -122,26 +117,35 @@ class UserServiceTest {
     void testTransactionRollbackOnError() throws SQLException {
         final var connection = spy(dataSource.getConnection());
         final var transactionDataSource = mock(DataSource.class);
+
         when(transactionDataSource.getConnection()).thenReturn(connection);
 
-        final var failingHistoryDao = new UserHistoryDao(jdbcTemplate) {
+        final var transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+        final var transactionUserDao = new UserDao(transactionJdbcTemplate);
+
+        final var failingHistoryDao = new UserHistoryDao(transactionJdbcTemplate) {
             @Override
-            public void log(Connection conn, UserHistory userHistory) {
+            public void log(UserHistory userHistory) {
                 throw new AssertionError("의도적으로 이력 저장 실패");
             }
         };
 
-        final var userService = new UserService(
-                userDao,
-                failingHistoryDao,
+        final UserService userService = new TxUserService(
+                new AppUserService(transactionUserDao, failingHistoryDao),
                 transactionDataSource
         );
 
         final var user = userDao.findByAccount("gugu");
         final var originalPassword = user.getPassword();
 
-        final var error = assertThrows(AssertionError.class,
-                () -> userService.changePassword(user.getId(), "newPassword", "gugu"));
+        final var error = assertThrows(
+                AssertionError.class,
+                () -> userService.changePassword(
+                        user.getId(),
+                        "newPassword",
+                        "gugu"
+                )
+        );
 
         assertThat(error).hasMessage("의도적으로 이력 저장 실패");
 
