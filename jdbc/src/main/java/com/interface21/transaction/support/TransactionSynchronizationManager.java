@@ -7,22 +7,33 @@ import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        return resources.get().get(key);
+        Map<DataSource, Connection> map = resources.get();
+        return map == null ? null : map.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
+        Map<DataSource, Connection> map = resources.get();
+        if (map == null) {
+            map = new HashMap<>();
+            resources.set(map);
+        }
+        if (map.putIfAbsent(key, value) != null) {
+            throw new IllegalStateException("이미 바인딩된 커넥션이 있습니다.");
+        }
     }
 
     public static Connection unbindResource(DataSource key) {
-        Map<DataSource, Connection> connectionMap = resources.get();
-        Connection removed = connectionMap.remove(key);
-        if (connectionMap.isEmpty()) {
+        Map<DataSource, Connection> map = resources.get();
+        if (map == null) {
+            return null;
+        }
+        Connection removed = map.remove(key);
+        if (map.isEmpty()) {
             resources.remove();
         }
         return removed;
