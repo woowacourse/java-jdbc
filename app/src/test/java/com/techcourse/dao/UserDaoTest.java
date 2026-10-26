@@ -17,6 +17,8 @@ class UserDaoTest {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
 
         userDao = new UserDao(DataSourceConfig.getInstance());
+        new com.interface21.jdbc.core.JdbcTemplate(DataSourceConfig.getInstance())
+                .update("truncate table users restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -65,5 +67,24 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+    @Test
+    void missingUser() {
+        assertThat(userDao.findById(-1L)).isNull();
+        assertThat(userDao.findByAccount("missing")).isNull();
+    }
+
+    @Test
+    void quotedAccountIsBoundAsData() {
+        final var account = "o'reilly' OR '1'='1";
+        userDao.insert(new User(account, "password", "test@example.com"));
+        assertThat(userDao.findByAccount(account).getAccount()).isEqualTo(account);
+        assertThat(userDao.findAll()).hasSize(2);
+    }
+
+    @Test
+    void templateConstructor() {
+        final var dao = new UserDao(new com.interface21.jdbc.core.JdbcTemplate(DataSourceConfig.getInstance()));
+        assertThat(dao.findByAccount("gugu").getEmail()).isEqualTo("hkkang@woowahan.com");
     }
 }
