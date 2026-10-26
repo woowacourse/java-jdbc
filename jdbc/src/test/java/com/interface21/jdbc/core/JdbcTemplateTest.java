@@ -42,6 +42,18 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void exposesConnectionAcquisitionFailureAsDataAccessException() throws SQLException {
+        final var exception = new SQLException("Cannot obtain connection");
+        when(dataSource.getConnection()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+
+        verify(connection, never()).close();
+    }
+
+    @Test
     void update() throws SQLException {
         final var sql = "update users set password = ? where id = ?";
         when(pstmt.executeUpdate()).thenReturn(1);
