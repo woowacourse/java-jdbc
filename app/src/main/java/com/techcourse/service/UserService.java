@@ -57,7 +57,7 @@ public class UserService {
                 rollback(connection, e);
                 throw new DataAccessException(e);
 
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | Error e) {
                 rollback(connection, e);
                 throw e;
             }
@@ -67,7 +67,7 @@ public class UserService {
         }
     }
 
-    private void rollback(Connection connection, Exception originalException) {
+    private void rollback(Connection connection, Throwable originalException) {
         try {
             connection.rollback();
         } catch (SQLException rollbackException) {

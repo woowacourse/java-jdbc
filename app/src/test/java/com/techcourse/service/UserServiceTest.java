@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -11,10 +12,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 class UserServiceTest {
 
@@ -105,6 +109,48 @@ class UserServiceTest {
         final var actual = userService.findById(user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
+
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history",
+                rs -> rs.getInt(1)
+        );
+
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void testTransactionRollbackOnError() throws SQLException {
+        final var connection = spy(dataSource.getConnection());
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+
+        final var failingHistoryDao = new UserHistoryDao(jdbcTemplate) {
+            @Override
+            public void log(Connection conn, UserHistory userHistory) {
+                throw new AssertionError("의도적으로 이력 저장 실패");
+            }
+        };
+
+        final var userService = new UserService(
+                userDao,
+                failingHistoryDao,
+                transactionDataSource
+        );
+
+        final var user = userDao.findByAccount("gugu");
+        final var originalPassword = user.getPassword();
+
+        final var error = assertThrows(AssertionError.class,
+                () -> userService.changePassword(user.getId(), "newPassword", "gugu"));
+
+        assertThat(error).hasMessage("의도적으로 이력 저장 실패");
+
+        final var order = inOrder(connection);
+        order.verify(connection).rollback();
+        order.verify(connection).close();
+
+        assertThat(userDao.findById(user.getId()).getPassword())
+                .isEqualTo(originalPassword);
 
         final var historyCount = jdbcTemplate.queryForObject(
                 "select count(*) from user_history",
