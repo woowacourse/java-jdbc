@@ -1,8 +1,10 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,8 +34,34 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final PreparedStatementSetter setter
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
+        try (final var connection = dataSource.getConnection()) {
+            return query(connection, sql, rowMapper, setter);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> query(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        return query(
+                connection,
+                sql,
+                rowMapper,
+                statement -> bindParameters(statement, args)
+        );
+    }
+
+    public <T> List<T> query(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final PreparedStatementSetter setter
+    ) {
+        try (final var statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
 
             try (final var resultSet = statement.executeQuery()) {
@@ -48,6 +76,21 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
+    }
+
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        final var results = query(connection, sql, rowMapper, args);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.getFirst();
     }
 
     public <T> T queryForObject(
@@ -80,9 +123,31 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)
-        ) {
+        try (final var connection = dataSource.getConnection()) {
+            return update(connection, sql, setter);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public int update(
+            final Connection connection,
+            final String sql,
+            final Object... args
+    ) {
+        return update(
+                connection,
+                sql,
+                statement -> bindParameters(statement, args)
+        );
+    }
+
+    public int update(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter
+    ) {
+        try (final var statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {

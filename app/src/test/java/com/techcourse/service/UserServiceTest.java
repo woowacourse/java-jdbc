@@ -8,56 +8,167 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private long userId;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var dataSource = DataSourceConfig.getInstance();
+
+        DatabasePopulatorUtils.execute(dataSource);
+
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
+        jdbcTemplate.update("delete from user_history");
+        jdbcTemplate.update("delete from users");
+
+        final var user = new User(
+                "gugu",
+                "password",
+                "hkkang@woowahan.com"
+        );
+
         userDao.insert(user);
+        this.userId = userDao.findByAccount("gugu").getId();
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(userId, newPassword, createBy);
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(userId);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+
+        final var historyCount = jdbcTemplate.queryForObject(
+                """ 
+                select count(*) 
+                from user_history 
+                where user_id = ? 
+                  and password = ? 
+                  and created_by = ? 
+                  and created_at is not null 
+                """,
+                resultSet -> resultSet.getLong(1),
+                userId,
+                newPassword,
+                createBy
+        );
+
+        assertThat(historyCount).isEqualTo(1L);
     }
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
 
+        final var originalPassword = userService.findById(userId).getPassword();
         final var newPassword = "newPassword";
         final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
+
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(userId, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        final var actual = userService.findById(userId);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
+
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ?",
+                resultSet -> resultSet.getLong(1),
+                userId
+        );
+
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void restoresAutoCommitBeforeClosingAfterCommit() throws SQLException {
+        verifyAutoCommitRestored(false, true);
+    }
+
+    @Test
+    void restoresAutoCommitBeforeClosingAfterRollback() throws SQLException {
+        verifyAutoCommitRestored(true, true);
+    }
+
+    @Test
+    void preservesInitiallyDisabledAutoCommit() throws SQLException {
+        verifyAutoCommitRestored(false, false);
+    }
+
+    @Test
+    void doesNotEnableAutoCommitWhenRollbackFails() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            final var borrowedConnection = spy(connection);
+            final var dataSource = mock(DataSource.class);
+            when(dataSource.getConnection()).thenReturn(borrowedConnection);
+            doAnswer(invocation -> null).when(borrowedConnection).close();
+            final var rollbackFailure = new SQLException("rollback failed");
+            doThrow(rollbackFailure).when(borrowedConnection).rollback();
+            final var service = new UserService(dataSource, userDao, new MockUserHistoryDao(jdbcTemplate));
+
+            final var failure = assertThrows(DataAccessException.class,
+                    () -> service.changePassword(userId, "newPassword", "gugu"));
+
+            assertThat(failure.getSuppressed()).containsExactly(rollbackFailure);
+            verify(borrowedConnection, never()).setAutoCommit(true);
+            verify(borrowedConnection).close();
+            connection.rollback();
+        }
+    }
+
+    private void verifyAutoCommitRestored(final boolean fails, final boolean originalAutoCommit) throws SQLException {
+        final var connection = spy(DataSourceConfig.getInstance().getConnection());
+        connection.setAutoCommit(originalAutoCommit);
+        final var dataSource = mock(DataSource.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        doAnswer(invocation -> {
+            assertThat(connection.getAutoCommit()).isEqualTo(originalAutoCommit);
+            return invocation.callRealMethod();
+        }).when(connection).close();
+        final UserHistoryDao historyDao = fails
+                ? new MockUserHistoryDao(jdbcTemplate)
+                : new UserHistoryDao(jdbcTemplate);
+        final var service = new UserService(dataSource, userDao, historyDao);
+
+        try {
+            if (fails) {
+                assertThrows(DataAccessException.class,
+                        () -> service.changePassword(userId, "newPassword", "gugu"));
+            } else {
+                service.changePassword(userId, "newPassword", "gugu");
+            }
+            verify(connection).close();
+        } finally {
+            if (!connection.isClosed()) {
+                connection.rollback();
+                connection.close();
+            }
+        }
     }
 }
