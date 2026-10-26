@@ -8,6 +8,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import java.sql.SQLException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,5 +59,19 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void testTransactionRollback_WhenFailAfterLog_ThenHistoryRollBack() {
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(userDao, userHistoryDao);
+
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        final List<Long> histories = jdbcTemplate.query(
+                "select id from user_history where user_id = ?", rs -> rs.getLong("id"), 1L);
+        assertThat(histories).isEmpty();
+        assertThat(userService.findById(1L).getPassword()).isNotEqualTo("newPassword");
     }
 }
