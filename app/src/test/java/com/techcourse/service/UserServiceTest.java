@@ -53,7 +53,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -84,7 +84,7 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         final var originalPassword = userService.findById(userId).getPassword();
         final var newPassword = "newPassword";
@@ -131,8 +131,9 @@ class UserServiceTest {
             final var rollbackFailure = new SQLException("rollback failed");
             doThrow(rollbackFailure).when(borrowedConnection).rollback();
             final var transactionalTemplate = new JdbcTemplate(dataSource);
-            final var service = new UserService(
-                    dataSource, new UserDao(transactionalTemplate), new MockUserHistoryDao(transactionalTemplate));
+            final var appUserService = new AppUserService(
+                    new UserDao(transactionalTemplate), new MockUserHistoryDao(transactionalTemplate));
+            final var service = new TxUserService(appUserService, dataSource);
 
             final var failure = assertThrows(DataAccessException.class,
                     () -> service.changePassword(userId, "newPassword", "gugu"));
@@ -157,7 +158,8 @@ class UserServiceTest {
         final UserHistoryDao historyDao = fails
                 ? new MockUserHistoryDao(transactionalTemplate)
                 : new UserHistoryDao(transactionalTemplate);
-        final var service = new UserService(dataSource, new UserDao(transactionalTemplate), historyDao);
+        final var appUserService = new AppUserService(new UserDao(transactionalTemplate), historyDao);
+        final var service = new TxUserService(appUserService, dataSource);
 
         try {
             if (fails) {
