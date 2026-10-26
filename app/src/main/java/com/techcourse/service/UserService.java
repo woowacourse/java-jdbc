@@ -26,8 +26,11 @@ public class UserService {
         userDao.insert(user);
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
+    public void changePassword(final Connection connection,
+                               final long id,
+                               final String newPassword,
+                               final String createBy) {
+        try (connection) {
             try {
                 connection.setAutoCommit(false);
                 final var user = findById(id);
