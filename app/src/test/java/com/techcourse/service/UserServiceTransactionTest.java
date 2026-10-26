@@ -4,7 +4,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +20,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
@@ -38,6 +39,7 @@ class UserServiceTransactionTest {
 
     private DataSource dataSource;
     private Connection connection;
+    private DataSource daoDataSource;
     private UserDao userDao;
 
     // 예외 자신과, cause 및 suppressed를 따라가며 닿는 모든 예외를 모은다.
@@ -63,25 +65,42 @@ class UserServiceTransactionTest {
         dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         final PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        final ResultSet resultSet = mock(ResultSet.class);
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
         given(preparedStatement.executeUpdate()).willReturn(1);
 
+        // findById가 서비스의 Connection으로 조회할 때 돌려줄 사용자 한 명이다.
+        given(preparedStatement.executeQuery()).willReturn(resultSet);
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getLong("id")).willReturn(USER_ID);
+        given(resultSet.getString("account")).willReturn("gugu");
+        given(resultSet.getString("password")).willReturn("password");
+        given(resultSet.getString("email")).willReturn("hkkang@woowahan.com");
+
         // DAO가 서비스의 Connection을 쓰지 않고 스스로 Connection을 얻으려 하면 이 DataSource를 거치게 된다.
-        final JdbcTemplate jdbcTemplate = new JdbcTemplate(mock(DataSource.class));
-        userDao = new UserDao(jdbcTemplate) {
-            @Override
-            public User findById(final Long id) {
-                return new User(id, "gugu", "password", "hkkang@woowahan.com");
-            }
-        };
+        // mock이라 getConnection()이 null을 돌려주므로, 그런 호출이 있으면 테스트가 바로 깨진다.
+        daoDataSource = mock(DataSource.class);
+        userDao = new UserDao(new JdbcTemplate(daoDataSource));
+    }
+
+    @Test
+    @DisplayName("findById도 서비스의 Connection으로 조회하고, DAO가 따로 Connection을 얻지 않는다")
+    void findsUserWithServiceConnection() throws SQLException {
+        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(daoDataSource)), dataSource);
+
+        userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY);
+
+        verify(dataSource, times(1)).getConnection();
+        verify(connection).prepareStatement(startsWith("select"));
+        verify(daoDataSource, never()).getConnection();
     }
 
     @Test
     @DisplayName("비밀번호 변경과 이력 저장이 모두 성공하면 커밋하고, 롤백하지 않고, Connection을 닫는다")
     void commitsWhenAllSucceed() throws SQLException {
-        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(mock(DataSource.class))), dataSource);
+        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(daoDataSource)), dataSource);
 
         userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY);
 
@@ -91,16 +110,18 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    @DisplayName("autocommit을 끈 하나의 Connection에서 비밀번호 변경과 이력 저장을 실행한 뒤 커밋한다")
-    void runsBothStatementsInOneTransaction() throws SQLException {
-        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(mock(DataSource.class))), dataSource);
+    @DisplayName("autocommit을 끈 하나의 Connection에서 조회, 비밀번호 변경, 이력 저장을 실행한 뒤 커밋한다")
+    void runsAllStatementsInOneTransaction() throws SQLException {
+        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(daoDataSource)), dataSource);
 
         userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY);
 
         verify(dataSource, times(1)).getConnection();
         final var inOrder = inOrder(connection);
         inOrder.verify(connection).setAutoCommit(false);
-        inOrder.verify(connection, times(2)).prepareStatement(anyString());
+        inOrder.verify(connection).prepareStatement(startsWith("select"));
+        inOrder.verify(connection).prepareStatement(startsWith("update"));
+        inOrder.verify(connection).prepareStatement(startsWith("insert"));
         inOrder.verify(connection).commit();
         inOrder.verify(connection).close();
     }
@@ -120,7 +141,7 @@ class UserServiceTransactionTest {
     }
 
     private UserHistoryDao failingHistoryDao(final RuntimeException failure) {
-        return new UserHistoryDao(new JdbcTemplate(mock(DataSource.class))) {
+        return new UserHistoryDao(new JdbcTemplate(daoDataSource)) {
             @Override
             public void log(final Connection connection, final UserHistory userHistory) {
                 throw failure;
@@ -176,7 +197,7 @@ class UserServiceTransactionTest {
     void rollsBackWhenCommitFails() throws SQLException {
         final var commitFailure = new SQLException("커밋 실패");
         willThrow(commitFailure).given(connection).commit();
-        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(mock(DataSource.class))), dataSource);
+        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(daoDataSource)), dataSource);
 
         assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
                 .isInstanceOf(DataAccessException.class)
@@ -192,7 +213,7 @@ class UserServiceTransactionTest {
     @DisplayName("Connection을 얻지 못하면 DataAccessException을 던지고, 쿼리를 실행하지 않는다")
     void failsWhenConnectionUnavailable() throws SQLException {
         given(dataSource.getConnection()).willThrow(new SQLException("연결 실패"));
-        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(mock(DataSource.class))), dataSource);
+        final var userService = new UserService(userDao, new UserHistoryDao(new JdbcTemplate(daoDataSource)), dataSource);
 
         assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
                 .isInstanceOf(DataAccessException.class)

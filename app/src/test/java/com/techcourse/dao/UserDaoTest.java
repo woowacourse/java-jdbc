@@ -92,6 +92,35 @@ class UserDaoTest {
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 
+    @Test
+    void findByIdWithConnection() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            final var user = userDao.findById(connection, 1L);
+
+            assertThat(user.getAccount()).isEqualTo("gugu");
+        }
+    }
+
+    // 같은 Connection으로 읽어야 커밋 전인 자기 변경을 본다. 다른 Connection으로 읽으면 변경 전 값이 보인다.
+    @Test
+    void findByIdWithConnectionSeesUncommittedChangeInSameTransaction() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var originalPassword = user.getPassword();
+        user.changePassword("password99");
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            userDao.update(connection, user);
+
+            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("password99");
+            assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
+
+            connection.rollback();
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
+    }
+
     // 인메모리 DB가 테스트 간에 공유되므로, 매 테스트마다 행을 비우고 id를 1부터 다시 시작시킨다.
     private void truncateUsers(final DataSource dataSource) {
         try (final var connection = dataSource.getConnection();
