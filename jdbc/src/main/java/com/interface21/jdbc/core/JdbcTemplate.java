@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -77,10 +78,13 @@ public class JdbcTemplate {
     private <T> T execute(String sql,
                           PreparedStatementCallback<T> callback,
                           Object... params) {
-        try (Connection connection = dataSource.getConnection()) {
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
             return execute(connection, sql, callback, params);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
