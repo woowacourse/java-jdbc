@@ -130,7 +130,9 @@ class UserServiceTest {
             doAnswer(invocation -> null).when(borrowedConnection).close();
             final var rollbackFailure = new SQLException("rollback failed");
             doThrow(rollbackFailure).when(borrowedConnection).rollback();
-            final var service = new UserService(dataSource, userDao, new MockUserHistoryDao(jdbcTemplate));
+            final var transactionalTemplate = new JdbcTemplate(dataSource);
+            final var service = new UserService(
+                    dataSource, new UserDao(transactionalTemplate), new MockUserHistoryDao(transactionalTemplate));
 
             final var failure = assertThrows(DataAccessException.class,
                     () -> service.changePassword(userId, "newPassword", "gugu"));
@@ -151,10 +153,11 @@ class UserServiceTest {
             assertThat(connection.getAutoCommit()).isEqualTo(originalAutoCommit);
             return invocation.callRealMethod();
         }).when(connection).close();
+        final var transactionalTemplate = new JdbcTemplate(dataSource);
         final UserHistoryDao historyDao = fails
-                ? new MockUserHistoryDao(jdbcTemplate)
-                : new UserHistoryDao(jdbcTemplate);
-        final var service = new UserService(dataSource, userDao, historyDao);
+                ? new MockUserHistoryDao(transactionalTemplate)
+                : new UserHistoryDao(transactionalTemplate);
+        final var service = new UserService(dataSource, new UserDao(transactionalTemplate), historyDao);
 
         try {
             if (fails) {
