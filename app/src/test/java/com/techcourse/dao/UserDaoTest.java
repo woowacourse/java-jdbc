@@ -6,6 +6,7 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,11 +14,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
+    private JdbcDataSource dataSource;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        final var dataSource = new JdbcDataSource();
+        dataSource = new JdbcDataSource();
         dataSource.setURL("jdbc:h2:mem:dao-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
         dataSource.setUser("sa");
         dataSource.setPassword("");
@@ -73,6 +75,24 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void updateWithConnection() throws SQLException {
+        final var newPassword = "passwordWithConnection";
+        final var user = userDao.findById(1L);
+        user.changePassword(newPassword);
+
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+
+            assertThat(connection.isClosed()).isFalse();
+            connection.commit();
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(newPassword);
     }
 
     @Test

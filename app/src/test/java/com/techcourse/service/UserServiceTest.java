@@ -1,63 +1,162 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
-@Disabled
 class UserServiceTest {
 
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var h2DataSource = new JdbcDataSource();
+        h2DataSource.setURL(
+                "jdbc:h2:mem:service-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1"
+        );
+        h2DataSource.setUser("sa");
+        h2DataSource.setPassword("");
+
+        this.dataSource = h2DataSource;
+
+        DatabasePopulatorUtils.execute(dataSource);
+
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        userDao.insert(new User(
+                "gugu",
+                "password",
+                "hkkang@woowahan.com"
+        ));
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(
+                userDao,
+                userHistoryDao,
+                dataSource
+        );
 
+        final var user = userDao.findByAccount("gugu");
         final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        final var createdBy = "gugu";
 
-        final var actual = userService.findById(1L);
+        userService.changePassword(user.getId(), newPassword, createdBy);
+
+        final var actual = userService.findById(user.getId());
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+
+        final var historyCount = jdbcTemplate.queryForObject(
+                """
+                select count(*) from user_history
+                where user_id = ?
+                  and password = ?
+                  and created_by = ?
+                """,
+                rs -> rs.getInt(1),
+                user.getId(),
+                newPassword,
+                createdBy
+        );
+
+        assertThat(historyCount).isEqualTo(1);
     }
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(
+                userDao,
+                userHistoryDao,
+                dataSource
+        );
 
+        final var user = userDao.findByAccount("gugu");
+        final var originalPassword = user.getPassword();
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
 
-        final var actual = userService.findById(1L);
+        assertThrows(
+                DataAccessException.class,
+                () -> userService.changePassword(
+                        user.getId(),
+                        newPassword,
+                        "gugu"
+                )
+        );
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        final var actual = userService.findById(user.getId());
+
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
+
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history",
+                rs -> rs.getInt(1)
+        );
+
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void testTransactionRollbackOnError() throws SQLException {
+        final var connection = spy(dataSource.getConnection());
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+
+        final var failingHistoryDao = new UserHistoryDao(jdbcTemplate) {
+            @Override
+            public void log(Connection conn, UserHistory userHistory) {
+                throw new AssertionError("의도적으로 이력 저장 실패");
+            }
+        };
+
+        final var userService = new UserService(
+                userDao,
+                failingHistoryDao,
+                transactionDataSource
+        );
+
+        final var user = userDao.findByAccount("gugu");
+        final var originalPassword = user.getPassword();
+
+        final var error = assertThrows(AssertionError.class,
+                () -> userService.changePassword(user.getId(), "newPassword", "gugu"));
+
+        assertThat(error).hasMessage("의도적으로 이력 저장 실패");
+
+        final var order = inOrder(connection);
+        order.verify(connection).rollback();
+        order.verify(connection).close();
+
+        assertThat(userDao.findById(user.getId()).getPassword())
+                .isEqualTo(originalPassword);
+
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history",
+                rs -> rs.getInt(1)
+        );
+
+        assertThat(historyCount).isZero();
     }
 }
