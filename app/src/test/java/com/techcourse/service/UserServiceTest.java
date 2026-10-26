@@ -8,13 +8,11 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -23,17 +21,19 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        this.userDao = new UserDao(DataSourceConfig.getInstance());
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table users restart identity");
+        jdbcTemplate.update("truncate table user_history restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
+        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -42,13 +42,15 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(jdbcTemplate.selectMany("select password from user_history",
+                resultSet -> resultSet.getString("password"))).containsExactly(newPassword);
     }
 
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userHistoryDao = new MockUserHistoryDao(DataSourceConfig.getInstance());
+        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -58,6 +60,8 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.selectMany("select id from user_history",
+                resultSet -> resultSet.getLong("id"))).isEmpty();
     }
 }

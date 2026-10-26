@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +44,31 @@ class JdbcTemplateTest {
     @Nested
     @DisplayName("update")
     class Update {
+
+        @Test
+        @DisplayName("전달받은 연결은 닫지 않고 수정 쿼리를 실행한다")
+        void keepCallerOwnedConnectionOpen() throws SQLException {
+            jdbcTemplate.update(connection, "UPDATE users SET name = ?", "피카츄");
+
+            verify(statement).setObject(1, "피카츄");
+            verify(statement).executeUpdate();
+            verify(statement).close();
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("수정 실패 시 전달받은 연결은 닫지 않는다")
+        void keepCallerOwnedConnectionOpenWhenUpdateFails() throws SQLException {
+            SQLException exception = new SQLException("수정 실패");
+            when(statement.executeUpdate()).thenThrow(exception);
+
+            assertThatThrownBy(() -> jdbcTemplate.update(connection, "UPDATE users SET name = ?", "피카츄"))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCause(exception);
+            verify(statement).close();
+            verify(connection, never()).close();
+        }
 
         @Test
         @DisplayName("수정 쿼리를 실행한다")
@@ -151,6 +177,31 @@ class JdbcTemplateTest {
         @BeforeEach
         void setUpResultSet() throws SQLException {
             when(statement.executeQuery()).thenReturn(resultSet);
+        }
+
+        @Test
+        @DisplayName("전달받은 연결은 닫지 않고 단건 조회한다")
+        void keepCallerOwnedConnectionOpen() throws SQLException {
+            when(resultSet.next()).thenReturn(true, false);
+
+            assertThat(jdbcTemplate.selectOne(connection, "SELECT name FROM users", row -> "피카츄"))
+                    .contains("피카츄");
+            verify(resultSet).close();
+            verify(statement).close();
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("조회 실패 시 전달받은 연결은 닫지 않는다")
+        void keepCallerOwnedConnectionOpenWhenQueryFails() throws SQLException {
+            when(resultSet.next()).thenReturn(true, true);
+
+            assertThatThrownBy(() -> jdbcTemplate.selectOne(connection, "SELECT name FROM users", row -> "피카츄"))
+                    .isInstanceOf(DataAccessException.class);
+            verify(resultSet).close();
+            verify(statement).close();
+            verify(connection, never()).close();
         }
 
         @Test
