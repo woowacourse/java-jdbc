@@ -28,10 +28,16 @@ public class JdbcTemplate {
             String sql,
             Object... params
     ) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        try (Connection connection = dataSource.getConnection()) {
+            update(connection, sql, params);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public void update(Connection connection, String sql, Object... params) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(params, statement);
             log.debug("query : {}", sql);
 
@@ -47,10 +53,21 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... params
     ) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        try (Connection connection = dataSource.getConnection()) {
+            return selectOne(connection, sql, rowMapper, params);
+        } catch (SQLException exception) {
+            log.error(exception.getMessage(), exception);
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public <T> Optional<T> selectOne(
+            Connection connection,
+            String sql,
+            RowMapper<T> rowMapper,
+            Object... params
+    ) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(params, statement);
             log.debug("query : {}", sql);
 
