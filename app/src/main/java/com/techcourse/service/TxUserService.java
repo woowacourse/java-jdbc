@@ -1,18 +1,15 @@
 package com.techcourse.service;
 
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.DataSourceUtils;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
-import java.sql.SQLException;
 
 public class TxUserService implements UserService {
 
     private final UserService userService;
-    private final DataSource dataSource;
+    private final TransactionTemplate transactionTemplate;
 
     public TxUserService(final UserService userService) {
         this(userService, DataSourceConfig.getInstance());
@@ -20,7 +17,7 @@ public class TxUserService implements UserService {
 
     public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
-        this.dataSource = dataSource;
+        this.transactionTemplate = new TransactionTemplate(dataSource);
     }
 
     @Override
@@ -35,37 +32,8 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var connection = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
-        Throwable originalException = null;
-        try {
-            final var autoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-
-            try {
-                userService.changePassword(id, newPassword, createBy);
-                connection.commit();
-            } catch (SQLException | RuntimeException | Error e) {
-                try {
-                    connection.rollback();
-                    connection.setAutoCommit(autoCommit);
-                } catch (SQLException cleanupException) {
-                    e.addSuppressed(cleanupException);
-                }
-                throw e;
-            }
-
-            connection.setAutoCommit(autoCommit);
-        } catch (SQLException e) {
-            final var exception = new DataAccessException(e);
-            originalException = exception;
-            throw exception;
-        } catch (RuntimeException | Error e) {
-            originalException = e;
-            throw e;
-        } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource, originalException);
-        }
+        transactionTemplate.execute(
+                () -> userService.changePassword(id, newPassword, createBy)
+        );
     }
 }
