@@ -39,12 +39,11 @@ class DataSourceUtilsTest {
     }
 
     @Test
-    void 바인딩된_커넥션이_없으면_getConnection_시_새_커넥션을_얻어_바인딩한다() throws SQLException {
+    void 바인딩된_커넥션이_없으면_getConnection_시_새_커넥션을_얻는다() throws SQLException {
         //when
         DataSourceUtils.getConnection(dataSource);
 
         //then
-        assertThat(TransactionSynchronizationManager.findConnection(dataSource)).contains(connectionFromDataSource);
         verify(dataSource).getConnection();
     }
 
@@ -74,7 +73,16 @@ class DataSourceUtilsTest {
     }
 
     @Test
-    void releaseConnection_시_바인딩을_해제하고_커넥션을_닫는다() throws SQLException {
+    void 바인딩되지_않은_커넥션이면_releaseConnection_시_커넥션을_닫는다() throws SQLException {
+        //when
+        DataSourceUtils.releaseConnection(connectionFromDataSource, dataSource);
+
+        //then
+        verify(connectionFromDataSource).close();
+    }
+
+    @Test
+    void 바인딩된_커넥션이면_releaseConnection_시_커넥션을_닫지_않고_바인딩도_유지한다() throws SQLException {
         //given
         TransactionSynchronizationManager.bindResource(dataSource, connectionFromDataSource);
 
@@ -82,19 +90,17 @@ class DataSourceUtilsTest {
         DataSourceUtils.releaseConnection(connectionFromDataSource, dataSource);
 
         //then
-        assertThat(TransactionSynchronizationManager.findConnection(dataSource)).isEmpty();
-        verify(connectionFromDataSource).close();
+        verify(connectionFromDataSource, never()).close();
+        assertThat(TransactionSynchronizationManager.findConnection(dataSource)).contains(connectionFromDataSource);
     }
 
     @Test
-    void 커넥션을_닫지_못하면_releaseConnection_시_예외가_발생하지만_바인딩은_해제된다() throws SQLException {
+    void 커넥션을_닫지_못하면_releaseConnection_시_예외가_발생한다() throws SQLException {
         //given
-        TransactionSynchronizationManager.bindResource(dataSource, connectionFromDataSource);
         doThrow(new SQLException()).when(connectionFromDataSource).close();
 
         //when & then
         assertThatThrownBy(() -> DataSourceUtils.releaseConnection(connectionFromDataSource, dataSource))
                 .isInstanceOf(DataAccessException.class);
-        assertThat(TransactionSynchronizationManager.findConnection(dataSource)).isEmpty();
     }
 }

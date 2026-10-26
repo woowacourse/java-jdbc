@@ -16,9 +16,7 @@ public abstract class DataSourceUtils {
         return TransactionSynchronizationManager.findConnection(dataSource)
                 .orElseGet(() -> {
                     try {
-                        Connection created = dataSource.getConnection();
-                        TransactionSynchronizationManager.bindResource(dataSource, created);
-                        return created;
+                        return dataSource.getConnection();
                     } catch (SQLException e) {
                         throw new CannotGetJdbcConnectionException("JDBC 커넥션을 얻는 데 실패했습니다.", e);
                     }
@@ -26,8 +24,11 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (TransactionSynchronizationManager.findConnection(dataSource).isPresent()) {
+            return;
+        }
+
         try {
-            TransactionSynchronizationManager.unbindResource(dataSource);
             connection.close();
         } catch (SQLException e) {
             throw new DataAccessException("JDBC 커넥션을 닫는 데 실패했습니다.", e);
