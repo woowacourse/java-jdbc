@@ -7,7 +7,6 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ConcurrentModificationException;
 import javax.sql.DataSource;
 
 public class UserService {
