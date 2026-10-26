@@ -26,6 +26,13 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
+        return query(sql, pstmt -> setParameters(pstmt, params), rowMapper);
+    }
+    public <T> List<T> query(
+            final String sql,
+            final PreparedStatementSetter setter,
+            final RowMapper<T> rowMapper
+            ) {
         return executeQuery(sql, resultSet -> {
                     List<T> results = new ArrayList<>();
 
@@ -35,7 +42,7 @@ public class JdbcTemplate {
 
                     return results;
                 },
-                params
+                setter
         );
     }
 
@@ -44,6 +51,17 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
+        return queryForObject(
+                sql,
+                pstmt -> setParameters(pstmt, params),
+                rowMapper
+        );
+    }
+    public <T> T queryForObject(
+            final String sql,
+            final PreparedStatementSetter setter,
+            final RowMapper<T> rowMapper
+            ) {
         return executeQuery(sql, resultSet -> {
                     if (!resultSet.next()) {
                         throw new DataAccessException("조회 결과가 없습니다.");
@@ -57,7 +75,7 @@ public class JdbcTemplate {
 
                     return result;
                 },
-                params
+                setter
         );
     }
 
@@ -90,14 +108,14 @@ public class JdbcTemplate {
     private <T> T executeQuery(
             final String sql,
             final ResultSetExtractor<T> extractor,
-            final Object... params
+            final PreparedStatementSetter setter
     ) {
         return execute(sql, pstmt -> {
                     try (ResultSet resultSet = pstmt.executeQuery()) {
                         return extractor.extractData(resultSet);
                     }
                 },
-                pstmt -> setParameters(pstmt, params)
+                setter
         );
     }
 
