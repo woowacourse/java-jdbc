@@ -39,8 +39,11 @@ class JdbcTemplateTest {
 
     @Test
     void update는_인자를_순서대로_채우고_실행한_뒤_자원을_닫는다() throws SQLException {
-        jdbcTemplate.update("insert into users (account, password) values (?, ?)", "gugu", "password");
+        final var sql = "insert into users (account, password) values (?, ?)";
 
+        jdbcTemplate.update(sql, "gugu", "password");
+
+        verify(connection).prepareStatement(sql);
         verify(pstmt).setObject(1, "gugu");
         verify(pstmt).setObject(2, "password");
         verify(pstmt).executeUpdate();
@@ -52,10 +55,12 @@ class JdbcTemplateTest {
     void query는_모든_행을_RowMapper로_변환한다() throws SQLException {
         given(rs.next()).willReturn(true, true, false);
         given(rs.getString("account")).willReturn("gugu", "pobi");
+        final var sql = "select account from users";
 
-        final var actual = jdbcTemplate.query("select account from users", r -> r.getString("account"));
+        final var actual = jdbcTemplate.query(sql, r -> r.getString("account"));
 
         assertThat(actual).containsExactly("gugu", "pobi");
+        verify(connection).prepareStatement(sql);
         verify(rs).close();
     }
 
@@ -87,16 +92,35 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                 "select account from users", r -> r.getString("account")))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("1개를 초과");
     }
 
     @Test
-    void SQLException이_발생하면_DataAccessException으로_감싸고_커넥션을_닫는다() throws SQLException {
-        given(pstmt.executeUpdate()).willThrow(new SQLException("DB 오류"));
+    void SQLException이_발생하면_DataAccessException으로_감싸고_자원을_닫는다() throws SQLException {
+        final var cause = new SQLException("DB 오류");
+        given(pstmt.executeUpdate()).willThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(DataAccessException.class)
-                .hasCauseInstanceOf(SQLException.class);
+                .hasCause(cause);
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void RowMapper에서_SQLException이_발생해도_원인을_유지하고_모든_자원을_닫는다() throws SQLException {
+        final var cause = new SQLException("매핑 오류");
+        given(rs.next()).willReturn(true);
+        final RowMapper<String> failingRowMapper = r -> {
+            throw cause;
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", failingRowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(rs).close();
+        verify(pstmt).close();
         verify(connection).close();
     }
 }
