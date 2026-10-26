@@ -5,10 +5,18 @@ import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
 public class UserDao {
+
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,14 +34,28 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
+    public void update(Connection connection, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        return jdbcTemplate.query(sql, createRowMapper());
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return findOne(sql, id);
+    }
+
+    public Optional<User> findById(Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        try {
+            return Optional.of(jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     public Optional<User> findByAccount(final String account) {
@@ -43,17 +65,9 @@ public class UserDao {
 
     private Optional<User> findOne(final String sql, final Object... args) {
         try {
-            return Optional.of(jdbcTemplate.queryForObject(sql, createRowMapper(), args));
+            return Optional.of(jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, args));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
-    }
-
-    private static RowMapper<User> createRowMapper() {
-        return rs -> new User(
-                rs.getLong("id"),
-                rs.getString("account"),
-                rs.getString("password"),
-                rs.getString("email"));
     }
 }

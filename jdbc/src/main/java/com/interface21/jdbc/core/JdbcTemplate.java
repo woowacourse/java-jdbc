@@ -38,7 +38,16 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> rows = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
+        final List<T> rows = execute(connection, sql, createSetter(args),
+                preparedStatement -> extractRows(preparedStatement, rowMapper));
+        return singleResult(rows);
+    }
+
+    private <T> T singleResult(List<T> rows) {
         if (rows.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
         }
@@ -56,6 +65,10 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
+    public int update(Connection connection, String query, Object... args) {
+        return execute(connection, query, createSetter(args), PreparedStatement::executeUpdate);
+    }
+
     private PreparedStatementSetter createSetter(Object... args) {
         return preparedStatement -> {
             for (int i = 0; i < args.length; i++) {
@@ -69,9 +82,21 @@ public class JdbcTemplate {
             PreparedStatementSetter preparedStatementSetter,
             PreparedStatementCallback<T> preparedStatementCallback
     ) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, preparedStatementSetter, preparedStatementCallback);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(
+            Connection connection,
+            String sql,
+            PreparedStatementSetter preparedStatementSetter,
+            PreparedStatementCallback<T> preparedStatementCallback
+    ) {
         log.debug("query : {}", sql);
-        try(Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatementSetter.setValues(preparedStatement);
             return preparedStatementCallback.doInPreparedStatement(preparedStatement);
         } catch (SQLException e) {
