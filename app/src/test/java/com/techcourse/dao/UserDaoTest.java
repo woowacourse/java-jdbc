@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,9 +33,7 @@ class UserDaoTest {
 
     @Test
     void findAll() {
-        final var users = userDao.findAll();
-
-        assertThat(users).isNotEmpty();
+        assertThat(userDao.findAll()).isNotEmpty();
     }
 
     @Test
@@ -46,53 +45,63 @@ class UserDaoTest {
 
     @Test
     void findByAccount() {
-        final var account = "gugu";
-        final var user = userDao.findByAccount(account);
+        final var user = userDao.findByAccount("gugu");
 
-        assertThat(user.getAccount()).isEqualTo(account);
+        assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
     void insert() {
-        final var account = "insert-gugu";
-        final var user = new User(account, "password", "hkkang@woowahan.com");
+        final var user = new User(
+                "insert-gugu",
+                "password",
+                "hkkang@woowahan.com"
+        );
 
         userDao.insert(user);
 
-        final var actual = userDao.findById(2L);
-
-        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(userDao.findById(2L).getAccount())
+                .isEqualTo("insert-gugu");
     }
 
     @Test
     void update() {
-        final var newPassword = "password99";
         final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        user.changePassword("password99");
 
         userDao.update(user);
 
-        final var actual = userDao.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(userDao.findById(1L).getPassword())
+                .isEqualTo("password99");
     }
 
     @Test
-    void updateWithConnection() throws SQLException {
-        final var newPassword = "passwordWithConnection";
+    void updateWithinTransaction() throws SQLException {
         final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        user.changePassword("newPassword");
 
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            userDao.update(connection, user);
+            TransactionSynchronizationManager.bindResource(
+                    dataSource, connection
+            );
 
-            assertThat(connection.isClosed()).isFalse();
-            connection.commit();
+            try {
+                userDao.update(user);
+
+                assertThat(connection.isClosed()).isFalse();
+                assertThat(userDao.findById(1L).getPassword())
+                        .isEqualTo("newPassword");
+
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
 
-        assertThat(userDao.findById(1L).getPassword()).isEqualTo(newPassword);
+        assertThat(userDao.findById(1L).getPassword())
+                .isEqualTo("password");
     }
 
     @Test
