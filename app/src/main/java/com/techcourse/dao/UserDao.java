@@ -3,10 +3,14 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class UserDao {
+
+    private final String UPDATE_USER_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
+    private final String SELECT_USER_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
             rs.getLong("id"),
@@ -32,9 +36,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(UPDATE_USER_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    public void update(final Connection conn, final User user) {
+        jdbcTemplate.update(conn, UPDATE_USER_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -44,9 +50,11 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(SELECT_USER_BY_ID_SQL, USER_ROW_MAPPER, id);
+    }
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+    public User findById(final Connection conn, final Long id) {
+        return jdbcTemplate.queryForObject(conn, SELECT_USER_BY_ID_SQL, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
