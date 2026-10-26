@@ -43,7 +43,7 @@ public class JdbcTemplate {
             if (rs.next()) {
                 return rowMapper.mapRow(rs, 0);
             }
-
+            return null;
         });
     }
 
