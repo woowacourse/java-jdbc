@@ -55,10 +55,14 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable originalException = null;
         try {
             return execute(connection, sql, callback, args);
+        } catch (RuntimeException | Error e) {
+            originalException = e;
+            throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource, originalException);
         }
     }
 

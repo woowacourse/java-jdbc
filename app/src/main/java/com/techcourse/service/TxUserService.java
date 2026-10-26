@@ -37,6 +37,7 @@ public class TxUserService implements UserService {
     public void changePassword(final long id, final String newPassword, final String createBy) {
         final var connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
+        Throwable originalException = null;
         try {
             final var autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
@@ -56,10 +57,15 @@ public class TxUserService implements UserService {
 
             connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            final var exception = new DataAccessException(e);
+            originalException = exception;
+            throw exception;
+        } catch (RuntimeException | Error e) {
+            originalException = e;
+            throw e;
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource, originalException);
         }
     }
 }

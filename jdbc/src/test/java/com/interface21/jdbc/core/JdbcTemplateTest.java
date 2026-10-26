@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DuplicateKeyException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +52,48 @@ class JdbcTemplateTest {
                 .hasCause(exception);
 
         verify(connection, never()).close();
+    }
+
+    @Test
+    void preservesSqlFailureWhenConnectionReleaseAlsoFails() throws SQLException {
+        final var sqlException = new SQLException("SQL execution failed");
+        final var closeException = new SQLException("Connection close failed");
+        when(pstmt.executeUpdate()).thenThrow(sqlException);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(sqlException)
+                .satisfies(exception -> {
+                    assertThat(exception.getSuppressed()).hasSize(1);
+                    assertThat(exception.getSuppressed()[0]).hasCause(closeException);
+                });
+    }
+
+    @Test
+    void preservesErrorWhenConnectionReleaseAlsoFails() throws SQLException {
+        final var error = new AssertionError("Execution failed");
+        final var closeException = new SQLException("Connection close failed");
+        when(pstmt.executeUpdate()).thenThrow(error);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isSameAs(error)
+                .satisfies(exception -> {
+                    assertThat(exception.getSuppressed()).hasSize(1);
+                    assertThat(exception.getSuppressed()[0]).hasCause(closeException);
+                });
+    }
+
+    @Test
+    void reportsReleaseFailureWhenSqlSucceeds() throws SQLException {
+        final var closeException = new SQLException("Connection close failed");
+        when(pstmt.executeUpdate()).thenReturn(1);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(closeException);
     }
 
     @Test

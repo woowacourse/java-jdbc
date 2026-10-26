@@ -25,6 +25,20 @@ public abstract class DataSourceUtils {
         }
     }
 
+    public static void releaseConnection(Connection connection, DataSource dataSource,
+                                         Throwable originalException) {
+        try {
+            releaseConnection(connection, dataSource);
+        } catch (RuntimeException | Error releaseException) {
+            if (originalException == null) {
+                throw releaseException;
+            }
+            if (originalException != releaseException) {
+                originalException.addSuppressed(releaseException);
+            }
+        }
+    }
+
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         if (connection == null || connection == TransactionSynchronizationManager.getResource(dataSource)) {
             return;
