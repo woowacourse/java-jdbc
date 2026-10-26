@@ -3,7 +3,9 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
@@ -67,5 +69,24 @@ class JdbcTemplateTest {
         verify(pstmt).setObject(2, 1L);
         verify(pstmt).close();
         verify(connection).close();
+    }
+
+    @Test
+    void updateWithConnection() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+
+        String sql = "update users set password = ? where id = ?";
+
+        when(connection.prepareStatement(sql)).thenReturn(pstmt);
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        jdbcTemplate.update(connection, sql, "newpassword", 1L);
+
+        verify(pstmt).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
     }
 }

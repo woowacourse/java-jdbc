@@ -28,11 +28,12 @@ public class JdbcTemplate {
     ) {
         return query(sql, pstmt -> setParameters(pstmt, params), rowMapper);
     }
+
     public <T> List<T> query(
             final String sql,
             final PreparedStatementSetter setter,
             final RowMapper<T> rowMapper
-            ) {
+    ) {
         return executeQuery(
                 sql,
                 setter,
@@ -59,11 +60,12 @@ public class JdbcTemplate {
                 rowMapper
         );
     }
+
     public <T> T queryForObject(
             final String sql,
             final PreparedStatementSetter setter,
             final RowMapper<T> rowMapper
-            ) {
+    ) {
         return executeQuery(
                 sql,
                 setter,
@@ -91,15 +93,42 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    public int update(
+            final Connection connection,
+            final String sql,
+            final Object... params
+    ) {
+        return update(connection, sql, pstmt -> setParameters(pstmt, params));
+    }
+
+    public int update(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter
+    ) {
+        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
+    }
 
     private <T> T execute(
             final String sql,
             final PreparedStatementSetter setter,
             final PreparedStatementCallback<T> callback
-            ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    ) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
+        }
 
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter,
+            final PreparedStatementCallback<T> callback
+    ) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(pstmt);
 
@@ -113,7 +142,7 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementSetter setter,
             final ResultSetExtractor<T> extractor
-            ) {
+    ) {
         return execute(
                 sql,
                 setter,
