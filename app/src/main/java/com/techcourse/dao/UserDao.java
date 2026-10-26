@@ -1,11 +1,12 @@
 package com.techcourse.dao;
 
 import com.interface21.RowMapper;
-import com.interface21.jdbc.core.JdbcQueryTemplate;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -19,11 +20,9 @@ public class UserDao {
     );
 
     private final DataSource dataSource;
-    private final JdbcQueryTemplate queryTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.queryTemplate = new JdbcQueryTemplate(dataSource);
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -47,6 +46,11 @@ public class UserDao {
                 pstmt.setString(1, user.getAccount());
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getEmail());
+            }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
             }
         };
 
@@ -72,27 +76,103 @@ public class UserDao {
                 pstmt.setString(3, user.getEmail());
                 pstmt.setLong(4, user.getId());
             }
+
+            @Override
+            protected Object mapRow(ResultSet rs) throws SQLException {
+                return null;
+            }
         };
 
         template.update();
     }
 
     public List<User> findAll() {
-        String sql = """
-                select id, account, password, email from users;
-                """;
-        return queryTemplate.query(sql, userRowMapper);
+        JdbcTemplate template = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users";
+            }
+
+            @Override
+            public DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) {
+            }
+
+            @Override
+            protected List<User> mapRow(ResultSet rs) throws SQLException {
+                return mapUsers(rs);
+            }
+        };
+
+        return (List<User>) template.query();
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return queryTemplate.queryForObject(sql, userRowMapper, id);
+        JdbcTemplate template = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "select id, account, password, email from users where id = ?";
+            }
+
+            @Override
+            public DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setObject(1, id);
+            }
+
+            @Override
+            protected User mapRow(ResultSet rs) throws SQLException {
+                List<User> users = mapUsers(rs);
+                if (users.size() != 1) {
+                    throw new IllegalStateException(
+                            "조회 결과는 정확히 1건이어야 합니다. 실제: " + users.size());
+                }
+                return users.getFirst();
+            }
+        };
+
+        return (User) template.query();
     }
 
     public User findByAccount(final String account) {
-        String sql = """
-                select * from users where account = ?
-                """;
-        return queryTemplate.query(sql, userRowMapper, account).getFirst();
+        JdbcTemplate template = new JdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "select * from users where account = ?";
+            }
+
+            @Override
+            public DataSource getDataSource() {
+                return UserDao.this.dataSource;
+            }
+
+            @Override
+            protected void setValues(PreparedStatement pstmt) throws SQLException {
+                pstmt.setString(1, account);
+            }
+
+            @Override
+            protected User mapRow(ResultSet rs) throws SQLException {
+                return mapUsers(rs).getFirst();
+            }
+        };
+
+        return (User) template.query();
+    }
+
+    private List<User> mapUsers(final ResultSet rs) throws SQLException {
+        List<User> users = new ArrayList<>();
+        while (rs.next()) {
+            users.add(userRowMapper.mapRow(rs, rs.getRow()));
+        }
+        return users;
     }
 }
