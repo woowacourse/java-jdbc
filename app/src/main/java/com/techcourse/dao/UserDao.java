@@ -31,12 +31,11 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail());
-
+        jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setString(1, user.getAccount());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getEmail());
+        });
     }
 
     public void update(final User user) {
@@ -46,7 +45,10 @@ public class UserDao {
                 WHERE id = ?
                 """;
 
-        jdbcTemplate.update(sql, user.getPassword(), user.getId());
+        jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setString(1, user.getPassword());
+            pstmt.setLong(2, user.getId());
+        });
     }
 
     public List<User> findAll() {
@@ -61,7 +63,7 @@ public class UserDao {
     public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        List<User> results = jdbcTemplate.query(sql, userRowMapper, id);
+        List<User> results = jdbcTemplate.query(sql, pstmt -> pstmt.setLong(1, id), userRowMapper);
 
         return results.stream()
                 .findFirst();
@@ -74,7 +76,7 @@ public class UserDao {
                 WHERE account = ?
                 """;
 
-        List<User> results = jdbcTemplate.query(sql, userRowMapper, account);
+        List<User> results = jdbcTemplate.query(sql, pstmt -> pstmt.setString(1, account), userRowMapper);
 
         return results.stream()
                 .findFirst();
