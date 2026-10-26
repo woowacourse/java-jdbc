@@ -26,26 +26,26 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        return query(sql, pstmt -> setParameters(pstmt, params), rowMapper);
+    }
+    public <T> List<T> query(
+            final String sql,
+            final PreparedStatementSetter setter,
+            final RowMapper<T> rowMapper
+            ) {
+        return executeQuery(
+                sql,
+                setter,
+                resultSet -> {
+                    List<T> results = new ArrayList<>();
 
-            log.debug("query : {}", sql);
+                    while (resultSet.next()) {
+                        results.add(rowMapper.mapRow(resultSet));
+                    }
 
-            setParameters(pstmt, params);
-
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
+                    return results;
                 }
-
-                return results;
-            }
-
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
-        }
+        );
     }
 
     public <T> T queryForObject(
@@ -53,43 +53,77 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
+        return queryForObject(
+                sql,
+                pstmt -> setParameters(pstmt, params),
+                rowMapper
+        );
+    }
+    public <T> T queryForObject(
+            final String sql,
+            final PreparedStatementSetter setter,
+            final RowMapper<T> rowMapper
+            ) {
+        return executeQuery(
+                sql,
+                setter,
+                resultSet -> {
+                    if (!resultSet.next()) {
+                        throw new DataAccessException("조회 결과가 없습니다.");
+                    }
+
+                    T result = rowMapper.mapRow(resultSet);
+
+                    if (resultSet.next()) {
+                        throw new DataAccessException("조회 결과는 1행이어야 합니다. 2행 이상 조회되었습니다.");
+                    }
+
+                    return result;
+                }
+        );
+    }
+
+    public int update(final String sql, final Object... params) {
+        return update(sql, pstmt -> setParameters(pstmt, params));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
+    }
+
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter setter,
+            final PreparedStatementCallback<T> callback
+            ) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement pstmt = connection.prepareStatement(sql)) {
 
-            log.debug("query : {}, sql");
-            setParameters(pstmt, params);
+            log.debug("query : {}", sql);
+            setter.setValues(pstmt);
 
-            try (ResultSet resultSet = pstmt.executeQuery()) {
-                if (!resultSet.next()) {
-                    throw new DataAccessException("조회 결과가 없습니다.");
-                }
-
-                T result = rowMapper.mapRow(resultSet);
-
-                if (resultSet.next()) {
-                    throw new DataAccessException("조회 결과는 1행이여야 합니다. 2행 이상 조회되었습니다.");
-                }
-
-                return result;
-            }
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행 실패 : " + sql, e);
         }
     }
 
-    public int update(final String sql, final Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    private <T> T executeQuery(
+            final String sql,
+            final PreparedStatementSetter setter,
+            final ResultSetExtractor<T> extractor
+            ) {
+        return execute(
+                sql,
+                setter,
+                pstmt -> {
+                    try (ResultSet resultSet = pstmt.executeQuery()) {
+                        return extractor.extractData(resultSet);
+                    }
+                }
 
-            log.debug("query : {}", sql);
-
-            setParameters(pstmt, params);
-
-            return pstmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
-        }
+        );
     }
 
     private void setParameters(
