@@ -28,10 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class UserServiceTest {
 
@@ -95,6 +100,62 @@ class UserServiceTest {
                 () -> service(new MockUserHistoryDao(jdbcTemplate)).changePassword(1L, "newPassword", "operator"));
 
         assertOriginalState();
+    }
+
+    @Test
+    @DisplayName("없는 사용자의 비밀번호 변경은 명확히 거절하고 다음 변경 요청은 정상 처리한다")
+    void missingUserLeavesTheDatabaseUnchangedAndClosesTheConnection() throws SQLException {
+        final var userService = service(new UserHistoryDao(jdbcTemplate));
+        final var connectionCaptor = ArgumentCaptor.forClass(Connection.class);
+
+        final var failure = assertThrows(UserNotFoundException.class,
+                () -> userService.changePassword(404L, "newPassword", "operator"));
+
+        assertThat(failure).hasMessage("User not found: 404");
+        verify(userDao).findById(connectionCaptor.capture(), eq(404L));
+        assertThat(connectionCaptor.getValue().isClosed()).isTrue();
+        assertOriginalState();
+        assertThat(userService.findById(404L)).isNull();
+
+        userService.changePassword(1L, "nextPassword", "operator");
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("nextPassword");
+        assertThat(historyCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("커밋 뒤 복원·종료 실패를 별도 예외로 알려도 비밀번호와 이력은 DB에 반영되어 있다")
+    void cleanupFailuresAreReportedAfterBothWritesHaveActuallyCommitted() throws SQLException {
+        for (final var stage : new String[]{"restore", "close"}) {
+            final var cleanupFailure = new SQLException(stage);
+            try (final var realConnection = dataSource.getConnection()) {
+                final var connection = mock(Connection.class, delegatesTo(realConnection));
+                final var transactionDataSource = mock(DataSource.class);
+                when(transactionDataSource.getConnection()).thenReturn(connection);
+                if (stage.equals("restore")) {
+                    doThrow(cleanupFailure).when(connection).setAutoCommit(true);
+                } else {
+                    doThrow(cleanupFailure).when(connection).close();
+                }
+                final var userService = new UserService(transactionDataSource, userDao,
+                        new UserHistoryDao(jdbcTemplate));
+                final var newPassword = stage + "Password";
+
+                final var failure = assertThrows(TransactionCleanupException.class,
+                        () -> userService.changePassword(1L, newPassword, stage));
+
+                assertThat(failure.getCause()).isSameAs(cleanupFailure);
+                verify(connection).commit();
+                verify(connection, never()).rollback();
+                verify(connection).close();
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo(newPassword);
+                final var savedPassword = jdbcTemplate.queryForObject(
+                        "select password from user_history where created_by = ?",
+                        row -> row.getString("password"), stage);
+                assertThat(savedPassword).isEqualTo(newPassword);
+            }
+        }
+        assertThat(historyCount()).isEqualTo(2L);
     }
 
     @Test

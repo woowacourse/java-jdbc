@@ -32,16 +32,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        var committed = false;
         try (final var connection = dataSource.getConnection()) {
             final var autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
 
             try {
                 final var user = userDao.findById(connection, id);
+                if (user == null) {
+                    throw new UserNotFoundException(id);
+                }
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
+                committed = true;
             } catch (SQLException | RuntimeException | Error e) {
                 rollbackAndRestore(connection, autoCommit, e);
                 throw e;
@@ -49,6 +54,9 @@ public class UserService {
 
             connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
+            if (committed) {
+                throw new TransactionCleanupException(e);
+            }
             throw new DataAccessException("Failed to change password in a transaction", e);
         }
     }

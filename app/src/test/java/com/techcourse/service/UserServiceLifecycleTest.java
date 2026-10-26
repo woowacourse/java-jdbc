@@ -62,6 +62,25 @@ class UserServiceLifecycleTest {
     }
 
     @Test
+    @DisplayName("변경 대상 사용자가 없으면 명확한 예외를 던지고 쓰기 없이 트랜잭션을 정리한다")
+    void missingUserRollsBackWithoutUpdatingOrLogging() throws Exception {
+        final var fixture = fixture();
+
+        final var thrown = assertThrows(UserNotFoundException.class,
+                () -> fixture.service().changePassword(404L, "newPassword", "operator"));
+
+        assertThat(thrown).hasMessage("User not found: 404");
+        verify(fixture.userDao()).findById(fixture.connection(), 404L);
+        verify(fixture.userDao(), never()).update(any(Connection.class), any(User.class));
+        verifyNoInteractions(fixture.historyDao());
+        final var order = inOrder(fixture.connection());
+        order.verify(fixture.connection()).rollback();
+        order.verify(fixture.connection()).setAutoCommit(true);
+        order.verify(fixture.connection()).close();
+        verify(fixture.connection(), never()).commit();
+    }
+
+    @Test
     @DisplayName("업무의 RuntimeException과 Error는 원본을 유지한 채 롤백·복원·종료한다")
     void runtimeAndErrorFailuresRollBackWithoutReplacingTheOriginalFailure() throws Exception {
         for (final var failure : new Throwable[]{new DataAccessException("business"), new AssertionError("business")}) {
@@ -129,6 +148,7 @@ class UserServiceLifecycleTest {
         final var thrown = assertThrows(DataAccessException.class,
                 () -> fixture.service().changePassword(1L, "newPassword", "operator"));
 
+        assertThat(thrown).isExactlyInstanceOf(DataAccessException.class);
         assertThat(thrown.getCause()).isSameAs(failure);
         final var order = inOrder(fixture.connection());
         order.verify(fixture.connection()).commit();
@@ -183,15 +203,16 @@ class UserServiceLifecycleTest {
     }
 
     @Test
-    @DisplayName("커밋 후 연결 종료 실패를 알리되 이미 커밋한 작업에 롤백을 시도하지 않는다")
+    @DisplayName("커밋 후 연결 종료 실패는 업무 실패와 다른 예외로 알리고 롤백하지 않는다")
     void closeFailureAfterCommitIsReportedWithoutRollback() throws Exception {
         final var fixture = fixture();
         final var failure = new SQLException("close");
         doThrow(failure).when(fixture.connection()).close();
 
-        final var thrown = assertThrows(DataAccessException.class,
+        final var thrown = assertThrows(TransactionCleanupException.class,
                 () -> fixture.service().changePassword(1L, "newPassword", "operator"));
 
+        assertThat(thrown).hasMessage("Password change was committed, but connection cleanup failed");
         assertThat(thrown.getCause()).isSameAs(failure);
         verify(fixture.connection()).commit();
         verify(fixture.connection()).setAutoCommit(true);
@@ -199,16 +220,36 @@ class UserServiceLifecycleTest {
     }
 
     @Test
-    @DisplayName("커밋 후 설정 복원 실패에도 연결을 닫고 이미 커밋한 작업은 롤백하지 않는다")
+    @DisplayName("커밋 후 설정 복원 실패도 별도 예외로 알리며 연결을 닫고 롤백하지 않는다")
     void restoreFailureAfterCommitStillClosesTheConnection() throws Exception {
         final var fixture = fixture();
         final var failure = new SQLException("restore");
         doThrow(failure).when(fixture.connection()).setAutoCommit(true);
 
-        final var thrown = assertThrows(DataAccessException.class,
+        final var thrown = assertThrows(TransactionCleanupException.class,
                 () -> fixture.service().changePassword(1L, "newPassword", "operator"));
 
+        assertThat(thrown).hasMessage("Password change was committed, but connection cleanup failed");
         assertThat(thrown.getCause()).isSameAs(failure);
+        verify(fixture.connection()).commit();
+        verify(fixture.connection(), never()).rollback();
+        verify(fixture.connection()).close();
+    }
+
+    @Test
+    @DisplayName("커밋 후 복원과 종료가 모두 실패하면 정리 예외에 두 원인을 보존한다")
+    void restoreAndCloseFailuresAfterCommitPreserveBothCauses() throws Exception {
+        final var fixture = fixture();
+        final var restoreFailure = new SQLException("restore");
+        final var closeFailure = new SQLException("close");
+        doThrow(restoreFailure).when(fixture.connection()).setAutoCommit(true);
+        doThrow(closeFailure).when(fixture.connection()).close();
+
+        final var thrown = assertThrows(TransactionCleanupException.class,
+                () -> fixture.service().changePassword(1L, "newPassword", "operator"));
+
+        assertThat(thrown.getCause()).isSameAs(restoreFailure);
+        assertThat(restoreFailure.getSuppressed()).containsExactly(closeFailure);
         verify(fixture.connection()).commit();
         verify(fixture.connection(), never()).rollback();
         verify(fixture.connection()).close();
