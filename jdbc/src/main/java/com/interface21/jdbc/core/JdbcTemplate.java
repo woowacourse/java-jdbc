@@ -28,8 +28,16 @@ public class JdbcTemplate {
         });
     }
 
+    public void update(String sql, Object... args) {
+        update(sql, pstmt -> bindParameters(pstmt, args));
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         return query(sql, pstmt -> {}, rowMapper);
+    }
+
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, pstmt -> bindParameters(pstmt, args), rowMapper);
     }
 
     public <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
@@ -56,6 +64,12 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private void bindParameters(PreparedStatement pstmt, Object[] args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 
