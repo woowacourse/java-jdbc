@@ -13,6 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.mock;
 
 // 매니저의 상태는 static ThreadLocal이라 같은 스레드에서 도는 테스트끼리 공유된다.
@@ -164,6 +166,115 @@ class TransactionSynchronizationManagerTest {
             });
 
             assertThat(seenByAnotherThread).isSameAs(anotherThreadConnection);
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        }
+    }
+
+    // 같은 키로 덮어쓰면 앞 Connection은 커밋, 롤백, close 없이 사라진다. 그래서 덮어쓰지 않고 바로 실패한다.
+    @Nested
+    @DisplayName("같은 스레드에서 이미 바인딩된 DataSource에는 다시 bind할 수 없다")
+    class DuplicateBind {
+
+        @Test
+        @DisplayName("이미 바인딩된 DataSource에 다른 Connection을 bind하면 IllegalStateException을 던진다")
+        void bindAnotherConnection() {
+            final Connection anotherConnection = mock(Connection.class);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+            assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, anotherConnection))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        // 중복 여부는 Connection이 아니라 DataSource 키로 판단한다.
+        @Test
+        @DisplayName("이미 바인딩된 것과 같은 Connection을 다시 bind해도 IllegalStateException을 던진다")
+        void bindSameConnectionAgain() {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+            assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, connection))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("중복 bind가 실패해도 기존 Connection의 바인딩은 그대로 남는다")
+        void keepsOriginalBindingAfterFailure() {
+            final Connection anotherConnection = mock(Connection.class);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+            assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, anotherConnection))
+                    .isInstanceOf(IllegalStateException.class);
+
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        }
+    }
+
+    // 바인딩이 없는데 unbind한다는 건 키를 잘못 넣었거나, 이미 정리한 걸 또 정리한다는 뜻이다. 조용히 넘어가지 않고 바로 드러낸다.
+    @Nested
+    @DisplayName("바인딩되지 않은 DataSource는 unbind할 수 없다")
+    class UnbindWithoutBinding {
+
+        @Test
+        @DisplayName("바인딩한 적 없는 DataSource를 unbind하면 IllegalStateException을 던진다")
+        void unbindNeverBound() {
+            assertThatThrownBy(() -> TransactionSynchronizationManager.unbindResource(dataSource))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("이미 unbind한 DataSource를 다시 unbind하면 IllegalStateException을 던진다")
+        void unbindTwice() {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+
+            assertThatThrownBy(() -> TransactionSynchronizationManager.unbindResource(dataSource))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("다른 DataSource만 바인딩돼 있을 때 이 DataSource를 unbind하면 예외를 던지고, 다른 DataSource의 바인딩은 건드리지 않는다")
+        void unbindWrongKey() {
+            final DataSource otherDataSource = mock(DataSource.class);
+            final Connection otherConnection = mock(Connection.class);
+            TransactionSynchronizationManager.bindResource(otherDataSource, otherConnection);
+
+            assertThatThrownBy(() -> TransactionSynchronizationManager.unbindResource(dataSource))
+                    .isInstanceOf(IllegalStateException.class);
+
+            assertThat(TransactionSynchronizationManager.getResource(otherDataSource)).isSameAs(otherConnection);
+        }
+
+        @Test
+        @DisplayName("다른 스레드에서는 이 스레드의 바인딩을 unbind할 수 없고, 이 스레드의 바인딩은 그대로 남는다")
+        void unbindFromAnotherThread() throws Exception {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+            final Throwable thrownInAnotherThread = runInAnotherThread(
+                    () -> catchThrowable(() -> TransactionSynchronizationManager.unbindResource(dataSource)));
+
+            assertThat(thrownInAnotherThread).isInstanceOf(IllegalStateException.class);
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        }
+    }
+
+    @Nested
+    @DisplayName("null Connection은 bind할 수 없다")
+    class NullConnection {
+
+        @Test
+        @DisplayName("null Connection을 bind하면 IllegalArgumentException을 던진다")
+        void bindNull() {
+            assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, null))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        // 실패한 bind가 흔적을 남기면, 이후의 중복 검사나 unbind 검사가 엉뚱하게 걸릴 수 있다.
+        @Test
+        @DisplayName("null bind가 실패한 뒤에도 그 DataSource는 바인딩되지 않은 상태라, 정상 Connection을 bind할 수 있다")
+        void bindAfterNullRejected() {
+            catchThrowable(() -> TransactionSynchronizationManager.bindResource(dataSource, null));
+
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
         }
     }
