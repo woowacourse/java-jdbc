@@ -23,14 +23,16 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
+        update(sql, argumentsSetter(args));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter pss) {
         try (final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            pss.setValues(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -39,14 +41,16 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, argumentsSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         try (final Connection conn = dataSource.getConnection();
                 final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            pss.setValues(pstmt);
 
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> result = new ArrayList<>();
@@ -63,7 +67,12 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
             final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, argumentsSetter(args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
+            final PreparedStatementSetter pss) {
+        final List<T> results = query(sql, rowMapper, pss);
         if (results.isEmpty()) {
             return null;
         }
@@ -71,5 +80,13 @@ public class JdbcTemplate {
             throw new DataAccessException(TOO_MANY_RESULTS_MESSAGE.formatted(results.size()));
         }
         return results.get(0);
+    }
+
+    private PreparedStatementSetter argumentsSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }

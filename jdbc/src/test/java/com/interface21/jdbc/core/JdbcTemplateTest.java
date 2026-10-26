@@ -52,6 +52,35 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void update는_PreparedStatementSetter로_직접_값을_채울_수_있다() throws SQLException {
+        final var sql = "update users set password = ? where id = ?";
+
+        jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setString(1, "new-password");
+            pstmt.setLong(2, 1L);
+        });
+
+        verify(connection).prepareStatement(sql);
+        verify(pstmt).setString(1, "new-password");
+        verify(pstmt).setLong(2, 1L);
+        verify(pstmt).executeUpdate();
+    }
+
+    @Test
+    void query는_PreparedStatementSetter로_직접_값을_채울_수_있다() throws SQLException {
+        given(rs.next()).willReturn(true, false);
+        given(rs.getString("account")).willReturn("gugu");
+
+        final var actual = jdbcTemplate.query(
+                "select account from users where id = ?",
+                r -> r.getString("account"),
+                pstmt -> pstmt.setLong(1, 1L));
+
+        assertThat(actual).containsExactly("gugu");
+        verify(pstmt).setLong(1, 1L);
+    }
+
+    @Test
     void query는_모든_행을_RowMapper로_변환한다() throws SQLException {
         given(rs.next()).willReturn(true, true, false);
         given(rs.getString("account")).willReturn("gugu", "pobi");
