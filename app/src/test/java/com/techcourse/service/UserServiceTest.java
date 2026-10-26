@@ -8,6 +8,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -42,6 +43,7 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("비밀번호를 변경하면 바뀐 비밀번호로 조회된다")
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
@@ -56,6 +58,7 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 저장이 실패하면 DataAccessException을 던지고, 비밀번호 변경도 롤백된다")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
@@ -73,6 +76,7 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 INSERT가 DB 제약 조건 위반으로 실패하면 커밋하지 않고 직접 롤백해서, 비밀번호와 이력이 변경 전 그대로 남는다")
     void rollsBackPasswordChangeWhenHistoryInsertFailsInDatabase() throws SQLException {
         final var originalUser = userDao.findById(1L);
         final var originalPassword = originalUser.getPassword();
@@ -104,6 +108,7 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("비밀번호 UPDATE가 DB 제약 조건 위반으로 실패하면 이력은 저장하지 않고, 커밋 없이 직접 롤백해서 비밀번호가 그대로 남는다")
     void rollsBackWhenUserUpdateFailsInDatabase() throws SQLException {
         final var originalUser = userDao.findById(1L);
         final var originalPassword = originalUser.getPassword();
