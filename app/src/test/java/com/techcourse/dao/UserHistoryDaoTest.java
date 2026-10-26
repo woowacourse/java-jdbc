@@ -32,13 +32,47 @@ class UserHistoryDaoTest {
                     new SavedHistory(row.getLong("user_id"), row.getString("account"), row.getString("password"),
                             row.getString("email"), row.getTimestamp("created_at").toLocalDateTime(),
                             row.getString("created_by")));
-            assertThat(saved.userId()).isEqualTo(history.getUserId());
-            assertThat(saved.account()).isEqualTo(history.getAccount());
-            assertThat(saved.password()).isEqualTo(history.getPassword());
-            assertThat(saved.email()).isEqualTo(history.getEmail());
-            assertThat(saved.createdAt()).isCloseTo(history.getCreatedAt(), within(1, ChronoUnit.MICROS));
-            assertThat(saved.createdBy()).isEqualTo(history.getCreateBy());
+            assertSavedHistory(saved, history);
         }
+    }
+
+    @Test
+    @DisplayName("외부 연결로 저장한 이력은 모든 값을 유지하고 호출자가 롤백하면 사라진다")
+    void savesEveryHistoryFieldOnTheCallerConnectionWithoutCommittingOrClosingIt() throws Exception {
+        final var dataSource = DataSourceConfig.createDataSource("jdbc:h2:mem:history-" + UUID.randomUUID());
+        try (final var connection = dataSource.getConnection()) {
+            DatabasePopulatorUtils.execute(dataSource);
+            final var jdbcTemplate = new JdbcTemplate(dataSource);
+            final var history = new UserHistory(new User(7L, "gugu", "newPassword", "gugu@example.com"), "operator");
+            connection.setAutoCommit(false);
+
+            new UserHistoryDao(jdbcTemplate).log(connection, history);
+
+            assertThat(connection.isClosed()).isFalse();
+            final var saved = jdbcTemplate.queryForObject(connection, "select * from user_history", row ->
+                    new SavedHistory(row.getLong("user_id"), row.getString("account"), row.getString("password"),
+                            row.getString("email"), row.getTimestamp("created_at").toLocalDateTime(),
+                            row.getString("created_by")));
+            assertSavedHistory(saved, history);
+            assertThat(historyCount(jdbcTemplate)).isZero();
+
+            connection.rollback();
+
+            assertThat(historyCount(jdbcTemplate)).isZero();
+        }
+    }
+
+    private void assertSavedHistory(final SavedHistory saved, final UserHistory history) {
+        assertThat(saved.userId()).isEqualTo(history.getUserId());
+        assertThat(saved.account()).isEqualTo(history.getAccount());
+        assertThat(saved.password()).isEqualTo(history.getPassword());
+        assertThat(saved.email()).isEqualTo(history.getEmail());
+        assertThat(saved.createdAt()).isCloseTo(history.getCreatedAt(), within(1, ChronoUnit.MICROS));
+        assertThat(saved.createdBy()).isEqualTo(history.getCreateBy());
+    }
+
+    private long historyCount(final JdbcTemplate jdbcTemplate) {
+        return jdbcTemplate.queryForObject("select count(*) from user_history", row -> row.getLong(1));
     }
 
     private record SavedHistory(long userId, String account, String password, String email,

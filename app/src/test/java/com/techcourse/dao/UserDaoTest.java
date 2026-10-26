@@ -73,16 +73,38 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("일반 수정은 모든 값을 올바른 컬럼에 저장하고 대상 사용자만 변경한다")
     void update() {
-        final var newPassword = "password99";
-        final var user = userDao.findById(1L);
-        user.changePassword(newPassword);
+        userDao.insert(new User("other", "otherPassword", "other@example.com"));
+        final var user = new User(1L, "changed-account", "password99", "changed@example.com");
 
         userDao.update(user);
 
         final var actual = userDao.findById(1L);
 
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual).usingRecursiveComparison().isEqualTo(user);
+        assertThat(userDao.findById(2L).getPassword()).isEqualTo("otherPassword");
+    }
+
+    @Test
+    @DisplayName("외부 연결의 수정은 모든 값을 바인딩하고 호출자가 롤백하거나 커밋할 때까지 연결을 유지한다")
+    void updateWithCallerConnectionLeavesTransactionCompletionToTheCaller() throws SQLException {
+        final var original = userDao.findById(1L);
+        final var changed = new User(1L, "changed-account", "password99", "changed@example.com");
+        databaseAnchor.setAutoCommit(false);
+
+        userDao.update(databaseAnchor, changed);
+
+        assertThat(databaseAnchor.isClosed()).isFalse();
+        assertThat(userDao.findById(databaseAnchor, 1L)).usingRecursiveComparison().isEqualTo(changed);
+        assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(original);
+
+        databaseAnchor.rollback();
+
+        assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(original);
+        userDao.update(databaseAnchor, changed);
+        databaseAnchor.commit();
+        assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(changed);
     }
 
     @Test

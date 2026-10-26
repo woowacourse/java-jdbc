@@ -17,22 +17,21 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        jdbcTemplate.update(INSERT_SQL,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy());
+        jdbcTemplate.update(INSERT_SQL, logParameters(userHistory));
     }
 
     public void log(final Connection connection, final UserHistory userHistory) {
-        jdbcTemplate.update(connection, INSERT_SQL,
+        jdbcTemplate.update(connection, INSERT_SQL, logParameters(userHistory));
+    }
+
+    private Object[] logParameters(final UserHistory userHistory) {
+        return new Object[]{
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
                 userHistory.getEmail(),
                 userHistory.getCreatedAt(),
-                userHistory.getCreateBy());
+                userHistory.getCreateBy()
+        };
     }
 }
