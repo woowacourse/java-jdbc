@@ -3,16 +3,11 @@ package com.techcourse.dao;
 import com.interface21.RowMapper;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> userRowMapper = (rs, row) -> new User(
             rs.getLong("id"),
             rs.getString("account"),
@@ -21,24 +16,27 @@ public class UserDao {
     );
 
     private final DataSource dataSource;
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
     }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.dataSource = null;
+        this.dataSource = jdbcTemplate.getDataSource();
         this.jdbcTemplate = jdbcTemplate;
     }
 
     public void insert(final User user) {
-        jdbcTemplate.update(createQueryForInsert(), pstmt -> setValuesForInsert(user, pstmt));
+        new InsertJdbcTemplate(this).insert(user);
     }
 
     public void update(final User user) {
-        jdbcTemplate.update(createQueryForUpdate(), pstmt -> setValuesForUpdate(user, pstmt));
+        new UpdateJdbcTemplate(this).update(user);
+    }
+
+    DataSource getDataSource() {
+        return dataSource;
     }
 
     public List<User> findAll() {
@@ -58,26 +56,5 @@ public class UserDao {
                 select * from users where account = ?
                 """;
         return jdbcTemplate.query(sql, userRowMapper, account).getFirst();
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set account = ?, password = ?, email = ? where id = ?";
-    }
-
-    private void setValuesForInsert(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-    }
-
-    private void setValuesForUpdate(final User user, final PreparedStatement pstmt) throws SQLException {
-        pstmt.setString(1, user.getAccount());
-        pstmt.setString(2, user.getPassword());
-        pstmt.setString(3, user.getEmail());
-        pstmt.setLong(4, user.getId());
     }
 }
