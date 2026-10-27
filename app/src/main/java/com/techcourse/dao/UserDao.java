@@ -7,14 +7,13 @@ import com.techcourse.domain.User;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UserDao {
 
-    private static final RowMapper USER_ROW_MAPPER = new RowMapper() {
+    private static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<>() {
         @Override
-        public Object mapRow(final ResultSet resultSet) throws SQLException {
+        public User mapRow(final ResultSet resultSet) throws SQLException {
             return new User(
                     resultSet.getLong("id"),
                     resultSet.getString("account"),
@@ -49,13 +48,8 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final var rows = jdbcTemplate.query(sql, new Object[0], USER_ROW_MAPPER);
 
-        final List<User> users = new ArrayList<>();
-        for (Object row : rows) {
-            users.add((User) row);
-        }
-        return users;
+        return jdbcTemplate.query(sql, new Object[0], USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -65,7 +59,7 @@ public class UserDao {
         if (rows.isEmpty()) {
             return null;
         }
-        return (User) rows.get(0);
+        return rows.get(0);
     }
 
     public User findByAccount(final String account) {
@@ -75,6 +69,6 @@ public class UserDao {
         if (rows.isEmpty()) {
             return null;
         }
-        return (User) rows.get(0);
+        return rows.get(0);
     }
 }

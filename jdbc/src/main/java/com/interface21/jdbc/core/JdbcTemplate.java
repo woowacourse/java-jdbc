@@ -32,14 +32,14 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(final String sql, final Object[] parameters, final RowMapper rowMapper) {
+    public <T> List<T> query(final String sql, final Object[] parameters, final RowMapper<T> rowMapper) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, parameters);
             log.debug("query : {}", sql);
 
             try (ResultSet resultSet = statement.executeQuery()) {
-                final List<Object> rows = new ArrayList<>();
+                final List<T> rows = new ArrayList<>();
                 while (resultSet.next()) {
                     rows.add(rowMapper.mapRow(resultSet));
                 }

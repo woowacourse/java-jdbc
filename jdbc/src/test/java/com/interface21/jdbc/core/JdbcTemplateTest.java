@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,9 +20,9 @@ import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper NAME_MAPPER = new RowMapper() {
+    private static final RowMapper<String> NAME_MAPPER = new RowMapper<>() {
         @Override
-        public Object mapRow(final ResultSet resultSet) throws SQLException {
+        public String mapRow(final ResultSet resultSet) throws SQLException {
             return resultSet.getString("name");
         }
     };
@@ -69,7 +70,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("name")).thenReturn("gugu", "other");
 
-        final var names = jdbcTemplate.query(sql, new Object[]{"team"}, NAME_MAPPER);
+        final List<String> names = jdbcTemplate.query(sql, new Object[]{"team"}, NAME_MAPPER);
 
         assertThat(names).containsExactly("gugu", "other");
         verify(connection).prepareStatement(sql);
