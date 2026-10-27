@@ -20,10 +20,11 @@ public abstract class TransactionSynchronizationManager {
         if (value == null) {
             throw new IllegalArgumentException("Cannot bind a null value to the thread");
         }
-        if (resources.get().containsKey(key)) {
-            throw new IllegalStateException("Resource already bound to thread");
+        Map<DataSource, Connection> connectionMap = resources.get();
+        if (connectionMap.containsKey(key)) {
+            throw new IllegalStateException("Resource already bound to thread: " + key.getClass().getName());
         }
-        resources.get().put(key, value);
+        connectionMap.put(key, value);
     }
 
     public static Connection unbindResource(DataSource key) {
