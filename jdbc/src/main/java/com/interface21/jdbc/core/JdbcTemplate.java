@@ -24,7 +24,10 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        final PreparedStatementSetter preparedStatementSetter = new ArgumentPreparedStatementSetter(args);
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatement -> {
             preparedStatementSetter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
@@ -40,7 +43,7 @@ public class JdbcTemplate {
         return singleResult(results);
     }
 
-    private <T> T query(
+    public <T> T query(
             final String sql,
             final PreparedStatementSetter preparedStatementSetter,
             final ResultSetExtractor<T> resultSetExtractor
