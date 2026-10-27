@@ -38,7 +38,7 @@ public class DatabasePopulatorUtils {
                 if (connection != null) {
                     connection.close();
                 }
-            } catch (SQLException ㄷㄷignored) {}
+            } catch (SQLException ignored) {}
         }
     }
 
