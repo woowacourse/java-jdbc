@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -12,10 +13,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -181,5 +184,33 @@ class JdbcTemplateTest {
         inOrder.verify(rs).close();
         inOrder.verify(pstmt).close();
         inOrder.verify(conn).close();
+    }
+
+    @Test
+    void 커넥션이_주어지면_update_시_새_커넥션을_얻지_않고_닫지도_않는다() throws SQLException {
+        //given
+        Connection givenConnection = mock(Connection.class);
+        when(givenConnection.prepareStatement(anyString())).thenReturn(pstmt);
+
+        //when
+        jdbcTemplate.update(givenConnection, SQL, "gugu", "password", "hkkang@woowahan.com");
+
+        //then
+        verify(dataSource, never()).getConnection();
+        verify(pstmt).executeUpdate();
+        verify(pstmt).close();
+        verify(givenConnection, never()).close();
+    }
+
+    @Test
+    void 커넥션_획득에_실패하면_CannotGetJdbcConnectionException이_발생한다() throws SQLException {
+        //given
+        SQLException cause = new SQLException("커넥션 획득 실패");
+        when(dataSource.getConnection()).thenThrow(cause);
+
+        //when & then
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, "gugu", "password", "hkkang@woowahan.com"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(cause);
     }
 }
