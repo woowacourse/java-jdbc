@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,6 +28,14 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter setter) {
         return execute(sql, setter, PreparedStatement::executeUpdate);
+    }
+
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return update(connection, sql, parameterSetter(parameters));
+    }
+
+    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
+        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -71,14 +80,30 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                          final PreparedStatementCallback<T> callback) {
-        log.debug("query : {}", sql);
-
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            setter.setValues(statement);
-            return callback.execute(statement);
+        try (final var connection = dataSource.getConnection()) {
+            return executeStatement(connection, sql, setter, callback);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    // 호출자가 트랜잭션을 관리하는 Connection이므로 닫지 않는다.
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
+        try {
+            return executeStatement(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    private <T> T executeStatement(final Connection connection, final String sql, final PreparedStatementSetter setter,
+                                   final PreparedStatementCallback<T> callback) throws SQLException {
+        log.debug("query : {}", sql);
+
+        try (final var statement = connection.prepareStatement(sql)) {
+            setter.setValues(statement);
+            return callback.execute(statement);
         }
     }
 
