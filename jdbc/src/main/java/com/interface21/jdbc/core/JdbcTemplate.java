@@ -31,7 +31,11 @@ public class JdbcTemplate {
     }
 
     public int update(final Connection connection, final String sql, final Object... parameters) {
-        return execute(connection, sql, parameterSetter(parameters), PreparedStatement::executeUpdate);
+        return update(connection, sql, parameterSetter(parameters));
+    }
+
+    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
+        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {

@@ -74,6 +74,25 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithGivenConnectionUsesCustomSetterWithoutClosingConnection() throws SQLException {
+        final var givenConnection = mock(Connection.class);
+        when(givenConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(givenConnection, "update users set email = ? where id = ?", ps -> {
+            ps.setNull(1, Types.VARCHAR);
+            ps.setLong(2, 1L);
+        });
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setNull(1, Types.VARCHAR);
+        verify(statement).setLong(2, 1L);
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(givenConnection, never()).close();
+    }
+
+    @Test
     void updateWithGivenConnectionTranslatesFailureWithoutClosingConnection() throws SQLException {
         final var givenConnection = mock(Connection.class);
         final var cause = new SQLException("update failed");
