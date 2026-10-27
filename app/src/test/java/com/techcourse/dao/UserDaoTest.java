@@ -47,19 +47,16 @@ class UserDaoTest {
     void findAllWhenColumnOrderChanges() throws SQLException {
         final var jdbcTemplate = mock(JdbcTemplate.class);
         final var resultSet = mock(ResultSet.class);
-        when(resultSet.getLong(1)).thenReturn(1L);
-        when(resultSet.getString(2)).thenReturn("gugu");
-        when(resultSet.getString(3)).thenReturn("password");
-        when(resultSet.getString(4)).thenReturn("hkkang@woowahan.com");
+        when(resultSet.getLong("id")).thenReturn(1L);
+        when(resultSet.getLong(1)).thenThrow(new SQLException("Cannot convert 'legacy' to long"));
+        when(resultSet.getString("account")).thenReturn("gugu");
+        when(resultSet.getString("password")).thenReturn("password");
+        when(resultSet.getString("email")).thenReturn("hkkang@woowahan.com");
 
         when(jdbcTemplate.findAll(anyString(), any())).thenAnswer(invocation -> {
             final String sql = invocation.getArgument(0);
             final RowMapper<User> rowMapper = invocation.getArgument(1);
-            if (sql.contains("*")) {
-                // 변경된 테이블의 첫 칼럼은 id 대신 문자열 'legacy'다.
-                when(resultSet.getLong(1))
-                        .thenThrow(new SQLException("Cannot convert 'legacy' to long"));
-            }
+            assertThat(sql).doesNotContain("*");
             return List.of(rowMapper.mapRow(resultSet));
         });
         final var userDao = new UserDao(jdbcTemplate);

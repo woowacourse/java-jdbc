@@ -13,6 +13,12 @@ public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
 
+    private static final RowMapper<User> USER_ROW_MAPPER = rs -> new User(
+            rs.getLong("id"),
+            rs.getString("account"),
+            rs.getString("password"),
+            rs.getString("email"));
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
@@ -44,13 +50,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        RowMapper<User> rowMapper = rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
-
-        return jdbcTemplate.findAll(sql, rowMapper);
+        return jdbcTemplate.findAll(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
@@ -58,13 +58,7 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        RowMapper<User> rowMapper = rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
-
-        return jdbcTemplate.find(sql, rowMapper, id);
+        return jdbcTemplate.find(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
@@ -72,12 +66,6 @@ public class UserDao {
 
         log.debug("query : {}", sql);
 
-        RowMapper<User> rowMapper = rs -> new User(
-                rs.getLong(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4));
-
-        return jdbcTemplate.find(sql, rowMapper, account);
+        return jdbcTemplate.find(sql, USER_ROW_MAPPER, account);
     }
 }
