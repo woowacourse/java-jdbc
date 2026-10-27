@@ -41,11 +41,17 @@ public class JdbcTemplate {
             setParameter(params, pstmt);
 
             try (ResultSet rs = pstmt.executeQuery();) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
+                if (!rs.next()) {
+                    return null;
                 }
+
+                T result = rowMapper.mapRow(rs);
+
+                if (rs.next()) {
+                    throw new IllegalStateException("단건 조회 결과가 2건 이상입니다.");
+                }
+                return result;
             }
-            return null;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
