@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -31,15 +30,6 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         int updated = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-
-        if (updated == 0) {
-            throw new IllegalArgumentException("존재하지 않는 사용자입니다. id: " + user.getId());
-        }
-    }
-
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        int updated = jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
 
         if (updated == 0) {
             throw new IllegalArgumentException("존재하지 않는 사용자입니다. id: " + user.getId());
