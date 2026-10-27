@@ -42,12 +42,6 @@ public class JdbcTemplate {
         return singleResult(query(sql, rowMapper, args));
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
-        final List<T> rows = execute(connection, sql, createSetter(args),
-                preparedStatement -> extractRows(preparedStatement, rowMapper));
-        return singleResult(rows);
-    }
-
     private <T> T singleResult(List<T> rows) {
         if (rows.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
@@ -64,10 +58,6 @@ public class JdbcTemplate {
 
     public int update(String sql, PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
-    }
-
-    public int update(Connection connection, String query, Object... args) {
-        return execute(connection, query, createSetter(args), PreparedStatement::executeUpdate);
     }
 
     private PreparedStatementSetter createSetter(Object... args) {

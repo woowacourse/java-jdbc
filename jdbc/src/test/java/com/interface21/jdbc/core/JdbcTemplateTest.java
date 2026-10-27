@@ -121,21 +121,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("전달받은 커넥션으로 queryForObject하면 해당 커넥션을 사용하고 닫지 않는다")
-    void queryForObjectWithConnection() throws SQLException {
-        given(resultSet.next()).willReturn(true, false);
-        given(resultSet.getString("name")).willReturn("gugu");
-
-        final String result = jdbcTemplate.queryForObject(connection, "select name from users where id = ?", NAME_ROW_MAPPER, 1L);
-
-        assertThat(result).isEqualTo("gugu");
-        verify(statement).setObject(1, 1L);
-        verify(statement).close();
-        verify(connection, never()).close();
-        verify(dataSource, never()).getConnection();
-    }
-
-    @Test
     @DisplayName("update는 파라미터를 순서대로 바인딩하고 영향받은 행 수를 반환한다")
     void update() throws SQLException {
         given(statement.executeUpdate()).willReturn(1);
