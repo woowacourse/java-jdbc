@@ -42,12 +42,7 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        List<User> users = jdbcTemplate.query(sql, userRowMapper, id);
-        if (users.size() != 1) {
-            throw new IllegalStateException(
-                    "조회 결과는 정확히 1건이어야 합니다. 실제: " + users.size());
-        }
-        return users.getFirst();
+        return jdbcTemplate.query(sql, userRowMapper, id).getFirst();
     }
 
     public User findByAccount(final String account) {
