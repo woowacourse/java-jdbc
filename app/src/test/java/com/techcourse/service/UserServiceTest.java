@@ -8,13 +8,13 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -26,6 +26,8 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table user_history restart identity");
+        jdbcTemplate.update("truncate table users restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -37,11 +39,16 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
+        final var before = LocalDateTime.now();
         userService.changePassword(1L, newPassword, createBy);
 
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ? and password = ? and created_by = ? and created_at >= ?",
+                (resultSet, rowNum) -> resultSet.getLong(1), 1L, newPassword, createBy, before);
+        assertThat(historyCount).isEqualTo(1L);
     }
 
     @Test
@@ -58,6 +65,9 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo("password");
+        final var historyCount = jdbcTemplate.queryForObject("select count(*) from user_history",
+                (resultSet, rowNum) -> resultSet.getLong(1));
+        assertThat(historyCount).isZero();
     }
 }
