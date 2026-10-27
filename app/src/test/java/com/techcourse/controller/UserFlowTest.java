@@ -102,9 +102,8 @@ class UserFlowTest {
     }
 
     @Test
-    void duplicateInsertAfterPassingPreCheckRedirectsToRegister() throws Exception {
+    void duplicateInsertRedirectsToRegister() throws Exception {
         final var dao = mock(UserDao.class);
-        when(dao.findByAccount("first")).thenReturn(null);
         doThrow(new DuplicateKeyException("duplicate", new SQLException("unique index violated", "23505")))
                 .when(dao).insert(any(User.class));
         when(request.getParameter("account")).thenReturn("first");

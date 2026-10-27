@@ -36,9 +36,6 @@ public class RegisterController {
         } catch (IllegalArgumentException e) {
             return new ModelAndView(new JspView("redirect:/register"));
         }
-        if (userDao.findByAccount(user.getAccount()) != null) {
-            return new ModelAndView(new JspView("redirect:/register"));
-        }
         try {
             userDao.insert(user);
         } catch (DuplicateKeyException e) {
