@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,8 +110,17 @@ public class JdbcTemplate {
                           final PreparedStatementCallback<T> callback) {
         Objects.requireNonNull(sql, "sql must not be null");
         Objects.requireNonNull(setter, "setter must not be null");
-        try (final var connection = dataSource.getConnection()) {
-            return doExecute(connection, sql, setter, callback);
+        try {
+            final var connection = DataSourceUtils.doGetConnection(dataSource);
+            Throwable failure = null;
+            try {
+                return doExecute(connection, sql, setter, callback);
+            } catch (SQLException | RuntimeException | Error e) {
+                failure = e;
+                throw e;
+            } finally {
+                DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
+            }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }

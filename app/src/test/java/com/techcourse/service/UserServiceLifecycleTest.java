@@ -1,21 +1,21 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -27,18 +27,27 @@ import static org.mockito.Mockito.when;
 
 class UserServiceLifecycleTest {
 
+    private final List<DataSource> dataSources = new ArrayList<>();
+
+    @AfterEach
+    void noTransactionConnectionRemainsBound() {
+        for (final var dataSource : dataSources) {
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        }
+    }
+
     @Test
-    @DisplayName("일반 조회와 저장은 DAO에 위임하고 별도 트랜잭션 연결을 열지 않는다")
-    void findAndInsertDelegateWithoutOpeningATransactionConnection() throws Exception {
+    @DisplayName("일반 조회와 저장은 내부 서비스에 위임하고 별도 트랜잭션 연결을 열지 않는다")
+    void findAndSaveDelegateWithoutOpeningATransactionConnection() throws Exception {
         final var fixture = fixture();
-        when(fixture.userDao().findById(1L)).thenReturn(fixture.user());
+        when(fixture.delegate().findById(1L)).thenReturn(fixture.user());
 
         assertThat(fixture.service().findById(1L)).isSameAs(fixture.user());
-        fixture.service().insert(fixture.user());
+        fixture.service().save(fixture.user());
 
-        verify(fixture.userDao()).findById(1L);
-        verify(fixture.userDao()).insert(fixture.user());
-        verifyNoInteractions(fixture.dataSource(), fixture.connection(), fixture.historyDao());
+        verify(fixture.delegate()).findById(1L);
+        verify(fixture.delegate()).save(fixture.user());
+        verifyNoInteractions(fixture.dataSource(), fixture.connection());
     }
 
     @Test
@@ -49,12 +58,10 @@ class UserServiceLifecycleTest {
         fixture.service().changePassword(1L, "newPassword", "operator");
 
         verify(fixture.dataSource(), times(1)).getConnection();
-        final var order = inOrder(fixture.connection(), fixture.userDao(), fixture.historyDao());
+        final var order = inOrder(fixture.connection(), fixture.delegate());
         order.verify(fixture.connection()).getAutoCommit();
         order.verify(fixture.connection()).setAutoCommit(false);
-        order.verify(fixture.userDao()).findById(fixture.connection(), 1L);
-        order.verify(fixture.userDao()).update(fixture.connection(), fixture.user());
-        order.verify(fixture.historyDao()).log(same(fixture.connection()), any(UserHistory.class));
+        order.verify(fixture.delegate()).changePassword(1L, "newPassword", "operator");
         order.verify(fixture.connection()).commit();
         order.verify(fixture.connection()).setAutoCommit(true);
         order.verify(fixture.connection()).close();
@@ -66,13 +73,14 @@ class UserServiceLifecycleTest {
     void missingUserRollsBackWithoutUpdatingOrLogging() throws Exception {
         final var fixture = fixture();
 
+        final var failure = new UserNotFoundException(404L);
+        doThrow(failure).when(fixture.delegate()).changePassword(404L, "newPassword", "operator");
+
         final var thrown = assertThrows(UserNotFoundException.class,
                 () -> fixture.service().changePassword(404L, "newPassword", "operator"));
 
-        assertThat(thrown).hasMessage("User not found: 404");
-        verify(fixture.userDao()).findById(fixture.connection(), 404L);
-        verify(fixture.userDao(), never()).update(any(Connection.class), any(User.class));
-        verifyNoInteractions(fixture.historyDao());
+        assertThat(thrown).isSameAs(failure);
+        verify(fixture.delegate()).changePassword(404L, "newPassword", "operator");
         final var order = inOrder(fixture.connection());
         order.verify(fixture.connection()).rollback();
         order.verify(fixture.connection()).setAutoCommit(true);
@@ -85,7 +93,7 @@ class UserServiceLifecycleTest {
     void runtimeAndErrorFailuresRollBackWithoutReplacingTheOriginalFailure() throws Exception {
         for (final var failure : new Throwable[]{new DataAccessException("business"), new AssertionError("business")}) {
             final var fixture = fixture();
-            doThrow(failure).when(fixture.historyDao()).log(same(fixture.connection()), any(UserHistory.class));
+            doThrow(failure).when(fixture.delegate()).changePassword(1L, "newPassword", "operator");
 
             assertThat(assertThrows(Throwable.class,
                     () -> fixture.service().changePassword(1L, "newPassword", "operator"))).isSameAs(failure);
@@ -105,7 +113,7 @@ class UserServiceLifecycleTest {
         final var failure = new DataAccessException("business");
         final var rollbackFailure = new SQLException("rollback");
         final var closeFailure = new SQLException("close");
-        doThrow(failure).when(fixture.historyDao()).log(same(fixture.connection()), any(UserHistory.class));
+        doThrow(failure).when(fixture.delegate()).changePassword(1L, "newPassword", "operator");
         doThrow(rollbackFailure).when(fixture.connection()).rollback();
         doThrow(closeFailure).when(fixture.connection()).close();
 
@@ -125,7 +133,7 @@ class UserServiceLifecycleTest {
         final var fixture = fixture();
         final var failure = new DataAccessException("business");
         final var restoreFailure = new SQLException("restore");
-        doThrow(failure).when(fixture.historyDao()).log(same(fixture.connection()), any(UserHistory.class));
+        doThrow(failure).when(fixture.delegate()).changePassword(1L, "newPassword", "operator");
         doThrow(restoreFailure).when(fixture.connection()).setAutoCommit(true);
 
         final var thrown = assertThrows(DataAccessException.class,
@@ -195,7 +203,7 @@ class UserServiceLifecycleTest {
                     () -> fixture.service().changePassword(1L, "newPassword", "operator"));
 
             assertThat(thrown.getCause()).isSameAs(failure);
-            verifyNoInteractions(fixture.userDao(), fixture.historyDao());
+            verifyNoInteractions(fixture.delegate());
             verify(fixture.connection(), never()).commit();
             verify(fixture.connection(), never()).rollback();
             verify(fixture.connection(), times(stage.equals("get") ? 0 : 1)).close();
@@ -272,19 +280,42 @@ class UserServiceLifecycleTest {
         verify(fixture.connection(), never()).setAutoCommit(true);
     }
 
+    @Test
+    @DisplayName("기존 트랜잭션이 있으면 새로 시작하지 않고 기존 등록과 연결을 보존한다")
+    void existingTransactionIsRejectedWithoutReleasingItsConnection() throws Exception {
+        final var fixture = fixture();
+        TransactionSynchronizationManager.bindResource(fixture.dataSource(), fixture.connection());
+        try {
+            assertThrows(IllegalStateException.class,
+                    () -> fixture.service().changePassword(1L, "newPassword", "operator"));
+
+            assertThat(TransactionSynchronizationManager.getResource(fixture.dataSource()))
+                    .isSameAs(fixture.connection());
+            verifyNoInteractions(fixture.dataSource(), fixture.connection(), fixture.delegate());
+        } finally {
+            TransactionSynchronizationManager.unbindResource(fixture.dataSource());
+        }
+    }
+
     private Fixture fixture() throws SQLException {
         final var dataSource = mock(DataSource.class);
+        dataSources.add(dataSource);
         final var connection = mock(Connection.class);
-        final var userDao = mock(UserDao.class);
-        final var historyDao = mock(UserHistoryDao.class);
+        final var delegate = mock(UserService.class);
         final var user = new User(1L, "gugu", "password", "gugu@example.com");
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L)).thenReturn(user);
-        return new Fixture(dataSource, connection, userDao, historyDao, user,
-                new UserService(dataSource, userDao, historyDao));
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+            return null;
+        }).when(delegate).changePassword(1L, "newPassword", "operator");
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+            return null;
+        }).when(connection).close();
+        return new Fixture(dataSource, connection, delegate, user, new TxUserService(delegate, dataSource));
     }
 
-    private record Fixture(DataSource dataSource, Connection connection, UserDao userDao,
-                           UserHistoryDao historyDao, User user, UserService service) {}
+    private record Fixture(DataSource dataSource, Connection connection, UserService delegate,
+                           User user, UserService service) {}
 }
