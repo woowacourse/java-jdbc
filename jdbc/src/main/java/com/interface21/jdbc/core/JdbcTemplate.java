@@ -54,18 +54,11 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
                                 final RowMapper<T> rowMapper) {
-        return execute(sql, setter, pstmt -> {
-            try (var rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                final var result = rowMapper.mapRow(rs);
-                if (rs.next()) {
-                    throw new IncorrectResultSizeDataAccessException(1, 2);
-                }
-                return result;
-            }
-        });
+        final var results = query(sql, setter, rowMapper);
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        return results.isEmpty() ? null : results.getFirst();
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,

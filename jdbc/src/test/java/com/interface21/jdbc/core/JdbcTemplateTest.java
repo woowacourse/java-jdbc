@@ -220,7 +220,7 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(QUERY, pstmt -> {}, rs -> rs.getString("email")))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class)
-                .hasMessageContaining("expected 1");
+                .hasMessageContaining("expected 1, actual 2");
 
         verify(rows).close();
         verify(statement).close();
