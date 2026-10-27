@@ -30,12 +30,21 @@ public class JdbcTemplate {
         execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
+    public void update(final Connection conn, final String sql, final Object... args) {
+        execute(conn, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         return execute(sql, pss, pstmt -> mapRows(pstmt, rowMapper));
+    }
+
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper,
+            final Object... args) {
+        return execute(conn, sql, argumentsSetter(args), pstmt -> mapRows(pstmt, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
@@ -45,7 +54,15 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
             final PreparedStatementSetter pss) {
-        final List<T> results = query(sql, rowMapper, pss);
+        return singleResult(query(sql, rowMapper, pss));
+    }
+
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper,
+            final Object... args) {
+        return singleResult(query(conn, sql, rowMapper, args));
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.isEmpty()) {
             return null;
         }
@@ -57,8 +74,17 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
             final PreparedStatementCallback<T> action) {
-        try (final Connection conn = dataSource.getConnection();
-                final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, action);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
+            final PreparedStatementCallback<T> action) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
