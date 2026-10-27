@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -15,6 +16,7 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("truncate table users restart identity");
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -65,5 +67,29 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void acceptsJdbcTemplate() {
+        final var dao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+
+        assertThat(dao.findByAccount("gugu").getEmail()).isEqualTo("hkkang@woowahan.com");
+    }
+
+    @Test
+    void returnsNullWhenUserDoesNotExist() {
+        assertThat(userDao.findById(999L)).isNull();
+        assertThat(userDao.findByAccount("missing")).isNull();
+    }
+
+    @Test
+    void treatsAccountAsParameter() {
+        final var account = "gugu' OR '1'='1";
+        userDao.insert(new User(account, "password", "stark@example.com"));
+
+        final var actual = userDao.findByAccount(account);
+
+        assertThat(actual.getAccount()).isEqualTo(account);
+        assertThat(actual.getEmail()).isEqualTo("stark@example.com");
     }
 }
