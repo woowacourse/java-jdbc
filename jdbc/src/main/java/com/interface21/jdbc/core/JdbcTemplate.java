@@ -53,7 +53,7 @@ public class JdbcTemplate {
         if (results.size() > 1) {
             throw new DataAccessException("결과가 1개보다 많습니다. size=" + results.size());
         }
-        return results.stream().findFirst();
+        return results.get(0);
     }
 
     public int update(final String sql, final PreparedStatementSetter pss) {
