@@ -119,22 +119,10 @@ public class JdbcTemplate {
                 failure = e;
                 throw e;
             } finally {
-                releaseConnection(connection, failure);
+                DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
-        }
-    }
-
-    private void releaseConnection(final Connection connection, final Throwable failure) throws SQLException {
-        try {
-            DataSourceUtils.doReleaseConnection(connection, dataSource);
-        } catch (SQLException | RuntimeException | Error e) {
-            if (failure != null) {
-                failure.addSuppressed(e);
-            } else {
-                throw e;
-            }
         }
     }
 

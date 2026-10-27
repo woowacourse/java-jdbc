@@ -48,4 +48,20 @@ public abstract class DataSourceUtils {
         }
         connection.close();
     }
+
+    /**
+     * 반환 중 추가 예외가 발생하면 기존 실패에 보존하고, 기존 실패가 없으면 그대로 전달한다.
+     */
+    public static void doReleaseConnection(final Connection connection, final DataSource dataSource,
+                                           final Throwable failure) throws SQLException {
+        try {
+            doReleaseConnection(connection, dataSource);
+        } catch (SQLException | RuntimeException | Error e) {
+            if (failure != null) {
+                failure.addSuppressed(e);
+            } else {
+                throw e;
+            }
+        }
+    }
 }

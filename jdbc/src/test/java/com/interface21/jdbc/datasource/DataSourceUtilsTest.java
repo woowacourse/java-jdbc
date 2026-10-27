@@ -106,4 +106,82 @@ class DataSourceUtilsTest {
                 () -> DataSourceUtils.doReleaseConnection(connection, dataSource)));
         assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
+
+    @Test
+    @DisplayName("기존 실패가 있거나 없어도 반환에 성공하면 연결을 닫고 추가 예외를 만들지 않는다")
+    void successfulReleaseDoesNotChangeTheOriginalFailure() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var first = mock(Connection.class);
+        final var second = mock(Connection.class);
+        final var failure = new IllegalStateException("business failed");
+
+        DataSourceUtils.doReleaseConnection(first, dataSource, failure);
+        DataSourceUtils.doReleaseConnection(second, dataSource, null);
+
+        verify(first).close();
+        verify(second).close();
+        assertThat(failure.getSuppressed()).isEmpty();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    @DisplayName("종료 중 SQL·런타임 예외와 Error가 발생해도 원래 업무 실패에 추가 원인을 보존한다")
+    void cleanupFailuresAreSuppressedOnTheOriginalFailure() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        for (final var cleanupFailure : cleanupFailures()) {
+            final var connection = mock(Connection.class);
+            final var failure = new IllegalStateException("business failed");
+            doThrow(cleanupFailure).when(connection).close();
+
+            DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
+
+            assertThat(failure.getSuppressed()).containsExactly(cleanupFailure);
+            verify(connection).close();
+        }
+    }
+
+    @Test
+    @DisplayName("원래 실패가 없으면 종료 중 SQL·런타임 예외와 Error를 변환하지 않고 전달한다")
+    void cleanupFailuresArePropagatedUnchangedWhenThereIsNoOriginalFailure() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        for (final var cleanupFailure : cleanupFailures()) {
+            final var connection = mock(Connection.class);
+            doThrow(cleanupFailure).when(connection).close();
+
+            final var thrown = assertThrows(Throwable.class,
+                    () -> DataSourceUtils.doReleaseConnection(connection, dataSource, null));
+
+            assertThat(thrown).isSameAs(cleanupFailure);
+            verify(connection).close();
+        }
+    }
+
+    @Test
+    @DisplayName("예외를 보존하는 반환도 등록된 연결을 유지하고 등록 해제 후에만 닫는다")
+    void releaseWithOriginalFailurePreservesTransactionOwnership() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var failure = new IllegalStateException("business failed");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
+            DataSourceUtils.doReleaseConnection(null, dataSource, failure);
+
+            verify(connection, never()).close();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+            assertThat(failure.getSuppressed()).isEmpty();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+
+        DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
+
+        verify(connection).close();
+        assertThat(failure.getSuppressed()).isEmpty();
+    }
+
+    private Throwable[] cleanupFailures() {
+        return new Throwable[]{new SQLException("close failed"), new IllegalStateException("close failed"),
+                new AssertionError("close failed")};
+    }
 }
