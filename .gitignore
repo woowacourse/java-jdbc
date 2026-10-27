@@ -180,3 +180,6 @@ tomcat.*/**
 # DB
 test.mv.db
 *.db
+
+# 개인 학습
+docs/study
