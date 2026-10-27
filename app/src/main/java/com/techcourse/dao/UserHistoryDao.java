@@ -20,7 +20,7 @@ public class UserHistoryDao {
         this.dataSource = dataSource;
     }
 
-    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+    public UserHistoryDao(final JdbcTemplate<?> jdbcTemplate) {
         this.dataSource = null;
     }
 
