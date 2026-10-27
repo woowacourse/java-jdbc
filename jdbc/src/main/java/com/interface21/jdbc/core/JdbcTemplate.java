@@ -23,21 +23,33 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        return update(sql, argumentsSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setArguments(pstmt, args);
+            pss.setValues(pstmt);
             return pstmt.executeUpdate();
         });
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, argumentsSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         return execute(sql, pstmt -> {
-            setArguments(pstmt, args);
+            pss.setValues(pstmt);
             return mapRows(pstmt, rowMapper);
         });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, rowMapper, argumentsSetter(args));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        final List<T> results = query(sql, rowMapper, pss);
         if (results.size() != 1) {
             throw new DataAccessException("조회 결과가 1건이 아닙니다. 결과 수: " + results.size());
         }
@@ -66,9 +78,11 @@ public class JdbcTemplate {
         }
     }
 
-    private void setArguments(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter argumentsSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }

@@ -108,4 +108,34 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select account from users", ACCOUNT_MAPPER))
                 .isInstanceOf(DataAccessException.class);
     }
+
+    @Test
+    void updateWithPreparedStatementSetter() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update("update users set account = ? where id = ?", pstmt -> {
+            pstmt.setString(1, "gugu");
+            pstmt.setLong(2, 1L);
+        });
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(preparedStatement).setString(1, "gugu");
+        verify(preparedStatement).setLong(2, 1L);
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryWithPreparedStatementSetter() throws SQLException {
+        final var resultSet = mock(ResultSet.class);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var accounts = jdbcTemplate.query("select account from users where id = ?", ACCOUNT_MAPPER,
+                pstmt -> pstmt.setLong(1, 1L));
+
+        assertThat(accounts).containsExactly("gugu");
+        verify(preparedStatement).setLong(1, 1L);
+    }
 }
