@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,9 +38,6 @@ public class UserDao {
         jdbcTemplate.update(UPDATE_SQL, user.getPassword(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, UPDATE_SQL, user.getPassword(), user.getId());
-    }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";

@@ -2,6 +2,9 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DuplicateKeyException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +37,65 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(pstmt);
     }
 
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
+    @Test
+    void exposesConnectionAcquisitionFailureAsDataAccessException() throws SQLException {
+        final var exception = new SQLException("Cannot obtain connection");
+        when(dataSource.getConnection()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void preservesSqlFailureWhenConnectionReleaseAlsoFails() throws SQLException {
+        final var sqlException = new SQLException("SQL execution failed");
+        final var closeException = new SQLException("Connection close failed");
+        when(pstmt.executeUpdate()).thenThrow(sqlException);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(sqlException)
+                .satisfies(exception -> {
+                    assertThat(exception.getSuppressed()).hasSize(1);
+                    assertThat(exception.getSuppressed()[0]).hasCause(closeException);
+                });
+    }
+
+    @Test
+    void preservesErrorWhenConnectionReleaseAlsoFails() throws SQLException {
+        final var error = new AssertionError("Execution failed");
+        final var closeException = new SQLException("Connection close failed");
+        when(pstmt.executeUpdate()).thenThrow(error);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isSameAs(error)
+                .satisfies(exception -> {
+                    assertThat(exception.getSuppressed()).hasSize(1);
+                    assertThat(exception.getSuppressed()[0]).hasCause(closeException);
+                });
+    }
+
+    @Test
+    void reportsReleaseFailureWhenSqlSucceeds() throws SQLException {
+        final var closeException = new SQLException("Connection close failed");
+        when(pstmt.executeUpdate()).thenReturn(1);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(closeException);
+    }
+
     @Test
     void update() throws SQLException {
         final var sql = "update users set password = ? where id = ?";
@@ -50,10 +112,11 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithProvidedConnectionDoesNotCloseIt() throws SQLException {
+    void updateUsesBoundConnectionWithoutClosingIt() throws SQLException {
         when(pstmt.executeUpdate()).thenReturn(1);
 
-        final var affectedRows = jdbcTemplate.update(connection,
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var affectedRows = jdbcTemplate.update(
                 "update users set password = ? where id = ?", "password99", 1L);
 
         assertThat(affectedRows).isEqualTo(1);
@@ -67,11 +130,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void keepsProvidedConnectionOpenWhenExecutionFails() throws SQLException {
+    void keepsBoundConnectionOpenWhenExecutionFails() throws SQLException {
         final var exception = new SQLException("SQL execution failed");
         when(pstmt.executeUpdate()).thenThrow(exception);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
 
