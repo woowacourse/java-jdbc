@@ -40,7 +40,7 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select * from users";
+        final var sql = "select id, account, password, email  from users";
 
         log.debug("query : {}", sql);
 
