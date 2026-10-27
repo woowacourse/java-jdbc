@@ -17,9 +17,14 @@ class DaoTransactionTest {
     private UserHistoryDao userHistoryDao;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         final var dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
+        try (final var connection = DataSourceConfig.getInstance().getConnection();
+             final var statement = connection.createStatement()) {
+            statement.executeUpdate("truncate table user_history restart identity");
+            statement.executeUpdate("truncate table users restart identity");
+        }
         userDao = new UserDao(dataSource);
         userHistoryDao = new UserHistoryDao(dataSource);
         userDao.insert(new User("gugu", "password", "gugu@example.com"));
