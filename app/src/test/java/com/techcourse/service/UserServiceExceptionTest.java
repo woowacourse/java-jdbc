@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -9,13 +10,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -24,22 +25,28 @@ import static org.mockito.Mockito.when;
 
 class UserServiceExceptionTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private UserHistoryDao userHistoryDao;
     private UserService userService;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         final var userDao = mock(UserDao.class);
         userHistoryDao = mock(UserHistoryDao.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(connection, 1L))
+        when(userDao.findById(1L))
                 .thenReturn(Optional.of(new User(1L, "gugu", "password", "gugu@example.com")));
 
         userService = new UserService(dataSource, userDao, userHistoryDao);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -104,7 +111,7 @@ class UserServiceExceptionTest {
 
     private DataAccessException failHistorySave() {
         final var original = new DataAccessException("이력 저장 실패");
-        doThrow(original).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(original).when(userHistoryDao).log(any(UserHistory.class));
         return original;
     }
 }
