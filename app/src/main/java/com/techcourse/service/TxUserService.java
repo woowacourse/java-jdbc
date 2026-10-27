@@ -62,7 +62,7 @@ public class TxUserService implements UserService {
                 failure = e;
                 throw e;
             } finally {
-                DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
+                releaseConnection(connection, failure);
             }
         } catch (SQLException e) {
             if (committed) {
@@ -82,4 +82,15 @@ public class TxUserService implements UserService {
         }
     }
 
+    private void releaseConnection(final Connection connection, final Throwable failure) throws SQLException {
+        try {
+            DataSourceUtils.doReleaseConnection(connection, dataSource);
+        } catch (SQLException | RuntimeException | Error e) {
+            if (failure != null) {
+                failure.addSuppressed(e);
+            } else {
+                throw e;
+            }
+        }
+    }
 }
