@@ -46,6 +46,18 @@ class UserServiceTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
         assertHistoryCount(1);
+        try (final var connection = DataSourceConfig.getInstance().getConnection();
+             final var statement = connection.prepareStatement("select * from user_history where user_id = ?")) {
+            statement.setLong(1, 1L);
+            try (final var resultSet = statement.executeQuery()) {
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("account")).isEqualTo("gugu");
+                assertThat(resultSet.getString("password")).isEqualTo(newPassword);
+                assertThat(resultSet.getString("email")).isEqualTo("hkkang@woowahan.com");
+                assertThat(resultSet.getString("created_by")).isEqualTo(createBy);
+                assertThat(resultSet.getTimestamp("created_at")).isNotNull();
+            }
+        }
     }
 
     @Test
