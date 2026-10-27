@@ -31,7 +31,7 @@ class Stage0Test {
         // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
         try (final Connection connection = DriverManager.getConnection(H2_URL, USER, PASSWORD)) {
-            assertThat(connection.isValid(1)).isTrue();
+            assertThat(connection.isValid(1)).isTrue(); // 얻어 온 커넥션이 유효한가?
         }
     }
 
@@ -50,10 +50,16 @@ class Stage0Test {
      */
     @Test
     void dataSource() throws SQLException {
-        final JdbcDataSource dataSource = new JdbcDataSource();
+        final JdbcDataSource dataSource = new JdbcDataSource(); // 연결 정보를 설정한 DataSource 객체에 요청
         dataSource.setURL(H2_URL);
         dataSource.setUser(USER);
         dataSource.setPassword(PASSWORD);
+
+        /*
+        H2의 JdbcDataSource.getConnection()은 호출할 때마다 새로운 커넥션을 생성
+        커넥션 풀을 사용하려면 풀 기능을 제공하는 구현체가 필요.
+        즉, DataSource는 커넥션을 얻는 공통 창구이고, 풀링 여부는 구현에 달려 있다.
+         */
 
         try (final var connection = dataSource.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
