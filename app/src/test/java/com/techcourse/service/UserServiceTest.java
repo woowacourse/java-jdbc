@@ -38,7 +38,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final UserService userService = createUserService(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -64,7 +64,7 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final UserService userService = createUserService(userHistoryDao);
 
         final var originalPassword = userService.findById(1L).getPassword();
         final var newPassword = "newPassword";
@@ -82,7 +82,7 @@ class UserServiceTest {
     @Test
     void rollsBackWhenHistoryInsertFails() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final UserService userService = createUserService(userHistoryDao);
         final var originalPassword = userService.findById(1L).getPassword();
         final var invalidCreateBy = "g".repeat(101);
 
@@ -97,19 +97,22 @@ class UserServiceTest {
     @Test
     void rollbackPreservesPreviouslyCommittedPasswordAndHistory() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final UserService userService = createUserService(userHistoryDao);
         userService.changePassword(1L, "firstPassword", "gugu");
         final var originalPassword = userService.findById(1L).getPassword();
         final var originalHistories = findHistories();
         assertThat(originalHistories).hasSize(1);
-        final var failingService = new UserService(
-                DataSourceConfig.getInstance(), userDao, new MockUserHistoryDao(jdbcTemplate));
+        final UserService failingService = createUserService(new MockUserHistoryDao(jdbcTemplate));
 
         assertThrows(DataAccessException.class,
                 () -> failingService.changePassword(1L, "newPassword", "support"));
 
         assertThat(userService.findById(1L).getPassword()).isEqualTo(originalPassword);
         assertThat(findHistories()).containsExactlyElementsOf(originalHistories);
+    }
+
+    private UserService createUserService(final UserHistoryDao userHistoryDao) {
+        return new TxUserService(DataSourceConfig.getInstance(), new AppUserService(userDao, userHistoryDao));
     }
 
     private List<PasswordChangeHistory> findHistories() {
