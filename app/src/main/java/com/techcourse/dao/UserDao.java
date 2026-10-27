@@ -6,6 +6,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -34,6 +35,16 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         final int updatedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        validateUpdated(updatedRows, user);
+    }
+
+    public void update(final Connection conn, final User user) {
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final int updatedRows = jdbcTemplate.update(conn, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        validateUpdated(updatedRows, user);
+    }
+
+    private void validateUpdated(final int updatedRows, final User user) {
         if (updatedRows == 0) {
             throw new DataAccessException("수정할 사용자가 존재하지 않습니다. id = " + user.getId());
         }
@@ -47,6 +58,11 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+    }
+
+    public User findById(final Connection conn, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(conn, sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
