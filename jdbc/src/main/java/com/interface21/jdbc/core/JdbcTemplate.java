@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -41,7 +42,50 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                              final RowMapper<T> rowMapper) {
-        return execute(sql, setter, pstmt -> {
+        return execute(sql, setter, extractAll(rowMapper));
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
+                                final RowMapper<T> rowMapper) {
+        return singleResult(query(sql, setter, rowMapper));
+    }
+
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return execute(conn, sql, setterOf(args), PreparedStatement::executeUpdate);
+    }
+
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper,
+                             final Object... args) {
+        return execute(conn, sql, setterOf(args), extractAll(rowMapper));
+    }
+
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return singleResult(query(conn, sql, rowMapper, args));
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
+        try (var conn = dataSource.getConnection()) {
+            return execute(conn, sql, setter, callback);
+        } catch (SQLException e) {
+            throw translate(sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
+        try (var pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.setValues(pstmt);
+            return callback.doInStatement(pstmt);
+        } catch (SQLException e) {
+            throw translate(sql, e);
+        }
+    }
+
+    private static <T> StatementCallback<List<T>> extractAll(final RowMapper<T> rowMapper) {
+        return pstmt -> {
             try (var rs = pstmt.executeQuery()) {
                 final var results = new ArrayList<T>();
                 while (rs.next()) {
@@ -49,28 +93,14 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        });
+        };
     }
 
-    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
-                                final RowMapper<T> rowMapper) {
-        final var results = query(sql, setter, rowMapper);
+    private static <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.isEmpty() ? null : results.getFirst();
-    }
-
-    private <T> T execute(final String sql, final PreparedStatementSetter setter,
-                          final StatementCallback<T> callback) {
-        try (var conn = dataSource.getConnection();
-             var pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setter.setValues(pstmt);
-            return callback.doInStatement(pstmt);
-        } catch (SQLException e) {
-            throw translate(sql, e);
-        }
     }
 
     private static PreparedStatementSetter setterOf(final Object... args) {

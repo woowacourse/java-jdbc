@@ -99,6 +99,34 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithExternalConnectionLeavesConnectionOpen() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var count = jdbcTemplate.update(connection, SQL, "changed", 1L);
+
+        assertThat(count).isEqualTo(1);
+        final var order = inOrder(statement);
+        order.verify(statement).setObject(1, "changed");
+        order.verify(statement).setObject(2, 1L);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void externalConnectionFailureTranslatesButDoesNotClose() throws SQLException {
+        final var failure = new SQLException("execution failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, 1L))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
     void setterFailureClosesResourcesWithoutExecuting() throws SQLException {
         final var failure = new SQLException("binding failed");
 
