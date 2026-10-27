@@ -7,6 +7,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
@@ -41,22 +42,22 @@ public class UserService {
 
                 connection.commit();
             } catch (SQLException e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackException) {
-                    e.addSuppressed(rollbackException);
-                }
+                rollback(connection, e);
                 throw new DataAccessException(e);
             } catch (RuntimeException e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackException) {
-                    e.addSuppressed(rollbackException);
-                }
+                rollback(connection, e);
                 throw e;
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(final Connection connection, final Exception originalException) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackException) {
+            originalException.addSuppressed(rollbackException);
         }
     }
 }
