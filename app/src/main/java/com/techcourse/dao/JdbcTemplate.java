@@ -56,6 +56,11 @@ public abstract class JdbcTemplate {
         }
     }
 
+    public final <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        return results.isEmpty() ? null : results.getFirst();
+    }
+
     private ResultSet executeQuery(final PreparedStatementSetter setter, final PreparedStatement statement)
             throws SQLException {
         if (setter != null) {

@@ -8,7 +8,7 @@ import java.util.List;
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> userRowMapper = resultSet -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
@@ -39,20 +39,18 @@ public class UserDao {
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        final var users = jdbcTemplate.query(sql, userRowMapper, id);
-        return users.isEmpty() ? null : users.getFirst();
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        final var users = jdbcTemplate.query(sql, userRowMapper, account);
-        return users.isEmpty() ? null : users.getFirst();
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }

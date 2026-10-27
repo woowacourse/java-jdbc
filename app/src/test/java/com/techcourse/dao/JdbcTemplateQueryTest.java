@@ -150,4 +150,16 @@ class JdbcTemplateQueryTest {
         verify(statement).close();
         verify(connection).close();
     }
+    @Test
+    void queryForObjectReturnsNullWhenEmpty() {
+        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isNull();
+    }
+
+    @Test
+    void queryForObjectReturnsFirstRowWhenMultipleRowsExist() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "pobi");
+
+        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isEqualTo("gugu");
+    }
 }
