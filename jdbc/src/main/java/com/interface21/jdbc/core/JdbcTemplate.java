@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,14 +31,6 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return update(connection, sql, new ArgumentPreparedStatementSetter(args));
-    }
-
-    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
@@ -63,22 +56,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection()) {
-            return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException(failureMessage("SQL 실행에 실패했습니다", sql), e);
-        }
-    }
-
-    // 호출자가 넘긴 커넥션은 닫지 않는다(트랜잭션 경계는 호출자가 관리한다)
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
-                          final StatementCallback<T> callback) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
             throw new DataAccessException(failureMessage("SQL 실행에 실패했습니다", sql), e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
