@@ -58,10 +58,10 @@ class Stage1Test {
      *   Read phenomena | Dirty reads
      * Isolation level  |
      * -----------------|-------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +, isolation level : 1, user : User{id=1, account='gugu', email='hkkang@woowahan.com', password='password'}
+     * Read Committed   | -, isolation level : 2, user : null
+     * Repeatable Read  | -, isolation level : 4, user : null
+     * Serializable     | -, isolation level : 8, user : null
      */
     @Test
     void dirtyReading() throws SQLException {
@@ -111,10 +111,10 @@ class Stage1Test {
      *   Read phenomena | Non-repeatable reads
      * Isolation level  |
      * -----------------|---------------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | -
+     * Serializable     | -
      */
     @Test
     void noneRepeatable() throws SQLException {
@@ -173,10 +173,10 @@ class Stage1Test {
      *   Read phenomena | Phantom reads
      * Isolation level  |
      * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * Read Uncommitted | +
+     * Read Committed   | +
+     * Repeatable Read  | +
+     * Serializable     | -
      */
     @Test
     void phantomReading() throws SQLException {
@@ -239,7 +239,9 @@ class Stage1Test {
 
     private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
-        config.setJdbcUrl(container.getJdbcUrl());
+        final var jdbcUrl = container.getJdbcUrl();
+        final var separator = jdbcUrl.contains("?") ? "&" : "?";
+        config.setJdbcUrl(jdbcUrl + separator + "allowMultiQueries=true");
         config.setUsername(container.getUsername());
         config.setPassword(container.getPassword());
         config.setDriverClassName(container.getDriverClassName());
