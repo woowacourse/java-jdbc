@@ -65,12 +65,12 @@ class UserDaoTest {
     }
 
     @Test
-    void update() {
+    void update() throws SQLException {
         final var newPassword = "password99";
         final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(user);
+        update(user);
 
         final var actual = userDao.findById(1L);
 
@@ -98,12 +98,12 @@ class UserDaoTest {
     }
 
     @Test
-    void updateChangesOnlyTheRequestedUser() {
+    void updateChangesOnlyTheRequestedUser() throws SQLException {
         userDao.insert(new User("other", "otherPassword", "other@example.com"));
         final var user = userDao.findById(1L);
         user.changePassword("newPassword");
 
-        userDao.update(user);
+        update(user);
 
         assertThat(userDao.findById(1L)).usingRecursiveComparison().isEqualTo(user);
         assertThat(userDao.findById(2L).getPassword()).isEqualTo("otherPassword");
@@ -132,5 +132,11 @@ class UserDaoTest {
         final var dao = new UserDao(DataSourceConfig.getInstance());
 
         assertThat(dao.findById(1L).getAccount()).isEqualTo("gugu");
+    }
+
+    private void update(final User user) throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            userDao.update(connection, user);
+        }
     }
 }
