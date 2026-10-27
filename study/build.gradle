@@ -16,15 +16,13 @@ repositories {
     mavenCentral()
 }
 
-ext['testcontainers.version'] = '1.21.4'
-
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     implementation 'com.h2database:h2:2.3.232'
-    implementation 'org.testcontainers:mysql'
+    implementation 'org.testcontainers:mysql:1.21.3'
 
     implementation 'org.reflections:reflections:0.10.2'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
