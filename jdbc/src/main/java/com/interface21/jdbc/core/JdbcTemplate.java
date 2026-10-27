@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.PreparedStatementSetter;
 import com.interface21.RowMapper;
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,7 +44,7 @@ public abstract class JdbcTemplate<T> {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("데이터 조회에 실패했습니다.", e);
         }
     }
 
@@ -59,7 +60,7 @@ public abstract class JdbcTemplate<T> {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("데이터 변경에 실패했습니다.", e);
         }
     }
 
