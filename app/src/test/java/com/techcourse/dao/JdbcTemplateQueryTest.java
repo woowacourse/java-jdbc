@@ -26,6 +26,7 @@ class JdbcTemplateQueryTest {
 
     private static final String SQL = "select account from users where id >= ?";
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private ResultSet resultSet;
@@ -35,7 +36,7 @@ class JdbcTemplateQueryTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -150,6 +151,38 @@ class JdbcTemplateQueryTest {
         verify(statement).close();
         verify(connection).close();
     }
+
+    @Test
+    void queryWithExternalConnection() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.query(connection, SQL, rowMapper, 1L)).containsExactly("gugu");
+
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenMappingFails() throws SQLException {
+        final var cause = new SQLException("매핑 실패");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, SQL, setter, rowMapper))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).rollback();
+        verifyNoInteractions(dataSource);
+    }
     @Test
     void queryForObjectReturnsNullWhenEmpty() {
         assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isNull();
@@ -161,5 +194,19 @@ class JdbcTemplateQueryTest {
         when(resultSet.getString("account")).thenReturn("gugu", "pobi");
 
         assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isEqualTo("gugu");
+    }
+
+    @Test
+    void queryForObjectUsesExternalConnection() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.queryForObject(connection, SQL, rowMapper, 1L)).isEqualTo("gugu");
+
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
     }
 }
