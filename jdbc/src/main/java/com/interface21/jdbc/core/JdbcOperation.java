@@ -27,7 +27,7 @@ public abstract class JdbcOperation<R> {
 
         Connection connection = DataSourceUtils.getConnection(dataSource);
         if (alreadyBound) {
-            return execute(connection, sql, setter);
+            return executeWithBoundConnection(connection, sql, setter);
         }
 
         try (connection) {
@@ -39,7 +39,7 @@ public abstract class JdbcOperation<R> {
         }
     }
 
-    public final R execute(Connection connection, String sql, PreparedStatementSetter setter) {
+    private R executeWithBoundConnection(Connection connection, String sql, PreparedStatementSetter setter) {
         try {
             return executeWithConnection(connection, sql, setter);
         } catch (SQLException e) {
