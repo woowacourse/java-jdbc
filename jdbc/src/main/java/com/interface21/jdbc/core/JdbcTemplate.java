@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +48,12 @@ public class JdbcTemplate {
         final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
-            return null;
+            throw new DataAccessException("결과가 없습니다.");
         }
         if (results.size() > 1) {
             throw new DataAccessException("결과가 1개보다 많습니다. size=" + results.size());
         }
-        return results.get(0);
+        return results.stream().findFirst();
     }
 
     public int update(final String sql, final PreparedStatementSetter pss) {
