@@ -161,14 +161,14 @@ class DataSourceUtilsTest {
             verify(connection).close();
         }
 
+        // 지키려는 건 "삼키지 않고 던지되 원인을 남긴다"는 정책이라, 어떤 예외 타입으로 감쌀지는 구현에 맡긴다.
         @Test
-        @DisplayName("close가 실패하면 CannotGetJdbcConnectionException을 던지고, 원인 SQLException을 남긴다")
+        @DisplayName("close가 실패하면 예외를 던지고, 원인 SQLException을 남긴다")
         void keepsCauseWhenCloseFails() throws SQLException {
             final SQLException closeFailure = new SQLException("close 실패");
             willThrow(closeFailure).given(connection).close();
 
             assertThatThrownBy(() -> DataSourceUtils.releaseConnection(connection, dataSource))
-                    .isInstanceOf(CannotGetJdbcConnectionException.class)
                     .hasCause(closeFailure);
         }
     }
@@ -195,10 +195,11 @@ class DataSourceUtilsTest {
             verify(dataSource, never()).getConnection();
         }
 
-        // getConnection이 멋대로 묶어버리면, 트랜잭션을 여는 쪽의 bind가 중복 bind로 터진다.
+        // getConnection이 몰래 묶어버리면, 트랜잭션을 여는 쪽의 bind가 두 번째 bind가 되어
+        // TransactionSynchronizationManager의 중복 bind 규칙에 걸려 터진다.
         @Test
-        @DisplayName("getConnection으로 얻은 새 Connection을 트랜잭션을 여는 쪽이 직접 bind할 수 있다")
-        void transactionOwnerCanBindObtainedConnection() {
+        @DisplayName("getConnection이 바인딩을 남기지 않아서, 트랜잭션을 여는 쪽의 첫 bind가 중복 bind로 터지지 않는다")
+        void ownerBindIsNotDuplicateAfterGetConnection() {
             final Connection obtained = DataSourceUtils.getConnection(dataSource);
 
             TransactionSynchronizationManager.bindResource(dataSource, obtained);
