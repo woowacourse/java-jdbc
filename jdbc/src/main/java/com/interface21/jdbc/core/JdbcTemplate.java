@@ -1,12 +1,14 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,19 +24,18 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        update(sql, createStatementSetter(args));
+        update(sql, createPreparedStatementSetter(args));
     }
 
     public void update(final String sql, final PreparedStatementSetter statementSetter) {
-        try (final Connection connection = dataSource.getConnection()) {
+        execute(connection -> {
             update(connection, sql, statementSetter);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update", e);
-        }
+            return null;
+        });
     }
 
     public void update(final Connection connection, final String sql, final Object... args) {
-        update(connection, sql, createStatementSetter(args));
+        update(connection, sql, createPreparedStatementSetter(args));
     }
 
     public void update(final Connection connection, final String sql,
@@ -50,21 +51,17 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, createStatementSetter(args), rowMapper);
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter statementSetter,
                              final RowMapper<T> rowMapper) {
-        try (final Connection connection = dataSource.getConnection()) {
-            return query(connection, sql, statementSetter, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute query", e);
-        }
+        return execute(connection -> query(connection, sql, statementSetter, rowMapper));
     }
 
     public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
                              final Object... args) {
-        return query(connection, sql, createStatementSetter(args), rowMapper);
+        return query(connection, sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final Connection connection, final String sql,
@@ -117,13 +114,20 @@ public class JdbcTemplate {
         return results.get(0);
     }
 
-    private void setParameters(final PreparedStatement statement, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
+    private <T> T execute(final Function<Connection, T> action) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            return action.apply(connection);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    private PreparedStatementSetter createStatementSetter(final Object... args) {
-        return statement -> setParameters(statement, args);
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... parameters) {
+        return statement -> {
+            for (int i = 0; i < parameters.length; i++) {
+                statement.setObject(i + 1, parameters[i]);
+            }
+        };
     }
 }
