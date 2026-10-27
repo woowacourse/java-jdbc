@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -7,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -15,6 +18,7 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("truncate table users restart identity");
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -41,6 +45,15 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccount_결과가_여러_건이면_예외가_발생한다() {
+        final var account = "gugu";
+        userDao.insert(new User(account, "password2", "gugu2@woowahan.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount(account))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
