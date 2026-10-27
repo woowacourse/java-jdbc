@@ -53,14 +53,25 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParameters(preparedStatement, args);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                final T result = rowMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("조회 결과가 1건이어야 하지만 2건 이상입니다.");
+                }
+                return result;
+            }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
         }
-        if (results.size() > 1) {
-            throw new DataAccessException("조회 결과가 1건이어야 하지만 " + results.size() + "건입니다.");
-        }
-        return results.getFirst();
     }
 
     private void setParameters(final PreparedStatement preparedStatement, final Object... args) throws SQLException {
