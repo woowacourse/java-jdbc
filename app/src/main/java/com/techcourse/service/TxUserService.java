@@ -25,38 +25,27 @@ public class TxUserService implements UserService {
 
     @Override
     public void save(User user) {
-        Connection connection = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, connection);
-        try {
-            connection.setAutoCommit(false);
-            userService.save(user);
-            connection.commit();
-        } catch (SQLException | DataAccessException e) {
-            rollback(e, connection);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new DataAccessException(e.getMessage());
-        } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            close(connection);
-        }
+        executeTransaction(() -> userService.save(user));
     }
 
     @Override
     public void changePassword(long id, String newPassword, String createdBy) {
+        executeTransaction(() -> userService.changePassword(id, newPassword, createdBy));
+    }
+
+    private void executeTransaction(Runnable action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
             connection.setAutoCommit(false);
-            userService.changePassword(id, newPassword, createdBy);
+            action.run();
             connection.commit();
-        } catch (SQLException | DataAccessException e) {
+        } catch (SQLException e) {
             rollback(e, connection);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new DataAccessException(e.getMessage());
+            throw new DataAccessException(e);
+        } catch (RuntimeException e) {
+            rollback(e, connection);
+            throw e;
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
             close(connection);
