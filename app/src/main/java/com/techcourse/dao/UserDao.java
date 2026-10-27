@@ -3,14 +3,11 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
     private static final RowMapper<User> USER_ROW_MAPPER =
             resultSet -> new User(
                     resultSet.getLong("id"),
@@ -20,10 +17,6 @@ public class UserDao {
             );
 
     private final JdbcTemplate jdbcTemplate;
-
-    public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -40,10 +33,11 @@ public class UserDao {
         );
     }
 
-    public void update(final User user) {
+    public void update(final Connection connection, final User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         jdbcTemplate.update(
+                connection,
                 sql,
                 user.getAccount(),
                 user.getPassword(),
