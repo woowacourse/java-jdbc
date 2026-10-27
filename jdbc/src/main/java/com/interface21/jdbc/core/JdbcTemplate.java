@@ -25,6 +25,10 @@ public class JdbcTemplate {
         execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    /**
+     * 단일 SQL 인자로 NULL을 전달할 때는 {@code update(sql, new Object[]{null})}을 사용한다.
+     * {@code update(sql, null)}은 PreparedStatementSetter 오버로드와 구분할 수 없다.
+     */
     public void update(String sql, Object... args) {
         update(sql, pstmt -> bindParameters(pstmt, args));
     }
