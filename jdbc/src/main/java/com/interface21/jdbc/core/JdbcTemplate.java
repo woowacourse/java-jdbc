@@ -1,6 +1,5 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.PreparedStatementSetter;
 import com.interface21.RowMapper;
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
@@ -13,27 +12,27 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class JdbcTemplate<T> {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
-    protected abstract String createQuery();
+    private final DataSource dataSource;
 
-    public abstract DataSource getDataSource();
-
-    public List<T> query(RowMapper<T> rowMapper) {
-        return query(rowMapper, null);
+    public JdbcTemplate(final DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    public List<T> query(RowMapper<T> rowMapper, PreparedStatementSetter setter) {
-        final var sql = createQuery();
+    public DataSource getDataSource() {
+        return dataSource;
+    }
 
-        try (Connection conn = getDataSource().getConnection();
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            if (setter != null) {
-                setter.setValues(pstmt);
+            if (args != null) {
+                setValues(pstmt, args);
             }
             try (ResultSet rs = executeQuery(pstmt)) {
                 List<T> results = new ArrayList<>();
@@ -48,19 +47,23 @@ public abstract class JdbcTemplate<T> {
         }
     }
 
-    public void update(PreparedStatementSetter setter) {
-        String sql = createQuery();
-
-        try (Connection conn = getDataSource().getConnection();
+    public void update(String sql, Object... args) {
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
 
-            setter.setValues(pstmt);
+            setValues(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("데이터 변경에 실패했습니다.", e);
+        }
+    }
+
+    private void setValues(final PreparedStatement pstmt, final Object... args) throws SQLException {
+        for (int i = 0; i < args.length; i++) {
+            pstmt.setObject(i + 1, args[i]);
         }
     }
 
