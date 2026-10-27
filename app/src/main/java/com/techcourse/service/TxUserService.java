@@ -45,15 +45,8 @@ public class TxUserService implements UserService {
                 connection.setAutoCommit(false);
                 TransactionSynchronizationManager.bindResource(dataSource, connection);
                 try {
-                    try {
-                        userService.changePassword(id, newPassword, createdBy);
-                        connection.commit();
-                        committed = true;
-                    } catch (SQLException | RuntimeException | Error e) {
-                        rollbackAndRestore(connection, autoCommit, e);
-                        throw e;
-                    }
-
+                    executeAndCommit(connection, autoCommit, id, newPassword, createdBy);
+                    committed = true;
                     connection.setAutoCommit(autoCommit);
                 } finally {
                     TransactionSynchronizationManager.unbindResource(dataSource);
@@ -62,13 +55,24 @@ public class TxUserService implements UserService {
                 failure = e;
                 throw e;
             } finally {
-                releaseConnection(connection, failure);
+                DataSourceUtils.doReleaseConnection(connection, dataSource, failure);
             }
         } catch (SQLException e) {
             if (committed) {
                 throw new TransactionCleanupException(e);
             }
             throw new DataAccessException("Failed to change password in a transaction", e);
+        }
+    }
+
+    private void executeAndCommit(final Connection connection, final boolean autoCommit, final long id,
+                                  final String newPassword, final String createdBy) throws SQLException {
+        try {
+            userService.changePassword(id, newPassword, createdBy);
+            connection.commit();
+        } catch (SQLException | RuntimeException | Error e) {
+            rollbackAndRestore(connection, autoCommit, e);
+            throw e;
         }
     }
 
@@ -82,15 +86,4 @@ public class TxUserService implements UserService {
         }
     }
 
-    private void releaseConnection(final Connection connection, final Throwable failure) throws SQLException {
-        try {
-            DataSourceUtils.doReleaseConnection(connection, dataSource);
-        } catch (SQLException | RuntimeException | Error e) {
-            if (failure != null) {
-                failure.addSuppressed(e);
-            } else {
-                throw e;
-            }
-        }
-    }
 }
