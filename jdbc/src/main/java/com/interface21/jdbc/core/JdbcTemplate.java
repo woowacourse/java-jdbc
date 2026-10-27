@@ -5,9 +5,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +82,10 @@ public class JdbcTemplate {
     private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
         return pstmt -> {
             for (int i = 0; i < args.length; i++) {
+                if (args[i] == null) {
+                    pstmt.setNull(i + 1, Types.NULL);
+                    continue;
+                }
                 pstmt.setObject(i + 1, args[i]);
             }
         };
