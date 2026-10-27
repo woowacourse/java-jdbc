@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -21,10 +23,19 @@ public abstract class JdbcOperation<R> {
     }
 
     public final R execute(String sql, PreparedStatementSetter setter) {
-        try (Connection conn = dataSource.getConnection()) {
-            return executeWithConnection(conn, sql, setter);
+        boolean alreadyBound = TransactionSynchronizationManager.getResource(dataSource) != null;
+
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        if (alreadyBound) {
+            return execute(connection, sql, setter);
+        }
+
+        try (connection) {
+            return executeWithConnection(connection, sql, setter);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다.", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
@@ -36,6 +47,8 @@ public abstract class JdbcOperation<R> {
         }
     }
 
+    protected abstract R executeStatement(PreparedStatement pstmt) throws SQLException;
+
     private R executeWithConnection(Connection connection, String sql, PreparedStatementSetter setter)
             throws SQLException {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -43,6 +56,4 @@ public abstract class JdbcOperation<R> {
             return executeStatement(pstmt);
         }
     }
-
-    protected abstract R executeStatement(PreparedStatement pstmt) throws SQLException;
 }
