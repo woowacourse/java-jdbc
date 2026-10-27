@@ -73,6 +73,18 @@ public class UserDao {
         return result.getFirst();
     }
 
+    public User findById(final Long id, final Connection conn) {
+        final var sql = "select id, account, password, email from users where id = ?";
+
+        List<User> result = jdbcTemplate.query(sql, conn, userRowMapper, id);
+
+        if (result.isEmpty()) {
+            return null;
+        }
+
+        return result.getFirst();
+    }
+
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 

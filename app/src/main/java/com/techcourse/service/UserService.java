@@ -34,7 +34,7 @@ public class UserService {
             try {
                 connection.setAutoCommit(false);
 
-                final var user = findById(id);
+                final var user = userDao.findById(id, connection);
                 user.changePassword(newPassword);
                 userDao.update(user, connection);
                 userHistoryDao.log(new UserHistory(user, createBy), connection);

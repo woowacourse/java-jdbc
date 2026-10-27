@@ -35,7 +35,7 @@ class UserServiceTransactionTest {
         final var userDao = mock(UserDao.class);
         userHistoryDao = mock(UserHistoryDao.class);
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(1L))
+        when(userDao.findById(1L, connection))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
         userService = new UserService(userDao, userHistoryDao, dataSource);
     }

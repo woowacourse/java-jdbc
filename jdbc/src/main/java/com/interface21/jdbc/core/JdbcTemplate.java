@@ -73,6 +73,27 @@ public class JdbcTemplate {
         }
     }
 
+    public final <T> List<T> query(String sql, Connection conn, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, conn, pstmt -> setValues(pstmt, args), rowMapper);
+    }
+
+    public final <T> List<T> query(String sql, Connection conn, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+
+            List<T> results = new ArrayList<>();
+            try(ResultSet rs = executeQuery(setter, pstmt)) {
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+            }
+            return results;
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
     private ResultSet executeQuery(PreparedStatementSetter setter, PreparedStatement pstmt) throws SQLException {
         setter.setValues(pstmt);
         return pstmt.executeQuery();
