@@ -23,7 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class UserServiceExceptionTest {
+class TxUserServiceExceptionTest {
 
     private DataSource dataSource;
     private Connection connection;
@@ -41,7 +41,7 @@ class UserServiceExceptionTest {
         when(userDao.findById(1L))
                 .thenReturn(Optional.of(new User(1L, "gugu", "password", "gugu@example.com")));
 
-        userService = new UserService(dataSource, userDao, userHistoryDao);
+        userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
     }
 
     @AfterEach
