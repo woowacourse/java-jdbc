@@ -1,5 +1,7 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -123,7 +126,7 @@ class JdbcTemplateTest {
 
         // then
         assertThat(thrown)
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
     }
 
@@ -139,7 +142,7 @@ class JdbcTemplateTest {
 
         // then
         assertThat(thrown)
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
         verify(connection).close();
     }
@@ -156,7 +159,7 @@ class JdbcTemplateTest {
 
         // then
         assertThat(thrown)
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
         verify(statement).close();
         verify(connection).close();
@@ -174,7 +177,7 @@ class JdbcTemplateTest {
 
         // then
         assertThat(thrown)
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
         verify(statement).close();
         verify(connection).close();
@@ -193,7 +196,7 @@ class JdbcTemplateTest {
 
         // then
         assertThat(thrown)
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
         verify(resultSet).close();
         verify(statement).close();
@@ -242,5 +245,57 @@ class JdbcTemplateTest {
 
         // then
         assertThat(name).isEqualTo("gugu");
+    }
+
+    @Test
+    @DisplayName("인자 바인딩에 실패하면 DB 접근 예외로 원인을 전달하고 자원을 해제한다")
+    void failToBindParameters() throws SQLException {
+        // given
+        final var sql = "update people set name = ?";
+        final var failure = new SQLException("binding failed");
+        doThrow(failure).when(statement).setObject(1, "gugu");
+
+        // when
+        final var thrown = catchThrowable(() -> jdbcTemplate.update(sql, "gugu"));
+
+        // then
+        assertThat(thrown).isInstanceOf(DataAccessException.class).hasCause(failure);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("매퍼의 실행 예외를 그대로 전달하면서 모든 조회 자원을 해제한다")
+    void failToMapRowWithUncheckedException() throws SQLException {
+        // given
+        final var sql = "select name from people";
+        final var failure = new IllegalStateException("mapping failed");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("name")).thenThrow(failure);
+
+        // when
+        final var thrown = catchThrowable(() -> jdbcTemplate.query(sql, NAME_MAPPER));
+
+        // then
+        assertThat(thrown).isSameAs(failure);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("Statement 해제 실패도 DB 접근 예외로 전달하고 연결은 해제한다")
+    void failToCloseStatement() throws SQLException {
+        // given
+        final var sql = "update people set name = 'gugu'";
+        final var failure = new SQLException("close failed");
+        doThrow(failure).when(statement).close();
+
+        // when
+        final var thrown = catchThrowable(() -> jdbcTemplate.update(sql));
+
+        // then
+        assertThat(thrown).isInstanceOf(DataAccessException.class).hasCause(failure);
+        verify(connection).close();
     }
 }
