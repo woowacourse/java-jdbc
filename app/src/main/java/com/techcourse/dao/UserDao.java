@@ -2,7 +2,6 @@ package com.techcourse.dao;
 
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -71,28 +70,4 @@ public class UserDao {
         );
     }
 
-    public User findById(final Connection connection, final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
-        return jdbcTemplate.queryForObject(
-                connection,
-                sql,
-                this::mapUser,
-                id
-        );
-    }
-
-    public void update(final Connection connection, final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        jdbcTemplate.update(
-                connection,
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
-    }
 }
-
