@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
@@ -71,10 +72,14 @@ class UserHistoryDaoTest {
     void 외부_연결로_이력을_저장하고_커밋하면_이력이_남는다() throws SQLException {
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
 
-            userHistoryDao.log(connection, userHistory);
-
-            connection.commit();
+            try {
+                userHistoryDao.log(userHistory);
+                connection.commit();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
+            }
         }
 
         final Long historyCount = jdbcTemplate.queryForObject("""
@@ -89,10 +94,14 @@ class UserHistoryDaoTest {
     void 외부_연결로_이력을_저장하고_롤백하면_이력이_남지_않는다() throws SQLException {
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
 
-            userHistoryDao.log(connection, userHistory);
-
-            connection.rollback();
+            try {
+                userHistoryDao.log(userHistory);
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
+            }
         }
 
         final Long historyCount = jdbcTemplate.queryForObject("""
