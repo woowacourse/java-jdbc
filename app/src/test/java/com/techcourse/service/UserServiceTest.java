@@ -22,9 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 class UserServiceTest {
@@ -136,10 +134,11 @@ class UserServiceTest {
             assertThat(countHistories(1L)).isZero();
 
             // H2의 close 시 자동 롤백만으로 통과하지 않도록 서비스의 명시적인 롤백도 확인한다.
+            // 커밋하지 않았다는 건 위의 데이터 확인으로 증명한다. spy로 commit 호출 여부를 직접 볼 수는 없는데,
+            // H2는 setAutoCommit(true)가 불리면 JDBC 규약대로 내부에서 commit()을 호출하고, 롤백 뒤 autocommit을 되돌릴 때 그 내부 호출까지 spy에 잡히기 때문이다.
             final var inOrder = inOrder(connection);
             inOrder.verify(connection).rollback();
             inOrder.verify(connection).close();
-            verify(connection, never()).commit();
         }
     }
 
@@ -166,10 +165,10 @@ class UserServiceTest {
             assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
             verifyNoInteractions(userHistoryDao);
 
+            // 커밋하지 않았다는 건 위의 비밀번호 확인으로 증명한다. 이유는 바로 위 테스트의 주석과 같다.
             final var inOrder = inOrder(connection);
             inOrder.verify(connection).rollback();
             inOrder.verify(connection).close();
-            verify(connection, never()).commit();
         }
     }
 }

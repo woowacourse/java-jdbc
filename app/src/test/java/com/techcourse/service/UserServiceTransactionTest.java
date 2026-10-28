@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -65,6 +66,15 @@ class UserServiceTransactionTest {
         }
     }
 
+    // 예외 자신과 cause만 따라간다. suppressed는 넣지 않으므로, 여기에 있는 예외가 주 원인이다.
+    private static List<Throwable> causeChain(final Throwable root) {
+        final List<Throwable> chain = new ArrayList<>();
+        for (Throwable current = root; current != null && !chain.contains(current); current = current.getCause()) {
+            chain.add(current);
+        }
+        return chain;
+    }
+
     @BeforeEach
     void setUp() throws SQLException {
         dataSource = mock(DataSource.class);
@@ -73,6 +83,8 @@ class UserServiceTransactionTest {
         resultSet = mock(ResultSet.class);
 
         given(dataSource.getConnection()).willReturn(connection);
+        // JDBC 기본값처럼, 새로 얻은 Connection은 autocommit이 켜져 있다.
+        given(connection.getAutoCommit()).willReturn(true);
         given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
         given(preparedStatement.executeUpdate()).willReturn(1);
 
@@ -275,6 +287,86 @@ class UserServiceTransactionTest {
                 .hasRootCauseMessage("연결 실패");
 
         verify(connection, never()).prepareStatement(anyString());
+        assertNoBoundConnection();
+    }
+
+    // 커넥션 풀이라면 autocommit이 꺼진 채로 반납된 Connection을 다음 사람이 그대로 받게 된다.
+    // 그래서 성공이든 실패든, 닫기 전에 autocommit을 되돌린다.
+    @Test
+    @DisplayName("성공하면 커밋한 뒤 autocommit을 되돌리고 나서 Connection을 닫는다")
+    void restoresAutoCommitAfterCommit() throws SQLException {
+        txUserService(historyDao()).changePassword(USER_ID, NEW_PASSWORD, CREATE_BY);
+
+        final var inOrder = inOrder(connection);
+        inOrder.verify(connection).commit();
+        inOrder.verify(connection).setAutoCommit(true);
+        inOrder.verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("업무 로직이 실패해 롤백해도, autocommit을 되돌리고 나서 Connection을 닫는다")
+    void restoresAutoCommitAfterRollback() throws SQLException {
+        final var userService = txUserService(failingHistoryDao(new DataAccessException("이력 저장 실패")));
+
+        assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .isInstanceOf(DataAccessException.class);
+
+        final var inOrder = inOrder(connection);
+        inOrder.verify(connection).rollback();
+        inOrder.verify(connection).setAutoCommit(true);
+        inOrder.verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("커밋이 실패해 롤백해도, autocommit을 되돌리고 나서 Connection을 닫는다")
+    void restoresAutoCommitAfterCommitFailure() throws SQLException {
+        willThrow(new SQLException("커밋 실패")).given(connection).commit();
+        final var userService = txUserService(historyDao());
+
+        assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .isInstanceOf(DataAccessException.class);
+
+        final var inOrder = inOrder(connection);
+        inOrder.verify(connection).rollback();
+        inOrder.verify(connection).setAutoCommit(true);
+        inOrder.verify(connection).close();
+    }
+
+    // 커밋은 이미 끝나 데이터가 반영됐다. 복구 실패를 실패로 알리면 호출한 쪽이 재시도해 같은 변경이 두 번 일어날 수 있다.
+    // 그래서 복구 실패는 로그만 남기고 호출한 쪽에는 성공으로 알린다. Connection은 어느 쪽이든 닫히고, 망가진 Connection의 뒷수습은 풀의 몫이다.
+    @Test
+    @DisplayName("커밋한 뒤 autocommit 복구가 실패해도 예외를 던지지 않고, 롤백하지 않고, Connection은 닫고 바인딩을 풀어둔다")
+    void doesNotFailWhenRestoreFailsAfterCommit() throws SQLException {
+        willThrow(new SQLException("복구 실패")).given(connection).setAutoCommit(true);
+        final var userService = txUserService(historyDao());
+
+        assertThatCode(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .doesNotThrowAnyException();
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+        verify(connection).close();
+        assertNoBoundConnection();
+    }
+
+    // 연결이 끊긴 경우처럼, 업무 실패와 복구 실패는 함께 일어나기 쉽다. 복구 실패가 원래 원인을 가리면 안 된다.
+    // 복구 실패를 suppressed로 붙일지 로그만 남길지는 구현에 맡기고, 원래 예외가 주 원인으로 남는지만 본다.
+    @Test
+    @DisplayName("업무 로직이 실패한 뒤 autocommit 복구까지 실패해도, 원래 예외를 주 원인으로 던지고 Connection은 닫고 바인딩을 풀어둔다")
+    void keepsOriginalFailureWhenRestoreFails() throws SQLException {
+        final var historyFailure = new DataAccessException("이력 저장 실패");
+        final var restoreFailure = new SQLException("복구 실패");
+        willThrow(restoreFailure).given(connection).setAutoCommit(true);
+        final var userService = txUserService(failingHistoryDao(historyFailure));
+
+        assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .satisfies(thrown -> {
+                    assertThat(causeChain(thrown)).contains(historyFailure);
+                    assertThat(causeChain(thrown)).doesNotContain(restoreFailure);
+                });
+
+        verify(connection).setAutoCommit(true);
+        verify(connection).close();
         assertNoBoundConnection();
     }
 
