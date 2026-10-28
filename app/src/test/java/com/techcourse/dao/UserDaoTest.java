@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -146,10 +147,14 @@ class UserDaoTest {
 
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
 
-            userDao.update(connection, user);
-
-            connection.commit();
+            try {
+                userDao.update(user);
+                connection.commit();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
+            }
         }
 
         final var actual = userDao.findById(1L);
@@ -163,9 +168,15 @@ class UserDaoTest {
         new JdbcTemplate(DataSourceConfig.getInstance()).update("delete from users where id = ?", user.getId());
 
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
-            assertThatThrownBy(() -> userDao.update(connection, user))
-                    .isInstanceOf(DataAccessException.class)
-                    .hasMessage("사용자 수정 결과는 1건이어야 합니다. 실제 수정 건수: 0");
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
+
+            try {
+                assertThatThrownBy(() -> userDao.update(user))
+                        .isInstanceOf(DataAccessException.class)
+                        .hasMessage("사용자 수정 결과는 1건이어야 합니다. 실제 수정 건수: 0");
+            } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
+            }
         }
     }
 
@@ -177,10 +188,14 @@ class UserDaoTest {
 
         try (final var connection = DataSourceConfig.getInstance().getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(DataSourceConfig.getInstance(), connection);
 
-            userDao.update(connection, user);
-
-            connection.rollback();
+            try {
+                userDao.update(user);
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(DataSourceConfig.getInstance());
+            }
         }
 
         final var actual = userDao.findById(1L);

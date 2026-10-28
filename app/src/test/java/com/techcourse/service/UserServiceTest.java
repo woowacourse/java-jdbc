@@ -4,9 +4,11 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -63,6 +66,7 @@ class UserServiceTest {
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
@@ -87,8 +91,10 @@ class UserServiceTest {
             jdbcTemplate.update("update users set email = ? where id = ?", newEmail, 1L);
             return dataSource.getConnection();
         });
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(transactionDataSource, userDao, userHistoryDao);
+        final var transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+        final var transactionUserDao = new UserDao(transactionJdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(transactionJdbcTemplate);
+        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
 
         userService.changePassword(1L, "newPassword", "gugu");
 
@@ -117,7 +123,7 @@ class UserServiceTest {
                         .isInstanceOf(DataAccessException.class)
                         .hasCauseInstanceOf(SQLTimeoutException.class);
                 return invocation.callRealMethod();
-            }).when(transactionUserDao).update(any(Connection.class), any(User.class));
+            }).when(transactionUserDao).update(any(User.class));
 
             userService.changePassword(1L, "newPassword", "gugu");
 
@@ -138,8 +144,8 @@ class UserServiceTest {
         final var connection = spy(dataSource.getConnection());
         final var transactionDataSource = mock(DataSource.class);
         when(transactionDataSource.getConnection()).thenReturn(connection);
-        final var transactionJdbcTemplate = spy(jdbcTemplate);
-        doReturn(0).when(transactionJdbcTemplate).update(any(Connection.class), anyString(), any(Object[].class));
+        final var transactionJdbcTemplate = spy(new JdbcTemplate(transactionDataSource));
+        doReturn(0).when(transactionJdbcTemplate).update(anyString(), any(Object[].class));
         final var transactionUserDao = new UserDao(transactionJdbcTemplate);
         final var userHistoryDao = mock(UserHistoryDao.class);
         final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
@@ -153,6 +159,7 @@ class UserServiceTest {
         verify(connection).rollback();
         verify(connection, never()).commit();
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
         assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
     }
 
@@ -167,6 +174,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
@@ -205,9 +213,11 @@ class UserServiceTest {
         when(transactionDataSource.getConnection()).thenReturn(connection);
         final var commitException = new SQLException("커밋 실패");
         doThrow(commitException).when(connection).commit();
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(transactionDataSource, userDao, userHistoryDao);
-        final var originalPassword = userService.findById(1L).getPassword();
+        final var transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+        final var transactionUserDao = new UserDao(transactionJdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(transactionJdbcTemplate);
+        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
+        final var originalPassword = userDao.findById(1L).getPassword();
 
         final var exception = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -215,7 +225,8 @@ class UserServiceTest {
         assertThat(exception).hasCause(commitException);
         verify(connection).rollback();
         verify(connection).close();
-        assertThat(userService.findById(1L).getPassword()).isEqualTo(originalPassword);
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
         final Long historyCount = jdbcTemplate.queryForObject("""
                 select count(*)
                 from user_history
@@ -234,9 +245,9 @@ class UserServiceTest {
         final var userHistoryDao = mock(UserHistoryDao.class);
         final var transactionUserDao = mock(UserDao.class);
         final var user = userDao.findById(1L);
-        when(transactionUserDao.findByIdForUpdate(connection, 1L)).thenReturn(user);
+        when(transactionUserDao.findByIdForUpdate(1L)).thenReturn(user);
         final var updateException = new DataAccessException("사용자 수정 실패");
-        doThrow(updateException).when(transactionUserDao).update(connection, user);
+        doThrow(updateException).when(transactionUserDao).update(user);
         final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
 
         final var exception = assertThrows(DataAccessException.class,
@@ -245,5 +256,86 @@ class UserServiceTest {
         assertThat(exception).isSameAs(updateException);
         assertThat(exception.getSuppressed()).containsExactly(rollbackException);
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+    }
+
+    @Test
+    void 비밀번호_변경은_하나의_연결을_공유하고_완료_후_등록을_해제한다() throws SQLException {
+        final var connection = spy(dataSource.getConnection());
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        final var transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+        final var transactionUserDao = spy(new UserDao(transactionJdbcTemplate));
+        final var userHistoryDao = spy(new UserHistoryDao(transactionJdbcTemplate));
+        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isSameAs(connection);
+            assertThat(connection.isClosed()).isFalse();
+            return invocation.callRealMethod();
+        }).when(userHistoryDao).log(any(UserHistory.class));
+
+        userService.changePassword(1L, "newPassword", "gugu");
+
+        verify(transactionDataSource).getConnection();
+        verify(transactionUserDao).findByIdForUpdate(1L);
+        verify(transactionUserDao).update(any(User.class));
+        verify(userHistoryDao).log(any(UserHistory.class));
+        final var order = inOrder(connection);
+        order.verify(connection).setAutoCommit(false);
+        order.verify(connection).commit();
+        order.verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
+        final Long historyCount = jdbcTemplate.queryForObject("""
+                select count(*)
+                from user_history
+                """, resultSet -> resultSet.getLong(1));
+        assertThat(historyCount).isEqualTo(1L);
+    }
+
+    @Test
+    void 자동_커밋_설정에_실패하면_DAO를_호출하지_않고_연결을_닫는다() throws SQLException {
+        final var connection = mock(Connection.class);
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        final var settingException = new SQLException("자동 커밋 설정 실패");
+        doThrow(settingException).when(connection).setAutoCommit(false);
+        final var transactionUserDao = mock(UserDao.class);
+        final var userHistoryDao = mock(UserHistoryDao.class);
+        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(settingException);
+
+        verifyNoInteractions(transactionUserDao, userHistoryDao);
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+    }
+
+    @Test
+    void 사용자_수정과_연결_종료가_함께_실패해도_원래_예외를_보존하고_등록을_해제한다() throws SQLException {
+        final var connection = mock(Connection.class);
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        final var transactionUserDao = mock(UserDao.class);
+        final var user = userDao.findById(1L);
+        when(transactionUserDao.findByIdForUpdate(1L)).thenReturn(user);
+        final var updateException = new DataAccessException("사용자 수정 실패");
+        doThrow(updateException).when(transactionUserDao).update(user);
+        final var closeException = new SQLException("연결 종료 실패");
+        doThrow(closeException).when(connection).close();
+        final var userHistoryDao = mock(UserHistoryDao.class);
+        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
+                .isSameAs(updateException)
+                .hasSuppressedException(closeException);
+
+        verifyNoInteractions(userHistoryDao);
+        verify(connection).rollback();
+        verify(connection, never()).commit();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
     }
 }
