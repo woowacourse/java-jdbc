@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,7 +40,7 @@ class JdbcTemplateTest {
 
     @Test
     void updateBindsDifferentTypesAndClosesResources() throws SQLException {
-        jdbcTemplate.update("sql", new Object[]{"title", 1L, null});
+        jdbcTemplate.update("sql", "title", 1L, null);
 
         verify(statement).setObject(1, "title");
         verify(statement).setObject(2, 1L);
@@ -54,7 +55,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(rowMapper.mapRow(resultSet)).thenReturn("first", "second");
 
-        assertThat(jdbcTemplate.query("sql", rowMapper, new Object[]{7L}))
+        assertThat(jdbcTemplate.query("sql", rowMapper, 7L))
                 .containsExactly("first", "second");
         verify(statement).setObject(1, 7L);
         verifyQueryResourcesClosed();
@@ -73,7 +74,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, false);
         when(rowMapper.mapRow(resultSet)).thenReturn("only row");
 
-        assertThat(jdbcTemplate.queryForObject("sql", rowMapper, new Object[0])).isEqualTo("only row");
+        assertThat(jdbcTemplate.queryForObject("sql", rowMapper)).isEqualTo("only row");
         verifyQueryResourcesClosed();
     }
 
@@ -92,7 +93,9 @@ class JdbcTemplateTest {
         final var failure = new SQLException("update failed");
         when(statement.executeUpdate()).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.update("sql", new Object[0])).hasCause(failure);
+        assertThatThrownBy(() -> jdbcTemplate.update("sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
         verify(statement).close();
         verify(connection).close();
     }
@@ -103,7 +106,9 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true);
         when(rowMapper.mapRow(resultSet)).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper, new Object[0])).hasCause(failure);
+        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper, new Object[0]))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
         verifyQueryResourcesClosed();
     }
 
@@ -112,15 +117,22 @@ class JdbcTemplateTest {
         final var failure = new SQLException("prepare failed");
         when(connection.prepareStatement("sql")).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper, new Object[0])).hasCause(failure);
+        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper, new Object[0]))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
         verify(connection).close();
     }
 
     @Test
     void closeFailureStillClosesRemainingResources() throws SQLException {
-        doThrow(new SQLException("close failed")).when(resultSet).close();
+        final var failure = new SQLException("close failed");
+        doThrow(failure).when(resultSet).close();
 
-        assertThat(jdbcTemplate.query("sql", rowMapper, new Object[0])).isEmpty();
+        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
         verifyQueryResourcesClosed();
     }
 
