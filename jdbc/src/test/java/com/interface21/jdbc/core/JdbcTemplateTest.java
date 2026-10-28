@@ -139,6 +139,39 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("목록 조회 결과가 없으면 빈 리스트를 반환하고 자원을 닫는다")
+    void queryReturnsEmptyListWhenNoRows() throws SQLException {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+
+        var result = jdbcTemplate.query(
+                "select account from users", rs -> rs.getString("account"));
+
+        assertThat(result).isEmpty();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("목록 조회 결과가 여러 건이면 모든 행을 순서대로 변환하고 자원을 닫는다")
+    void queryReturnsAllMappedRowsInOrder() throws SQLException {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "bobo");
+
+        var result = jdbcTemplate.query(
+                "select account from users", rs -> rs.getString("account"));
+
+        assertThat(result).containsExactly("gugu", "bobo");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     @DisplayName("목록 조회의 결과 변환이 실패하면 원인을 보존하고 자원을 닫는다")
     void queryMappingFailureClosesResources() throws SQLException {
         ResultSet resultSet = mock(ResultSet.class);
