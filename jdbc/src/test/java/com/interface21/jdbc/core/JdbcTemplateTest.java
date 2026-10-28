@@ -72,6 +72,19 @@ class JdbcTemplateTest {
                     .isInstanceOf(DataAccessException.class)
                     .hasCause(failure);
         }
+
+        @Test
+        void PreparedStatementSetter로_개발자가_직접_값을_설정할_수_있다() throws SQLException {
+            when(preparedStatement.executeUpdate()).thenReturn(1);
+
+            jdbcTemplate.update("update users set account = ? where id = ?", preparedStatement -> {
+                preparedStatement.setString(1, "handa");
+                preparedStatement.setLong(2, 1L);
+            });
+
+            verify(preparedStatement).setString(1, "handa");
+            verify(preparedStatement).setLong(2, 1L);
+        }
     }
 
     @Nested
@@ -104,6 +117,20 @@ class JdbcTemplateTest {
                     "select account from users", row -> row.getString("account"));
 
             assertThat(actual).isEmpty();
+        }
+
+        @Test
+        void PreparedStatementSetter로_조회_조건을_설정할_수_있다() throws SQLException {
+            when(resultSet.next()).thenReturn(true, false);
+            when(resultSet.getString("account")).thenReturn("handa");
+
+            final List<String> actual = jdbcTemplate.query(
+                    "select account from users where id = ?",
+                    row -> row.getString("account"),
+                    preparedStatement -> preparedStatement.setLong(1, 1L));
+
+            assertThat(actual).containsExactly("handa");
+            verify(preparedStatement).setLong(1, 1L);
         }
     }
 
