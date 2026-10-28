@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,82 +21,49 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object[] params) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public void update(String sql, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setParameters(pstmt, params);
             log.debug("query : {}", sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResources(conn, pstmt, null);
+            throw new DataAccessException(e);
         }
     }
 
-    public List<Object> query(String sql, Object[] params, RowMapper rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(sql);
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
             setParameters(pstmt, params);
             log.debug("query : {}", sql);
-            rs = pstmt.executeQuery();
-
-            List<Object> results = new ArrayList<>();
-            while (rs.next()) {
-                results.add(rowMapper.mapRow(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs));
+                }
+                return results;
             }
-            return results;
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        } finally {
-            closeResources(conn, pstmt, rs);
+            throw new DataAccessException(e);
         }
     }
 
-    public Object queryForObject(String sql, Object[] params, RowMapper rowMapper) {
-        List<Object> results = query(sql, params, rowMapper);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = query(sql, rowMapper, params);
         if (results.size() != 1) {
             throw new IllegalStateException("Expected 1 row but found " + results.size());
         }
-        return results.get(0);
+        return results.getFirst();
     }
 
-    private void setParameters(PreparedStatement pstmt, Object[] params) throws SQLException {
+    private void setParameters(PreparedStatement pstmt, Object... params) throws SQLException {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
-        }
-    }
-
-    private void closeResources(Connection conn, PreparedStatement pstmt, ResultSet rs) {
-        try {
-            if (rs != null) {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            log.warn("Failed to close ResultSet", e);
-        }
-        try {
-            if (pstmt != null) {
-                pstmt.close();
-            }
-        } catch (SQLException e) {
-            log.warn("Failed to close PreparedStatement", e);
-        }
-        try {
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException e) {
-            log.warn("Failed to close Connection", e);
         }
     }
 }
