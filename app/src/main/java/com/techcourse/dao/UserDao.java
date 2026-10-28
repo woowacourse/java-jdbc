@@ -4,23 +4,16 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class UserDao {
 
-    private static final RowMapper<User> USER_ROW_MAPPER = new RowMapper<User>() {
-        @Override
-        public User mapRow(ResultSet resultSet) throws SQLException {
-            return new User(
-                    resultSet.getLong("id"),
-                    resultSet.getString("account"),
-                    resultSet.getString("password"),
-                    resultSet.getString("email"));
-        }
-    };
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email"));
 
     private final JdbcTemplate jdbcTemplate;
 
