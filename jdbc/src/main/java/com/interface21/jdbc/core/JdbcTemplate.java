@@ -47,14 +47,6 @@ public class JdbcTemplate {
         return result;
     }
 
-    private void releaseAfterFailure(final Connection connection, final RuntimeException failure) {
-        try {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        } catch (CannotGetJdbcConnectionException releaseFailure) {
-            failure.addSuppressed(releaseFailure);
-        }
-    }
-
     private <T> T execute(Connection connection, final String sql, final StatementCallback<T> callback, final Object... args) {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -72,19 +64,19 @@ public class JdbcTemplate {
         }
     }
 
-    public int insert(final Connection connection, final String sql, final Object... args) {
-        return update(connection, sql, args);
+    private void releaseAfterFailure(final Connection connection, final RuntimeException failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (CannotGetJdbcConnectionException releaseFailure) {
+            failure.addSuppressed(releaseFailure);
+        }
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
-    public <R> R queryForObject(final Connection connection,
-                                final String sql,
-                                final RowMapper<R> mapper,
-                                final Object... args) {
-        return execute(connection, sql, singleResult(mapper), args);
+    public <R> R queryForObject(
+            final String sql,
+            final RowMapper<R> mapper,
+            final Object... args) {
+        return execute(sql, singleResult(mapper), args);
     }
 
     private <R> StatementCallback<R> singleResult(RowMapper<R> mapper) {
@@ -101,12 +93,6 @@ public class JdbcTemplate {
                 return result;
             }
         };
-    }
-
-    public <R> R queryForObject(final String sql,
-                                final RowMapper<R> mapper,
-                                final Object... args) {
-        return execute(sql, singleResult(mapper), args);
     }
 
     public <R> List<R> query(final String sql, final RowMapper<R> mapper, final Object... args) {

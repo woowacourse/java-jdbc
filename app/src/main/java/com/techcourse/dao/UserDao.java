@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -23,8 +22,8 @@ public class UserDao {
         jdbcTemplate.insert(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, USER_UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    public void update(final User user) {
+        jdbcTemplate.update(USER_UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -43,12 +42,6 @@ public class UserDao {
 
     public User findById(final Long id) {
         return jdbcTemplate.queryForObject(SELECT_ID_ACCOUNT_PASSWORD_EMAIL_FROM_USERS_WHERE_ID,
-                UserDao::createUserFromResultSet, id);
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        return jdbcTemplate.queryForObject(connection,
-                SELECT_ID_ACCOUNT_PASSWORD_EMAIL_FROM_USERS_WHERE_ID,
                 UserDao::createUserFromResultSet, id);
     }
 
