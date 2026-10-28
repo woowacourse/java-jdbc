@@ -88,6 +88,17 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
+    public User findByIdForUpdate(final Connection connection, final Long id) {
+        final String sql = """
+                select id, account, password, email
+                from users
+                where id = ?
+                for update
+                """;
+
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
+    }
+
     public User findByAccount(final String account) {
         final String sql = """
                 select id, account, password, email

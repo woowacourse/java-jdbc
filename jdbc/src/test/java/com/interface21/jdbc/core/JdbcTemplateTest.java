@@ -377,6 +377,63 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void 외부_연결로_단건_조회하고_결과와_구문만_닫는다() throws SQLException {
+        final String sql = "select account from users where id = ? for update";
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final String account = jdbcTemplate.queryForObject(
+                connection, sql, row -> row.getString("account"), 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        final var order = inOrder(connection, statement, resultSet);
+        order.verify(connection).prepareStatement(sql);
+        order.verify(statement).setObject(1, 1L);
+        order.verify(statement).executeQuery();
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 외부_연결의_조회가_실패해도_연결은_닫지_않는다() throws SQLException {
+        final String sql = "select account from users where id = ? for update";
+        final var exception = new SQLException("조회 실패");
+        when(statement.executeQuery()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                connection, sql, row -> row.getString("account"), 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 외부_연결의_행_변환이_실패해도_결과와_구문만_닫는다() throws SQLException {
+        final String sql = "select account from users where id = ? for update";
+        final var exception = new SQLException("행 변환 실패");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                connection, sql, row -> row.getString("account"), 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+
+        final var order = inOrder(resultSet, statement);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
     void 단건_조회_결과가_한_건이면_객체를_반환한다() throws SQLException {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);

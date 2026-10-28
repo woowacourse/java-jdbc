@@ -30,13 +30,12 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-
         try (final var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
             try {
+                final var user = userDao.findByIdForUpdate(connection, id);
+                user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();

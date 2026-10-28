@@ -58,19 +58,30 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter statementSetter) {
-        return executeQuery(sql, resultSet -> {
-            if (!resultSet.next()) {
-                return null;
+        return executeQuery(sql, resultSet -> extractSingleResult(resultSet, rowMapper), statementSetter);
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, statement -> {
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                return extractSingleResult(resultSet, rowMapper);
             }
+        }, statement -> bindParameters(statement, args));
+    }
 
-            final T result = rowMapper.mapRow(resultSet);
+    private <T> T extractSingleResult(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        if (!resultSet.next()) {
+            return null;
+        }
 
-            if (resultSet.next()) {
-                throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
-            }
+        final T result = rowMapper.mapRow(resultSet);
 
-            return result;
-        }, statementSetter);
+        if (resultSet.next()) {
+            throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
+        }
+
+        return result;
     }
 
     private <T> T executeQuery(final String sql, final ResultSetExtractor<T> resultSetExtractor,
