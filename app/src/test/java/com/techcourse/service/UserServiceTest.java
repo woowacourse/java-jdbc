@@ -20,11 +20,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class UserServiceTest {
@@ -127,6 +131,29 @@ class UserServiceTest {
                 "select email from user_history where user_id = ?",
                 resultSet -> resultSet.getString("email"), 1L);
         assertThat(historyEmail).isEqualTo(user.getEmail());
+    }
+
+    @Test
+    void 사용자_수정이_0건이면_이력을_저장하지_않고_롤백한다() throws SQLException {
+        final var connection = spy(dataSource.getConnection());
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        final var transactionJdbcTemplate = spy(jdbcTemplate);
+        doReturn(0).when(transactionJdbcTemplate).update(any(Connection.class), anyString(), any(Object[].class));
+        final var transactionUserDao = new UserDao(transactionJdbcTemplate);
+        final var userHistoryDao = mock(UserHistoryDao.class);
+        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
+        final var originalPassword = userDao.findById(1L).getPassword();
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("사용자 수정 결과는 1건이어야 합니다. 실제 수정 건수: 0");
+
+        verifyNoInteractions(userHistoryDao);
+        verify(connection).rollback();
+        verify(connection, never()).commit();
+        verify(connection).close();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
     }
 
     @Test

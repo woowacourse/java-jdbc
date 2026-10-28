@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
@@ -59,7 +60,7 @@ public class UserDao {
                 where id = ?
                 """;
 
-        jdbcTemplate.update(
+        final int updatedRows = jdbcTemplate.update(
                 connection,
                 sql,
                 user.getAccount(),
@@ -67,6 +68,10 @@ public class UserDao {
                 user.getEmail(),
                 user.getId()
         );
+
+        if (updatedRows != 1) {
+            throw new DataAccessException("사용자 수정 결과는 1건이어야 합니다. 실제 수정 건수: " + updatedRows);
+        }
     }
 
     public List<User> findAll() {
