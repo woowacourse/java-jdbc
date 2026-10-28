@@ -40,14 +40,18 @@ public class JdbcTemplate {
      * 조회 결과가 없으면 null을 반환하고, 두 건 이상이면 예외를 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final var results = query(sql, rowMapper, parameters);
-        if (results.size() > 1) {
-            throw new DataAccessException("Expected at most one row but found " + results.size() + ": " + sql);
-        }
-        if (results.isEmpty()) {
-            return null;
-        }
-        return results.getFirst();
+        return execute(sql, parameters, statement -> {
+            try (final var resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+                final var result = rowMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("Expected at most one row but found at least 2: " + sql);
+                }
+                return result;
+            }
+        });
     }
 
     private void bindParameters(final PreparedStatement statement, final Object[] parameters) throws SQLException {

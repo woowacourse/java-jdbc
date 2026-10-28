@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -86,26 +87,34 @@ class JdbcTemplateTest {
 
         assertThat(id).isEqualTo(1L);
         verify(statement).setObject(1, "gugu");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
     @DisplayName("단건 조회 결과가 없으면 null을 반환한다")
-    void query_for_object_with_no_rows() {
+    void query_for_object_with_no_rows() throws SQLException {
         final var id = jdbcTemplate.queryForObject("select id from users", row -> row.getLong("id"));
 
         assertThat(id).isNull();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    @DisplayName("단건 조회 결과가 두 건 이상이면 예외를 던진다")
+    @DisplayName("단건 조회에 두 번째 행이 있으면 추가 행을 매핑하지 않고 예외를 던진다")
     void query_for_object_with_multiple_rows() throws SQLException {
-        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.next()).thenReturn(true, true, true, false);
         final var sql = "select id from users";
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getLong("id")))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("2")
+                .hasMessageContaining("at least 2")
                 .hasMessageContaining(sql);
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getLong("id");
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
@@ -177,6 +186,70 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining(sql)
                 .hasCause(failure);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("조회 결과를 순회하다 실패하면 부분 결과를 반환하지 않고 자원을 해제한다")
+    void query_iteration_failure() throws SQLException {
+        final var failure = new SQLException("Cursor unavailable");
+        when(resultSet.next()).thenReturn(true).thenThrow(failure);
+        final var sql = "select id from users";
+
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, row -> row.getLong("id")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining(sql)
+                .hasCause(failure);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회의 두 번째 행을 확인하다 실패해도 원인을 보존하고 자원을 해제한다")
+    void query_for_object_iteration_failure() throws SQLException {
+        final var failure = new SQLException("Cursor unavailable");
+        when(resultSet.next()).thenReturn(true).thenThrow(failure);
+        final var sql = "select id from users";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getLong("id")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining(sql)
+                .hasCause(failure);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회의 행 매핑이 실패해도 SQL 예외 원인을 보존하고 자원을 해제한다")
+    void query_for_object_row_mapping_failure() throws SQLException {
+        when(resultSet.next()).thenReturn(true);
+        final var failure = new SQLException("Column unavailable");
+        when(resultSet.getString("account")).thenThrow(failure);
+        final var sql = "select account from users";
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining(sql)
+                .hasCause(failure);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회 중 런타임 예외가 발생해도 모든 자원을 해제한다")
+    void query_for_object_runtime_failure() throws SQLException {
+        when(resultSet.next()).thenReturn(true);
+        final var failure = new IllegalArgumentException("Cannot map row");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select id from users", row -> {
+                    throw failure;
+                }))
+                .isSameAs(failure);
+        verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }
