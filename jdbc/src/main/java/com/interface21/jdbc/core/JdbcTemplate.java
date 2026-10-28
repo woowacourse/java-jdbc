@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,21 +20,20 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bind(statement, args);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to execute update", e);
-        }
+        return update(sql, argumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bind(statement, args);
+        return query(sql, argumentSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+                           final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (final var resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -41,22 +41,45 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to execute query", e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final var results = query(sql, rowMapper, args);
+        return queryForObject(sql, argumentSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
+                                final RowMapper<T> rowMapper) {
+        final var results = query(sql, setter, rowMapper);
         if (results.size() > 1) {
-            throw new IllegalStateException("Expected at most one row, but found " + results.size());
+            throw new DataAccessException("Expected at most one row, but found " + results.size());
         }
         return results.isEmpty() ? null : results.get(0);
     }
 
-    private void bind(final PreparedStatement statement, final Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
+        try (final var connection = dataSource.getConnection();
+             final var statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.setValues(statement);
+            return callback.execute(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
+    }
+
+    private PreparedStatementSetter argumentSetter(final Object[] args) {
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
