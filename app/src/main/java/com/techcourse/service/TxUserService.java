@@ -4,12 +4,16 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class TxUserService implements UserService {
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
+
     private final UserService userService;
     private final DataSource dataSource;
 
@@ -38,10 +42,19 @@ public class TxUserService implements UserService {
             } catch (RuntimeException e) {
                 rollback(e, connection);
             } finally {
+                endTransaction(connection);
                 TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private static void endTransaction(Connection connection) throws SQLException {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            log.warn("Failed to reset autocommit", e);
         }
     }
 
