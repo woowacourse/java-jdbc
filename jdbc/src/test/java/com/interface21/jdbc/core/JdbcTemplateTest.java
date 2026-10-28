@@ -28,6 +28,7 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
@@ -543,6 +544,33 @@ class JdbcTemplateTest {
                     .isInstanceOf(DataAccessException.class)
                     .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("close 실패");
+        }
+
+        // 성공 경로에서 난 닫기 실패가 실패 경로의 반납으로 다시 흘러 들어가면, 같은 Connection을 두 번 닫게 된다.
+        @Test
+        @DisplayName("쿼리는 성공했지만 Connection을 닫다가 실패해도, close는 한 번만 시도한다")
+        void triesCloseOnlyOnceWhenCloseFails() throws SQLException {
+            willThrow(new SQLException("close 실패")).given(connection).close();
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class);
+
+            verify(connection, times(1)).close();
+        }
+
+        // DB와 무관한 실패라도 빌려온 Connection은 돌려줘야 한다. 감쌀지 그대로 던질지는 구현에 맡기고, 원래 예외만 잃지 않으면 된다.
+        // 특정 하위 타입만 골라 잡는 구현이 통과하지 않도록, 어떤 하위 타입도 아닌 RuntimeException 자체를 던진다.
+        @Test
+        @DisplayName("행을 변환하다 RuntimeException이 나도 Connection을 닫고, 원래 예외를 잃지 않는다")
+        void closesConnectionWhenMapperThrowsRuntimeException() throws SQLException {
+            final RuntimeException mappingFailure = new RuntimeException("변환 실패");
+            given(resultSet.next()).willReturn(true, false);
+
+            assertThatThrownBy(() -> jdbcTemplate.query("select id, name, age from crew", rs -> {
+                throw mappingFailure;
+            })).satisfies(thrown -> assertThat(reachableThrowables(thrown)).contains(mappingFailure));
+
+            verify(connection).close();
         }
 
         // 먼저 일어난 쿼리 실패가 진짜 원인이다. 뒤따른 닫기 실패가 그것을 가리면 안 되고, suppressed로 함께 남는다.
