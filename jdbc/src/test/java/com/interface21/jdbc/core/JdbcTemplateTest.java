@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,5 +111,78 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject("select name from users where account = ?", NAME_ROW_MAPPER, "gugu"))
                 .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+    }
+
+    @Test
+    void 직접_지정한_바인더로_SQL_타입을_지정한다() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final int affectedRows = jdbcTemplate.update("update users set name = ?", statement ->
+                statement.setNull(1, Types.VARCHAR));
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(preparedStatement).setNull(1, Types.VARCHAR);
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void 결과_추출기로_여러_행을_하나의_값으로_집계한다() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getInt("amount")).thenReturn(10, 20);
+
+        final int sum = jdbcTemplate.query("select amount from orders where user_id = ?",
+                statement -> statement.setLong(1, 42L), results -> {
+                    int total = 0;
+                    while (results.next()) {
+                        total += results.getInt("amount");
+                    }
+                    return total;
+                });
+
+        assertThat(sum).isEqualTo(30);
+        verify(preparedStatement).setLong(1, 42L);
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void 바인딩에_실패하면_원인을_보존하고_자원을_닫는다() throws SQLException {
+        final var failure = new SQLException("binding failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set name = ?", statement -> {
+            throw failure;
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void 결과_추출에_실패하면_원인을_보존하고_모든_자원을_닫는다() throws SQLException {
+        final var failure = new SQLException("extraction failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select name from users", statement -> {}, results -> {
+            throw failure;
+        })).isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void 매퍼의_런타임_예외를_그대로_전달하고_모든_자원을_닫는다() throws SQLException {
+        when(resultSet.next()).thenReturn(true);
+        final var failure = new IllegalArgumentException("mapping failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select name from users", (results, rowNum) -> {
+            throw failure;
+        })).isSameAs(failure);
+
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection).close();
     }
 }
