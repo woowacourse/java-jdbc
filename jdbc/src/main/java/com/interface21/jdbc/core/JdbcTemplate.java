@@ -35,10 +35,14 @@ public class JdbcTemplate {
             final PreparedStatementSetter setter
     ) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try {
             return query(connection, sql, rowMapper, setter);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            releaseConnection(connection, failure);
         }
     }
 
@@ -96,10 +100,25 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter setter) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try {
             return update(connection, sql, setter);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
+            releaseConnection(connection, failure);
+        }
+    }
+
+    private void releaseConnection(final Connection connection, final Throwable cause) {
+        try {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (RuntimeException | Error e) {
+            if (cause == null) {
+                throw e;
+            }
+            cause.addSuppressed(e);
         }
     }
 
