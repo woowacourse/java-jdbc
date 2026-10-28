@@ -1,5 +1,12 @@
 package com.interface21.jdbc.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,20 +15,13 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 class JdbcTemplateTest {
 
     private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private ResultSet resultSet;
-    private RowMapper rowMapper;
+    private RowMapper<String> rowMapper;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
@@ -30,7 +30,7 @@ class JdbcTemplateTest {
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
-        rowMapper = mock(RowMapper.class);
+        rowMapper = mock();
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement("sql")).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
@@ -39,7 +39,7 @@ class JdbcTemplateTest {
 
     @Test
     void updateBindsDifferentTypesAndClosesResources() throws SQLException {
-        jdbcTemplate.update("sql", new Object[] {"title", 1L, null});
+        jdbcTemplate.update("sql", new Object[]{"title", 1L, null});
 
         verify(statement).setObject(1, "title");
         verify(statement).setObject(2, 1L);
@@ -54,7 +54,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(rowMapper.mapRow(resultSet)).thenReturn("first", "second");
 
-        assertThat(jdbcTemplate.query("sql", new Object[] {7L}, rowMapper))
+        assertThat(jdbcTemplate.query("sql", new Object[]{7L}, rowMapper))
                 .containsExactly("first", "second");
         verify(statement).setObject(1, 7L);
         verifyQueryResourcesClosed();

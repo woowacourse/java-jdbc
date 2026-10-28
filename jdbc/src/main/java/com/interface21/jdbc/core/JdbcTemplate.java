@@ -37,7 +37,7 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Object> query(String sql, Object[] params, RowMapper rowMapper) {
+    public <T> List<T> query(String sql, Object[] params, RowMapper<T> rowMapper) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -48,7 +48,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
             rs = pstmt.executeQuery();
 
-            List<Object> results = new ArrayList<>();
+            List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
@@ -61,12 +61,12 @@ public class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String sql, Object[] params, RowMapper rowMapper) {
-        List<Object> results = query(sql, params, rowMapper);
+    public <T> T queryForObject(String sql, Object[] params, RowMapper<T> rowMapper) {
+        List<T> results = query(sql, params, rowMapper);
         if (results.size() != 1) {
             throw new IllegalStateException("Expected 1 row but found " + results.size());
         }
-        return results.get(0);
+        return results.getFirst();
     }
 
     private void setParameters(PreparedStatement pstmt, Object[] params) throws SQLException {

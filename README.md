@@ -3,18 +3,22 @@
 ## JDBC 라이브러리 구현하기
 
 ### 학습목표
+
 - JDBC 라이브러리를 구현하는 경험을 함으로써 중복을 제거하는 연습을 한다.
 - Transaction 적용을 위해 알아야할 개념을 이해한다.
 
 ### 시작 가이드
+
 1. 이전 미션에서 진행한 코드를 사용하고 싶다면, 마이그레이션 작업을 진행합니다.
     - 학습 테스트는 강의 시간에 풀어봅시다.
 2. LMS의 1단계 미션부터 진행합니다.
 
 ## 준비 사항
+
 - 강의 시작 전에 docker를 설치해주세요.
 
 ## 학습 테스트
+
 1. [ConnectionPool](study/src/test/java/connectionpool)
 2. [Transaction](study/src/test/java/transaction)
 
@@ -26,10 +30,10 @@
 - [x] UserDao에 사용자 저장, 조회, 수정 기능을 구현한다.
 - [x] UserDaoTest를 통과시켜 리팩터링 전의 기본 동작을 확인한다.
 - [x] JdbcTemplate에 SQL과 인자를 받아 저장, 수정 SQL을 실행하는 공통 기능을 구현한다.
-- [x] UserDao의 insert(), update()가 JdbcTemplate의 공통 기능을 사용하도록 변경한다.
+- [x] UserDao의 insert (), update ()가 JdbcTemplate의 공통 기능을 사용하도록 변경한다.
 - [x] 저장, 수정 공통화 후 UserDaoTest 5개가 통과하는지 확인한다.
 - [x] JdbcTemplate에 SQL, 인자, 결과를 객체로 변환하는 방법을 받아 조회하는 공통 기능을 구현한다.
-- [x] UserDao의 findById(), findByAccount(), findAll()이 JdbcTemplate의 공통 기능을 사용하도록 변경한다.
+- [x] UserDao의 findById (), findByAccount (), findAll ()이 JdbcTemplate의 공통 기능을 사용하도록 변경한다.
 - [x] JdbcTemplate에서 사용한 Connection, PreparedStatement, ResultSet을 정리한다.
 - [x] UserDaoTest를 다시 통과시켜 리팩터링 후에도 기존 동작이 유지되는지 확인한다.
 - [x] 여러 건 조회, 빈 결과, JdbcTemplate 주입 생성자를 검증한다.
@@ -39,7 +43,8 @@
 
 - `update(sql, params)`가 저장, 수정 등 변경 SQL을 실행한다.
 - `query(sql, params, rowMapper)`가 각 행을 변환해 목록으로 반환한다.
-- `queryForObject(sql, params, rowMapper)`는 정확히 1건일 때 결과를 반환한다. 0건 또는 2건 이상이면 예상 건수와 실제 건수를 담은 `IllegalStateException`을 발생시킨다.
+- `queryForObject(sql, params, rowMapper)`는 정확히 1건일 때 결과를 반환한다. 0건 또는 2건 이상이면 예상 건수와 실제 건수를 담은 `IllegalStateException`을
+  발생시킨다.
 - UserHistoryDao의 이력 저장도 `update()`를 사용하며, DataSource 또는 JdbcTemplate을 주입받을 수 있다.
 - UserDao는 SQL, 인자, ResultSet에서 User로 변환하는 방법만 담당한다.
 - JdbcTemplate은 연결, 인자 설정, SQL 실행, 결과 순회, 예외 처리, 자원 정리를 담당한다.
@@ -60,8 +65,16 @@
 </details>
 
 <details>
-<summary>Step 2</summary>
+<summary>Step 2 - 리팩터링</summary>
 
+저장과 조회 동작을 유지하면서,
+JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
+
+- [X] 조회 결과를 원하는 타입으로 받아 캐스팅을 제거한다.
+- [ ] SQL 인자를 배열 생성 없이 전달할 수 있도록 개선한다.
+- [ ] 행을 객체로 변환하는 코드를 람다로 간결하게 표현한다.
+- [ ] DB 작업 실패를 커스텀 unchecked 예외로 전달한다.
+- [ ] try-with-resources로 JDBC 자원을 자동으로 정리한다.
 
 </details>
 
