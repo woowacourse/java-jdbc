@@ -31,10 +31,6 @@ public class JdbcTemplate {
         return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, argumentSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentSetter(args));
     }
@@ -43,22 +39,12 @@ public class JdbcTemplate {
         return execute(sql, pss, resultSetExtractor(rowMapper));
     }
 
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper,
-                             final Object... args) {
-        return execute(conn, sql, argumentSetter(args), resultSetExtractor(rowMapper));
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return queryForObject(sql, rowMapper, argumentSetter(args));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         return singleResult(query(sql, rowMapper, pss));
-    }
-
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return singleResult(query(conn, sql, rowMapper, args));
     }
 
     private <T> T singleResult(final List<T> results) {
@@ -83,15 +69,6 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> callback) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
-        try {
-            return execute(conn, sql, pss, callback);
-        } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-        }
-    }
-
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
-                          final PreparedStatementCallback<T> callback) {
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             if (pss != null) {
@@ -100,6 +77,8 @@ public class JdbcTemplate {
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
