@@ -20,12 +20,7 @@ import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
 
-    private static final RowMapper<String> NAME_MAPPER = new RowMapper<>() {
-        @Override
-        public String mapRow(final ResultSet resultSet) throws SQLException {
-            return resultSet.getString("name");
-        }
-    };
+    private static final RowMapper<String> NAME_MAPPER = resultSet -> resultSet.getString("name");
 
     private final DataSource dataSource = mock(DataSource.class);
     private final Connection connection = mock(Connection.class);
@@ -48,7 +43,7 @@ class JdbcTemplateTest {
         when(statement.executeUpdate()).thenReturn(1);
 
         // when
-        final var affectedRows = jdbcTemplate.update(sql, new Object[]{"gugu", 2L});
+        final var affectedRows = jdbcTemplate.update(sql, "gugu", 2L);
 
         // then
         assertThat(affectedRows).isEqualTo(1);
@@ -64,7 +59,7 @@ class JdbcTemplateTest {
         final var sql = "update people set name = 'gugu'";
 
         // when
-        jdbcTemplate.update(sql, new Object[0]);
+        jdbcTemplate.update(sql);
 
         // then
         verify(statement).close();
@@ -80,7 +75,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("gugu", "other");
 
         // when
-        final List<String> names = jdbcTemplate.query(sql, new Object[]{"team"}, NAME_MAPPER);
+        final List<String> names = jdbcTemplate.query(sql, NAME_MAPPER, "team");
 
         // then
         assertThat(names).containsExactly("gugu", "other");
@@ -95,7 +90,7 @@ class JdbcTemplateTest {
         final var sql = "select name from people";
 
         // when
-        final var names = jdbcTemplate.query(sql, new Object[0], NAME_MAPPER);
+        final var names = jdbcTemplate.query(sql, NAME_MAPPER);
 
         // then
         assertThat(names).isEmpty();
@@ -108,7 +103,7 @@ class JdbcTemplateTest {
         final var sql = "select name from people";
 
         // when
-        jdbcTemplate.query(sql, new Object[0], NAME_MAPPER);
+        jdbcTemplate.query(sql, NAME_MAPPER);
 
         // then
         verify(resultSet).close();
@@ -124,7 +119,7 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenThrow(failure);
 
         // when
-        final var thrown = catchThrowable(() -> jdbcTemplate.update("update people set name = 'gugu'", new Object[0]));
+        final var thrown = catchThrowable(() -> jdbcTemplate.update("update people set name = 'gugu'"));
 
         // then
         assertThat(thrown)
@@ -140,7 +135,7 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenThrow(failure);
 
         // when
-        final var thrown = catchThrowable(() -> jdbcTemplate.update("invalid sql", new Object[0]));
+        final var thrown = catchThrowable(() -> jdbcTemplate.update("invalid sql"));
 
         // then
         assertThat(thrown)
@@ -157,7 +152,7 @@ class JdbcTemplateTest {
         when(statement.executeUpdate()).thenThrow(failure);
 
         // when
-        final var thrown = catchThrowable(() -> jdbcTemplate.update("invalid sql", new Object[0]));
+        final var thrown = catchThrowable(() -> jdbcTemplate.update("invalid sql"));
 
         // then
         assertThat(thrown)
@@ -175,7 +170,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenThrow(failure);
 
         // when
-        final var thrown = catchThrowable(() -> jdbcTemplate.query("invalid sql", new Object[0], NAME_MAPPER));
+        final var thrown = catchThrowable(() -> jdbcTemplate.query("invalid sql", NAME_MAPPER));
 
         // then
         assertThat(thrown)
@@ -194,7 +189,7 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenThrow(failure);
 
         // when
-        final var thrown = catchThrowable(() -> jdbcTemplate.query("select name from people", new Object[0], NAME_MAPPER));
+        final var thrown = catchThrowable(() -> jdbcTemplate.query("select name from people", NAME_MAPPER));
 
         // then
         assertThat(thrown)
@@ -203,5 +198,49 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회는 지정한 조건의 객체를 반환한다")
+    void queryForObject() throws SQLException {
+        // given
+        final var sql = "select name from people where id = ?";
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        // when
+        final String name = jdbcTemplate.queryForObject(sql, NAME_MAPPER, 2L);
+
+        // then
+        assertThat(name).isEqualTo("gugu");
+        verify(statement).setObject(1, 2L);
+    }
+
+    @Test
+    @DisplayName("단건 조회 결과가 없으면 null을 반환한다")
+    void queryForObjectWhenEmpty() {
+        // given
+        final var sql = "select name from people";
+
+        // when
+        final var name = jdbcTemplate.queryForObject(sql, NAME_MAPPER);
+
+        // then
+        assertThat(name).isNull();
+    }
+
+    @Test
+    @DisplayName("단건 조회 결과가 여러 개면 기존 계약대로 첫 결과를 반환한다")
+    void queryForObjectWithMultipleRows() throws SQLException {
+        // given
+        final var sql = "select name from people";
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("name")).thenReturn("gugu", "other");
+
+        // when
+        final var name = jdbcTemplate.queryForObject(sql, NAME_MAPPER);
+
+        // then
+        assertThat(name).isEqualTo("gugu");
     }
 }

@@ -21,7 +21,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object[] parameters) {
+    public int update(final String sql, final Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, parameters);
@@ -32,7 +32,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final Object[] parameters, final RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, parameters);
@@ -48,6 +48,17 @@ public class JdbcTemplate {
         } catch (SQLException exception) {
             throw new RuntimeException("조회에 실패했습니다.", exception);
         }
+    }
+
+    /**
+     * 결과가 없으면 null, 여러 행이면 첫 번째 결과를 반환한다.
+     */
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        final var rows = query(sql, rowMapper, parameters);
+        if (rows.isEmpty()) {
+            return null;
+        }
+        return rows.getFirst();
     }
 
     private void setParameters(final PreparedStatement statement, final Object[] parameters) throws SQLException {
