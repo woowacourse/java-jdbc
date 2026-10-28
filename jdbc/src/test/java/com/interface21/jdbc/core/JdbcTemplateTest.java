@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -12,6 +13,7 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,12 +30,13 @@ class JdbcTemplateTest {
     @BeforeEach
     void setUp() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.prepareStatement(org.mockito.ArgumentMatchers.anyString())).thenReturn(statement);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
     }
 
     @Test
-    void updateBindsParametersAndReturnsAffectedRowCount() throws SQLException {
+    @DisplayName("수정 쿼리에 null을 포함한 매개변수를 순서대로 바인딩하고 변경 건수를 반환한다")
+    void update_binds_parameters() throws SQLException {
         final var sql = "update users set account = ?, email = ? where id = ?";
         when(statement.executeUpdate()).thenReturn(2);
 
@@ -49,7 +52,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryMapsEveryRowAndClosesResources() throws SQLException {
+    @DisplayName("조회한 모든 행을 매핑하고 자원을 해제한다")
+    void query_maps_rows() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "brown");
 
@@ -64,14 +68,16 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryReturnsEmptyListWhenThereAreNoRows() {
+    @DisplayName("조회 결과가 없으면 빈 목록을 반환한다")
+    void query_with_no_rows() {
         final var accounts = jdbcTemplate.query("select account from users", row -> row.getString("account"));
 
         assertThat(accounts).isEmpty();
     }
 
     @Test
-    void queryForObjectReturnsTheMappedRow() throws SQLException {
+    @DisplayName("조회 결과가 한 건이면 매핑한 객체를 반환한다")
+    void query_for_object() throws SQLException {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getLong("id")).thenReturn(1L);
 
@@ -83,14 +89,16 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectReturnsNullWhenThereAreNoRows() {
+    @DisplayName("단건 조회 결과가 없으면 null을 반환한다")
+    void query_for_object_with_no_rows() {
         final var id = jdbcTemplate.queryForObject("select id from users", row -> row.getLong("id"));
 
         assertThat(id).isNull();
     }
 
     @Test
-    void queryForObjectRejectsMultipleRows() throws SQLException {
+    @DisplayName("단건 조회 결과가 두 건 이상이면 예외를 던진다")
+    void query_for_object_with_multiple_rows() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         final var sql = "select id from users";
 
@@ -104,7 +112,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void connectionFailurePreservesSqlAndCause() throws SQLException {
+    @DisplayName("커넥션을 얻지 못하면 실행한 SQL과 원인을 담은 예외를 던진다")
+    void connection_failure() throws SQLException {
         final var failure = new SQLException("Connection unavailable");
         when(dataSource.getConnection()).thenThrow(failure);
         final var sql = "delete from users";
@@ -116,7 +125,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void prepareFailureClosesConnection() throws SQLException {
+    @DisplayName("쿼리를 준비하다 실패해도 커넥션을 해제한다")
+    void prepare_statement_failure() throws SQLException {
         final var sql = "delete from users";
         final var failure = new SQLException("Invalid SQL");
         when(connection.prepareStatement(sql)).thenThrow(failure);
@@ -129,7 +139,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void bindingFailureClosesStatementAndConnection() throws SQLException {
+    @DisplayName("매개변수를 바인딩하다 실패해도 자원을 해제한다")
+    void parameter_binding_failure() throws SQLException {
         final var failure = new SQLException("Unsupported parameter");
         doThrow(failure).when(statement).setObject(1, "gugu");
 
@@ -141,7 +152,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateFailureClosesStatementAndConnection() throws SQLException {
+    @DisplayName("수정 쿼리가 실패하면 자원을 해제하고 원인을 보존한다")
+    void update_failure() throws SQLException {
         final var failure = new SQLException("Constraint violation");
         when(statement.executeUpdate()).thenThrow(failure);
         final var sql = "insert into users (account) values (?)";
@@ -155,7 +167,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryFailureClosesStatementAndConnection() throws SQLException {
+    @DisplayName("조회 쿼리가 실패하면 자원을 해제하고 원인을 보존한다")
+    void query_failure() throws SQLException {
         final var failure = new SQLException("Invalid query");
         when(statement.executeQuery()).thenThrow(failure);
         final var sql = "select id from missing_table";
@@ -169,7 +182,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void sqlMappingFailureClosesAllResourcesAndPreservesCause() throws SQLException {
+    @DisplayName("행을 매핑하다 SQL 예외가 발생해도 모든 자원을 해제하고 원인을 보존한다")
+    void row_mapping_sql_failure() throws SQLException {
         when(resultSet.next()).thenReturn(true);
         final var failure = new SQLException("Column unavailable");
         when(resultSet.getString("account")).thenThrow(failure);
@@ -185,11 +199,14 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void runtimeMappingFailureAlsoClosesAllResources() throws SQLException {
+    @DisplayName("행을 매핑하다 런타임 예외가 발생해도 모든 자원을 해제한다")
+    void row_mapping_runtime_failure() throws SQLException {
         when(resultSet.next()).thenReturn(true);
         final var failure = new IllegalArgumentException("Cannot map row");
 
-        assertThatThrownBy(() -> jdbcTemplate.query("select id from users", row -> { throw failure; }))
+        assertThatThrownBy(() -> jdbcTemplate.query("select id from users", row -> {
+                    throw failure;
+                }))
                 .isSameAs(failure);
         verify(resultSet).close();
         verify(statement).close();
@@ -197,7 +214,8 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void cleanupFailureIsSuppressedWithoutReplacingTheSqlFailure() throws SQLException {
+    @DisplayName("자원 해제 중 발생한 예외가 기존 SQL 예외를 덮어쓰지 않는다")
+    void resource_cleanup_failure() throws SQLException {
         final var failure = new SQLException("Execution failed");
         final var closeFailure = new SQLException("Close failed");
         when(statement.executeUpdate()).thenThrow(failure);

@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
@@ -25,12 +26,14 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void dataSourceConstructorPersistsHistory() throws SQLException {
+    @DisplayName("DataSource를 주입받아 사용자 변경 이력을 저장한다")
+    void save_history_with_data_source() throws SQLException {
         assertPersistsHistory(new UserHistoryDao(DataSourceConfig.getInstance()));
     }
 
     @Test
-    void jdbcTemplateConstructorPersistsHistory() throws SQLException {
+    @DisplayName("JdbcTemplate을 주입받아 사용자 변경 이력을 저장한다")
+    void save_history_with_jdbc_template() throws SQLException {
         assertPersistsHistory(new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance())));
     }
 

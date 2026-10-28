@@ -36,7 +36,9 @@ public class JdbcTemplate {
         });
     }
 
-    /** Returns null when no row matches and rejects more than one matching row. */
+    /**
+     * 조회 결과가 없으면 null을 반환하고, 두 건 이상이면 예외를 던진다.
+     */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final var results = query(sql, rowMapper, parameters);
         if (results.size() > 1) {
@@ -60,7 +62,7 @@ public class JdbcTemplate {
              final var statement = connection.prepareStatement(sql)) {
             bindParameters(statement, parameters);
             return callback.execute(statement);
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
     }
