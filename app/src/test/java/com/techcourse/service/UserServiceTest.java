@@ -25,12 +25,13 @@ import static org.mockito.Mockito.when;
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
     private UserDao userDao;
     private long userId;
 
     @BeforeEach
     void setUp() {
-        final var dataSource = DataSourceConfig.getInstance();
+        this.dataSource = DataSourceConfig.getInstance();
 
         DatabasePopulatorUtils.execute(dataSource);
 
@@ -53,7 +54,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
+        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -84,7 +85,7 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
+        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
 
         final var originalPassword = userService.findById(userId).getPassword();
         final var newPassword = "newPassword";
@@ -103,6 +104,25 @@ class UserServiceTest {
                 userId
         );
 
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void rollsBackWithAnExplicitlyConfiguredDataSource() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        when(dataSource.getConnection()).thenAnswer(invocation -> DataSourceConfig.getInstance().getConnection());
+        final var template = new JdbcTemplate(dataSource);
+        final var service = new TxUserService(new AppUserService(
+                new UserDao(template), new MockUserHistoryDao(template)), dataSource);
+        final var originalPassword = service.findById(userId).getPassword();
+
+        assertThrows(DataAccessException.class,
+                () -> service.changePassword(userId, "newPassword", "gugu"));
+
+        assertThat(service.findById(userId).getPassword()).isEqualTo(originalPassword);
+        final var historyCount = template.queryForObject(
+                "select count(*) from user_history where user_id = ?",
+                resultSet -> resultSet.getLong(1), userId);
         assertThat(historyCount).isZero();
     }
 
