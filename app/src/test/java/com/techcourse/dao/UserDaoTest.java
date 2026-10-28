@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -7,7 +8,10 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 class UserDaoTest {
@@ -132,5 +136,55 @@ class UserDaoTest {
         final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void 외부_연결로_사용자를_수정하고_커밋하면_변경이_저장된다() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var newPassword = "password99";
+        user.changePassword(newPassword);
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+
+            connection.commit();
+        }
+
+        final var actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void 외부_연결로_수정할_사용자가_없으면_예외가_발생한다() throws SQLException {
+        final var user = userDao.findById(1L);
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("delete from users where id = ?", user.getId());
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            assertThatThrownBy(() -> userDao.update(connection, user))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasMessage("사용자 수정 결과는 1건이어야 합니다. 실제 수정 건수: 0");
+        }
+    }
+
+    @Test
+    void 외부_연결로_사용자를_수정하고_롤백하면_기존_비밀번호가_유지된다() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var originalPassword = user.getPassword();
+        user.changePassword("password99");
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.update(connection, user);
+
+            connection.rollback();
+        }
+
+        final var actual = userDao.findById(1L);
+
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 }

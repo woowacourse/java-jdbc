@@ -30,6 +30,11 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, statementSetter);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate,
+                statement -> bindParameters(statement, args));
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, statement -> bindParameters(statement, args));
     }
@@ -53,19 +58,30 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter statementSetter) {
-        return executeQuery(sql, resultSet -> {
-            if (!resultSet.next()) {
-                return null;
+        return executeQuery(sql, resultSet -> extractSingleResult(resultSet, rowMapper), statementSetter);
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, statement -> {
+            try (final ResultSet resultSet = statement.executeQuery()) {
+                return extractSingleResult(resultSet, rowMapper);
             }
+        }, statement -> bindParameters(statement, args));
+    }
 
-            final T result = rowMapper.mapRow(resultSet);
+    private <T> T extractSingleResult(final ResultSet resultSet, final RowMapper<T> rowMapper) throws SQLException {
+        if (!resultSet.next()) {
+            return null;
+        }
 
-            if (resultSet.next()) {
-                throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
-            }
+        final T result = rowMapper.mapRow(resultSet);
 
-            return result;
-        }, statementSetter);
+        if (resultSet.next()) {
+            throw new DataAccessException("단건 조회 결과는 최대 1개여야 합니다. 2개 이상의 행이 조회되었습니다.");
+        }
+
+        return result;
     }
 
     private <T> T executeQuery(final String sql, final ResultSetExtractor<T> resultSetExtractor,
@@ -79,8 +95,17 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback,
                          final PreparedStatementSetter statementSetter) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (final Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, statementSetter);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                         final PreparedStatementCallback<T> callback,
+                         final PreparedStatementSetter statementSetter) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             statementSetter.setValues(statement);
