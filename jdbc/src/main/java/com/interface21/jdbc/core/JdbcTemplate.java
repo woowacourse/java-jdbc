@@ -47,6 +47,14 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryObject(String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            throw new DataAccessException("단건 조회 결과가 없습니다.");
+        }
+        return results.getFirst();
+    }
+
     public void update(String sql, Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

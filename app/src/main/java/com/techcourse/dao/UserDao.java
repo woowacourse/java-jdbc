@@ -42,11 +42,11 @@ public class UserDao {
 
     public User findById(final Long id) {
         String sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.query(sql, userRowMapper, id).getFirst();
+        return jdbcTemplate.queryObject(sql, userRowMapper, id);
     }
 
     public User findByAccount(final String account) {
         String sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.query(sql, userRowMapper, account).getFirst();
+        return jdbcTemplate.queryObject(sql, userRowMapper, account);
     }
 }

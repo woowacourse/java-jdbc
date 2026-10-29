@@ -102,6 +102,37 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("단건 조회는 인자를 바인딩하고 매핑한 객체를 반환한다")
+    void queryObjectReturnsMappedRow() throws SQLException {
+        final var sql = "select account from users where id = ?";
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var account = jdbcTemplate.queryObject(sql, accountRowMapper, 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(connection).prepareStatement(sql);
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회 결과가 없으면 DataAccessException을 던지고 자원을 닫는다")
+    void queryObjectThrowsWhenNoRows() throws SQLException {
+        when(resultSet.next()).thenReturn(false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryObject(SELECT_SQL, accountRowMapper))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(resultSet, never()).getString("account");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     @DisplayName("연결 획득 중 SQLException이 발생하면 원인을 보존한 DataAccessException을 던진다")
     void updateWrapsConnectionSQLException() throws SQLException {
         final var cause = new SQLException("connection failed");
