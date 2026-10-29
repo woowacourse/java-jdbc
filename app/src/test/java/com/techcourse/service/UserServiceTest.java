@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.techcourse.config.UserServiceConfig;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
@@ -31,7 +32,7 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         jdbcTemplate = new JdbcTemplate(dataSource);
         userService = UserServiceConfig.userService(dataSource);
-        userService.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+        userService.save(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
     @AfterEach
@@ -99,6 +100,18 @@ class UserServiceTest {
 
         assertThat(userService.findById(1L).getPassword()).isEqualTo("successPassword");
         assertHistoryCount(1L);
+    }
+
+    @Test
+    void decoratorParticipatesInExistingTransaction() {
+        final var transactionTemplate = new TransactionTemplate(dataSource);
+        assertThatThrownBy(() -> transactionTemplate.execute(() -> {
+            userService.changePassword(1L, "newPassword", "admin");
+            throw new IllegalStateException("outer failed");
+        })).isInstanceOf(IllegalStateException.class);
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
+        assertHistoryCount(0L);
     }
 
     private void assertHistoryCount(final long expected) {
