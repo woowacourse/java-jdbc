@@ -22,7 +22,11 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(String sql, PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(
@@ -30,7 +34,7 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        return execute(sql, pstmt -> {
+        return execute(sql, createPreparedStatementSetter(args), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) {
                     return null;
@@ -41,7 +45,7 @@ public class JdbcTemplate {
                 }
                 return result;
             }
-        }, args);
+        });
     }
 
     public <T> List<T> query(
@@ -49,7 +53,7 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        return execute(sql, pstmt -> {
+        return execute(sql, createPreparedStatementSetter(args), pstmt -> {
             List<T> result = new ArrayList<>();
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -57,23 +61,29 @@ public class JdbcTemplate {
                 }
                 return result;
             }
-        }, args);
+        });
     }
 
-    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... args) {
+    private <T> T execute(
+            String sql,
+            PreparedStatementSetter setter,
+            PreparedStatementCallback<T> callback
+    ) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            bindParameters(pstmt, args);
+            setter.setValues(pstmt);
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다.", e);
         }
     }
 
-    private void bindParameters(PreparedStatement pstmt, Object[] args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter createPreparedStatementSetter(Object[] args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     @FunctionalInterface
