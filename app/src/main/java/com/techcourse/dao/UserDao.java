@@ -31,7 +31,7 @@ public class UserDao {
         return jdbcTemplate.query(sql, UserDao::createUserFromResultSet);
     }
 
-    private static User createUserFromResultSet(ResultSet resultSet) throws SQLException {
+    private static User createUserFromResultSet(final ResultSet resultSet) throws SQLException {
         return new User(
                 resultSet.getLong("id"),
                 resultSet.getString("account"),

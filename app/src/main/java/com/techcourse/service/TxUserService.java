@@ -17,23 +17,23 @@ public class TxUserService implements UserService {
     private final UserService userService;
     private final DataSource dataSource;
 
-    public TxUserService(UserService userService, DataSource dataSource) {
+    public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
         this.dataSource = dataSource;
     }
 
     @Override
-    public User findById(long id) {
+    public User findById(final long id) {
         return userService.findById(id);
     }
 
     @Override
-    public void save(User user) {
+    public void save(final User user) {
         userService.save(user);
     }
 
     @Override
-    public void changePassword(long id, String newPassword, String createdBy) {
+    public void changePassword(final long id, final String newPassword, final String createdBy) {
         try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             beginTransaction(connection);
             try {
@@ -50,7 +50,7 @@ public class TxUserService implements UserService {
         }
     }
 
-    private static void endTransaction(Connection connection) throws SQLException {
+    private static void endTransaction(final Connection connection) throws SQLException {
         try {
             connection.setAutoCommit(true);
         } catch (SQLException e) {
@@ -58,7 +58,7 @@ public class TxUserService implements UserService {
         }
     }
 
-    private void beginTransaction(Connection connection) {
+    private void beginTransaction(final Connection connection) {
         try {
             connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindResource(dataSource, connection);

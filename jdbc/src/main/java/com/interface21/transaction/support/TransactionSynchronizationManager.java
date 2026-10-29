@@ -12,11 +12,11 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Connection getResource(DataSource key) {
+    public static Connection getResource(final DataSource key) {
         return resources.get().get(key);
     }
 
-    public static void bindResource(DataSource key, Connection value) {
+    public static void bindResource(final DataSource key, final Connection value) {
         if (value == null) {
             throw new IllegalArgumentException("Cannot bind a null value to the thread");
         }
@@ -27,7 +27,7 @@ public abstract class TransactionSynchronizationManager {
         connectionMap.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) {
+    public static Connection unbindResource(final DataSource key) {
         Connection removedConnection = resources.get().remove(key);
         if (removedConnection == null) {
             throw new IllegalStateException("No resource bound to thread");

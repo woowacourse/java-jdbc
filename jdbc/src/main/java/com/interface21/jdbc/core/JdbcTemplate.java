@@ -47,7 +47,7 @@ public class JdbcTemplate {
         return result;
     }
 
-    private <T> T execute(Connection connection, final String sql, final StatementCallback<T> callback, final Object... args) {
+    private <T> T execute(final Connection connection, final String sql, final StatementCallback<T> callback, final Object... args) {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             mapParameters(pstmt, args);
@@ -79,7 +79,7 @@ public class JdbcTemplate {
         return execute(sql, singleResult(mapper), args);
     }
 
-    private <R> StatementCallback<R> singleResult(RowMapper<R> mapper) {
+    private <R> StatementCallback<R> singleResult(final RowMapper<R> mapper) {
         return pstmt -> {
             pstmt.setMaxRows(MAX_ROWS_FOR_SINGLE_RESULT_CHECK);
             try (ResultSet resultSet = pstmt.executeQuery()) {
