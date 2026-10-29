@@ -1,7 +1,9 @@
 package com.techcourse.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -56,11 +58,23 @@ class UserDaoTest {
     }
 
     @Test
+    void findByIdThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findById(999L))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByAccountThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findByAccount("missing-account"))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
