@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,14 +28,6 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public int update(
-            final Connection conn,
-            final String sql,
-            final Object... params
-    ) {
-        return execute(conn, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public <T> List<T> query(
             final String sql,
             final RowMapper<T> rowMapper,
@@ -58,11 +51,12 @@ public class JdbcTemplate {
             final JdbcOperation<R> operation,
             final Object... params
     ) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+
+        try {
             return execute(conn, sql, operation, params);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
