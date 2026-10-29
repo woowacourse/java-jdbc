@@ -20,7 +20,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, Object[] args) {
+    public void update(final String sql, Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
 
@@ -28,7 +28,7 @@ public class JdbcTemplate {
             conn = dataSource.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            setObject(args, pstmt);
+            setObject(pstmt, args);
             pstmt.executeUpdate();
 
             log.debug("query : {}", sql);
@@ -53,7 +53,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, Object[] args, RowMapper<T> rowMapper) {
+    public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -65,7 +65,7 @@ public class JdbcTemplate {
             pstmt = conn.prepareStatement(sql);
 
             if (args != null) {
-                setObject(args, pstmt);
+                setObject(pstmt, args);
             }
             rs = pstmt.executeQuery();
 
@@ -104,12 +104,8 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, RowMapper<T> rowMapper) {
-        return query(sql, null, rowMapper);
-    }
-
-    public <T> T queryForObject(final String sql, Object[] args, RowMapper<T> rowMapper) {
-        List<T> results = query(sql, args, rowMapper);
+    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
+        List<T> results = query(sql, rowMapper, args);
 
         if (results.size() != 1) {
             throw new IllegalStateException("queryForObject 결과가 1개가 아닙니다.");
@@ -118,7 +114,7 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private void setObject(Object[] args, PreparedStatement pstmt) throws SQLException {
+    private void setObject(PreparedStatement pstmt, Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }

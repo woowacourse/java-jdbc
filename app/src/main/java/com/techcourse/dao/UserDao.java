@@ -20,23 +20,14 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        Object[] args = new Object[3];
-        args[0] = user.getAccount();
-        args[1] = user.getPassword();
-        args[2] = user.getEmail();
 
-        jdbcTemplate.update(sql, args);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        Object[] args = new Object[4];
-        args[0] = user.getAccount();
-        args[1] = user.getPassword();
-        args[2] = user.getEmail();
-        args[3] = user.getId();
 
-        jdbcTemplate.update(sql, args);
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -47,18 +38,14 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        Object[] args = new Object[1];
-        args[0] = id;
 
-        return jdbcTemplate.queryForObject(sql, args, rowMapper());
+        return jdbcTemplate.queryForObject(sql, rowMapper(), id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        Object[] args = new Object[1];
-        args[0] = account;
 
-        return jdbcTemplate.queryForObject(sql, args, rowMapper());
+        return jdbcTemplate.queryForObject(sql, rowMapper(), account);
     }
 
     private RowMapper<User> rowMapper() {

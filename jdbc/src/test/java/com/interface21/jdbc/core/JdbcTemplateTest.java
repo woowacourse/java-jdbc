@@ -59,8 +59,7 @@ class JdbcTemplateTest {
     @Test
     void queryWithParametersMapsMatchingRows() {
         List<String> accounts = jdbcTemplate.query(
-                "select account from users where id > ?", new Object[]{1L},
-                rs -> rs.getString("account"));
+                "select account from users where id > ?", rs -> rs.getString("account"), 1L);
 
         assertThat(accounts).containsExactly("pobi");
     }
@@ -68,8 +67,7 @@ class JdbcTemplateTest {
     @Test
     void queryWithParametersReturnsAnEmptyListWhenNoRowsMatch() {
         List<String> accounts = jdbcTemplate.query(
-                "select account from users where id > ?", new Object[]{2L},
-                rs -> rs.getString("account"));
+                "select account from users where id > ?", rs -> rs.getString("account"), 2L);
 
         assertThat(accounts).isEmpty();
     }
@@ -77,8 +75,7 @@ class JdbcTemplateTest {
     @Test
     void queryForObjectReturnsTheSingleRow() {
         String account = jdbcTemplate.queryForObject(
-                "select account from users where id = ?", new Object[]{1L},
-                rs -> rs.getString("account"));
+                "select account from users where id = ?", rs -> rs.getString("account"), 1L);
 
         assertThat(account).isEqualTo("gugu");
     }
@@ -88,10 +85,10 @@ class JdbcTemplateTest {
         RowMapper<String> mapper = rs -> rs.getString("account");
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                "select account from users where id = ?", new Object[]{99L}, mapper))
+                "select account from users where id = ?", mapper, 99L))
                 .isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                "select account from users", new Object[]{}, mapper))
+                "select account from users", mapper))
                 .isInstanceOf(IllegalStateException.class);
     }
 }
