@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,10 +32,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, new ArgumentPreparedStatementSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, new ArgumentPreparedStatementSetter(args));
     }
@@ -59,16 +56,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, queryCallback(resultSet -> mapSingleRow(resultSet, rowMapper)));
     }
 
-    public <T> T queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... args
-    ) {
-        return execute(connection, sql, new ArgumentPreparedStatementSetter(args),
-                queryCallback(resultSet -> mapSingleRow(resultSet, rowMapper)));
-    }
-
     private <T> PreparedStatementCallback<T> queryCallback(final ResultSetCallback<T> callback) {
         return preparedStatement -> {
             try (final ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -82,14 +69,25 @@ public class JdbcTemplate {
             final PreparedStatementSetter preparedStatementSetter,
             final PreparedStatementCallback<T> callback
     ) {
-        try (final Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, preparedStatementSetter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Connection 처리에 실패했습니다.", e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException e) {
+                if (failure == null) {
+                    throw e;
+                }
+                failure.addSuppressed(e);
+            }
         }
     }
 
-    // 전달받은 Connection은 호출한 쪽이 트랜잭션과 함께 관리하므로 닫지 않는다.
     private <T> T execute(
             final Connection connection,
             final String sql,

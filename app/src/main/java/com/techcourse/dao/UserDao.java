@@ -6,7 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -40,12 +39,6 @@ public class UserDao {
         validateUpdated(updatedRows, user);
     }
 
-    public void update(final Connection connection, final User user) {
-        final var updatedRows = jdbcTemplate.update(
-                connection, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-        validateUpdated(updatedRows, user);
-    }
-
     private void validateUpdated(final int updatedRows, final User user) {
         if (updatedRows == 0) {
             throw new DataAccessException("수정할 사용자가 없습니다. id: " + user.getId());
@@ -59,10 +52,6 @@ public class UserDao {
 
     public User findById(final Long id) {
         return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {

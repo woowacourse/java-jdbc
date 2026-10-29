@@ -4,9 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -18,10 +17,8 @@ public class DatabasePopulatorUtils {
     public static void execute(final DataSource dataSource) {
         Connection connection = null;
         Statement statement = null;
-        try {
-            final var url = DatabasePopulatorUtils.class.getClassLoader().getResource("schema.sql");
-            final var file = new File(url.getFile());
-            final var sql = Files.readString(file.toPath());
+        try (final var inputStream = DatabasePopulatorUtils.class.getClassLoader().getResourceAsStream("schema.sql")) {
+            final var sql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.execute(sql);

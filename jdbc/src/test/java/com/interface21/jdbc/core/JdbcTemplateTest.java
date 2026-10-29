@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,6 +47,13 @@ class JdbcTemplateTest {
         given(preparedStatement.executeQuery()).willReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -164,10 +174,11 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_Connection으로_update하면_Connection을_닫지_않는다() throws SQLException {
+    void 트랜잭션의_Connection으로_update하면_Connection을_닫지_않는다() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         given(preparedStatement.executeUpdate()).willReturn(1);
 
-        final var updatedRows = jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password", 1L);
+        final var updatedRows = jdbcTemplate.update("update users set password = ? where id = ?", "password", 1L);
 
         assertThat(updatedRows).isEqualTo(1);
         verify(preparedStatement).setObject(1, "password");
@@ -178,12 +189,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_Connection으로_queryForObject하면_Connection을_닫지_않는다() throws SQLException {
+    void 트랜잭션의_Connection으로_queryForObject하면_Connection을_닫지_않는다() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         given(resultSet.next()).willReturn(true, false);
         given(resultSet.getString("account")).willReturn("gugu");
 
         final var account = jdbcTemplate.queryForObject(
-                connection, "select account from users where id = ?", accountMapper, 1L);
+                "select account from users where id = ?", accountMapper, 1L);
 
         assertThat(account).isEqualTo("gugu");
         verify(resultSet).close();
@@ -193,14 +205,41 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_Connection에서_SQLException이_발생해도_Connection을_닫지_않는다() throws SQLException {
+    void 트랜잭션에서_SQLException이_발생해도_Connection을_닫지_않는다() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var cause = new SQLException("syntax error");
         given(preparedStatement.executeUpdate()).willThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set"))
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
         verify(preparedStatement).close();
         verify(connection, never()).close();
+    }
+
+    @Test
+    void Connection_반납이_실패해도_SQL_예외를_보존한다() throws SQLException {
+        final var sqlFailure = new SQLException("syntax error");
+        final var closeFailure = new SQLException("close failed");
+        given(preparedStatement.executeUpdate()).willThrow(sqlFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(sqlFailure)
+                .satisfies(exception -> {
+                    assertThat(exception.getSuppressed()).hasSize(1);
+                    assertThat(exception.getSuppressed()[0]).hasCause(closeFailure);
+                });
+    }
+
+    @Test
+    void Connection_획득_실패도_DataAccessException으로_변환한다() throws SQLException {
+        final var cause = new SQLException("connection unavailable");
+        given(dataSource.getConnection()).willThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "password"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
     }
 }
