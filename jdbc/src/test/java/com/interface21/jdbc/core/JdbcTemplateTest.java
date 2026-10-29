@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -61,6 +62,16 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithConnectionDoesNotCloseConnection() throws SQLException {
+        jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password", 1L);
+
+        verify(pstmt).setObject(1, "password");
+        verify(pstmt).setObject(2, 1L);
+        verify(pstmt).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
     void updateClosesResources() throws SQLException {
         jdbcTemplate.update("update users set password = ? where id = ?", "password", 1L);
 
@@ -86,6 +97,34 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "password"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateDoesNotExecuteWhenSetterFailed() throws SQLException {
+        final var cause = new SQLException();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", pstmt -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt, never()).executeUpdate();
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryDoesNotExecuteWhenSetterFailed() throws SQLException {
+        final var cause = new SQLException();
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users where id = ?", ACCOUNT_MAPPER, pstmt -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt, never()).executeQuery();
         verify(pstmt).close();
         verify(connection).close();
     }
