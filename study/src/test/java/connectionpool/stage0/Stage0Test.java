@@ -54,6 +54,12 @@ class Stage0Test {
         dataSource.setURL(H2_URL);
         dataSource.setUser(USER);
         dataSource.setPassword(PASSWORD);
+        System.out.println(dataSource.getURL());
+        System.out.println(dataSource.getConnection());
+        System.out.println(dataSource.getConnection().isValid(1));
+        System.out.println(dataSource.getUser());
+        System.out.println(dataSource.getPassword());
+        System.out.println(dataSource);
 
         try (final var connection = dataSource.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();

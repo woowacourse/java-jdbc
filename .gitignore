@@ -176,3 +176,7 @@ tomcat.*/**
 
 # IDE compile output (Eclipse/VSCode Java LS)
 **/bin/
+
+# Test database files
+test.db
+test.*.db

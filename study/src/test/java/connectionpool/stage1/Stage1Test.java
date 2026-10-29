@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class Stage1Test {
 
@@ -34,6 +35,7 @@ class Stage1Test {
         try (final var connection = jdbcConnectionPool.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
             assertThat(jdbcConnectionPool.getActiveConnections()).isEqualTo(1);
+            System.out.println(connection);
         }
         assertThat(jdbcConnectionPool.getActiveConnections()).isZero();
 
@@ -68,6 +70,12 @@ class Stage1Test {
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        System.out.println(hikariConfig);
+        System.out.println(hikariConfig.getJdbcUrl());
+        System.out.println(hikariConfig.getUsername());
+        System.out.println(hikariConfig.getPassword());
+        System.out.println(hikariConfig.getDataSourceProperties());
+        System.out.println(hikariConfig.getMaximumPoolSize());
 
         final var dataSource = new HikariDataSource(hikariConfig);
         final var properties = dataSource.getDataSourceProperties();
@@ -78,5 +86,44 @@ class Stage1Test {
         assertThat(properties.getProperty("prepStmtCacheSqlLimit")).isEqualTo("2048");
 
         dataSource.close();
+    }
+
+    @Test
+    void testConnectionPoolLimit() throws SQLException {
+        HikariConfig config = new HikariConfig();
+
+        config.setJdbcUrl(H2_URL);
+        config.setUsername(USER);
+        config.setPassword(PASSWORD);
+
+        config.setMaximumPoolSize(2);
+        config.setMinimumIdle(0);
+        config.setConnectionTimeout(1000);
+
+        try (HikariDataSource dataSource = new HikariDataSource(config)) {
+            var pool = dataSource.getHikariPoolMXBean();
+
+            try (
+                    var conn1 = dataSource.getConnection();
+                    var conn2 = dataSource.getConnection()
+            ) {
+                System.out.println("Active: " + pool.getActiveConnections());
+                System.out.println("Idle: " + pool.getIdleConnections());
+
+                assertThat(pool.getActiveConnections()).isEqualTo(2);
+
+                // 커넥션 2개를 모두 사용 중인데 하나를 더 요청
+                assertThatThrownBy(dataSource::getConnection)
+                        .isInstanceOf(SQLException.class);
+            }
+
+            // try-with-resources에 의해 2개 반환
+            assertThat(pool.getActiveConnections()).isZero();
+
+            // 반환된 커넥션을 다시 빌릴 수 있음
+            try (var conn3 = dataSource.getConnection()) {
+                assertThat(conn3.isValid(1)).isTrue();
+            }
+        }
     }
 }

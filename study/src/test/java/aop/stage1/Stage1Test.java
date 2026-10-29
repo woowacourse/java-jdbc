@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,7 +42,7 @@ class Stage1Test {
 
     @Test
     void testChangePassword() {
-        final UserService userService = null;
+        final UserService userService = createProxy(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -54,7 +55,7 @@ class Stage1Test {
 
     @Test
     void testTransactionRollback() {
-        final UserService userService = null;
+        final UserService userService = createProxy(userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -65,4 +66,20 @@ class Stage1Test {
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
+
+    private UserService createProxy(UserHistoryDao historyDao) {
+        UserService target = new UserService(userDao, historyDao);
+
+        TransactionPointcut pointcut = new TransactionPointcut();
+        TransactionAdvice advice = new TransactionAdvice(platformTransactionManager);
+        TransactionAdvisor advisor = new TransactionAdvisor(pointcut, advice);
+
+        ProxyFactoryBean factoryBean = new ProxyFactoryBean();
+        factoryBean.setTarget(target);
+        factoryBean.setProxyTargetClass(true);
+        factoryBean.addAdvisor(advisor);
+
+        return (UserService) factoryBean.getObject();
+    }
+
 }
