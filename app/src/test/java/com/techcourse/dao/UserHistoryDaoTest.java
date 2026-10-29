@@ -13,16 +13,23 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.temporal.ChronoUnit;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UserHistoryDaoTest {
 
-  @Test
-  void logStoresAllHistoryFields() throws SQLException {
+  private UserHistoryDao userHistoryDao;
+
+  @BeforeEach
+  void setUp() {
     DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
     final JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
     jdbcTemplate.update("truncate table user_history restart identity");
-    final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
+    userHistoryDao = new UserHistoryDao(jdbcTemplate);
+  }
+
+  @Test
+  void logStoresAllHistoryFields() throws SQLException {
     final User user = new User(1L, "gugu", "password", "hkkang@woowahan.com");
     final UserHistory userHistory = new UserHistory(user, "gugu");
 
