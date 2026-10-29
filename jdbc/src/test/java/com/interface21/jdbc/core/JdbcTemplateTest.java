@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
@@ -240,6 +241,113 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void updateWithExternalConnectionBindsValuesAndKeepsConnectionOpen() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        assertThat(jdbcTemplate.update(connection, SQL, "gugu", 7L)).isEqualTo(1);
+
+        verify(statement).setObject(1, "gugu");
+        verify(statement).setObject(2, 7L);
+        verifyExternalConnectionPreserved();
+    }
+
+    @Test
+    void queryWithExternalConnectionMapsRowsAndClosesOnlyQueryResources() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("name")).thenReturn("gugu", "second");
+
+        assertThat(jdbcTemplate.query(connection, SQL, rs -> rs.getString("name"), 7L))
+                .containsExactly("gugu", "second");
+
+        verify(statement).setObject(1, 7L);
+        verify(resultSet).close();
+        verifyExternalConnectionPreserved();
+    }
+
+    @Test
+    void singleQueryWithExternalConnectionReturnsMappedRow() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        final String actual = jdbcTemplate.queryForObject(connection, SQL, rs -> rs.getString("name"), 7L);
+
+        assertThat(actual).isEqualTo("gugu");
+        verify(resultSet).close();
+        verifyExternalConnectionPreserved();
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenPreparationFails() throws SQLException {
+        final var cause = new SQLException("prepare failed");
+        when(connection.prepareStatement(SQL)).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verifyNoInteractions(dataSource);
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenBindingFails() throws SQLException {
+        final var cause = new SQLException("binding failed");
+        doThrow(cause).when(statement).setObject(1, 7L);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verifyExternalConnectionPreserved();
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenExecutionFails() throws SQLException {
+        final var cause = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verifyExternalConnectionPreserved();
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenMappingFails() throws SQLException {
+        final var cause = new SQLException("mapping failed");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, SQL, rs -> { throw cause; }, 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(resultSet).close();
+        verifyExternalConnectionPreserved();
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenSingleQueryFindsMultipleRows() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true)
+                .thenThrow(new AssertionError("Should not read beyond the second row"));
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, SQL, rs -> "gugu", 7L))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).close();
+        verifyExternalConnectionPreserved();
+    }
+
+    private void verifyExternalConnectionPreserved() throws SQLException {
+        verifyNoInteractions(dataSource);
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
