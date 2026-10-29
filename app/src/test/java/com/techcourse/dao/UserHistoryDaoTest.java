@@ -37,6 +37,24 @@ class UserHistoryDaoTest {
         assertSavesHistory(new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance())));
     }
 
+    @Test
+    void savesHistoryUsingGivenConnection() throws SQLException {
+        final var dao = new UserHistoryDao(DataSourceConfig.getInstance());
+        final var history = new UserHistory(null, 7L, "gugu", "changed-password", "gugu@example.com", "admin");
+
+        try (var connection = DataSourceConfig.getInstance().getConnection()) {
+            dao.log(connection, history);
+            assertThat(connection.isClosed()).isFalse();
+        }
+
+        try (var connection = DataSourceConfig.getInstance().getConnection();
+             var statement = connection.prepareStatement("select user_id from user_history");
+             var result = statement.executeQuery()) {
+            assertThat(result.next()).isTrue();
+            assertThat(result.getLong("user_id")).isEqualTo(7L);
+        }
+    }
+
     private void assertSavesHistory(final UserHistoryDao dao) throws SQLException {
         final var history = new UserHistory(null, 42L, "gugu", "changed-password",
                 "gugu@example.com", "admin");
