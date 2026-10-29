@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -42,8 +43,20 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
-        try (var connection = dataSource.getConnection();
-             var statement = connection.prepareStatement(sql)) {
+        try (var connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute JDBC statement", e);
+        }
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, statement -> bind(statement, args), PreparedStatement::executeUpdate);
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementSetter setter, final StatementCallback<T> callback) {
+        try (var statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
             return callback.execute(statement);
         } catch (SQLException e) {

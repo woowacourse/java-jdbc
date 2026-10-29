@@ -8,20 +8,22 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws java.sql.SQLException {
+        try (var connection = DataSourceConfig.getInstance().getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute("drop all objects");
+        }
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
@@ -60,4 +62,34 @@ class UserServiceTest {
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
+    @Test
+    void commitsPasswordAndHistoryTogether() {
+        final var service = new UserService(userDao, new UserHistoryDao(jdbcTemplate));
+        service.changePassword(1L, "changed", "operator");
+        final var histories = jdbcTemplate.query(
+                "select password, created_by from user_history where user_id = ?",
+                (rs, row) -> rs.getString("password") + ":" + rs.getString("created_by"), 1L);
+        assertThat(histories).containsExactly("changed:operator");
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("changed");
+    }
+
+    @Test
+    void rollsBackEvenWhenHistoryWasAlreadyInserted() {
+        final var historyDao = new UserHistoryDao(jdbcTemplate) {
+            @Override
+            public void log(final java.sql.Connection connection,
+                            final com.techcourse.domain.UserHistory history) {
+                super.log(connection, history);
+                throw new DataAccessException("failure after history insert");
+            }
+        };
+        final var service = new UserService(userDao, historyDao);
+        assertThrows(DataAccessException.class, () -> service.changePassword(1L, "changed", "operator"));
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select id from user_history", (rs, row) -> rs.getLong(1))).isEmpty();
+        // 실패 이후 다음 요청이 새 연결에서 정상 처리되는지 확인한다.
+        new UserService(userDao, new UserHistoryDao(jdbcTemplate)).changePassword(1L, "retry", "operator");
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("retry");
+    }
+
 }
