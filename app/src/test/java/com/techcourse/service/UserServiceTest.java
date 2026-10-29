@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 class UserServiceTest {
 
@@ -104,6 +106,55 @@ class UserServiceTest {
         userService.changePassword(1L, "nextPassword", "gugu");
 
         assertThat(userService.findById(1L).getPassword()).isEqualTo("nextPassword");
+    }
+
+    @Test
+    void 안쪽_실패를_바깥에서_잡아도_전체_트랜잭션을_롤백한다() {
+        final var source = DataSourceConfig.getInstance();
+        final var failingService = new TxUserService(source,
+                new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate)));
+        final var outerAction = mock(UserService.class);
+        doAnswer(invocation -> {
+            try {
+                failingService.changePassword(1L, "failedPassword", "gugu");
+            } catch (DataAccessException ignored) {
+                // 안쪽 실패를 처리한 뒤 바깥 작업이 계속되는 상황
+            }
+            new AppUserService(userDao, new UserHistoryDao(jdbcTemplate))
+                    .changePassword(1L, "outerPassword", "gugu");
+            return null;
+        }).when(outerAction).changePassword(1L, "outerPassword", "gugu");
+        final var outerService = new TxUserService(source, outerAction);
+
+        assertThrows(DataAccessException.class,
+                () -> outerService.changePassword(1L, "outerPassword", "gugu"));
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        final long historyCount = jdbcTemplate.queryForObject("select count(*) from user_history",
+                resultSet -> resultSet.getLong(1));
+        assertThat(historyCount).isZero();
+        assertThat(TransactionSynchronizationManager.getResource(source)).isNull();
+
+        final var nextService = new TxUserService(source,
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
+        nextService.changePassword(1L, "nextPassword", "gugu");
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("nextPassword");
+    }
+
+    @Test
+    void 정상적인_중첩_참여는_바깥_트랜잭션에서_함께_커밋한다() {
+        final var source = DataSourceConfig.getInstance();
+        final var innerService = new TxUserService(source,
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
+        final var outerService = new TxUserService(source, innerService);
+
+        outerService.changePassword(1L, "newPassword", "gugu");
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
+        final String historyPassword = jdbcTemplate.queryForObject("select password from user_history where user_id = ?",
+                resultSet -> resultSet.getString(1), 1L);
+        assertThat(historyPassword).isEqualTo("newPassword");
+        assertThat(TransactionSynchronizationManager.getResource(source)).isNull();
     }
 
     @Test

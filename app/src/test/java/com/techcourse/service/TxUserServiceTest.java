@@ -133,6 +133,18 @@ class TxUserServiceTest {
     }
 
     @Test
+    void 참여한_트랜잭션에서_Error가_발생하면_롤백_상태를_남기고_원인을_보존한다() {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var cause = new AssertionError("inner failed");
+        doThrow(cause).when(appUserService).changePassword(1L, "newPassword", "gugu");
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu")).isSameAs(cause);
+
+        assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isTrue();
+        verifyNoInteractions(dataSource, connection);
+    }
+
+    @Test
     void 기존_트랜잭션에_참여하면_그_Connection을_커밋하거나_닫지_않는다() {
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 

@@ -32,7 +32,12 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
         if (TransactionSynchronizationManager.getResource(dataSource) != null) {
-            userService.changePassword(id, newPassword, createBy);
+            try {
+                userService.changePassword(id, newPassword, createBy);
+            } catch (RuntimeException | Error e) {
+                TransactionSynchronizationManager.setRollbackOnly(dataSource);
+                throw e;
+            }
             return;
         }
 
@@ -60,6 +65,9 @@ public class TxUserService implements UserService {
         boolean completed = false;
         try {
             action.run();
+            if (TransactionSynchronizationManager.isRollbackOnly(dataSource)) {
+                throw new DataAccessException("참여한 트랜잭션의 실패로 전체 트랜잭션을 롤백합니다.");
+            }
             connection.commit();
             completed = true;
         } catch (RuntimeException | Error | SQLException e) {

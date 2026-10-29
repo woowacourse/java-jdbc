@@ -57,6 +57,7 @@ class TransactionSynchronizationManagerTest {
     @Test
     void 같은_DataSource라도_다른_스레드의_Connection은_공유하지_않는다() throws Exception {
         TransactionSynchronizationManager.bindResource(dataSource, connection);
+        TransactionSynchronizationManager.setRollbackOnly(dataSource);
         final var otherConnection = mock(Connection.class);
 
         try (final var executor = Executors.newSingleThreadExecutor()) {
@@ -65,6 +66,7 @@ class TransactionSynchronizationManagerTest {
                 TransactionSynchronizationManager.bindResource(dataSource, otherConnection);
                 try {
                     assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(otherConnection);
+                    assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isFalse();
                 } finally {
                     TransactionSynchronizationManager.unbindResource(dataSource);
                 }
@@ -78,6 +80,28 @@ class TransactionSynchronizationManagerTest {
     @Test
     void 등록하지_않은_자원은_해제할_수_없다() {
         assertThatThrownBy(() -> TransactionSynchronizationManager.unbindResource(dataSource))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void 롤백_상태는_DataSource별로_분리하고_해제하면_초기화한다() {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        TransactionSynchronizationManager.bindResource(otherDataSource, mock(Connection.class));
+
+        TransactionSynchronizationManager.setRollbackOnly(dataSource);
+
+        assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isTrue();
+        assertThat(TransactionSynchronizationManager.isRollbackOnly(otherDataSource)).isFalse();
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isFalse();
+    }
+
+    @Test
+    void 등록하지_않은_트랜잭션의_롤백_상태는_변경하거나_조회할_수_없다() {
+        assertThatThrownBy(() -> TransactionSynchronizationManager.setRollbackOnly(dataSource))
+                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> TransactionSynchronizationManager.isRollbackOnly(dataSource))
                 .isInstanceOf(IllegalStateException.class);
     }
 
