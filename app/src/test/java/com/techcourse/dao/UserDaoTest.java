@@ -131,7 +131,7 @@ class UserDaoTest {
     }
 
     @Test
-    void jdbcTemplateConstructorUsesProvidedTemplate() {
+    void jdbcTemplateConstructorSupportsInsertAndFindById() {
         final var dao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
         dao.insert(new User("template", "templatePassword", "template@example.com"));
 

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -69,12 +70,38 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryForObjectReturnsSingleRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.queryForObject(SQL, ACCOUNT_MAPPER, 7L)).isEqualTo("gugu");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectReturnsNullWhenEmpty() throws SQLException {
+        assertThat(jdbcTemplate.queryForObject(SQL, ACCOUNT_MAPPER, 7L)).isNull();
+
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectRejectsMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ACCOUNT_MAPPER, 7L))
+                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessageContaining(SQL);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
     void queryFailurePreservesCauseAndClosesResources() throws SQLException {
         final var cause = new SQLException("query failed");
         when(statement.executeQuery()).thenThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.query(SQL, ACCOUNT_MAPPER, 7L))
-                .isInstanceOf(DataAccessException.class).hasCause(cause);
+                .isExactlyInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(statement).close();
         verify(connection).close();
