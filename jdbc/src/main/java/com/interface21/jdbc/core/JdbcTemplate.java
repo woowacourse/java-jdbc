@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,34 +20,20 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(final String sql, final Object... parameters) {
-        try (
-                final var conn = dataSource.getConnection();
-                final var pstmt = conn.prepareStatement(sql)
-        ) {
-            createPreparedStatementSetter(parameters).setParameters(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    public int update(final String sql, final Object... parameters) {
+        return execute(PreparedStatement::executeUpdate, sql, parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        try (
-                final var conn = dataSource.getConnection();
-                final var pstmt = conn.prepareStatement(sql)
-        ) {
-            createPreparedStatementSetter(parameters).setParameters(pstmt);
-            try (final var rs = pstmt.executeQuery()) {
+        return execute(pstmt -> {
+            try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        }, sql, parameters);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -65,5 +53,17 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, parameters[i]);
             }
         };
+    }
+
+    private <T> T execute(final PreparedStatementCallback<T> pstmtcb, final String sql, final Object... parameters) {
+        try (
+                final var conn = dataSource.getConnection();
+                final var pstmt = conn.prepareStatement(sql)
+        ) {
+            createPreparedStatementSetter(parameters).setParameters(pstmt);
+            return pstmtcb.execute(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
