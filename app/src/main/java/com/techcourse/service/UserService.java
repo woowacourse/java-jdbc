@@ -40,21 +40,26 @@ public class UserService {
             final var autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             Throwable failure = null;
+            boolean completed = false;
             try {
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
+                completed = true;
             } catch (SQLException | RuntimeException | Error e) {
                 failure = e;
                 try {
                     connection.rollback();
+                    completed = true;
                 } catch (SQLException rollbackFailure) {
                     e.addSuppressed(rollbackFailure);
                 }
                 throw e;
             } finally {
                 try {
-                    connection.setAutoCommit(autoCommit);
+                    if (completed) {
+                        connection.setAutoCommit(autoCommit);
+                    }
                 } catch (SQLException restoreFailure) {
                     if (failure != null) {
                         failure.addSuppressed(restoreFailure);

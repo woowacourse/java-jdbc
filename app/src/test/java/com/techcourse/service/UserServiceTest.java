@@ -87,7 +87,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class, () -> service.changePassword(1L, "changed", "operator"));
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
         assertThat(jdbcTemplate.query("select id from user_history", (rs, row) -> rs.getLong(1))).isEmpty();
-        // A subsequent transaction on the pool must still succeed.
+        // 실패 이후 다음 요청이 새 연결에서 정상 처리되는지 확인한다.
         new UserService(userDao, new UserHistoryDao(jdbcTemplate)).changePassword(1L, "retry", "operator");
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("retry");
     }
