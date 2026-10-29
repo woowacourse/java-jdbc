@@ -28,6 +28,10 @@ public class TransactionAdvice implements MethodInterceptor {
             } catch (RuntimeException | Error e) {
                 conn.rollback();
                 throw e;
+            } catch (Throwable e) {
+                // Spring과 같이 체크 예외는 비즈니스상 예상된 결과로 보고 커밋한 뒤 그대로 던진다.
+                conn.commit();
+                throw e;
             } finally {
                 TransactionSynchronizationManager.unbindResource(dataSource);
             }

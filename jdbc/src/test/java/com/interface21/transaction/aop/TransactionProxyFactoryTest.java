@@ -59,6 +59,20 @@ class TransactionProxyFactoryTest {
     }
 
     @Test
+    @DisplayName("@Transactional 메서드에서 체크 예외가 나면 커밋하고 예외를 그대로 던진다")
+    void commitsWhenCheckedExceptionOccurs() throws SQLException {
+        final FakeService proxy = TransactionProxyFactory.createProxy(new FakeService(dataSource), dataSource);
+
+        assertThatThrownBy(proxy::failingChecked).isInstanceOf(Exception.class)
+                .isNotInstanceOf(RuntimeException.class);
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
     @DisplayName("@Transactional이 없는 메서드에는 트랜잭션을 걸지 않는다")
     void doesNotStartTransactionForPlainMethod() throws SQLException {
         final FakeService proxy = TransactionProxyFactory.createProxy(new FakeService(dataSource), dataSource);
@@ -84,6 +98,11 @@ class TransactionProxyFactoryTest {
         @Transactional
         public void failing() {
             throw new IllegalStateException("실패");
+        }
+
+        @Transactional
+        public void failingChecked() throws Exception {
+            throw new Exception("체크 예외");
         }
 
         public Connection plain() {
