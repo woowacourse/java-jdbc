@@ -60,14 +60,18 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
-        if (results.size() > 1) {
-            throw new IllegalStateException("Expected at most one row, but found " + results.size());
-        }
-        return results.get(0);
+        return execute(sql, pstmt -> bindParameters(pstmt, args), pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                final T result = rowMapper.mapRow(rs);
+                if (rs.next()) {
+                    throw new IllegalStateException("Expected at most one row, but found more than one");
+                }
+                return result;
+            }
+        });
     }
 
     private void bindParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {

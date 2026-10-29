@@ -15,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
@@ -170,6 +172,72 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> { throw cause; }, 7L))
                 .isSameAs(cause);
+
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectReturnsNullWithoutMappingWhenEmpty() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        final RowMapper<?> rowMapper = mock(RowMapper.class);
+
+        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 7L)).isNull();
+
+        verifyNoInteractions(rowMapper);
+        verify(statement).setObject(1, 7L);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectReturnsSingleMappedRow() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        final String actual = jdbcTemplate.queryForObject(SQL, rs -> rs.getString("name"), 7L);
+
+        assertThat(actual).isEqualTo("gugu");
+
+        verify(resultSet).getString("name");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectStopsAtSecondRowWithoutMappingIt() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true)
+                .thenThrow(new AssertionError("Should not read beyond the second row"));
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rs -> rs.getString("name"), 7L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Expected at most one row, but found more than one");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getString("name");
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectMappingFailureIsTranslatedAndClosesResources() throws SQLException {
+        final var cause = new SQLException("mapping failed");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rs -> { throw cause; }, 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectSecondRowCheckFailureIsTranslatedAndClosesResources() throws SQLException {
+        final var cause = new SQLException("cursor failed");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rs -> "gugu", 7L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verifyQueryResourcesClosed();
     }
