@@ -7,20 +7,12 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.service.UserService;
 
 import javax.sql.DataSource;
-import java.util.Objects;
 
 // 서비스는 이곳에서만 생성해 @Transactional 프록시가 항상 적용되도록 한다.
 public class ServiceConfig {
 
-    private static UserService USER_SERVICE;
-
     public static UserService userService() {
-        if (Objects.isNull(USER_SERVICE)) {
-            final DataSource dataSource = DataSourceConfig.getInstance();
-            final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            USER_SERVICE = userService(new UserDao(jdbcTemplate), new UserHistoryDao(jdbcTemplate));
-        }
-        return USER_SERVICE;
+        return Holder.INSTANCE;
     }
 
     public static UserService userService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
@@ -28,6 +20,17 @@ public class ServiceConfig {
                 new UserService(userDao, userHistoryDao),
                 DataSourceConfig.getInstance()
         );
+    }
+
+    private static UserService createUserService() {
+        final DataSource dataSource = DataSourceConfig.getInstance();
+        final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        return userService(new UserDao(jdbcTemplate), new UserHistoryDao(jdbcTemplate));
+    }
+
+    // Holder 클래스는 처음 접근될 때 한 번만 초기화되고, JVM이 클래스 초기화를 동기화해 주므로 프록시가 하나만 만들어진다.
+    private static class Holder {
+        private static final UserService INSTANCE = createUserService();
     }
 
     private ServiceConfig() {}
