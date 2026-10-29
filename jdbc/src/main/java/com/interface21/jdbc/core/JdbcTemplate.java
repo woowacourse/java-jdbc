@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,24 +23,20 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
+        return update(sql, pstmt -> bindParameters(pstmt, args));
+    }
 
-            bindParameters(pstmt, args);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindParameters(pstmt, args);
+        return query(sql, pstmt -> bindParameters(pstmt, args), rowMapper);
+    }
 
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+                           final RowMapper<T> rowMapper) {
+        return execute(sql, setter, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -47,21 +44,34 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.setValues(pstmt);
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
-        if (results.size() > 1) {
-            throw new IllegalStateException("Expected at most one row, but found " + results.size());
-        }
-        return results.get(0);
+        return execute(sql, pstmt -> bindParameters(pstmt, args), pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                final T result = rowMapper.mapRow(rs);
+                if (rs.next()) {
+                    throw new IllegalStateException("Expected at most one row, but found more than one");
+                }
+                return result;
+            }
+        });
     }
 
     private void bindParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {

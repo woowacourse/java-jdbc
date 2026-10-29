@@ -61,7 +61,7 @@ class UserDaoTest {
 
         assertThatThrownBy(() -> userDao.findByAccount("gugu"))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Expected at most one row, but found 2");
+                .hasMessage("Expected at most one row, but found more than one");
     }
 
     @Test
