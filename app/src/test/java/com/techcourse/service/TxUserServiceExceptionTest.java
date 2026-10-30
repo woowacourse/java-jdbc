@@ -10,7 +10,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,11 +43,6 @@ class TxUserServiceExceptionTest {
         userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
     }
 
-    @AfterEach
-    void tearDown() {
-        TransactionSynchronizationManager.unbindResource(dataSource);
-    }
-
     @Test
     void preservesOriginalExceptionWhenRollbackFails() throws SQLException {
         final var original = failHistorySave();
@@ -57,6 +51,7 @@ class TxUserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(original);
         assertThat(original.getSuppressed()).containsExactly(rollbackFailure);
@@ -72,6 +67,7 @@ class TxUserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(original);
         assertThat(actual.getSuppressed()).containsExactly(closeFailure);
@@ -89,6 +85,7 @@ class TxUserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(original);
         assertThat(original.getSuppressed()).containsExactly(rollbackFailure);
@@ -103,10 +100,20 @@ class TxUserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(closeFailure);
         verify(connection).commit();
         verify(connection, never()).rollback();
+    }
+
+    @Test
+    void unbindsConnectionAfterCommit() throws SQLException {
+        userService.changePassword(1L, "newPassword", "gugu");
+
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        verify(connection).commit();
+        verify(connection).close();
     }
 
     private DataAccessException failHistorySave() {
