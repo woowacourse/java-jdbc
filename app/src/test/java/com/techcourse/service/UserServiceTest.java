@@ -6,21 +6,35 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
 import java.time.LocalDateTime;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class UserServiceTest {
 
     private javax.sql.DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+
+    @AfterEach
+    void connectionIsNotBoundAfterTest() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
 
     @BeforeEach
     void setUp() {
@@ -82,11 +96,38 @@ class UserServiceTest {
     }
 
     @Test
+    void testRollbackAndCleanupWhenConnectionCloseAlsoFails() throws SQLException {
+        final var connection = spy(dataSource.getConnection());
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        final var transactionTemplate = new JdbcTemplate(transactionDataSource);
+        final var userService = new UserService(transactionDataSource,
+                new UserDao(transactionTemplate), new MockUserHistoryDao(transactionTemplate));
+        final var closeFailure = new SQLException("Close failed");
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw closeFailure;
+        }).when(connection).close();
+
+        final var exception = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        verify(connection).rollback();
+        verify(connection).close();
+        assertThat(exception.getSuppressed()).hasSize(1);
+        assertThat(exception.getSuppressed()[0]).isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(closeFailure);
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(historyCount()).isZero();
+    }
+
+    @Test
     void testTransactionRollsBackWhenUserUpdateAffectsNoRows() {
         final var userDaoWithNoUpdatedRows = new UserDao(jdbcTemplate) {
             @Override
-            public int update(final Connection connection, final User user) {
-                jdbcTemplate.update(connection, "delete from users where id = ?", user.getId());
+            public int update(final User user) {
+                jdbcTemplate.update("delete from users where id = ?", user.getId());
                 return 0;
             }
         };

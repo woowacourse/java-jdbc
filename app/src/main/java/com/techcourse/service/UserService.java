@@ -5,6 +5,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -31,10 +33,24 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        Throwable failure = null;
+        try {
             changePasswordInTransaction(connection, id, newPassword, createBy);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException e) {
+                if (failure == null) {
+                    throw e;
+                }
+                failure.addSuppressed(e);
+            }
         }
     }
 
@@ -42,21 +58,20 @@ public class UserService {
                                               final String createBy) {
         try {
             connection.setAutoCommit(false);
-            updatePasswordAndLogHistory(connection, id, newPassword, createBy);
+            updatePasswordAndLogHistory(id, newPassword, createBy);
             connection.commit();
         } catch (SQLException | RuntimeException e) {
             throw rollbackAndTranslate(connection, e);
         }
     }
 
-    private void updatePasswordAndLogHistory(final Connection connection, final long id, final String newPassword,
-                                             final String createBy) throws SQLException {
-        final var user = userDao.findById(connection, id);
+    private void updatePasswordAndLogHistory(final long id, final String newPassword, final String createBy) {
+        final var user = userDao.findById(id);
         user.changePassword(newPassword);
-        if (userDao.update(connection, user) != 1) {
+        if (userDao.update(user) != 1) {
             throw new DataAccessException("회원을 갱신하지 못했습니다: " + id);
         }
-        userHistoryDao.log(connection, new UserHistory(user, createBy));
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 
     private RuntimeException rollbackAndTranslate(final Connection connection, final Exception cause) {
