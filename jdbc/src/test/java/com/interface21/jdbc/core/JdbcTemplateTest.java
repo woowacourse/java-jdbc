@@ -104,4 +104,18 @@ class JdbcTemplateTest {
         verify(statement).close();
         verify(connection).close();
     }
+
+    @Test
+    void sqlExceptionInRowMapper() throws SQLException {
+        final SQLException exception = new SQLException("컬럼 읽기 실패");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
 }
