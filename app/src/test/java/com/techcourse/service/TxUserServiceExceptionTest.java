@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -15,31 +16,31 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class UserServiceExceptionTest {
+class TxUserServiceExceptionTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private UserHistoryDao userHistoryDao;
     private UserService userService;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         final var userDao = mock(UserDao.class);
         userHistoryDao = mock(UserHistoryDao.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(connection, 1L))
+        when(userDao.findById(1L))
                 .thenReturn(Optional.of(new User(1L, "gugu", "password", "gugu@example.com")));
 
-        userService = new UserService(dataSource, userDao, userHistoryDao);
+        userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
     }
 
     @Test
@@ -50,6 +51,7 @@ class UserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(original);
         assertThat(original.getSuppressed()).containsExactly(rollbackFailure);
@@ -65,6 +67,7 @@ class UserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(original);
         assertThat(actual.getSuppressed()).containsExactly(closeFailure);
@@ -82,6 +85,7 @@ class UserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(original);
         assertThat(original.getSuppressed()).containsExactly(rollbackFailure);
@@ -96,15 +100,25 @@ class UserServiceExceptionTest {
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         assertThat(actual.getCause()).isSameAs(closeFailure);
         verify(connection).commit();
         verify(connection, never()).rollback();
     }
 
+    @Test
+    void unbindsConnectionAfterCommit() throws SQLException {
+        userService.changePassword(1L, "newPassword", "gugu");
+
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        verify(connection).commit();
+        verify(connection).close();
+    }
+
     private DataAccessException failHistorySave() {
         final var original = new DataAccessException("이력 저장 실패");
-        doThrow(original).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(original).when(userHistoryDao).log(any(UserHistory.class));
         return original;
     }
 }

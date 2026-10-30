@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
@@ -40,10 +43,16 @@ class JdbcTemplateTest {
         resultSet = mock(ResultSet.class);
 
         given(dataSource.getConnection()).willReturn(connection);
+        given(connection.getAutoCommit()).willReturn(true);
         given(connection.prepareStatement(anyString())).willReturn(statement);
         given(statement.executeQuery()).willReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -109,21 +118,6 @@ class JdbcTemplateTest {
                     assertThat(exception.getExpectedSize()).isEqualTo(1);
                     assertThat(exception.getActualSize()).isEqualTo(2);
                 });
-    }
-
-    @Test
-    @DisplayName("전달받은 커넥션으로 queryForObject하면 해당 커넥션을 사용하고 닫지 않는다")
-    void queryForObjectWithConnection() throws SQLException {
-        given(resultSet.next()).willReturn(true, false);
-        given(resultSet.getString("name")).willReturn("gugu");
-
-        final String result = jdbcTemplate.queryForObject(connection, "select name from users where id = ?", NAME_ROW_MAPPER, 1L);
-
-        assertThat(result).isEqualTo("gugu");
-        verify(statement).setObject(1, 1L);
-        verify(statement).close();
-        verify(connection, never()).close();
-        verify(dataSource, never()).getConnection();
     }
 
     @Test
@@ -211,5 +205,34 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
+    }
+
+    @Test
+    @DisplayName("트랜잭션 밖에서는 쿼리마다 커넥션을 새로 얻고 사용 후 바인딩을 해제한다")
+    void releaseConnectionOutsideTransaction() throws SQLException {
+        given(statement.executeUpdate()).willReturn(1);
+
+        jdbcTemplate.update("delete from users");
+        jdbcTemplate.update("delete from users");
+
+        verify(dataSource, times(2)).getConnection();
+        verify(connection, times(2)).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    @DisplayName("트랜잭션에 바인딩된 커넥션이 있으면 그 커넥션을 재사용하고 닫지 않는다")
+    void reuseBoundConnectionInTransaction() throws SQLException {
+        given(connection.getAutoCommit()).willReturn(false);
+        given(statement.executeUpdate()).willReturn(1);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update("delete from users");
+        jdbcTemplate.update("delete from users");
+
+        verify(dataSource, never()).getConnection();
+        verify(statement, times(2)).close();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
     }
 }
