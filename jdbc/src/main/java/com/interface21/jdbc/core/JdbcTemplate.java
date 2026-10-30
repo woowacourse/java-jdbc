@@ -51,20 +51,6 @@ public class JdbcTemplate {
         return singleResult(query(sql, setter, rowMapper));
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, setterOf(args), PreparedStatement::executeUpdate);
-    }
-
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper,
-                             final Object... args) {
-        return execute(conn, sql, setterOf(args), extractAll(rowMapper));
-    }
-
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return singleResult(query(conn, sql, rowMapper, args));
-    }
-
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
         final var conn = DataSourceUtils.getConnection(dataSource);
