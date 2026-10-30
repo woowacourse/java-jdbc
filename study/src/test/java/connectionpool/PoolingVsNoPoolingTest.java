@@ -40,6 +40,7 @@ class PoolingVsNoPoolingTest {
         container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
                 .withDatabaseName("test");
         container.start();
+        System.out.println("MySQL URL: " + container.getJdbcUrl());
 
         final var dataSource = createMysqlDataSource();
 

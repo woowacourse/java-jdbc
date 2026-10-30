@@ -1,8 +1,10 @@
 package connectionpool.stage0;
 
+import org.h2.jdbcx.JdbcConnectionPool;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -31,6 +33,7 @@ class Stage0Test {
         // Class.forName("org.h2.Driver"); // JDBC 4.0 부터 생략 가능
         // DriverManager 클래스를 활용하여 static 변수의 정보를 활용하여 h2 db에 연결한다.
         try (final Connection connection = DriverManager.getConnection(H2_URL, USER, PASSWORD)) {
+            System.out.println(connection.getClass().getName());
             assertThat(connection.isValid(1)).isTrue();
         }
     }
@@ -55,6 +58,51 @@ class Stage0Test {
         dataSource.setUser(USER);
         dataSource.setPassword(PASSWORD);
 
+        try (Connection first = dataSource.getConnection();
+             Connection second = dataSource.getConnection()) {
+
+            System.out.println(first.getClass().getName());
+            System.out.println(second.getClass().getName());
+            System.out.println(first == second);
+        }
+
+        try (Connection first = dataSource.getConnection()) {
+            first.setAutoCommit(false);
+            System.out.println("first: " + first.getAutoCommit());
+        }
+
+        try (Connection second = dataSource.getConnection()) {
+            System.out.println("second: " + second.getAutoCommit());
+        }
+
+        try (final var connection = dataSource.getConnection()) {
+            System.out.println(connection.getClass().getName());
+            assertThat(connection.isValid(1)).isTrue();
+        }
+
+        assertValidConnection(dataSource);
+    }
+
+    @Test
+    void connectionPool() throws SQLException {
+        JdbcConnectionPool pool =
+                JdbcConnectionPool.create(H2_URL, USER, PASSWORD);
+
+        System.out.println("빌리기 전: " + pool.getActiveConnections());
+
+        try (Connection connection = pool.getConnection()) {
+            System.out.println("빌린 동안: " + pool.getActiveConnections());
+        }
+
+        System.out.println("close 후: " + pool.getActiveConnections());
+
+        try (Connection connection = pool.getConnection()) {
+            System.out.println("다시 빌린 동안: " + pool.getActiveConnections());
+        }
+    }
+
+    private void assertValidConnection(DataSource dataSource) throws SQLException {
+        // 커넥션을 얻고, 유효한지 검증하고, 반드시 닫기
         try (final var connection = dataSource.getConnection()) {
             assertThat(connection.isValid(1)).isTrue();
         }

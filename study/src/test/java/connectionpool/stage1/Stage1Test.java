@@ -6,8 +6,11 @@ import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
+import java.sql.SQLTransientConnectionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class Stage1Test {
 
@@ -58,6 +61,41 @@ class Stage1Test {
      * HikariCP를 사용할 때 적용하면 좋은 MySQL 설정
      * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
      */
+    @Test
+    void connectionTimeoutWhenPoolIsExhausted() throws SQLException {
+        final var hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(H2_URL);
+        hikariConfig.setUsername(USER);
+        hikariConfig.setPassword(PASSWORD);
+        hikariConfig.setMaximumPoolSize(1);
+        hikariConfig.setMinimumIdle(0);
+        hikariConfig.setConnectionTimeout(1000);
+
+        try (final var dataSource = new HikariDataSource(hikariConfig)) {
+            try (final var first = dataSource.getConnection()) {
+                assertThat(first.isValid(1)).isTrue();
+
+                // 첫 번째 커넥션을 반환하지 않은 채 두 번째 커넥션을 요청한다.
+                final long startedAt = System.nanoTime();
+                assertThatThrownBy(() -> {
+                    try (final var second = dataSource.getConnection()) {
+                        // 예상과 달리 획득되더라도 자원을 정리한다.
+                    }
+                }).isInstanceOf(SQLTransientConnectionException.class);
+
+                final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(
+                        System.nanoTime() - startedAt);
+                System.out.println("두 번째 커넥션 획득 대기 시간(ms): " + elapsedMillis);
+                assertThat(elapsedMillis).isGreaterThanOrEqualTo(1000);
+            }
+
+            // 첫 번째 커넥션이 반환된 뒤에는 다시 빌릴 수 있다.
+            try (final var connection = dataSource.getConnection()) {
+                assertThat(connection.isValid(1)).isTrue();
+            }
+        }
+    }
+
     @Test
     void testHikariCP() {
         final var hikariConfig = new HikariConfig();
