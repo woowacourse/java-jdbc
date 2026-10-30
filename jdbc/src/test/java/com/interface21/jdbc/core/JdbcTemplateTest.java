@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -110,7 +111,8 @@ class JdbcTemplateTest {
         final var sql = "select id from users";
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getLong("id")))
-                .isInstanceOf(DataAccessException.class)
+                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .hasMessageContaining("at most one row")
                 .hasMessageContaining("at least 2")
                 .hasMessageContaining(sql);
         verify(resultSet, times(2)).next();
@@ -183,7 +185,7 @@ class JdbcTemplateTest {
         final var sql = "select id from missing_table";
 
         assertThatThrownBy(() -> jdbcTemplate.query(sql, row -> row.getLong("id")))
-                .isInstanceOf(DataAccessException.class)
+                .isExactlyInstanceOf(DataAccessException.class)
                 .hasMessageContaining(sql)
                 .hasCause(failure);
         verify(statement).close();
@@ -214,7 +216,7 @@ class JdbcTemplateTest {
         final var sql = "select id from users";
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getLong("id")))
-                .isInstanceOf(DataAccessException.class)
+                .isExactlyInstanceOf(DataAccessException.class)
                 .hasMessageContaining(sql)
                 .hasCause(failure);
         verify(resultSet).close();

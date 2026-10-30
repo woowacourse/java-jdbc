@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ public class JdbcTemplate {
     }
 
     /**
-     * 조회 결과가 없으면 null을 반환하고, 두 건 이상이면 예외를 던진다.
+     * 조회 결과가 없으면 null을 반환하고, 두 건 이상이면 IncorrectResultSizeDataAccessException을 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return execute(sql, parameters, statement -> {
@@ -47,7 +48,7 @@ public class JdbcTemplate {
                 }
                 final var result = rowMapper.mapRow(resultSet);
                 if (resultSet.next()) {
-                    throw new DataAccessException("Expected at most one row but found at least 2: " + sql);
+                    throw new IncorrectResultSizeDataAccessException("Expected at most one row but found at least 2: " + sql);
                 }
                 return result;
             }

@@ -1,6 +1,6 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -148,6 +148,6 @@ class UserDaoTest {
         userDao.insert(new User("gugu", "another-password", "another@woowahan.com"));
 
         assertThatThrownBy(() -> userDao.findByAccount("gugu"))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 }
