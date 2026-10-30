@@ -24,6 +24,7 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table user_history restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -39,8 +40,14 @@ class UserServiceTest {
         userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
+        final var histories = userHistoryDao.findByUserId(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(histories).singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getPassword()).isEqualTo(newPassword);
+                    assertThat(history.getCreateBy()).isEqualTo(createdBy);
+                });
     }
 
     @Test
