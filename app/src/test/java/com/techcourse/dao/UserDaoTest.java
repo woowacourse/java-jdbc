@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.NoSuchElementException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -110,6 +112,19 @@ class UserDaoTest {
         assertThat(userDao.findById(2L))
                 .usingRecursiveComparison()
                 .isEqualTo(new User(2L, "brown", "brown-password", "brown@woowahan.com"));
+    }
+
+    @Test
+    @DisplayName("수정할 사용자가 없으면 예외를 던지고 기존 사용자 정보를 유지한다")
+    void update_missing_user() {
+        final var user = new User(999L, "missing", "changed-password", "changed@woowahan.com");
+
+        assertThatThrownBy(() -> userDao.update(user))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("999");
+        assertThat(userDao.findAll())
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsExactly(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
     }
 
     @Test
