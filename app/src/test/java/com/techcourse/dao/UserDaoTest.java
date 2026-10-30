@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,15 +38,22 @@ class UserDaoTest {
 
     @Test
     void findById() {
-        final User user = userDao.findById(1L);
+        final User user = userDao.findById(1L).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
 
     @Test
+    void findByIdWithoutResult() {
+        final Optional<User> user = userDao.findById(2L);
+
+        assertThat(user).isEmpty();
+    }
+
+    @Test
     void findByAccount() {
         final String account = "gugu";
-        final User user = userDao.findByAccount(account);
+        final User user = userDao.findByAccount(account).orElseThrow();
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -56,7 +64,7 @@ class UserDaoTest {
         final User user = new User(account, "password", "hkkang@woowahan.com");
         userDao.insert(user);
 
-        final User actual = userDao.findById(2L);
+        final User actual = userDao.findById(2L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -67,7 +75,7 @@ class UserDaoTest {
 
         userDao.update(user);
 
-        final User actual = userDao.findById(1L);
+        final User actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getAccount()).isEqualTo(user.getAccount());
         assertThat(actual.getPassword()).isEqualTo(user.getPassword());

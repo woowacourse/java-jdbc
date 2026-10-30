@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,9 +69,9 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        final String account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
+        final Optional<String> account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
 
-        assertThat(account).isEqualTo("gugu");
+        assertThat(account).contains("gugu");
         verify(statement).setObject(1, 1L);
     }
 
@@ -78,9 +79,9 @@ class JdbcTemplateTest {
     void queryForObjectWithoutResults() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
-        final String account = jdbcTemplate.queryForObject("select account from users", row -> row.getString("account"));
+        final Optional<String> account = jdbcTemplate.queryForObject("select account from users", row -> row.getString("account"));
 
-        assertThat(account).isNull();
+        assertThat(account).isEmpty();
     }
 
     @Test

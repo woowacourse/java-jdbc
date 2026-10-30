@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -44,15 +45,15 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
         if (results.size() > 1) {
             throw new DataAccessException("단건 조회 결과가 여러 건입니다: " + results.size());
         }
-        return results.get(0);
+        return Optional.ofNullable(results.get(0));
     }
 
     private void setParameters(final PreparedStatement statement, final Object[] args) throws SQLException {
