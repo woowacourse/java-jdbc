@@ -8,6 +8,8 @@
     </appender>
 
     <logger name="nextstep" level="DEBUG" />
+    <logger name="com.techcourse.dao" level="DEBUG" />
+    <logger name="com.interface21.jdbc.core.JdbcTemplate" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
