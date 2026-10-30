@@ -27,9 +27,12 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("dongkey", "password", "dongkey@woowahan.com"));
+
         final List<User> users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).extracting(User::getAccount)
+                .containsExactlyInAnyOrder("gugu", "dongkey");
     }
 
     @Test
