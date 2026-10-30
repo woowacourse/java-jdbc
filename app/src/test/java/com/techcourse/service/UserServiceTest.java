@@ -52,7 +52,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "support-agent";
@@ -81,7 +82,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -101,8 +103,9 @@ class UserServiceTest {
         final var transactionDataSource = mock(DataSource.class);
         when(transactionDataSource.getConnection()).thenReturn(connection);
         final var transactionTemplate = new JdbcTemplate(transactionDataSource);
-        final var userService = new UserService(transactionDataSource,
+        final var appUserService = new AppUserService(
                 new UserDao(transactionTemplate), new MockUserHistoryDao(transactionTemplate));
+        final var userService = new TxUserService(transactionDataSource, appUserService);
         final var closeFailure = new SQLException("Close failed");
         doAnswer(invocation -> {
             invocation.callRealMethod();
@@ -132,7 +135,8 @@ class UserServiceTest {
             }
         };
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDaoWithNoUpdatedRows, userHistoryDao);
+        final var appUserService = new AppUserService(userDaoWithNoUpdatedRows, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "support-agent"));
@@ -140,6 +144,21 @@ class UserServiceTest {
         final var actual = userDao.findById(1L);
         assertThat(actual.getPassword()).isEqualTo("password");
         assertThat(historyCount()).isZero();
+    }
+
+    @Test
+    void testSaveAndFindByIdThroughTransactionService() {
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
+        final var user = new User("new-user", "password", "new-user@example.com");
+
+        userService.save(user);
+
+        final var savedUser = userDao.findByAccount("new-user");
+        final var actual = userService.findById(savedUser.getId());
+        assertThat(actual.getAccount()).isEqualTo("new-user");
+        assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(actual.getEmail()).isEqualTo("new-user@example.com");
     }
 
     private int historyCount() {
