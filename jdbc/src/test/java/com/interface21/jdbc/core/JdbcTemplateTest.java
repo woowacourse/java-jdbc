@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -186,6 +187,22 @@ class JdbcTemplateTest {
         verify(preparedStatement).close();
         verify(connection, never()).close();
         verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void closeFailureDoesNotHideSqlExecutionFailure() throws SQLException {
+        final var failure = new SQLException("execution failed");
+        final var closeFailure = new SQLException("close failed");
+        when(preparedStatement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, "kaki", 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure)
+                .satisfies(exception -> {
+                    assertThat(exception.getSuppressed()).hasSize(1);
+                    assertThat(exception.getSuppressed()[0]).hasCause(closeFailure);
+                });
     }
 
     private void assertStatementAndConnectionClosed() throws SQLException {

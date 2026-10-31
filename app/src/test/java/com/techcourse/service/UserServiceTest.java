@@ -2,8 +2,8 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.techcourse.config.UserServiceConfig;
 import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
@@ -47,8 +47,7 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = UserServiceConfig.create(dataSource);
         final var before = LocalDateTime.now().minusSeconds(1);
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -74,7 +73,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 이력을 저장한 뒤 예외를 발생시켜 두 작업이 모두 롤백되는지 확인한다.
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -84,8 +83,7 @@ class UserServiceTest {
 
     @Test
     void historyConstraintViolationRollsBackPassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = UserServiceConfig.create(dataSource);
 
         final var failure = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", null));
