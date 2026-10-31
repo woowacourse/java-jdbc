@@ -80,6 +80,45 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("전달받은 Connection으로 SQL을 실행하고 Connection을 닫지 않는다")
+    void updateWithSuppliedConnectionLeavesItOpen() throws SQLException {
+        Connection suppliedConnection = mock(Connection.class);
+        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        int affectedRows = jdbcTemplate.update(
+                suppliedConnection, "update users set password = ? where id = ?", "newPassword", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setObject(1, "newPassword");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(suppliedConnection, never()).close();
+        verify(suppliedConnection, never()).commit();
+        verify(suppliedConnection, never()).rollback();
+        verifyNoInteractions(connection);
+    }
+
+    @Test
+    @DisplayName("전달받은 Connection에서 SQL이 실패해도 Connection을 닫지 않고 원인을 보존한다")
+    void updateFailureWithSuppliedConnectionLeavesItOpen() throws SQLException {
+        Connection suppliedConnection = mock(Connection.class);
+        SQLException cause = new SQLException("SQL 실행 실패");
+        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                suppliedConnection, "update users set password = ? where id = ?", "newPassword", 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement).close();
+        verify(suppliedConnection, never()).close();
+        verify(suppliedConnection, never()).rollback();
+        verifyNoInteractions(connection);
+    }
+
+    @Test
     @DisplayName("Statement 준비가 실패하면 원인을 보존하고 Connection을 닫는다")
     void statementPreparationFailureClosesConnection() throws SQLException {
         SQLException cause = new SQLException("Statement 준비 실패");
