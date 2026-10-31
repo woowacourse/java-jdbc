@@ -38,7 +38,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -47,13 +48,17 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(countHistory()).isEqualTo(1);
     }
 
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -64,5 +69,21 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(countHistory()).isZero();
+    }
+
+    @Test
+    void appUserServiceAloneDoesNotRollBack() {
+        final var appUserService = new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate));
+
+        final var newPassword = "newPassword";
+        assertThrows(DataAccessException.class,
+                () -> appUserService.changePassword(1L, newPassword, "gugu"));
+
+        assertThat(appUserService.findById(1L).getPassword()).isEqualTo(newPassword);
+    }
+
+    private long countHistory() {
+        return jdbcTemplate.queryForObject("select count(*) from user_history", rs -> rs.getLong(1));
     }
 }

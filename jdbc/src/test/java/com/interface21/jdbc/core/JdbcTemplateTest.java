@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.DuplicateKeyException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +41,11 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(connection.prepareStatement(QUERY)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(rows);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -99,10 +106,11 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithExternalConnectionLeavesConnectionOpen() throws SQLException {
+    void usesBoundConnectionAndLeavesItOpen() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(statement.executeUpdate()).thenReturn(1);
 
-        final var count = jdbcTemplate.update(connection, SQL, "changed", 1L);
+        final var count = jdbcTemplate.update(SQL, "changed", 1L);
 
         assertThat(count).isEqualTo(1);
         final var order = inOrder(statement);
@@ -115,11 +123,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void externalConnectionFailureTranslatesButDoesNotClose() throws SQLException {
+    void boundConnectionFailureTranslatesButDoesNotClose() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var failure = new SQLException("execution failed");
         when(statement.executeUpdate()).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, 1L))
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, 1L))
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(statement).close();

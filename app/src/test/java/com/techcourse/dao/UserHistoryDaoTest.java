@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,20 +39,28 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void savesHistoryUsingGivenConnection() throws SQLException {
-        final var dao = new UserHistoryDao(DataSourceConfig.getInstance());
+    void usesBoundConnectionAndFollowsItsRollback() throws SQLException {
+        final var dataSource = DataSourceConfig.getInstance();
+        final var dao = new UserHistoryDao(dataSource);
         final var history = new UserHistory(null, 7L, "gugu", "changed-password", "gugu@example.com", "admin");
 
-        try (var connection = DataSourceConfig.getInstance().getConnection()) {
-            dao.log(connection, history);
-            assertThat(connection.isClosed()).isFalse();
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                dao.log(history);
+                assertThat(connection.isClosed()).isFalse();
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
 
-        try (var connection = DataSourceConfig.getInstance().getConnection();
-             var statement = connection.prepareStatement("select user_id from user_history");
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement("select count(*) from user_history");
              var result = statement.executeQuery()) {
             assertThat(result.next()).isTrue();
-            assertThat(result.getLong("user_id")).isEqualTo(7L);
+            assertThat(result.getLong(1)).isZero();
         }
     }
 
