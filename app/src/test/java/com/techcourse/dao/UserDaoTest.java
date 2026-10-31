@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
-    private Connection conn;
     private UserDao userDao;
 
     @BeforeEach
@@ -22,30 +21,24 @@ class UserDaoTest {
         final var dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
 
-        conn = dataSource.getConnection();
         final var jdbcTemplate = new JdbcTemplate(dataSource);
-        jdbcTemplate.update(conn, "truncate table users restart identity");
+        jdbcTemplate.update("truncate table users restart identity");
 
         userDao = new UserDao(jdbcTemplate);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(conn, user);
-    }
-
-    @AfterEach
-    void tearDown() throws SQLException {
-        conn.close();
+        userDao.insert(user);
     }
 
     @Test
     void findAll() {
-        final var users = userDao.findAll(conn);
+        final var users = userDao.findAll();
 
         assertThat(users).isNotEmpty();
     }
 
     @Test
     void findById() {
-        final var user = userDao.findById(conn, 1L);
+        final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
     }
@@ -53,7 +46,7 @@ class UserDaoTest {
     @Test
     void findByAccount() {
         final var account = "gugu";
-        final var user = userDao.findByAccount(conn, account);
+        final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
     }
@@ -62,9 +55,9 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(conn, user);
+        userDao.insert(user);
 
-        final var actual = userDao.findById(conn, 2L);
+        final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
     }
@@ -72,12 +65,12 @@ class UserDaoTest {
     @Test
     void update() {
         final var newPassword = "password99";
-        final var user = userDao.findById(conn, 1L);
+        final var user = userDao.findById(1L);
         user.changePassword(newPassword);
 
-        userDao.update(conn, user);
+        userDao.update(user);
 
-        final var actual = userDao.findById(conn,1L);
+        final var actual = userDao.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
     }
