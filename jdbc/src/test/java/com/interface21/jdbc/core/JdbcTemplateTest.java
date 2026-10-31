@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -93,14 +94,34 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_커넥션으로_update하면_커넥션을_닫지_않는다() throws SQLException {
-        jdbcTemplate.update(connection, "update users set password = ? where id = ?",
-                "newPassword", 1L);
+    void 트랜잭션이_진행_중이면_바인딩된_커넥션을_재사용하고_닫지_않는다() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            jdbcTemplate.update("update users set password = ? where id = ?", "newPassword", 1L);
 
-        verify(pstmt).executeUpdate();
-        verify(pstmt).close();
-        verify(connection, never()).close();
-        verify(dataSource, never()).getConnection();
+            verify(pstmt).executeUpdate();
+            verify(pstmt).close();
+            verify(connection, never()).close();
+            verify(dataSource, never()).getConnection();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void 트랜잭션_진행_중_SQL_실행이_실패해도_커넥션을_닫지_않는다() throws SQLException {
+        when(pstmt.executeUpdate()).thenThrow(new SQLException("execution error"));
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            assertThatThrownBy(() -> jdbcTemplate.update(
+                    "update users set password = ? where id = ?", "newPassword", 1L))
+                    .isInstanceOf(DataAccessException.class);
+
+            verify(pstmt).close();
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
