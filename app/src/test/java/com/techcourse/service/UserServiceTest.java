@@ -1,17 +1,16 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.sql.Connection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,9 +33,11 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("비밀번호를 변경하면 사용자 정보와 변경 이력을 함께 저장한다")
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final var userService = new TxUserService(
+                new AppUserService(userDao, userHistoryDao), DataSourceConfig.getInstance());
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -52,16 +53,20 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 저장이 실패하면 비밀번호 변경을 롤백한다")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         final var actual = userService.findById(1L);
 
@@ -69,15 +74,17 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 저장 후 실패하면 비밀번호 변경과 이력 저장을 모두 롤백한다")
     void testRollbackAfterHistoryInsert() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory userHistory) {
-                super.log(connection, userHistory);
+            public void log(final UserHistory userHistory) {
+                super.log(userHistory);
                 throw new DataAccessException("이력 저장 후 실패");
             }
         };
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final var userService = new TxUserService(
+                new AppUserService(userDao, userHistoryDao), DataSourceConfig.getInstance());
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));

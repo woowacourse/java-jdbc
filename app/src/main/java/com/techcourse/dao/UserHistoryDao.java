@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -23,10 +22,6 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         jdbcTemplate.command(INSERT_SQL, historySetter(userHistory));
-    }
-
-    public void log(final Connection connection, final UserHistory userHistory) {
-        jdbcTemplate.command(connection, INSERT_SQL, historySetter(userHistory));
     }
 
     private PreparedStatementSetter historySetter(final UserHistory userHistory) {
