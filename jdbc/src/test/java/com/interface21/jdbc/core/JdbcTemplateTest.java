@@ -347,6 +347,81 @@ class JdbcTemplateTest {
         verifyQueryResourcesClosed();
     }
 
+    @Test
+    void updateWithSetterBindsTypedParametersBeforeExecution() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        int affectedRows = jdbcTemplate.update(UPDATE_SQL, ps -> ps.setString(1, "alice"));
+
+        assertThat(affectedRows).isEqualTo(1);
+        InOrder order = inOrder(statement);
+        order.verify(statement).setString(1, "alice");
+        order.verify(statement).executeUpdate();
+        verifyStatementAndConnectionClosed();
+    }
+
+    @Test
+    void queryWithSetterBindsBeforeExecutionAndMapsRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet, 0)).thenReturn("alice");
+
+        List<String> rows = jdbcTemplate.query(QUERY_SQL, ps -> ps.setInt(1, 20), rowMapper);
+
+        assertThat(rows).containsExactly("alice");
+        InOrder order = inOrder(statement, rowMapper);
+        order.verify(statement).setInt(1, 20);
+        order.verify(statement).executeQuery();
+        order.verify(rowMapper).mapRow(resultSet, 0);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void updateConvertsSetterSqlExceptionAndClosesResources() throws SQLException {
+        SQLException failure = new SQLException("setter failed");
+        PreparedStatementSetter setter = ps -> { throw failure; };
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, setter))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement, never()).executeUpdate();
+        verifyStatementAndConnectionClosed();
+    }
+
+    @Test
+    void queryConvertsSetterSqlExceptionWithoutExecutingQuery() throws SQLException {
+        SQLException failure = new SQLException("setter failed");
+        PreparedStatementSetter setter = ps -> { throw failure; };
+
+        assertThatThrownBy(() -> jdbcTemplate.query(QUERY_SQL, setter, rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement, never()).executeQuery();
+        verifyNoInteractions(resultSet, rowMapper);
+        verifyStatementAndConnectionClosed();
+    }
+
+    @Test
+    void updatePropagatesSetterRuntimeExceptionAndClosesResources() throws SQLException {
+        IllegalArgumentException failure = new IllegalArgumentException("invalid parameter");
+        PreparedStatementSetter setter = ps -> { throw failure; };
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, setter)).isSameAs(failure);
+
+        verify(statement, never()).executeUpdate();
+        verifyStatementAndConnectionClosed();
+    }
+
+    @Test
+    void updateBindsSingleNullArgument() throws SQLException {
+        jdbcTemplate.update(UPDATE_SQL, (Object) null);
+
+        verify(statement).setObject(1, null);
+        verify(statement).executeUpdate();
+        verifyStatementAndConnectionClosed();
+    }
+
     private void verifyStatementAndConnectionClosed() throws SQLException {
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
