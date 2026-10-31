@@ -25,19 +25,25 @@ public class JdbcTemplate {
         return execute(sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... params) {
+        return execute(connection, sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
+    }
+
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
-        return execute(sql, createPreparedStatementSetter(params), pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rowMapper.mapRow(rs);
-                }
-                return null;
-            }
-        });
+        return execute(sql, createPreparedStatementSetter(params), createQueryForObjectCallback(rowMapper));
+    }
+
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        return execute(connection, sql, createPreparedStatementSetter(params), createQueryForObjectCallback(rowMapper));
     }
 
     public <T> List<T> query(
@@ -62,9 +68,21 @@ public class JdbcTemplate {
             final PreparedStatementSetter statementSetter,
             final PreparedStatementCallback<T> callback
     ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, statementSetter, callback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException("SQL 실행에 실패했습니다.", e);
+        }
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter statementSetter,
+            final PreparedStatementCallback<T> callback
+    ) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             statementSetter.setValues(pstmt);
@@ -73,6 +91,17 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL 실행에 실패했습니다.", e);
         }
+    }
+
+    private <T> PreparedStatementCallback<T> createQueryForObjectCallback(final RowMapper<T> rowMapper) {
+        return pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
+            }
+        };
     }
 
     private PreparedStatementSetter createPreparedStatementSetter(final Object... params) {
