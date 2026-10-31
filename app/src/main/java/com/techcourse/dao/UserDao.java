@@ -70,6 +70,11 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, this::mapUser, id);
     }
 
+    public User findById(final Long id, final Connection connection) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, this::mapUser, id);
+    }
+
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, this::mapUser, account);

@@ -38,18 +38,17 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        return execute(sql, createPreparedStatementSetter(args), pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                T result = rowMapper.mapRow(rs);
-                if (rs.next()) {
-                    throw new DataAccessException("단건 조회 결과는 최대 1건이어야 합니다.");
-                }
-                return result;
-            }
-        });
+        return execute(sql, createPreparedStatementSetter(args), pstmt -> extractSingleResult(pstmt, rowMapper));
+    }
+
+    public <T> T queryForObject(
+            Connection connection,
+            String sql,
+            RowMapper<T> rowMapper,
+            Object... args
+    ) {
+        return execute(connection, sql, createPreparedStatementSetter(args),
+                pstmt -> extractSingleResult(pstmt, rowMapper));
     }
 
     public <T> List<T> query(
@@ -66,6 +65,19 @@ public class JdbcTemplate {
                 return result;
             }
         });
+    }
+
+    private <T> T extractSingleResult(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            if (!rs.next()) {
+                return null;
+            }
+            T result = rowMapper.mapRow(rs);
+            if (rs.next()) {
+                throw new DataAccessException("단건 조회 결과는 최대 1건이어야 합니다.");
+            }
+            return result;
+        }
     }
 
     private <T> T execute(
