@@ -19,19 +19,25 @@ public abstract class DataSourceUtils {
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null || isTransactional(connection, dataSource)) {
+            return;
+        }
+
         try {
             connection.close();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
         }
+    }
+
+    private static boolean isTransactional(Connection connection, DataSource dataSource) {
+        return connection == TransactionSynchronizationManager.getResource(dataSource);
     }
 }
