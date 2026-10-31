@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,23 +22,12 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object[] parameters) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, parameters);
-            log.debug("query : {}", sql);
-            return statement.executeUpdate();
-        } catch (SQLException exception) {
-            throw new RuntimeException("SQL 실행에 실패했습니다.", exception);
-        }
+    public int update(final String sql, final Object... parameters) {
+        return execute(sql, parameters, PreparedStatement::executeUpdate);
     }
 
-    public <T> List<T> query(final String sql, final Object[] parameters, final RowMapper<T> rowMapper) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, parameters);
-            log.debug("query : {}", sql);
-
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return execute(sql, parameters, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> rows = new ArrayList<>();
                 while (resultSet.next()) {
@@ -45,8 +35,28 @@ public class JdbcTemplate {
                 }
                 return rows;
             }
+        });
+    }
+
+    /**
+     * 결과가 없으면 null, 여러 행이면 첫 번째 결과를 반환한다.
+     */
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        final var rows = query(sql, rowMapper, parameters);
+        if (rows.isEmpty()) {
+            return null;
+        }
+        return rows.getFirst();
+    }
+
+    private <T> T execute(final String sql, final Object[] parameters, final StatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            setParameters(statement, parameters);
+            log.debug("query : {}", sql);
+            return callback.execute(statement);
         } catch (SQLException exception) {
-            throw new RuntimeException("조회에 실패했습니다.", exception);
+            throw new DataAccessException("SQL 실행에 실패했습니다.", exception);
         }
     }
 
@@ -54,5 +64,11 @@ public class JdbcTemplate {
         for (int index = 0; index < parameters.length; index++) {
             statement.setObject(index + 1, parameters[index]);
         }
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
