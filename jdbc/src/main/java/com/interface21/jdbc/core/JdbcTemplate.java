@@ -31,14 +31,12 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        return execute(sql, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet);
-                }
-                return null;
-            }
-        }, args);
+        List<T> results = query(sql, rowMapper, args);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+        return results.getFirst();
     }
 
     public <T> List<T> query(
