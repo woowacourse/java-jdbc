@@ -23,11 +23,15 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
+        return update(sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
         log.debug("query : {}", sql);
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
+            setter.setValues(statement);
             return statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute update: " + sql, e);
@@ -35,11 +39,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
         log.debug("query : {}", sql);
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
+            setter.setValues(statement);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
@@ -59,7 +67,16 @@ public class JdbcTemplate {
      * @throws DataAccessException if more than one row matches or a JDBC operation fails
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    /**
+     * Returns the mapped row using custom parameter binding, or {@code null} if no row matches.
+     *
+     * @throws DataAccessException if more than one row matches or a JDBC operation fails
+     */
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        final List<T> results = query(sql, setter, rowMapper);
         if (results.isEmpty()) {
             return null;
         }
@@ -69,9 +86,11 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private void setParameters(final PreparedStatement statement, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
