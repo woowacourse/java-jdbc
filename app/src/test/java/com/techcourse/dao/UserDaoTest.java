@@ -7,6 +7,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -14,19 +16,27 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+    void setup() throws SQLException {
+        final var dataSource = DataSourceConfig.getInstance();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute("TRUNCATE TABLE users RESTART IDENTITY");
+        }
+
+        userDao = new UserDao(new JdbcTemplate(dataSource));
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
 
     @Test
     void findAll() {
+        userDao.insert(new User("usher", "password", "usher@email.com"));
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users.size()).isEqualTo(2);
     }
 
     @Test
