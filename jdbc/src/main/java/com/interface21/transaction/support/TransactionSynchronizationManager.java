@@ -16,7 +16,10 @@ public abstract class TransactionSynchronizationManager {
     }
 
     public static void bindResource(DataSource key, Connection value) {
-        resources.get().put(key, value);
+        Connection existing = resources.get().putIfAbsent(key, value);
+        if (existing != null) {
+            throw new IllegalStateException("이미 트랜잭션에 바인딩된 커넥션이 존재합니다: " + key);
+        }
     }
 
     public static Connection unbindResource(DataSource key) {
