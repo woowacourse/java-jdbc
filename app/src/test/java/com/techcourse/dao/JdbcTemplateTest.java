@@ -19,11 +19,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class JdbcTemplateTest {
 
     private static final String SQL = "update users set password = ? where id = ?";
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private JdbcTemplate jdbcTemplate;
@@ -31,7 +33,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
@@ -108,5 +110,33 @@ class JdbcTemplateTest {
 
         verify(statement).executeUpdate();
         verify(connection).close();
+    }
+
+    @Test
+    void updateWithExternalConnection() throws SQLException {
+        jdbcTemplate.update(connection, SQL, "password", 1L);
+
+        verify(statement).setObject(1, "password");
+        verify(statement).setObject(2, 1L);
+        verify(statement).executeUpdate();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void externalConnectionStaysOpenWhenUpdateFails() throws SQLException {
+        final var cause = new SQLException("수정 실패");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, setter))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).rollback();
+        verifyNoInteractions(dataSource);
     }
 }

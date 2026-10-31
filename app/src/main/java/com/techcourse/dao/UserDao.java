@@ -4,11 +4,12 @@ import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.sql.Connection;
 
 public class UserDao {
 
     private final JdbcTemplate jdbcTemplate;
-    private final RowMapper<User> userRowMapper = resultSet -> new User(
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
             resultSet.getLong("id"),
             resultSet.getString("account"),
             resultSet.getString("password"),
@@ -36,23 +37,31 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
+    public void update(final Connection connection, final User user) {
+        final var sql = "update users set password = ? where id = ?";
+        jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 
-        return jdbcTemplate.query(sql, userRowMapper);
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        final var users = jdbcTemplate.query(sql, userRowMapper, id);
-        return users.isEmpty() ? null : users.getFirst();
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        final var users = jdbcTemplate.query(sql, userRowMapper, account);
-        return users.isEmpty() ? null : users.getFirst();
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 }
