@@ -208,6 +208,40 @@ class JdbcTemplateTest {
         verifyQueryResourcesClosed();
     }
 
+    @Test
+    void closesConnectionWhenStatementCloseFails() throws SQLException {
+        final var failure = new SQLException("statement close failed");
+        when(statement.executeUpdate()).thenReturn(1);
+        doThrow(failure).when(statement).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, "gugu", null, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verifyStatementAndConnectionClosed();
+    }
+
+    @Test
+    void preservesMappingFailureAndSuppressesResourceCloseFailures() throws SQLException {
+        final var failure = new SQLException("mapping failed");
+        final var resultSetCloseFailure = new SQLException("result set close failed");
+        final var statementCloseFailure = new SQLException("statement close failed");
+        final var connectionCloseFailure = new SQLException("connection close failed");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("name")).thenThrow(failure);
+        doThrow(resultSetCloseFailure).when(resultSet).close();
+        doThrow(statementCloseFailure).when(statement).close();
+        doThrow(connectionCloseFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SELECT_SQL, NAME_ROW_MAPPER))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        assertThat(failure.getSuppressed())
+                .containsExactly(resultSetCloseFailure, statementCloseFailure, connectionCloseFailure);
+        verifyQueryResourcesClosed();
+    }
+
     private void verifyStatementAndConnectionClosed() throws SQLException {
         verify(statement).close();
         verify(connection).close();
