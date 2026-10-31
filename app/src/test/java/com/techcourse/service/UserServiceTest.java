@@ -2,6 +2,8 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -12,6 +14,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +61,23 @@ class UserServiceTest {
         assertThat(history.password()).isEqualTo(newPassword);
         assertThat(history.createdBy()).isEqualTo(createBy);
         assertThat(history.createdAt()).isNotNull();
+    }
+
+    @Test
+    void testChangePasswordUsesOneConnectionForLookupAndWrites() throws SQLException {
+        final var dataSource = spy(DataSourceConfig.getInstance());
+        final var sharedJdbcTemplate = new JdbcTemplate(dataSource);
+        final var userService = new UserService(
+                new UserDao(sharedJdbcTemplate),
+                new UserHistoryDao(sharedJdbcTemplate),
+                dataSource
+        );
+
+        userService.changePassword(1L, "newPassword", "gugu");
+
+        verify(dataSource).getConnection();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
+        assertThat(historyCount()).isEqualTo(1L);
     }
 
     @Test
