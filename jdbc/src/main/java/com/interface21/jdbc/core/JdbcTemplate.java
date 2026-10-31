@@ -23,24 +23,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        log.debug("query : {}", sql);
+        return update(sql, createPreparedStatementSetter(args));
+    }
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update: " + sql, e);
-        }
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
+    }
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            setParameters(statement, args);
-
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -48,9 +43,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute query: " + sql, e);
-        }
+        });
     }
 
     /**
@@ -59,7 +52,16 @@ public class JdbcTemplate {
      * @throws DataAccessException if more than one row matches or a JDBC operation fails
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    /**
+     * Returns the mapped row using custom parameter binding, or {@code null} if no row matches.
+     *
+     * @throws DataAccessException if more than one row matches or a JDBC operation fails
+     */
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        final List<T> results = query(sql, setter, rowMapper);
         if (results.isEmpty()) {
             return null;
         }
@@ -69,9 +71,30 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private void setParameters(final PreparedStatement statement, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            statement.setObject(i + 1, args[i]);
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
+        log.debug("query : {}", sql);
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            setter.setValues(statement);
+            return callback.doInPreparedStatement(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
+    }
+
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T doInPreparedStatement(PreparedStatement statement) throws SQLException;
     }
 }
