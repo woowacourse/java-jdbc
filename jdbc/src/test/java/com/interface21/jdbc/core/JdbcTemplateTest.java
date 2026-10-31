@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,9 +69,9 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        final String account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
+        final Optional<String> account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
 
-        assertThat(account).isEqualTo("gugu");
+        assertThat(account).contains("gugu");
         verify(statement).setObject(1, 1L);
     }
 
@@ -78,9 +79,9 @@ class JdbcTemplateTest {
     void queryForObjectWithoutResults() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
-        final String account = jdbcTemplate.queryForObject("select account from users", row -> row.getString("account"));
+        final Optional<String> account = jdbcTemplate.queryForObject("select account from users", row -> row.getString("account"));
 
-        assertThat(account).isNull();
+        assertThat(account).isEmpty();
     }
 
     @Test
@@ -100,6 +101,20 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "newPassword"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void sqlExceptionInRowMapper() throws SQLException {
+        final SQLException exception = new SQLException("컬럼 읽기 실패");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> row.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+        verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }

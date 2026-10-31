@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -40,12 +41,12 @@ public class UserDao {
         return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final String sql = "select id, account, password, email from users where id = ?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER, account);
     }
