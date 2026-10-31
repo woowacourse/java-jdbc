@@ -35,7 +35,7 @@ public abstract class TransactionSynchronizationManager {
         map.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) throws SQLException {
+    public static Connection unbindResource(DataSource key) {
         Map<DataSource, Connection> map = resources.get();
         if (map == null) {
             return null;

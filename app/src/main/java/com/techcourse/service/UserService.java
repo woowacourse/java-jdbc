@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -24,52 +26,29 @@ public class UserService {
     }
 
     public User findById(final long id) {
-        try(Connection conn = dataSource.getConnection()){
-            conn.setReadOnly(true);
-            conn.setAutoCommit(false);
-            try {
-                final User user = userDao.findById(conn, id);
-                conn.commit();
-                return user;
-            } catch (Exception e) {
-                rollback(conn, e);
-                throw new DataAccessException("회원 저장 실패", e);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return userDao.findById(id);
     }
 
     public void insert(final User user) {
-        try(Connection conn = dataSource.getConnection()){
-            conn.setAutoCommit(false);
-            try{
-                userDao.insert(conn, user);
-                conn.commit();
-            }catch (Exception e) {
-                rollback(conn, e);
-                throw new DataAccessException("회원 저장 실패", e);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        userDao.insert(user);
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection conn = dataSource.getConnection()) {
+        final Connection conn = getConnection();
+        TransactionSynchronizationManager.bindResource(dataSource, conn);
+        try {
             conn.setAutoCommit(false);
-            try {
-                final var user = userDao.findById(conn, id);
-                user.changePassword(newPassword);
-                userDao.update(conn,user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
-                conn.commit();
-            } catch (Exception e) {
-                rollback(conn, e);
-                throw new DataAccessException("비밀번호 변경 실패", e);
-            }
-        }catch (SQLException e) {
-            throw new DataAccessException(e);
+            final var user = userDao.findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            conn.commit();
+        } catch (Exception e) {
+            rollback(conn, e);
+            throw new DataAccessException("비밀번호 변경 실패", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -78,6 +57,14 @@ public class UserService {
             conn.rollback();
         } catch (SQLException rollbackException) {
             cause.addSuppressed(rollbackException);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 }

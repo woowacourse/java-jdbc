@@ -22,7 +22,7 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private Connection conn;
+
     @BeforeEach
     void setUp() throws SQLException {
         DataSource dataSource = DataSourceConfig.getInstance();
@@ -30,9 +30,8 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);
-        conn = dataSource.getConnection();
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(conn, user);
+        userDao.insert(user);
     }
 
     @Test
