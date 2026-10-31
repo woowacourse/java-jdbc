@@ -23,17 +23,7 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement st = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(st, args);
-            return st.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL 실행에 실패했습니다." + sql, e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(
@@ -41,23 +31,14 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... args
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(statement, args);
-
+        return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return rowMapper.mapRow(resultSet);
                 }
                 return null;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
-        }
+        }, args);
     }
 
     public <T> List<T> query(
@@ -65,13 +46,7 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object ... args
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            setParameters(statement, args);
-
+        return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 List<T> results = new ArrayList<>();
 
@@ -81,6 +56,21 @@ public class JdbcTemplate {
 
                 return results;
             }
+        }, args);
+    }
+
+    private <T> T execute(
+            String sql,
+            PreparedStatementCallback<T> callback,
+            Object... args
+    ) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            setParameters(statement, args);
+            return callback.doInPreparedStatement(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
