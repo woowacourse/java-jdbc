@@ -11,7 +11,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class JdbcTemplate {
+public class JdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -21,43 +21,69 @@ public final class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public final DataSource getDataSource() {
+        return dataSource;
+    }
 
-            bindParameters(pstmt, args);
-            log.debug("query : {}", sql);
+    public final <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(sql, parameterSetter(args), rowMapper);
+    }
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> resultList = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    resultList.add(rowMapper.mapRow(rs, rowNum++));
-                }
-                return resultList;
+    public final <T> List<T> query(String sql, PreparedStatementSetter statementSetter, RowMapper<T> rowMapper) {
+        return execute(sql, statement -> {
+            try (ResultSet resultSet = executeQuery(statementSetter, statement)) {
+                return mapRows(resultSet, rowMapper);
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
-    public int update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public final void update(String sql, Object... args) {
+        update(sql, parameterSetter(args));
+    }
 
-            bindParameters(pstmt, args);
+    public final void update(String sql, PreparedStatementSetter statementSetter) {
+        execute(sql, statement -> {
+            statementSetter.setValues(statement);
+            return statement.executeUpdate();
+        });
+    }
+
+    protected ResultSet executeQuery(PreparedStatementSetter statementSetter, PreparedStatement statement)
+            throws SQLException {
+        statementSetter.setValues(statement);
+        return statement.executeQuery();
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
+        try (Connection connection = getDataSource().getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            return pstmt.executeUpdate();
+            return callback.execute(statement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private void bindParameters(PreparedStatement pstmt, Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    private PreparedStatementSetter parameterSetter(Object[] args) {
+        return statement -> {
+            for (int parameterIndex = 0; parameterIndex < args.length; parameterIndex++) {
+                statement.setObject(parameterIndex + 1, args[parameterIndex]);
+            }
+        };
+    }
+
+    private <T> List<T> mapRows(ResultSet resultSet, RowMapper<T> rowMapper) throws SQLException {
+        List<T> rows = new ArrayList<>();
+        while (resultSet.next()) {
+            rows.add(rowMapper.mapRow(resultSet));
         }
+        return rows;
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
