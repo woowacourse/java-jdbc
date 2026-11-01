@@ -23,20 +23,37 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
-            try (final ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
-        }, args);
+        return execute(sql, statement -> mapRows(statement, rowMapper), args);
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, statement -> mapRows(statement, rowMapper), args);
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    public <T> Optional<T> queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return singleResult(query(connection, sql, rowMapper, args));
+    }
+
+    private <T> List<T> mapRows(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet resultSet = statement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
+            }
+            return results;
+        }
+    }
+
+    private <T> Optional<T> singleResult(final List<T> results) {
         if (results.isEmpty()) {
             return Optional.empty();
         }
@@ -47,8 +64,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (final Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, args);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        try (final PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, args);
             return callback.doInPreparedStatement(statement);
         } catch (SQLException e) {
