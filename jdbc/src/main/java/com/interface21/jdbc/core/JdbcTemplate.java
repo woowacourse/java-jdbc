@@ -31,10 +31,6 @@ public class JdbcTemplate {
         return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, createArgumentSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, createArgumentSetter(args));
     }
@@ -80,7 +76,6 @@ public class JdbcTemplate {
         }
     }
 
-    // 전달받은 커넥션은 트랜잭션을 시작한 쪽에서 닫아야 하므로 여기서 닫지 않는다.
     private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> action) {
         try (final var pstmt = conn.prepareStatement(sql)) {

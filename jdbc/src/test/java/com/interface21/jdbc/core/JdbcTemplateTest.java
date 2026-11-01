@@ -70,16 +70,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithConnectionDoesNotCloseConnection() throws SQLException {
-        jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password", 1L);
-
-        verify(pstmt).setObject(1, "password");
-        verify(pstmt).setObject(2, 1L);
-        verify(pstmt).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
     void updateClosesResources() throws SQLException {
         jdbcTemplate.update("update users set password = ? where id = ?", "password", 1L);
 
