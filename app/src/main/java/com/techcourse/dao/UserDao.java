@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.PreparedStatement;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -48,19 +47,5 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
-    }
-
-    private String createQueryForInsert() {
-        return null;
-    }
-
-    private String createQueryForUpdate() {
-        return null;
-    }
-
-    private void setValuesForInsert(User user, PreparedStatement stmt) {
-    }
-
-    private void setValuesForUpdate(User user, PreparedStatement stmt) {
     }
 }
