@@ -30,17 +30,12 @@ public class JdbcTemplate {
         });
     }
 
-    public <T> Optional<T> findById(final String sql, final Long id, final RowMapper<T> rowMapper) {
-        return execute(sql, pstmt -> {
-            pstmt.setLong(1, id);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(rowMapper.mapRow(rs));
-                }
-                return Optional.empty();
-            }
-        });
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        if (results.size() > 1) {
+            throw new DataAccessException("조회 결과가 2건 이상입니다. size: " + results.size());
+        }
+        return results.stream().findFirst();
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {

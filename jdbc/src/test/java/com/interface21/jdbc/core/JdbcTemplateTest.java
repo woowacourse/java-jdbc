@@ -67,22 +67,32 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void findById는_조회_결과가_있으면_매핑한_값을_반환한다() throws SQLException {
-        when(rs.next()).thenReturn(true);
+    void queryForObject는_조회_결과가_있으면_매핑한_값을_반환한다() throws SQLException {
+        when(rs.next()).thenReturn(true, false);
         when(rs.getString("name")).thenReturn("gugu");
 
-        final var actual = jdbcTemplate.findById(SQL, 1L, ROW_MAPPER);
+        final var actual = jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L);
 
         assertThat(actual).contains("gugu");
+        verify(pstmt).setObject(1, 1L);
     }
 
     @Test
-    void findById는_조회_결과가_없으면_빈_값을_반환한다() throws SQLException {
+    void queryForObject는_조회_결과가_없으면_빈_값을_반환한다() throws SQLException {
         when(rs.next()).thenReturn(false);
 
-        final var actual = jdbcTemplate.findById(SQL, 1L, ROW_MAPPER);
+        final var actual = jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L);
 
         assertThat(actual).isEmpty();
+    }
+
+    @Test
+    void queryForObject는_조회_결과가_2건_이상이면_예외가_발생한다() throws SQLException {
+        when(rs.next()).thenReturn(true, true, false);
+        when(rs.getString("name")).thenReturn("gugu", "kukim");
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class);
     }
 
     @Test
