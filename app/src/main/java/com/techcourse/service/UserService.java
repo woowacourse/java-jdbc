@@ -31,7 +31,6 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final DataSource dataSource = DataSourceConfig.getInstance();
         try (final Connection connection = dataSource.getConnection()) {
             try {
                 connection.setAutoCommit(false);
@@ -40,9 +39,12 @@ public class UserService {
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 connection.rollback();
                 throw new DataAccessException("some exception occurred while transaction", e);
+            } catch (RuntimeException e) {
+                connection.rollback();
+                throw e;
             }
         } catch (SQLException e) {
             throw new DataAccessException("sql exception occurred", e);
