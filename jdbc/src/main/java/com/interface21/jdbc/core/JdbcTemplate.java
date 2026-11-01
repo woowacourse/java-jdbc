@@ -22,24 +22,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            argumentsSetter(args).setValues(pstmt);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            argumentsSetter(args).setValues(pstmt);
-
+        return execute(sql, argumentsSetter(args), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 int rowNum = 1;
@@ -48,18 +35,11 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            argumentsSetter(args).setValues(pstmt);
-
+        return execute(sql, argumentsSetter(args), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (!rs.next()) {
                     return null;
@@ -72,6 +52,21 @@ public class JdbcTemplate {
                 }
                 return result;
             }
+        });
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter pss,
+            final PreparedStatementCallback<T> action
+    ) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            pss.setValues(pstmt);
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
