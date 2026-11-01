@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -81,5 +83,31 @@ class JdbcTemplateTest {
         final var actual = jdbcTemplate.findById(SQL, 1L, ROW_MAPPER);
 
         assertThat(actual).isEmpty();
+    }
+
+    @Test
+    void SQLException이_발생하면_DataAccessException으로_변환하고_자원을_닫는다() throws SQLException {
+        final var cause = new SQLException("실행 실패");
+        when(pstmt.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void RowMapper에서_SQLException이_발생해도_DataAccessException으로_변환하고_자원을_닫는다() throws SQLException {
+        final var cause = new SQLException("매핑 실패");
+        when(rs.next()).thenReturn(true);
+        when(rs.getString("name")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, ROW_MAPPER))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection).close();
     }
 }
