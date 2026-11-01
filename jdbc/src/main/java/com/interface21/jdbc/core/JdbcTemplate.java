@@ -37,44 +37,21 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> findById(String query, final Long id, final RowMapper<T> rowMapper) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = dataSource.getConnection();
-            pstmt = conn.prepareStatement(query);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setLong(1, id);
-            rs = pstmt.executeQuery();
 
             log.debug("query : {}", query);
-            if (rs.next()) {
-                return Optional.of(rowMapper.mapRow(rs));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rowMapper.mapRow(rs));
+                }
+                return Optional.empty();
             }
-            return Optional.empty();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
-
     }
 
     public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... args) {
