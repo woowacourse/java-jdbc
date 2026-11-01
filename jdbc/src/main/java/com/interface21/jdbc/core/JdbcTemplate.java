@@ -30,27 +30,47 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, pstmt -> bindParameters(pstmt, args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, pstmt -> bindParameters(pstmt, args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                            final RowMapper<T> rowMapper) {
-        return execute(sql, setter, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        });
+        return execute(sql, setter, pstmt -> mapRows(pstmt, rowMapper));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql,
+                           final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, pstmt -> bindParameters(pstmt, args),
+                pstmt -> mapRows(pstmt, rowMapper));
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, pstmt -> bindParameters(pstmt, args), pstmt -> mapSingleRow(pstmt, rowMapper));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                               final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, pstmt -> bindParameters(pstmt, args),
+                pstmt -> mapSingleRow(pstmt, rowMapper));
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementSetter setter, final PreparedStatementCallback<T> callback) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(pstmt);
             return callback.doInPreparedStatement(pstmt);
@@ -59,19 +79,27 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> bindParameters(pstmt, args), pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-                final T result = rowMapper.mapRow(rs);
-                if (rs.next()) {
-                    throw new IllegalStateException("Expected at most one row, but found more than one");
-                }
-                return result;
+    private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
             }
-        });
+            return results;
+        }
+    }
+
+    private <T> T mapSingleRow(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            if (!rs.next()) {
+                return null;
+            }
+            final T result = rowMapper.mapRow(rs);
+            if (rs.next()) {
+                throw new IllegalStateException("Expected at most one row, but found more than one");
+            }
+            return result;
+        }
     }
 
     private void bindParameters(final PreparedStatement pstmt, final Object[] args) throws SQLException {
