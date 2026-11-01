@@ -25,9 +25,7 @@ public class JdbcTemplate {
     public void update(String query, Object... objects) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
-            for (int i = 0; i < objects.length; i++) {
-                pstmt.setObject(i + 1, objects[i]);
-            }
+            createSetter(objects).setValues(pstmt);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -57,9 +55,7 @@ public class JdbcTemplate {
     public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... args) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
+            createSetter(args).setValues(pstmt);
 
             log.debug("query : {}", query);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -73,5 +69,13 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private PreparedStatementSetter createSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 }
