@@ -81,14 +81,18 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectRejectsZeroOrMultipleRows() {
-        RowMapper<String> mapper = rs -> rs.getString("account");
+    void queryForObjectRejectsZeroRows() {
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                "select account from users where id = ?", rs -> rs.getString("account"), 99L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("조회 결과를 찾을 수 없습니다.");
+    }
 
+    @Test
+    void queryForObjectRejectsMultipleRows() {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                "select account from users where id = ?", mapper, 99L))
-                .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                "select account from users", mapper))
-                .isInstanceOf(IllegalStateException.class);
+                "select account from users", rs -> rs.getString("account")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("조회 결과가 2개 이상입니다.");
     }
 }

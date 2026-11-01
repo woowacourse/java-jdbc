@@ -107,8 +107,11 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
 
-        if (results.size() != 1) {
-            throw new IllegalStateException("queryForObject 결과가 1개가 아닙니다.");
+        if (results.isEmpty()) {
+            throw new IllegalStateException("조회 결과를 찾을 수 없습니다.");
+        }
+        if (results.size() > 1) {
+            throw new IllegalStateException("조회 결과가 2개 이상입니다.");
         }
 
         return results.getFirst();
