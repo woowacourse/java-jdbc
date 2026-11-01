@@ -53,6 +53,25 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void update는_PreparedStatementSetter로_파라미터를_바인딩할_수_있다() throws SQLException {
+        jdbcTemplate.update(SQL, pstmt -> pstmt.setLong(1, 1L));
+
+        verify(pstmt).setLong(1, 1L);
+        verify(pstmt).executeUpdate();
+    }
+
+    @Test
+    void query는_PreparedStatementSetter로_파라미터를_바인딩할_수_있다() throws SQLException {
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getString("name")).thenReturn("gugu");
+
+        final var actual = jdbcTemplate.query(SQL, ROW_MAPPER, pstmt -> pstmt.setLong(1, 1L));
+
+        assertThat(actual).containsExactly("gugu");
+        verify(pstmt).setLong(1, 1L);
+    }
+
+    @Test
     void query는_모든_행을_매핑하고_자원을_닫는다() throws SQLException {
         when(rs.next()).thenReturn(true, true, false);
         when(rs.getString("name")).thenReturn("gugu", "kukim");

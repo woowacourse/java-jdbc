@@ -24,8 +24,12 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
+        update(sql, createSetter(args));
+    }
+
+    public void update(final String sql, final PreparedStatementSetter setter) {
         execute(sql, pstmt -> {
-            createSetter(args).setValues(pstmt);
+            setter.setValues(pstmt);
             return pstmt.executeUpdate();
         });
     }
@@ -39,8 +43,12 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, createSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, pstmt -> {
-            createSetter(args).setValues(pstmt);
+            setter.setValues(pstmt);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
