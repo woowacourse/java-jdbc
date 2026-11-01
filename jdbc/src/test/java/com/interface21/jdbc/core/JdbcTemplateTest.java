@@ -1,8 +1,11 @@
 package com.interface21.jdbc.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,12 +34,13 @@ class JdbcTemplateTest {
 
   @Test
   void updatePreservesSqlExceptionAndClosesResources() throws SQLException {
+    final String sql = "update users set password = ? where id = ?";
     final SQLException cause = new SQLException("SQL execution failed");
     when(preparedStatement.executeUpdate()).thenThrow(cause);
 
-    assertThatThrownBy(() -> jdbcTemplate.update(
-        "update users set password = ? where id = ?", "new-password", 1L))
+    assertThatThrownBy(() -> jdbcTemplate.update(sql, "new-password", 1L))
         .isInstanceOf(DataAccessException.class)
+        .hasMessageContaining(sql)
         .hasCause(cause);
 
     verify(preparedStatement).close();
@@ -45,6 +49,7 @@ class JdbcTemplateTest {
 
   @Test
   void queryPreservesMappingExceptionAndClosesResources() throws SQLException {
+    final String sql = "select account from users";
     final SQLException cause = new SQLException("Row mapping failed");
     when(preparedStatement.executeQuery()).thenReturn(resultSet);
     when(resultSet.next()).thenReturn(true);
@@ -52,12 +57,39 @@ class JdbcTemplateTest {
       throw cause;
     };
 
-    assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rowMapper))
+    assertThatThrownBy(() -> jdbcTemplate.query(sql, rowMapper))
         .isInstanceOf(DataAccessException.class)
+        .hasMessageContaining(sql)
         .hasCause(cause);
 
     verify(resultSet).close();
     verify(preparedStatement).close();
     verify(connection).close();
+  }
+
+  @Test
+  void bindingFailureClosesResourcesWithoutExecutingSql() throws SQLException {
+    final String sql = "update users set password = ?";
+    final SQLException cause = new SQLException("Parameter binding failed");
+    doThrow(cause).when(preparedStatement).setObject(1, "new-password");
+
+    assertThatThrownBy(() -> jdbcTemplate.update(sql, "new-password"))
+        .isInstanceOf(DataAccessException.class)
+        .hasMessageContaining(sql)
+        .hasCause(cause);
+
+    verify(preparedStatement, never()).executeUpdate();
+    verify(preparedStatement).close();
+    verify(connection).close();
+  }
+
+  @Test
+  void updateBindsSingleNullValueAndReturnsAffectedRows() throws SQLException {
+    when(preparedStatement.executeUpdate()).thenReturn(1);
+
+    final int updatedRows = jdbcTemplate.update("update users set email = ?", (Object) null);
+
+    assertThat(updatedRows).isEqualTo(1);
+    verify(preparedStatement).setObject(1, null);
   }
 }
