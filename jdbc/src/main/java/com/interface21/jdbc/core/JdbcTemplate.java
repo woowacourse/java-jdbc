@@ -22,42 +22,30 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String query, Object... objects) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            createSetter(objects).setValues(pstmt);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public void update(final String sql, final Object... args) {
+        execute(sql, pstmt -> {
+            createSetter(args).setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
     }
 
-    public <T> Optional<T> findById(String query, final Long id, final RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+    public <T> Optional<T> findById(final String sql, final Long id, final RowMapper<T> rowMapper) {
+        return execute(sql, pstmt -> {
             pstmt.setLong(1, id);
 
-            log.debug("query : {}", query);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(rowMapper.mapRow(rs));
                 }
                 return Optional.empty();
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        });
     }
 
-    public <T> List<T> query(final String query, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(sql, pstmt -> {
             createSetter(args).setValues(pstmt);
 
-            log.debug("query : {}", query);
             try (ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -65,6 +53,14 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
