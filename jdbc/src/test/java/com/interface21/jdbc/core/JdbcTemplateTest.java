@@ -136,6 +136,35 @@ class JdbcTemplateTest {
         verifyQueryResourcesClosed();
     }
 
+    @Test
+    void updateFailureKeepsCloseFailureAsSuppressed() throws SQLException {
+        final var failure = new SQLException("update failed");
+        final var closeFailure = new SQLException("close failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(statement).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+        verify(connection).close();
+    }
+
+    @Test
+    void mappingFailureKeepsCloseFailureAsSuppressed() throws SQLException {
+        final var failure = new SQLException("mapping failed");
+        final var closeFailure = new SQLException("close failed");
+        when(resultSet.next()).thenReturn(true);
+        when(rowMapper.mapRow(resultSet)).thenThrow(failure);
+        doThrow(closeFailure).when(resultSet).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+        verifyQueryResourcesClosed();
+    }
+
     private void verifyQueryResourcesClosed() throws SQLException {
         verify(resultSet).close();
         verify(statement).close();
