@@ -76,6 +76,12 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - [x] DB 작업 실패를 커스텀 unchecked 예외로 전달한다.
 - [x] try-with-resources로 JDBC 자원을 자동으로 정리한다.
 
+#### 리뷰 반영
+
+- [ ] UserDao에서 호출되지 않는 쿼리 생성, 값 설정 메서드와 PreparedStatement import를 제거한다.
+- [ ] 작업 예외와 자원 종료 예외가 함께 발생하면 작업 예외를 원인으로 유지하고 종료 예외를 suppressed로 보존하는지 검증한다.
+- [ ] 연결 획득, PreparedStatement 생성, 인자 설정, 로깅, 예외 변환을 공통 실행 메서드로 모으고 달라지는 실행과 결과 처리만 콜백으로 전달한다.
+
 </details>
 
 <details>
