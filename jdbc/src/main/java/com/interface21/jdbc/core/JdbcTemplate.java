@@ -39,20 +39,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, argumentsSetter(args), pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                T result = rowMapper.mapRow(rs, 1);
-
-                if (rs.next()) {
-                    throw new DataAccessException("조회 결과가 두 건 이상입니다.");
-                }
-                return result;
-            }
-        });
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("조회 결과가 두 건 이상입니다.");
+        }
+        return results.getFirst();
     }
 
     private <T> T execute(
