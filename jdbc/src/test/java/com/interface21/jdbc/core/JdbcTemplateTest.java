@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,11 +18,62 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
+
+    @Test
+    @DisplayName("트랜잭션의 여러 SQL은 같은 연결을 쓰고 연결을 닫지 않는다")
+    void reusesTransactionConnectionAcrossStatements() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var template = new JdbcTemplate(dataSource);
+        final var sql = "update users set password = ? where id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        try {
+            template.update(sql, "first", 1L);
+            template.update(sql, "second", 1L);
+
+            verify(dataSource, never()).getConnection();
+            verify(connection, times(2)).prepareStatement(sql);
+            verify(connection, never()).close();
+            verify(statement, times(2)).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("SQL 실행과 연결 닫기가 모두 실패해도 SQL 오류를 유지한다")
+    void preservesSqlFailureWhenCloseAlsoFails() throws SQLException {
+        final var dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var statement = mock(PreparedStatement.class);
+        final var sqlFailure = new SQLException("SQL failed");
+        final var closeFailure = new SQLException("Close failed");
+        final var sql = "update users set password = ?";
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeUpdate()).thenThrow(sqlFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        final var exception = assertThrows(DataAccessException.class,
+                () -> new JdbcTemplate(dataSource).update(sql, "new-password"));
+
+        assertThat(exception).hasCause(sqlFailure);
+        assertThat(exception.getSuppressed()).hasSize(1);
+        assertThat(exception.getSuppressed()[0]).hasCause(closeFailure);
+    }
 
     @Test
     @DisplayName("조회한 행을 순서대로 매핑하고 모든 자원을 닫는다")

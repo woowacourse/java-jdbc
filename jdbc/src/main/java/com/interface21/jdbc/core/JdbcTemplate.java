@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +27,6 @@ public class JdbcTemplate {
         return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, args, PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -45,11 +41,6 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, args, statement -> queryForObject(statement, rowMapper));
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return execute(connection, sql, args, statement -> queryForObject(statement, rowMapper));
     }
 
     private <T> T queryForObject(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
@@ -67,11 +58,22 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final Object[] args, final StatementCallback<T> callback) {
-        try (Connection connection = getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, args, callback);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException e) {
+                if (failure == null) {
+                    throw e;
+                }
+                failure.addSuppressed(e);
+            }
         }
     }
 
@@ -90,15 +92,6 @@ public class JdbcTemplate {
     private void setParameters(final PreparedStatement statement, final Object... args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", e);
         }
     }
 
