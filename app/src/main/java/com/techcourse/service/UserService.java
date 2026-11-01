@@ -12,10 +12,12 @@ import javax.sql.DataSource;
 
 public class UserService {
 
+    private final DataSource dataSource;
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final DataSource dataSource, final UserDao userDao, final UserHistoryDao userHistoryDao) {
+        this.dataSource = dataSource;
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
