@@ -31,14 +31,6 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return update(connection, sql, parameterSetter(parameters));
-    }
-
-    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return query(sql, parameterSetter(parameters), rowMapper);
     }
@@ -100,16 +92,6 @@ public class JdbcTemplate {
                 }
                 failure.addSuppressed(e);
             }
-        }
-    }
-
-    // 호출자가 트랜잭션을 관리하는 Connection이므로 닫지 않는다.
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
-                          final PreparedStatementCallback<T> callback) {
-        try {
-            return executeStatement(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
     }
 
