@@ -32,7 +32,11 @@ public class UserDao {
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final int updatedRows = jdbcTemplate.update(
+                sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        if (updatedRows != 1) {
+            throw new IllegalStateException("사용자 수정 결과가 1건이 아닙니다: " + updatedRows);
+        }
     }
 
     public List<User> findAll() {

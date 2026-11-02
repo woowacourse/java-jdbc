@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -15,6 +17,7 @@ class UserDaoTest {
     @BeforeEach
     void setup() {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        new JdbcTemplate(DataSourceConfig.getInstance()).update("truncate table users restart identity");
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -52,6 +55,15 @@ class UserDaoTest {
         final var actual = userDao.findById(2L);
 
         assertThat(actual.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void updateNonexistentUser() {
+        final var user = new User(999L, "nonexistent", "password", "user@example.com");
+
+        assertThatThrownBy(() -> userDao.update(user))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("사용자 수정 결과가 1건이 아닙니다: 0");
     }
 
     @Test
