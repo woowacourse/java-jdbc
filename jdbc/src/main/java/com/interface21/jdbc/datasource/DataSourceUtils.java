@@ -2,12 +2,16 @@ package com.interface21.jdbc.datasource;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public abstract class DataSourceUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSourceUtils.class);
 
     private DataSourceUtils() {}
 
@@ -32,7 +36,7 @@ public abstract class DataSourceUtils {
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
+            log.warn("Failed to close JDBC Connection", ex);
         }
     }
 }
