@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,8 +14,12 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        try (var connection = DataSourceConfig.getInstance().getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute("TRUNCATE TABLE users RESTART IDENTITY");
+        }
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
