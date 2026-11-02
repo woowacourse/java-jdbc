@@ -210,6 +210,39 @@ class UserServiceTest {
     }
 
     @Test
+    void 이력_저장_후_Error가_발생하면_비밀번호와_이력을_롤백한다() throws SQLException {
+        final var connection = spy(dataSource.getConnection());
+        final var transactionDataSource = mock(DataSource.class);
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        final var transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+        final var transactionUserDao = new UserDao(transactionJdbcTemplate);
+        final var userHistoryDao = spy(new UserHistoryDao(transactionJdbcTemplate));
+        final var error = new AssertionError("이력 저장 후 오류");
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw error;
+        }).when(userHistoryDao).log(any(UserHistory.class));
+        final var appUserService = new AppUserService(transactionUserDao, userHistoryDao);
+        final var userService = new TxUserService(transactionDataSource, appUserService);
+        final var originalPassword = userDao.findById(1L).getPassword();
+
+        final var actual = assertThrows(AssertionError.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(error);
+        verify(connection).rollback();
+        verify(connection, never()).commit();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
+        final Long historyCount = jdbcTemplate.queryForObject("""
+                select count(*)
+                from user_history
+                """, resultSet -> resultSet.getLong(1));
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
     void 이력_저장_SQL이_실패하면_비밀번호를_되돌린다() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
