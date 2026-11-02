@@ -12,11 +12,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
 
+    private DataSource dataSource;
     private UserDao userDao;
 
     @BeforeEach
     void setup() {
-        final DataSource dataSource = DataSourceConfig.getInstance();
+        this.dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
 
         final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
