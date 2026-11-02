@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -39,18 +41,22 @@ public class UserService {
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        try (final var conn = dataSource.getConnection()) {
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, conn);
+        try {
             conn.setAutoCommit(false);
-            try {
-                userDao.update(conn, user);
-                userHistoryDao.log(conn, new UserHistory(user, createBy));
-                conn.commit();
-            } catch (SQLException | RuntimeException e) {
-                rollback(conn, e);
-                throw e;
-            }
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            conn.commit();
         } catch (SQLException e) {
+            rollback(conn, e);
             throw new DataAccessException(e);
+        } catch (RuntimeException e) {
+            rollback(conn, e);
+            throw e;
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
