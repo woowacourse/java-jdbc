@@ -24,6 +24,18 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(String sql, Object... args) {
+        return update(sql, setterOf(args));
+    }
+
+    private PreparedStatementSetter setterOf(Object... args) {
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
+    }
+
     public <T> List<T> select(
             String sql,
             PreparedStatementSetter setter,
@@ -40,6 +52,23 @@ public class JdbcTemplate {
                 return results;
             }
         });
+    }
+
+    public <T> List<T> select(
+            String sql,
+            RowMapper<T> mapper,
+            Object... args
+    ) {
+        return select(sql, setterOf(args), mapper);
+    }
+
+    public <T> T selectOne(
+            String sql,
+            RowMapper<T> mapper,
+            Object... args
+    ) {
+        final List<T> results = select(sql, mapper, args);
+        return results.isEmpty() ? null : results.getFirst();
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback) {

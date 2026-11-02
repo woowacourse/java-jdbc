@@ -27,68 +27,26 @@ public class UserDao {
 
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(
-                sql,
-                stmt -> {
-                    stmt.setString(1, user.getAccount());
-                    stmt.setString(2, user.getPassword());
-                    stmt.setString(3, user.getEmail());
-                }
-        );
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        jdbcTemplate.update(
-                sql,
-                stmt -> {
-                    stmt.setString(1, user.getAccount());
-                    stmt.setString(2, user.getPassword());
-                    stmt.setString(3, user.getEmail());
-                    stmt.setLong(4, user.getId());
-                }
-        );
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-
-        return jdbcTemplate.select(sql,
-                stmt -> {
-                },
-                USER_ROW_MAPPER
-        );
+        return jdbcTemplate.select(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-
-        List<User> queryResult = jdbcTemplate.select(
-                sql,
-                stmt -> stmt.setLong(1, id),
-                USER_ROW_MAPPER
-        );
-
-        if (queryResult.isEmpty()) {
-            return null;
-        }
-
-        return queryResult.getFirst();
+        return jdbcTemplate.selectOne(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-
-        List<User> queryResult = jdbcTemplate.select(
-                sql,
-                stmt -> stmt.setString(1, account),
-                USER_ROW_MAPPER
-        );
-
-        if (queryResult.isEmpty()) {
-            return null;
-        }
-
-        return queryResult.getFirst();
+        return jdbcTemplate.selectOne(sql, USER_ROW_MAPPER, account);
     }
 }
