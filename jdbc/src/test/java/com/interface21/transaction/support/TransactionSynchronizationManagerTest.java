@@ -24,7 +24,6 @@ class TransactionSynchronizationManagerTest {
     private DataSource dataSource;
     private Connection connection;
 
-    // 다른 스레드에서 작업을 실행하고 결과를 돌려받는다. 그 스레드에서 난 예외는 ExecutionException으로 감싸져 테스트를 실패시킨다.
     private static <T> T runInAnotherThread(final Callable<T> task) throws Exception {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -77,7 +76,6 @@ class TransactionSynchronizationManagerTest {
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         }
 
-        // 톰캣처럼 스레드를 재사용하면, 한 스레드에서 트랜잭션이 끝난 뒤 다음 트랜잭션이 또 시작된다.
         @Test
         @DisplayName("unbind한 뒤 같은 DataSource에 새 Connection을 다시 바인딩하면, 새 Connection을 찾는다")
         void rebindAfterUnbind() {
@@ -127,7 +125,6 @@ class TransactionSynchronizationManagerTest {
         }
     }
 
-    // 요청마다 스레드가 다르다. 한 요청의 트랜잭션 Connection이 다른 요청의 DAO에 새어 나가면 안 된다.
     @Nested
     @DisplayName("스레드마다 따로 관리한다")
     class PerThread {
@@ -170,7 +167,6 @@ class TransactionSynchronizationManagerTest {
         }
     }
 
-    // 같은 키로 덮어쓰면 앞 Connection은 커밋, 롤백, close 없이 사라진다. 그래서 덮어쓰지 않고 바로 실패한다.
     @Nested
     @DisplayName("같은 스레드에서 이미 바인딩된 DataSource에는 다시 bind할 수 없다")
     class DuplicateBind {
@@ -185,7 +181,6 @@ class TransactionSynchronizationManagerTest {
                     .isInstanceOf(IllegalStateException.class);
         }
 
-        // 중복 여부는 Connection이 아니라 DataSource 키로 판단한다.
         @Test
         @DisplayName("이미 바인딩된 것과 같은 Connection을 다시 bind해도 IllegalStateException을 던진다")
         void bindSameConnectionAgain() {
@@ -208,7 +203,6 @@ class TransactionSynchronizationManagerTest {
         }
     }
 
-    // 바인딩이 없는데 unbind한다는 건 키를 잘못 넣었거나, 이미 정리한 걸 또 정리한다는 뜻이다. 조용히 넘어가지 않고 바로 드러낸다.
     @Nested
     @DisplayName("바인딩되지 않은 DataSource는 unbind할 수 없다")
     class UnbindWithoutBinding {
@@ -267,7 +261,6 @@ class TransactionSynchronizationManagerTest {
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
-        // 실패한 bind가 흔적을 남기면, 이후의 중복 검사나 unbind 검사가 엉뚱하게 걸릴 수 있다.
         @Test
         @DisplayName("null bind가 실패한 뒤에도 그 DataSource는 바인딩되지 않은 상태라, 정상 Connection을 bind할 수 있다")
         void bindAfterNullRejected() {

@@ -35,7 +35,6 @@ class DataSourceUtilsTest {
         given(dataSource.getConnection()).willReturn(connection);
     }
 
-    // 매니저의 상태는 static ThreadLocal이라, 테스트가 남긴 바인딩을 지워서 같은 스레드의 다음 테스트로 넘기지 않는다.
     @AfterEach
     void tearDown() {
         if (TransactionSynchronizationManager.getResource(dataSource) != null) {
@@ -76,7 +75,6 @@ class DataSourceUtilsTest {
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         }
 
-        // 톰캣은 스레드를 재사용한다. 트랜잭션 없는 앞 요청이 닫은 Connection을 같은 스레드의 다음 요청이 받으면 안 된다.
         @Test
         @DisplayName("트랜잭션 없이 얻고 반납하기를 반복하면, 매번 DataSource에서 새 Connection을 얻는다")
         void obtainsFreshConnectionEachTimeWithoutTransaction() throws SQLException {
@@ -117,7 +115,6 @@ class DataSourceUtilsTest {
             verify(connection, never()).close();
         }
 
-        // 바인딩을 푸는 건 트랜잭션을 연 쪽의 몫이다.
         @Test
         @DisplayName("묶여 있는 트랜잭션 Connection을 release해도 바인딩을 풀지 않는다")
         void keepsBindingOfBoundConnection() {
@@ -149,7 +146,6 @@ class DataSourceUtilsTest {
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(transactionConnection);
         }
 
-        // 트랜잭션을 연 쪽이 커밋이나 롤백을 마치고 바인딩을 푼 뒤에 release하면, 그때는 닫힌다.
         @Test
         @DisplayName("트랜잭션이 끝나 바인딩이 풀린 Connection은 release하면 닫는다")
         void closesAfterTransactionUnbinds() throws SQLException {
@@ -161,7 +157,6 @@ class DataSourceUtilsTest {
             verify(connection).close();
         }
 
-        // 지키려는 건 "삼키지 않고 던지되 원인을 남긴다"는 정책이라, 어떤 예외 타입으로 감쌀지는 구현에 맡긴다.
         @Test
         @DisplayName("close가 실패하면 예외를 던지고, 원인 SQLException을 남긴다")
         void keepsCauseWhenCloseFails() throws SQLException {
@@ -173,7 +168,6 @@ class DataSourceUtilsTest {
         }
     }
 
-    // 서비스가 트랜잭션 Connection을 묶어두고, DAO는 쿼리마다 Connection을 얻고 반납한다.
     @Nested
     @DisplayName("트랜잭션을 연 쪽과 함께 쓴다")
     class WithTransactionOwner {
@@ -195,8 +189,6 @@ class DataSourceUtilsTest {
             verify(dataSource, never()).getConnection();
         }
 
-        // getConnection이 몰래 묶어버리면, 트랜잭션을 여는 쪽의 bind가 두 번째 bind가 되어
-        // TransactionSynchronizationManager의 중복 bind 규칙에 걸려 터진다.
         @Test
         @DisplayName("getConnection이 바인딩을 남기지 않아서, 트랜잭션을 여는 쪽의 첫 bind가 중복 bind로 터지지 않는다")
         void ownerBindIsNotDuplicateAfterGetConnection() {

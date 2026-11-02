@@ -33,7 +33,6 @@ import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
 
-    // "한 행을 객체로 바꾸는 방법". JdbcTemplate을 쓰는 개발자가 작성해서 넘기는 부분이다.
     private static Crew toCrew(final ResultSet resultSet) throws SQLException {
         return new Crew(
                 resultSet.getLong("id"),
@@ -45,7 +44,6 @@ class JdbcTemplateTest {
     private record Crew(long id, String name, int age) {
     }
 
-    // 예외 자신과, cause 및 suppressed를 따라가며 닿는 모든 예외를 모은다.
     private static List<Throwable> reachableThrowables(final Throwable root) {
         final List<Throwable> found = new ArrayList<>();
         collect(root, found);
@@ -91,7 +89,6 @@ class JdbcTemplateTest {
             return h2DataSource;
         }
 
-        // 검증 대상인 JdbcTemplate을 거치지 않고 DB 상태를 준비하거나 확인하기 위한 도구다.
         private void executeRaw(final String sql) throws SQLException {
             try (final var connection = dataSource.getConnection();
                  final var statement = connection.createStatement()) {
@@ -282,8 +279,6 @@ class JdbcTemplateTest {
             assertThat(mappedRows.get()).isLessThanOrEqualTo(2);
         }
 
-        // 트랜잭션을 연 쪽이 Connection을 묶어두면, Connection을 넘기지 않아도 JdbcTemplate의 쿼리가 모두 그 트랜잭션 안에서 실행된다.
-        // readCrew는 JdbcTemplate을 거치지 않고 따로 Connection을 얻으므로, 트랜잭션 밖에서 본 커밋된 값을 읽는다.
         @Test
         @DisplayName("트랜잭션 Connection이 묶여 있으면 update와 queryForObject가 그 트랜잭션 안에서 실행되고, 롤백하면 변경이 남지 않는다")
         void runsInsideBoundTransaction() throws SQLException {
@@ -494,7 +489,6 @@ class JdbcTemplateTest {
             verify(connection, never()).prepareStatement(anyString());
         }
 
-        // 트랜잭션 없이 얻은 Connection을 묶어두면, 같은 스레드의 다음 쿼리가 이미 닫힌 Connection을 받게 된다.
         @Test
         @DisplayName("트랜잭션 없이 얻은 Connection은 바인딩하지 않는다")
         void doesNotBindConnectionWithoutTransaction() {
@@ -503,7 +497,6 @@ class JdbcTemplateTest {
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         }
 
-        // 서비스가 하위 계층 예외를 몰라도 되도록, Connection을 닫다가 난 실패도 DataAccessException으로 내보낸다.
         @Test
         @DisplayName("쿼리는 성공했지만 Connection을 닫다가 실패하면, 닫기 실패를 원인으로 보존한 DataAccessException을 던진다")
         void wrapsCloseFailure() throws SQLException {
@@ -515,7 +508,6 @@ class JdbcTemplateTest {
                     .hasRootCauseMessage("close 실패");
         }
 
-        // 성공 경로에서 난 닫기 실패가 실패 경로의 반납으로 다시 흘러 들어가면, 같은 Connection을 두 번 닫게 된다.
         @Test
         @DisplayName("쿼리는 성공했지만 Connection을 닫다가 실패해도, close는 한 번만 시도한다")
         void triesCloseOnlyOnceWhenCloseFails() throws SQLException {
@@ -527,8 +519,6 @@ class JdbcTemplateTest {
             verify(connection, times(1)).close();
         }
 
-        // DB와 무관한 실패라도 빌려온 Connection은 돌려줘야 한다. 감쌀지 그대로 던질지는 구현에 맡기고, 원래 예외만 잃지 않으면 된다.
-        // 특정 하위 타입만 골라 잡는 구현이 통과하지 않도록, 어떤 하위 타입도 아닌 RuntimeException 자체를 던진다.
         @Test
         @DisplayName("행을 변환하다 RuntimeException이 나도 Connection을 닫고, 원래 예외를 잃지 않는다")
         void closesConnectionWhenMapperThrowsRuntimeException() throws SQLException {
@@ -542,7 +532,6 @@ class JdbcTemplateTest {
             verify(connection).close();
         }
 
-        // 먼저 일어난 쿼리 실패가 진짜 원인이다. 뒤따른 닫기 실패가 그것을 가리면 안 되고, suppressed로 함께 남는다.
         @Test
         @DisplayName("쿼리도 실패하고 Connection 닫기도 실패하면, 쿼리 실패를 원인으로 던지고 닫기 실패는 suppressed로 남긴다")
         void keepsQueryFailureAsCauseAndCloseFailureAsSuppressed() throws SQLException {
@@ -557,8 +546,6 @@ class JdbcTemplateTest {
         }
     }
 
-    // 트랜잭션을 연 쪽이 Connection을 TransactionSynchronizationManager에 묶어둔 경우다.
-    // JdbcTemplate은 Connection을 넘겨받지 않아도 묶인 Connection을 찾아 빌려 쓰고, 주인이 아니니 닫지 않는다.
     @Nested
     @DisplayName("트랜잭션에 묶인 Connection으로 실행한다")
     class ExecuteWithBoundConnection {
@@ -583,7 +570,6 @@ class JdbcTemplateTest {
             TransactionSynchronizationManager.bindResource(dataSource, connection);
         }
 
-        // 매니저의 상태는 static ThreadLocal이라, 묶어둔 Connection을 풀어서 같은 스레드의 다음 테스트로 넘기지 않는다.
         @AfterEach
         void tearDown() {
             if (TransactionSynchronizationManager.getResource(dataSource) != null) {
