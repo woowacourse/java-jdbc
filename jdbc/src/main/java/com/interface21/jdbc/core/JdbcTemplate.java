@@ -27,18 +27,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            pss.setValues(pstmt);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return execute(sql, pss, pstmt -> pstmt.executeUpdate());
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -57,13 +46,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            log.debug("query : {}", sql);
-
-            pss.setValues(pstmt);
-
+        return execute(sql, pss, pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -71,10 +54,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     private PreparedStatementSetter createSetter(final Object... args) {
@@ -83,5 +63,21 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, args[i]);
             }
         };
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter pss,
+                          final PreparedStatementCallback<T> action) {
+        try (final Connection conn = dataSource.getConnection();
+             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            log.debug("query : {}", sql);
+
+            pss.setValues(pstmt);
+
+            return action.doInPreparedStatement(pstmt);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
     }
 }
