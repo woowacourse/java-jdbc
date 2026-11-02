@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -137,5 +138,35 @@ class JdbcTemplateTest {
 
         assertThat(accounts).containsExactly("gugu");
         verify(preparedStatement).setLong(1, 1L);
+    }
+
+    @Test
+    void updateWithConnectionDoesNotCloseConnection() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(connection, "update users set account = ? where id = ?", "gugu", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(preparedStatement).setObject(1, "gugu");
+        verify(preparedStatement).setObject(2, 1L);
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryForObjectWithConnectionDoesNotCloseConnection() throws SQLException {
+        final var resultSet = mock(ResultSet.class);
+        when(preparedStatement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject(connection, "select account from users where id = ?", ACCOUNT_MAPPER, 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 }

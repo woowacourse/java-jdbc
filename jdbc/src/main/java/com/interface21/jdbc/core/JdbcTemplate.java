@@ -33,6 +33,13 @@ public class JdbcTemplate {
         });
     }
 
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return execute(conn, sql, pstmt -> {
+            argumentsSetter(args).setValues(pstmt);
+            return pstmt.executeUpdate();
+        });
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
@@ -49,16 +56,31 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        final List<T> results = query(sql, rowMapper, pss);
-        if (results.size() != 1) {
-            throw new DataAccessException("조회 결과가 1건이 아닙니다. 결과 수: " + results.size());
-        }
-        return results.getFirst();
+        return singleResult(query(sql, rowMapper, pss));
+    }
+
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(conn, sql, pstmt -> {
+            argumentsSetter(args).setValues(pstmt);
+            return mapRows(pstmt, rowMapper);
+        });
+    }
+
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return singleResult(query(conn, sql, rowMapper, args));
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, action);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallback<T> action) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             return action.doInPreparedStatement(pstmt);
@@ -66,6 +88,13 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T singleResult(final List<T> results) {
+        if (results.size() != 1) {
+            throw new DataAccessException("조회 결과가 1건이 아닙니다. 결과 수: " + results.size());
+        }
+        return results.getFirst();
     }
 
     private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
