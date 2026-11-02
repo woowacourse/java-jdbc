@@ -22,28 +22,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
-            log.debug("query : {}", sql);
-
-            for (int i = 0; i < args.length; i++) {
-                pstmt.setObject(i + 1, args[i]);
-            }
-
+        return execute(sql, argumentsSetter(args), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 int rowNum = 1;
@@ -52,34 +35,42 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return null;
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("조회 결과가 두 건 이상입니다.");
+        }
+        return results.getFirst();
+    }
+
+    private <T> T execute(
+            final String sql,
+            final PreparedStatementSetter pss,
+            final PreparedStatementCallback<T> action
+    ) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            log.debug("query : {}", sql);
+
+            pss.setValues(pstmt);
+            return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
+    private PreparedStatementSetter argumentsSetter(final Object... args) {
+        return pstmt -> {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                T result = rowMapper.mapRow(rs, 1);
-
-                if (rs.next()) {
-                    throw new DataAccessException("조회 결과가 두 건 이상입니다.");
-                }
-                return result;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        };
     }
 }
