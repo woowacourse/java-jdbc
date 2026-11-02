@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -31,13 +33,14 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            connection.setAutoCommit(false);
             try {
-                connection.setAutoCommit(false);
                 final User user = findById(id);
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
@@ -45,6 +48,9 @@ public class UserService {
             } catch (RuntimeException e) {
                 connection.rollback();
                 throw e;
+            } finally {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
             throw new DataAccessException("sql exception occurred", e);
