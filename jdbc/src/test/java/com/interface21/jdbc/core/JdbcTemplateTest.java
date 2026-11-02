@@ -22,13 +22,14 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement pstmt;
     private ResultSet rs;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
@@ -114,6 +115,78 @@ class JdbcTemplateTest {
 
         verify(pstmt).close();
         verify(connection).close();
+    }
+
+    @Test
+    void 전달받은_연결로_수정하고_연결을_닫지_않는다() throws SQLException {
+        when(pstmt.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update(
+                connection, "update users set password = ? where id = ?", "new-password", 1L
+        );
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(dataSource, never()).getConnection();
+        verify(pstmt).setObject(1, "new-password");
+        verify(pstmt).setObject(2, 1L);
+        verify(pstmt).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 전달받은_연결에서_SQL이_실패해도_연결을_닫지_않는다() throws SQLException {
+        final SQLException failure = new SQLException("update failed");
+        when(pstmt.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                connection, "update users set password = ? where id = ?", "new-password", 1L
+        ))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(dataSource, never()).getConnection();
+        verify(pstmt).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 전달받은_연결로_단건_조회하고_연결을_닫지_않는다() throws SQLException {
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        when(rs.getString("account")).thenReturn("gugu");
+
+        final String account = jdbcTemplate.queryForObject(
+                connection, "select account from users where id = ?",
+                row -> row.getString("account"), 1L
+        );
+
+        assertThat(account).isEqualTo("gugu");
+        verify(dataSource, never()).getConnection();
+        verify(pstmt).setObject(1, 1L);
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 전달받은_연결에서_조회_결과_변환에_실패해도_연결을_닫지_않는다() throws SQLException {
+        final SQLException failure = new SQLException("mapping failed");
+        when(pstmt.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(true);
+        final RowMapper<String> rowMapper = row -> {
+            throw failure;
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
+                connection, "select account from users where id = ?", rowMapper, 1L
+        ))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(dataSource, never()).getConnection();
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection, never()).close();
     }
 
     @Test
