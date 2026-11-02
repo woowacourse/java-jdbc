@@ -18,3 +18,4 @@ create table if not exists user_history (
 );
 
 truncate table users restart identity;
+truncate table user_history restart identity;
