@@ -5,6 +5,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -29,6 +30,11 @@ public class UserDao {
 
     public void update(final User user) {
         jdbcTemplate.update("update users set account = ?, password = ?, email = ? where id = ?",
+                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    }
+
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(connection, "update users set account = ?, password = ?, email = ? where id = ?",
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
