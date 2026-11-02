@@ -36,14 +36,12 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        return execute(sql, setter, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
+        return executeQuery(sql, setter, resultSet -> {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
+            return results;
         });
     }
 
@@ -55,17 +53,24 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return executeQuery(sql, setter, resultSet -> {
+            if (!resultSet.next()) {
+                return null;
+            }
+            final T result = rowMapper.mapRow(resultSet);
+            if (resultSet.next()) {
+                throw new IncorrectResultSizeDataAccessException(
+                        "Expected at most one row, but found more than one row. SQL: " + sql);
+            }
+            return result;
+        });
+    }
+
+    private <T> T executeQuery(final String sql, final PreparedStatementSetter setter,
+                               final ResultSetExtractor<T> extractor) {
         return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
-                final T result = rowMapper.mapRow(resultSet);
-                if (resultSet.next()) {
-                    throw new IncorrectResultSizeDataAccessException(
-                            "Expected at most one row, but found more than one row. SQL: " + sql);
-                }
-                return result;
+                return extractor.extractData(resultSet);
             }
         });
     }
@@ -92,5 +97,11 @@ public class JdbcTemplate {
     private interface PreparedStatementCallback<T> {
 
         T execute(PreparedStatement statement) throws SQLException;
+    }
+
+    @FunctionalInterface
+    private interface ResultSetExtractor<T> {
+
+        T extractData(ResultSet resultSet) throws SQLException;
     }
 }
