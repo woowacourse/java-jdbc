@@ -34,15 +34,21 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
+        Connection existingConnection = TransactionSynchronizationManager.getResource(dataSource);
+        if (existingConnection != null) {
+            userService.changePassword(id, newPassword, createdBy);
+            return;
+        }
+
         try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             beginTransaction(connection);
             try {
                 userService.changePassword(id, newPassword, createdBy);
                 commit(connection);
+                endTransaction(connection);
             } catch (RuntimeException e) {
                 rollback(e, connection);
             } finally {
-                endTransaction(connection);
                 TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
@@ -50,7 +56,7 @@ public class TxUserService implements UserService {
         }
     }
 
-    private static void endTransaction(final Connection connection) throws SQLException {
+    private void endTransaction(final Connection connection) throws SQLException {
         try {
             connection.setAutoCommit(true);
         } catch (SQLException e) {
@@ -78,6 +84,7 @@ public class TxUserService implements UserService {
     private static void rollback(final RuntimeException exception, final Connection connection) {
         try {
             connection.rollback();
+            connection.setAutoCommit(true);
         } catch (SQLException sqlException) {
             exception.addSuppressed(sqlException);
         }
