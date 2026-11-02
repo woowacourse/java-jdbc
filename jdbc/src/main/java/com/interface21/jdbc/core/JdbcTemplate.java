@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +29,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pss, PreparedStatement::executeUpdate);
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, createArgumentSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -65,14 +63,19 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
-        try (final var conn = dataSource.getConnection()) {
+        // 트랜잭션이 진행 중이면 동기화된 커넥션을 쓰고, 정리는 트랜잭션을 시작한 쪽에 맡긴다.
+        final var inTransaction = TransactionSynchronizationManager.getResource(dataSource) != null;
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, pss, action);
-        } catch (SQLException e) {
-            throw toDataAccessException(sql, e);
+        } finally {
+            if (!inTransaction) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 
-    // 전달받은 커넥션은 트랜잭션을 시작한 쪽에서 닫아야 하므로 여기서 닫지 않는다.
     private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> action) {
         try (final var pstmt = conn.prepareStatement(sql)) {

@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,13 +24,14 @@ class JdbcTemplateTest {
 
     private static final RowMapper<String> ACCOUNT_MAPPER = rs -> rs.getString("account");
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement pstmt;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
 
@@ -36,6 +39,11 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(pstmt);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -62,21 +70,26 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithConnectionDoesNotCloseConnection() throws SQLException {
-        jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password", 1L);
-
-        verify(pstmt).setObject(1, "password");
-        verify(pstmt).setObject(2, 1L);
-        verify(pstmt).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
     void updateClosesResources() throws SQLException {
         jdbcTemplate.update("update users set password = ? where id = ?", "password", 1L);
 
         verify(pstmt).close();
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void updateUsesSynchronizedConnectionInTransaction() throws SQLException {
+        final var transactionConnection = mock(Connection.class);
+        when(transactionConnection.prepareStatement(anyString())).thenReturn(pstmt);
+        TransactionSynchronizationManager.bindResource(dataSource, transactionConnection);
+
+        jdbcTemplate.update("update users set password = ? where id = ?", "password", 1L);
+
+        verify(transactionConnection).prepareStatement(anyString());
+        verify(transactionConnection, never()).close();
+        verify(dataSource, never()).getConnection();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(transactionConnection);
     }
 
     @Test
