@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -34,33 +36,38 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
             boolean originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
             try {
-                User user = userDao.findById(connection, id);
+                final var user = findById(id);
                 user.changePassword(newPassword);
 
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
 
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
-                rollback(connection, originalAutoCommit, e);
+                rollback(connection, e);
                 throw e;
+            } finally {
+                connection.setAutoCommit(originalAutoCommit);
             }
-
-            connection.setAutoCommit(originalAutoCommit);
         } catch (SQLException e) {
             throw new DataAccessException("트랜잭션 실패 : 비밀번호 변경", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    private void rollback(final Connection connection, final boolean originalAutoCommit,final Exception cause) {
+    private void rollback(final Connection connection, final Exception cause) {
         try {
             connection.rollback();
-            connection.setAutoCommit(originalAutoCommit);
         } catch (SQLException e) {
             cause.addSuppressed(e);
         }
