@@ -7,6 +7,7 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,5 +64,26 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void 비밀번호_변경이_끝나면_바인딩된_Connection을_해제한다() {
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
+
+        userService.changePassword(1L, "newPassword", "gugu");
+
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
+    }
+
+    @Test
+    void 롤백되어도_바인딩된_Connection을_해제한다() {
+        final var appUserService = new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
+
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
     }
 }
