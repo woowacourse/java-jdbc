@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -41,6 +44,133 @@ class JdbcTemplateTest {
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
+    @Test
+    void 등록된_연결로_수정하고_구문만_닫는다() throws SQLException {
+        final String sql = """
+                update users
+                set password = ?
+                where id = ?
+                """;
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(sql, "password99", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setObject(1, "password99");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void 등록된_연결로_조회하고_결과와_구문만_닫는다() throws SQLException {
+        final String sql = """
+                select account
+                from users
+                where id > ?
+                """;
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var accounts = jdbcTemplate.query(sql, row -> row.getString("account"), 0L);
+
+        assertThat(accounts).containsExactly("gugu");
+        verify(statement).setObject(1, 0L);
+        final var order = inOrder(resultSet, statement);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void 등록된_연결의_실행에_실패해도_구문만_닫고_원인_예외를_보존한다() throws SQLException {
+        final String sql = """
+                delete from users
+                """;
+        final var exception = new SQLException("쿼리 실행 실패");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        when(statement.executeUpdate()).thenThrow(exception);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception);
+
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void 등록된_연결의_행_변환에서_런타임_예외가_발생해도_연결을_유지한다() throws SQLException {
+        final String sql = """
+                select account
+                from users
+                """;
+        final var exception = new IllegalStateException("행 변환 실패");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, row -> {
+            throw exception;
+        }))
+                .isSameAs(exception);
+
+        final var order = inOrder(resultSet, statement);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void 연결_종료에_실패하면_원인_예외를_보존한다() throws SQLException {
+        final String sql = """
+                delete from users
+                """;
+        final var exception = new SQLException("연결 종료 실패");
+        doThrow(exception).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("SQL 실행에 실패했습니다: " + sql)
+                .hasCause(exception);
+
+        verify(statement).close();
+    }
+
+    @Test
+    void 실행과_연결_종료가_함께_실패하면_실행_예외를_유지한다() throws SQLException {
+        final String sql = """
+                delete from users
+                """;
+        final var executionException = new SQLException("쿼리 실행 실패");
+        final var closeException = new SQLException("연결 종료 실패");
+        when(statement.executeUpdate()).thenThrow(executionException);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(executionException)
+                .hasSuppressedException(closeException);
+
+        verify(statement).close();
     }
 
     @Test

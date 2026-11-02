@@ -6,7 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -44,24 +43,7 @@ public class UserDao {
                 where id = ?
                 """;
 
-        jdbcTemplate.update(
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
-    }
-
-    public void update(final Connection connection, final User user) {
-        final String sql = """
-                update users
-                set account = ?, password = ?, email = ?
-                where id = ?
-                """;
-
         final int updatedRows = jdbcTemplate.update(
-                connection,
                 sql,
                 user.getAccount(),
                 user.getPassword(),
@@ -93,7 +75,7 @@ public class UserDao {
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByIdForUpdate(final Connection connection, final Long id) {
+    public User findByIdForUpdate(final Long id) {
         final String sql = """
                 select id, account, password, email
                 from users
@@ -101,7 +83,7 @@ public class UserDao {
                 for update
                 """;
 
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
