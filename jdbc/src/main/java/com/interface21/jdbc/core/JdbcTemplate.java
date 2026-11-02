@@ -25,6 +25,10 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
     }
 
+    public int update(Connection conn, String sql, Object... params) {
+        return execute(conn, sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -46,8 +50,17 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter pstmtSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, callback, pstmtSetter);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection conn, String sql, PreparedStatementCallback<T> callback,
+                          PreparedStatementSetter pstmtSetter) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pstmtSetter.setValues(pstmt);
