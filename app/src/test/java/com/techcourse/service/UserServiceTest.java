@@ -47,6 +47,7 @@ class UserServiceTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao);
+        final var originalPassword = userService.findById(1L).getPassword();
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -56,6 +57,6 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 }
