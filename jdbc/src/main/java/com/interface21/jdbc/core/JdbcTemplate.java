@@ -34,13 +34,6 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, pstmt -> {
-            argumentsSetter(args).setValues(pstmt);
-            return pstmt.executeUpdate();
-        });
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
@@ -58,17 +51,6 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         return singleResult(query(sql, rowMapper, pss));
-    }
-
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(conn, sql, pstmt -> {
-            argumentsSetter(args).setValues(pstmt);
-            return mapRows(pstmt, rowMapper);
-        });
-    }
-
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return singleResult(query(conn, sql, rowMapper, args));
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
