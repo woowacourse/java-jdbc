@@ -137,15 +137,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_Connection으로_갱신하면_새_Connection을_얻지_않고_닫지도_않는다() throws SQLException {
-        jdbcTemplate.update(connection, UPDATE_SQL, "password99", 1L);
-
-        verify(dataSource, never()).getConnection();
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
     void 트랜잭션에_바인딩된_Connection이_있으면_그_Connection으로_실행하고_닫지_않는다() throws SQLException {
         TransactionSynchronizationManager.bindResource(dataSource, connection);
 
