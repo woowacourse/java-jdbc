@@ -37,8 +37,12 @@ public class TxUserService implements UserService {
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         final var conn = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, conn);
+        boolean mustRestoreAutoCommit = false;
         try {
-            conn.setAutoCommit(false);
+            if (conn.getAutoCommit()) {
+                mustRestoreAutoCommit = true;
+                conn.setAutoCommit(false);
+            }
             userService.changePassword(id, newPassword, createdBy);
             conn.commit();
         } catch (SQLException e) {
@@ -49,7 +53,18 @@ public class TxUserService implements UserService {
             throw e;
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
+            if (mustRestoreAutoCommit) {
+                restoreAutoCommit(conn);
+            }
             DataSourceUtils.releaseConnection(conn, dataSource);
+        }
+    }
+
+    private void restoreAutoCommit(final Connection conn) {
+        try {
+            conn.setAutoCommit(true);
+        } catch (SQLException e) {
+            log.warn("Failed to restore auto-commit", e);
         }
     }
 
