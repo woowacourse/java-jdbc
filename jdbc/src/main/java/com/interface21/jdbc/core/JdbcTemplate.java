@@ -22,13 +22,10 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter setter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        return execute(sql, preparedStatement -> {
             setter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        });
     }
 
     public <T> List<T> select(
@@ -36,9 +33,7 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             RowMapper<T> mapper
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        return execute(sql, preparedStatement -> {
             setter.setValues(preparedStatement);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -48,8 +43,20 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(String sql, StatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return callback.doInStatement(preparedStatement);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+        T doInStatement(PreparedStatement preparedStatement) throws SQLException;
     }
 }

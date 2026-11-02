@@ -8,6 +8,13 @@ import javax.sql.DataSource;
 
 public class UserDao {
 
+    private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
+            resultSet.getLong("id"),
+            resultSet.getString("account"),
+            resultSet.getString("password"),
+            resultSet.getString("email")
+    );
+
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
@@ -49,7 +56,7 @@ public class UserDao {
         return jdbcTemplate.select(sql,
                 stmt -> {
                 },
-                parseToUser()
+                USER_ROW_MAPPER
         );
     }
 
@@ -59,7 +66,7 @@ public class UserDao {
         List<User> queryResult = jdbcTemplate.select(
                 sql,
                 stmt -> stmt.setLong(1, id),
-                parseToUser()
+                USER_ROW_MAPPER
         );
 
         if (queryResult.isEmpty()) {
@@ -75,7 +82,7 @@ public class UserDao {
         List<User> queryResult = jdbcTemplate.select(
                 sql,
                 stmt -> stmt.setString(1, account),
-                parseToUser()
+                USER_ROW_MAPPER
         );
 
         if (queryResult.isEmpty()) {
@@ -83,14 +90,5 @@ public class UserDao {
         }
 
         return queryResult.getFirst();
-    }
-
-    private RowMapper<User> parseToUser() {
-        return resultSet -> new User(
-                resultSet.getLong("id"),
-                resultSet.getString("account"),
-                resultSet.getString("password"),
-                resultSet.getString("email")
-        );
     }
 }
