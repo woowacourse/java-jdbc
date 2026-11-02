@@ -8,12 +8,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -22,13 +18,22 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, PreparedStatementSetter setter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        return execute(sql, preparedStatement -> {
             setter.setValues(preparedStatement);
             return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        });
+    }
+
+    public int update(String sql, Object... args) {
+        return update(sql, setterOf(args));
+    }
+
+    private PreparedStatementSetter setterOf(Object... args) {
+        return statement -> {
+            for (int i = 0; i < args.length; i++) {
+                statement.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     public <T> List<T> select(
@@ -36,9 +41,7 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             RowMapper<T> mapper
     ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        return execute(sql, preparedStatement -> {
             setter.setValues(preparedStatement);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -48,8 +51,37 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    public <T> List<T> select(
+            String sql,
+            RowMapper<T> mapper,
+            Object... args
+    ) {
+        return select(sql, setterOf(args), mapper);
+    }
+
+    public <T> T selectOne(
+            String sql,
+            RowMapper<T> mapper,
+            Object... args
+    ) {
+        final List<T> results = select(sql, mapper, args);
+        return results.isEmpty() ? null : results.getFirst();
+    }
+
+    private <T> T execute(String sql, StatementCallback<T> callback) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            return callback.doInStatement(preparedStatement);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+        T doInStatement(PreparedStatement preparedStatement) throws SQLException;
     }
 }
