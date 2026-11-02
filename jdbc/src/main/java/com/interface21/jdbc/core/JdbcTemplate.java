@@ -25,6 +25,15 @@ public class JdbcTemplate {
         execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    public void update(Connection connection, String sql, Object... args) {
+        execute(
+                connection,
+                sql,
+                pstmt -> bindParameters(pstmt, args),
+                PreparedStatement::executeUpdate
+        );
+    }
+
     /**
      * 단일 SQL 인자로 NULL을 전달할 때는 {@code update(sql, new Object[]{null})}을 사용한다.
      * {@code update(sql, null)}은 PreparedStatementSetter 오버로드와 구분할 수 없다.
@@ -50,13 +59,33 @@ public class JdbcTemplate {
         });
     }
 
-    private <R> R execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<R> callback) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//    private <R> R execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<R> callback) {
+//        try (Connection conn = dataSource.getConnection();
+//             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//            log.debug("query : {}", sql);
+//            setter.setValues(pstmt);
+//
+//            return callback.doInPreparedStatement(pstmt);
+//        } catch (SQLException e) {
+//            log.error(e.getMessage(), e);
+//            throw new DataAccessException(e);
+//        }
+//    }
 
+    private <R> R execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<R> callback) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, setter, callback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <R> R execute(Connection conn, String sql, PreparedStatementSetter setter,
+                          PreparedStatementCallback<R> callback) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(pstmt);
-
             return callback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
