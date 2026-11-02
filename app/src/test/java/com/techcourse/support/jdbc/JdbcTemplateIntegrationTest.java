@@ -9,6 +9,7 @@ import com.interface21.jdbc.core.RowMapper;
 import java.sql.SQLException;
 import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,11 @@ class JdbcTemplateIntegrationTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update("create table products (id bigint primary key, name varchar(100), "
                 + "price int, description varchar(100))");
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.update("SHUTDOWN");
     }
 
     @Test
