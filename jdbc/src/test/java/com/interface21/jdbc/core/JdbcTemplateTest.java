@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -105,7 +104,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단건 조회에 두 번째 행이 있으면 추가 행을 매핑하지 않고 예외를 던진다")
+    @DisplayName("단건 조회 결과가 여러 건이면 조회 건수를 담은 예외를 던진다")
     void query_for_object_with_multiple_rows() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, true, false);
         final var sql = "select id from users";
@@ -113,10 +112,8 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, row -> row.getLong("id")))
                 .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
                 .hasMessageContaining("at most one row")
-                .hasMessageContaining("at least 2")
+                .hasMessageContaining("found 3")
                 .hasMessageContaining(sql);
-        verify(resultSet, times(2)).next();
-        verify(resultSet).getLong("id");
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
