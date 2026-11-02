@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -123,6 +124,50 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateClosesConnectionWhenStatementCreationFails() throws SQLException {
+        final var sql = "delete from users";
+        final var cause = new SQLException("statement creation failed");
+        when(connection.prepareStatement(sql)).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(connection).close();
+    }
+
+    @Test
+    void queryClosesResourcesWhenBindingFails() throws SQLException {
+        final var cause = new SQLException("binding failed");
+        doThrow(cause).when(statement).setObject(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(
+                "select account from users where id = ?", row -> row.getString("account"), 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement, never()).executeQuery();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryClosesResourcesWhenMapperThrowsUncheckedException() throws SQLException {
+        final var resultSet = mock(ResultSet.class);
+        final var cause = new IllegalArgumentException("mapping failed");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> {
+            throw cause;
+        })).isSameAs(cause);
+
+        verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }

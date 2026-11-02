@@ -23,21 +23,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(statement, args);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            setParameters(statement, args);
+        return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -45,6 +35,15 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        }, args);
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setParameters(statement, args);
+            return callback.execute(statement);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
@@ -54,5 +53,11 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
