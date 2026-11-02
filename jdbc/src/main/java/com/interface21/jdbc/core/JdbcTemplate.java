@@ -24,11 +24,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, statement -> bindParameters(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
+        return query(sql, statement -> bindParameters(statement, args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -36,14 +44,18 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, args);
+        });
     }
 
     /**
      * 조회 결과가 없으면 null을 반환하고, 두 건 이상이면 IncorrectResultSizeDataAccessException을 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
+        return queryForObject(sql, statement -> bindParameters(statement, args), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (!resultSet.next()) {
                     return null;
@@ -55,14 +67,15 @@ public class JdbcTemplate {
                 }
                 return result;
             }
-        }, args);
+        });
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            bindParameters(statement, args);
+            setter.setValues(statement);
             return callback.execute(statement);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
