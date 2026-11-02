@@ -22,6 +22,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.BDDMockito.given;
@@ -48,7 +49,6 @@ class UserServiceTransactionTest {
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
-    // 예외 자신과, cause 및 suppressed를 따라가며 닿는 모든 예외를 모은다.
     private static List<Throwable> reachableThrowables(final Throwable root) {
         final List<Throwable> found = new ArrayList<>();
         collect(root, found);
@@ -66,7 +66,6 @@ class UserServiceTransactionTest {
         }
     }
 
-    // 예외 자신과 cause만 따라간다. suppressed는 넣지 않으므로, 여기에 있는 예외가 주 원인이다.
     private static List<Throwable> causeChain(final Throwable root) {
         final List<Throwable> chain = new ArrayList<>();
         for (Throwable current = root; current != null && !chain.contains(current); current = current.getCause()) {
@@ -100,7 +99,6 @@ class UserServiceTransactionTest {
         userDao = new UserDao(jdbcTemplate);
     }
 
-    // 매니저의 상태는 static ThreadLocal이라, 구현이 바인딩을 남기더라도 같은 스레드의 다음 테스트로 넘기지 않는다.
     @AfterEach
     void tearDown() {
         if (TransactionSynchronizationManager.getResource(dataSource) != null) {
@@ -183,7 +181,6 @@ class UserServiceTransactionTest {
         inOrder.verify(connection).close();
     }
 
-    // 톰캣은 스레드를 재사용한다. 앞 트랜잭션이 바인딩을 남기면 다음 트랜잭션의 bind가 중복 bind로 터진다.
     @Test
     @DisplayName("트랜잭션이 끝난 뒤 같은 스레드에서 다시 비밀번호를 바꿔도, 새 트랜잭션으로 정상 실행된다")
     void runsNextTransactionOnSameThread() throws SQLException {
@@ -224,7 +221,6 @@ class UserServiceTransactionTest {
                 .satisfies(thrown -> assertThat(reachableThrowables(thrown)).contains(historyFailure));
     }
 
-    // 원래 예외를 suppressed로 붙이든 cause로 감싸든 설계는 자유다. 두 예외가 모두 추적 가능하기만 하면 된다.
     @Test
     @DisplayName("롤백마저 실패해도 원래 예외와 롤백 실패를 모두 남기고, Connection은 닫고, 바인딩을 풀어둔다")
     void keepsBothFailuresWhenRollbackFails() throws SQLException {
@@ -242,7 +238,6 @@ class UserServiceTransactionTest {
         assertNoBoundConnection();
     }
 
-    // 비밀번호 UPDATE가 실행된 뒤 DB와 무관한 이유로 실패하는 상황이다. 실패의 종류와 상관없이 앞선 UPDATE는 없던 일이 되어야 한다.
     @Test
     @DisplayName("DB와 무관한 RuntimeException으로 실패해도 롤백하고, 커밋하지 않고, 원래 예외를 전달한다")
     void rollsBackOnNonDataAccessRuntimeException() throws SQLException {
@@ -290,8 +285,6 @@ class UserServiceTransactionTest {
         assertNoBoundConnection();
     }
 
-    // 커넥션 풀이라면 autocommit이 꺼진 채로 반납된 Connection을 다음 사람이 그대로 받게 된다.
-    // 그래서 성공이든 실패든, 닫기 전에 autocommit을 되돌린다.
     @Test
     @DisplayName("성공하면 커밋한 뒤 autocommit을 되돌리고 나서 Connection을 닫는다")
     void restoresAutoCommitAfterCommit() throws SQLException {
@@ -332,8 +325,6 @@ class UserServiceTransactionTest {
         inOrder.verify(connection).close();
     }
 
-    // 커밋은 이미 끝나 데이터가 반영됐다. 복구 실패를 실패로 알리면 호출한 쪽이 재시도해 같은 변경이 두 번 일어날 수 있다.
-    // 그래서 복구 실패는 로그만 남기고 호출한 쪽에는 성공으로 알린다. Connection은 어느 쪽이든 닫히고, 망가진 Connection의 뒷수습은 풀의 몫이다.
     @Test
     @DisplayName("커밋한 뒤 autocommit 복구가 실패해도 예외를 던지지 않고, 롤백하지 않고, Connection은 닫고 바인딩을 풀어둔다")
     void doesNotFailWhenRestoreFailsAfterCommit() throws SQLException {
@@ -349,8 +340,6 @@ class UserServiceTransactionTest {
         assertNoBoundConnection();
     }
 
-    // 연결이 끊긴 경우처럼, 업무 실패와 복구 실패는 함께 일어나기 쉽다. 복구 실패가 원래 원인을 가리면 안 된다.
-    // 복구 실패를 suppressed로 붙일지 로그만 남길지는 구현에 맡기고, 원래 예외가 주 원인으로 남는지만 본다.
     @Test
     @DisplayName("업무 로직이 실패한 뒤 autocommit 복구까지 실패해도, 원래 예외를 주 원인으로 던지고 Connection은 닫고 바인딩을 풀어둔다")
     void keepsOriginalFailureWhenRestoreFails() throws SQLException {
@@ -370,7 +359,6 @@ class UserServiceTransactionTest {
         assertNoBoundConnection();
     }
 
-    // 트랜잭션을 시작하다 실패하면 아직 아무것도 묶이지 않은 상태다. 정리하다가 난 다른 예외가 원래 실패를 가리면 안 된다.
     @Test
     @DisplayName("autocommit을 끄다 실패하면 그 원인을 담은 DataAccessException을 던지고, 쿼리를 실행하지 않고, Connection은 닫는다")
     void failsWhenSetAutoCommitFails() throws SQLException {
@@ -384,5 +372,75 @@ class UserServiceTransactionTest {
         verify(connection, never()).prepareStatement(anyString());
         verify(connection).close();
         assertNoBoundConnection();
+    }
+
+    @Test
+    @DisplayName("업무 로직이 실패한 뒤 롤백마저 실패하면, autocommit을 되돌리지 않고 Connection을 닫고 바인딩을 풀어둔다")
+    void doesNotRestoreAutoCommitWhenRollbackFails() throws SQLException {
+        willThrow(new SQLException("롤백 실패")).given(connection).rollback();
+        final var userService = txUserService(failingHistoryDao(new DataAccessException("이력 저장 실패")));
+
+        assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(connection, never()).setAutoCommit(true);
+        verify(connection).close();
+        assertNoBoundConnection();
+    }
+
+    @Test
+    @DisplayName("커밋이 실패한 뒤 롤백마저 실패하면, autocommit을 되돌리지 않고 Connection을 닫고 바인딩을 풀어둔다")
+    void doesNotRestoreAutoCommitWhenRollbackFailsAfterCommitFailure() throws SQLException {
+        willThrow(new SQLException("커밋 실패")).given(connection).commit();
+        willThrow(new SQLException("롤백 실패")).given(connection).rollback();
+        final var userService = txUserService(historyDao());
+
+        assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(connection, never()).setAutoCommit(true);
+        verify(connection).close();
+        assertNoBoundConnection();
+    }
+
+    @Test
+    @DisplayName("바깥 트랜잭션이 있으면 그 Connection으로 실행하고, DataSource에서 새 Connection을 얻지 않는다")
+    void participatesInOuterTransactionWithItsConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        txUserService(historyDao()).changePassword(USER_ID, NEW_PASSWORD, CREATE_BY);
+
+        verify(dataSource, never()).getConnection();
+        verify(connection).prepareStatement(startsWith("update"));
+        verify(connection).prepareStatement(startsWith("insert"));
+    }
+
+    @Test
+    @DisplayName("바깥 트랜잭션에 참여하면 autocommit 변경, 커밋, 롤백, 닫기를 하지 않고, 바깥의 바인딩도 그대로 둔다")
+    void leavesOuterTransactionUntouchedWhenParticipating() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        txUserService(historyDao()).changePassword(USER_ID, NEW_PASSWORD, CREATE_BY);
+
+        verify(connection, never()).setAutoCommit(anyBoolean());
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    @DisplayName("바깥 트랜잭션에 참여하다 실패하면 롤백하거나 닫지 않고, 원래 예외를 그대로 전달하고, 바깥의 바인딩도 그대로 둔다")
+    void propagatesFailureToOuterTransactionWithoutRollingBack() throws SQLException {
+        final var historyFailure = new DataAccessException("이력 저장 실패");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var userService = txUserService(failingHistoryDao(historyFailure));
+
+        assertThatThrownBy(() -> userService.changePassword(USER_ID, NEW_PASSWORD, CREATE_BY))
+                .satisfies(thrown -> assertThat(causeChain(thrown)).contains(historyFailure));
+
+        verify(connection, never()).rollback();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
     }
 }

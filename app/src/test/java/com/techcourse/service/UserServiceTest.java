@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -42,7 +44,6 @@ class UserServiceTest {
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
-    // 인메모리 DB가 테스트 간에 공유되므로, 매 테스트마다 행을 비우고 id를 1부터 다시 시작시킨다.
     private void truncateTables() {
         try (final var connection = dataSource.getConnection();
              final var statement = connection.createStatement()) {
@@ -51,14 +52,6 @@ class UserServiceTest {
         } catch (SQLException e) {
             throw new IllegalStateException("테이블 초기화에 실패했습니다.", e);
         }
-    }
-
-    private long countHistories(final long userId) {
-        return jdbcTemplate.queryForObject(
-                "select count(*) from user_history where user_id = ?",
-                resultSet -> resultSet.getLong(1),
-                userId
-        );
     }
 
     @Test
@@ -75,6 +68,14 @@ class UserServiceTest {
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
         assertThat(countHistories(1L)).isEqualTo(1L);
+    }
+
+    private long countHistories(final long userId) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ?",
+                resultSet -> resultSet.getLong(1),
+                userId
+        );
     }
 
     @Test
@@ -95,8 +96,6 @@ class UserServiceTest {
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
     }
 
-    // TxUserService 없이 쓰면 쿼리마다 따로 autocommit된다.
-    // 트랜잭션 처리가 AppUserService 안에 섞여 있지 않은지도 함께 확인한다.
     @Test
     @DisplayName("트랜잭션 없이 AppUserService만 쓰면, 이력 저장이 실패해도 앞서 실행한 비밀번호 변경은 그대로 남는다")
     void appUserServiceAloneDoesNotRollBack() {
@@ -108,9 +107,6 @@ class UserServiceTest {
         assertThat(appUserService.findById(1L).getPassword()).isEqualTo("newPassword");
     }
 
-    // TransactionSynchronizationManager는 DataSource 인스턴스를 키로 쓴다.
-    // 그래서 서비스와 DAO가 같은 DataSource(transactionDataSource)를 써야 DAO가 서비스의 트랜잭션 Connection을 찾는다.
-    // 검증용 조회는 실제 DataSource를 쓰는 userDao로 해서, 트랜잭션 밖에서 본 커밋된 값을 읽는다.
     @Test
     @DisplayName("이력 INSERT가 DB 제약 조건 위반으로 실패하면 커밋하지 않고 직접 롤백해서, 비밀번호와 이력이 변경 전 그대로 남는다")
     void rollsBackPasswordChangeWhenHistoryInsertFailsInDatabase() throws SQLException {
@@ -170,5 +166,58 @@ class UserServiceTest {
             inOrder.verify(connection).rollback();
             inOrder.verify(connection).close();
         }
+    }
+
+    @Test
+    @DisplayName("이력 저장이 실패한 뒤 롤백마저 실패해도, autocommit을 켜면서 변경을 커밋해 버리지 않아 비밀번호가 그대로 남는다")
+    void doesNotCommitByRestoringAutoCommitWhenRollbackFails() throws SQLException {
+        final var originalPassword = userDao.findById(1L).getPassword();
+
+        try (final Connection connection = spy(dataSource.getConnection())) {
+            willThrow(new SQLException("롤백 실패")).given(connection).rollback();
+            final DataSource transactionDataSource = mock(DataSource.class);
+            given(transactionDataSource.getConnection()).willReturn(connection);
+            final var transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+            final UserService userService = new TxUserService(
+                    new AppUserService(new UserDao(transactionJdbcTemplate), new UserHistoryDao(transactionJdbcTemplate)),
+                    transactionDataSource
+            );
+
+            // created_by의 NOT NULL 제약조건을 위반해 이력 INSERT가 실패하고, 이어지는 롤백도 실패한다.
+            assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", null))
+                    .isInstanceOf(DataAccessException.class);
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
+        assertThat(countHistories(1L)).isZero();
+    }
+
+    @Test
+    @DisplayName("바깥 트랜잭션 안에서 호출되면 그 트랜잭션에 참여해서, 바깥이 롤백하면 비밀번호 변경과 이력도 남지 않는다")
+    void participatesInOuterTransaction() throws SQLException {
+        final var originalPassword = userDao.findById(1L).getPassword();
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)),
+                dataSource
+        );
+
+        final Connection outerConnection = dataSource.getConnection();
+        outerConnection.setAutoCommit(false);
+        TransactionSynchronizationManager.bindResource(dataSource, outerConnection);
+        try {
+            userService.changePassword(1L, "newPassword", "gugu");
+
+            assertThat(outerConnection.isClosed()).isFalse();
+            assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
+        } finally {
+            if (!outerConnection.isClosed()) {
+                outerConnection.rollback();
+            }
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            outerConnection.close();
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
+        assertThat(countHistories(1L)).isZero();
     }
 }
