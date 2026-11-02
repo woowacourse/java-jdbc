@@ -1,7 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -12,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,11 +28,11 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
 
-    // "한 행을 객체로 바꾸는 방법". JdbcTemplate을 쓰는 개발자가 작성해서 넘기는 부분이다.
     private static Crew toCrew(final ResultSet resultSet) throws SQLException {
         return new Crew(
                 resultSet.getLong("id"),
@@ -39,6 +42,23 @@ class JdbcTemplateTest {
     }
 
     private record Crew(long id, String name, int age) {
+    }
+
+    private static List<Throwable> reachableThrowables(final Throwable root) {
+        final List<Throwable> found = new ArrayList<>();
+        collect(root, found);
+        return found;
+    }
+
+    private static void collect(final Throwable throwable, final List<Throwable> found) {
+        if (throwable == null || found.contains(throwable)) {
+            return;
+        }
+        found.add(throwable);
+        collect(throwable.getCause(), found);
+        for (final Throwable suppressed : throwable.getSuppressed()) {
+            collect(suppressed, found);
+        }
     }
 
     @Nested
@@ -69,7 +89,6 @@ class JdbcTemplateTest {
             return h2DataSource;
         }
 
-        // 검증 대상인 JdbcTemplate을 거치지 않고 DB 상태를 준비하거나 확인하기 위한 도구다.
         private void executeRaw(final String sql) throws SQLException {
             try (final var connection = dataSource.getConnection();
                  final var statement = connection.createStatement()) {
@@ -95,37 +114,6 @@ class JdbcTemplateTest {
                 }
                 return resultSet.getString("name") + "," + resultSet.getInt("age");
             }
-        }
-
-        // 트랜잭션 안에서 조회도 같은 Connection을 써야 하는 이유다. 다른 Connection으로 읽으면 아직 커밋되지 않은 자기 변경을 못 본다.
-        @Test
-        @DisplayName("같은 Connection으로 update한 뒤 queryForObject하면 커밋 전 변경을 읽고, 롤백하면 변경이 남지 않는다")
-        void queryForObjectWithBorrowedConnectionSeesUncommittedChange() throws SQLException {
-            executeRaw("insert into crew (name, age) values ('pobi', 30)");
-
-            try (final var connection = dataSource.getConnection()) {
-                connection.setAutoCommit(false);
-                jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
-
-                final String nameInTransaction = jdbcTemplate.queryForObject(
-                        connection,
-                        "select name from crew where id = ?",
-                        resultSet -> resultSet.getString("name"),
-                        1L
-                );
-                final String nameOutsideTransaction = jdbcTemplate.queryForObject(
-                        "select name from crew where id = ?",
-                        resultSet -> resultSet.getString("name"),
-                        1L
-                );
-
-                assertThat(nameInTransaction).isEqualTo("neo");
-                assertThat(nameOutsideTransaction).isEqualTo("pobi");
-
-                connection.rollback();
-            }
-
-            assertThat(readCrew(1L)).isEqualTo("pobi,30");
         }
 
         @Test
@@ -289,6 +277,33 @@ class JdbcTemplateTest {
             )).isInstanceOf(DataAccessException.class);
 
             assertThat(mappedRows.get()).isLessThanOrEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("트랜잭션 Connection이 묶여 있으면 update와 queryForObject가 그 트랜잭션 안에서 실행되고, 롤백하면 변경이 남지 않는다")
+        void runsInsideBoundTransaction() throws SQLException {
+            executeRaw("insert into crew (name, age) values ('pobi', 30)");
+            final Connection transactionConnection = dataSource.getConnection();
+            transactionConnection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, transactionConnection);
+            try {
+                jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L);
+
+                final String nameInTransaction = jdbcTemplate.queryForObject(
+                        "select name from crew where id = ?",
+                        resultSet -> resultSet.getString("name"),
+                        1L
+                );
+
+                assertThat(nameInTransaction).isEqualTo("neo");
+                assertThat(readCrew(1L)).isEqualTo("pobi,30");
+            } finally {
+                transactionConnection.rollback();
+                TransactionSynchronizationManager.unbindResource(dataSource);
+                transactionConnection.close();
+            }
+
+            assertThat(readCrew(1L)).isEqualTo("pobi,30");
         }
     }
 
@@ -473,16 +488,72 @@ class JdbcTemplateTest {
 
             verify(connection, never()).prepareStatement(anyString());
         }
+
+        @Test
+        @DisplayName("트랜잭션 없이 얻은 Connection은 바인딩하지 않는다")
+        void doesNotBindConnectionWithoutTransaction() {
+            jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L);
+
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        }
+
+        @Test
+        @DisplayName("쿼리는 성공했지만 Connection을 닫다가 실패하면, 닫기 실패를 원인으로 보존한 DataAccessException을 던진다")
+        void wrapsCloseFailure() throws SQLException {
+            willThrow(new SQLException("close 실패")).given(connection).close();
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseInstanceOf(SQLException.class)
+                    .hasRootCauseMessage("close 실패");
+        }
+
+        @Test
+        @DisplayName("쿼리는 성공했지만 Connection을 닫다가 실패해도, close는 한 번만 시도한다")
+        void triesCloseOnlyOnceWhenCloseFails() throws SQLException {
+            willThrow(new SQLException("close 실패")).given(connection).close();
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class);
+
+            verify(connection, times(1)).close();
+        }
+
+        @Test
+        @DisplayName("행을 변환하다 RuntimeException이 나도 Connection을 닫고, 원래 예외를 잃지 않는다")
+        void closesConnectionWhenMapperThrowsRuntimeException() throws SQLException {
+            final RuntimeException mappingFailure = new RuntimeException("변환 실패");
+            given(resultSet.next()).willReturn(true, false);
+
+            assertThatThrownBy(() -> jdbcTemplate.query("select id, name, age from crew", rs -> {
+                throw mappingFailure;
+            })).satisfies(thrown -> assertThat(reachableThrowables(thrown)).contains(mappingFailure));
+
+            verify(connection).close();
+        }
+
+        @Test
+        @DisplayName("쿼리도 실패하고 Connection 닫기도 실패하면, 쿼리 실패를 원인으로 던지고 닫기 실패는 suppressed로 남긴다")
+        void keepsQueryFailureAsCauseAndCloseFailureAsSuppressed() throws SQLException {
+            final SQLException closeFailure = new SQLException("close 실패");
+            given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
+            willThrow(closeFailure).given(connection).close();
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseMessage("실행 실패")
+                    .satisfies(thrown -> assertThat(reachableThrowables(thrown)).contains(closeFailure));
+        }
     }
 
-    // 트랜잭션처럼 호출한 쪽이 Connection의 수명을 관리하는 경우다. JdbcTemplate은 빌려 쓰기만 하고 닫지 않는다.
     @Nested
-    @DisplayName("빌린 Connection으로 실행한다")
-    class ExecuteWithBorrowedConnection {
+    @DisplayName("트랜잭션에 묶인 Connection으로 실행한다")
+    class ExecuteWithBoundConnection {
 
         private DataSource dataSource;
         private Connection connection;
         private PreparedStatement preparedStatement;
+        private ResultSet resultSet;
         private JdbcTemplate jdbcTemplate;
 
         @BeforeEach
@@ -490,20 +561,27 @@ class JdbcTemplateTest {
             dataSource = mock(DataSource.class);
             connection = mock(Connection.class);
             preparedStatement = mock(PreparedStatement.class);
+            resultSet = mock(ResultSet.class);
 
             given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
+            given(preparedStatement.executeQuery()).willReturn(resultSet);
 
             jdbcTemplate = new JdbcTemplate(dataSource);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+        }
+
+        @AfterEach
+        void tearDown() {
+            if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
 
         @Test
-        @DisplayName("update는 넘겨받은 Connection으로 실행하고, DataSource에서 새 Connection을 얻지 않는다")
-        void updateUsesBorrowedConnection() throws SQLException {
-            given(preparedStatement.executeUpdate()).willReturn(1);
+        @DisplayName("update는 묶인 Connection으로 실행하고, DataSource에서 새 Connection을 얻지 않는다")
+        void updateUsesBoundConnection() throws SQLException {
+            jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L);
 
-            final int affectedRows = jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
-
-            assertThat(affectedRows).isEqualTo(1);
             verify(connection).prepareStatement("update crew set name = ? where id = ?");
             verify(preparedStatement).setObject(1, "neo");
             verify(preparedStatement).setObject(2, 1L);
@@ -511,29 +589,21 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("insert는 넘겨받은 Connection으로 실행하고, PreparedStatement만 닫고 빌린 Connection은 닫지 않는다")
-        void insertUsesBorrowedConnectionWithoutClosingIt() throws SQLException {
-            given(preparedStatement.executeUpdate()).willReturn(1);
+        @DisplayName("update가 성공하면 PreparedStatement는 닫지만 묶인 Connection은 닫지 않는다")
+        void updateDoesNotCloseBoundConnection() throws SQLException {
+            jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L);
 
-            final int affectedRows = jdbcTemplate.insert(connection, "insert into crew (name, age) values (?, ?)", "pobi", 30);
-
-            assertThat(affectedRows).isEqualTo(1);
-            verify(connection).prepareStatement("insert into crew (name, age) values (?, ?)");
-            verify(preparedStatement).setObject(1, "pobi");
-            verify(preparedStatement).setObject(2, 30);
             verify(preparedStatement).close();
             verify(connection, never()).close();
-            verify(dataSource, never()).getConnection();
         }
 
         @Test
-        @DisplayName("insert 실행 중 SQLException이 나면 DataAccessException으로 바꿔 던지고, 빌린 Connection은 닫지 않는다")
-        void insertDoesNotCloseBorrowedConnectionOnFailure() throws SQLException {
+        @DisplayName("update 실행 중 SQLException이 나면 DataAccessException으로 바꿔 던지고, 묶인 Connection은 닫지 않는다")
+        void updateDoesNotCloseBoundConnectionOnFailure() throws SQLException {
             given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
 
-            assertThatThrownBy(() -> jdbcTemplate.insert(connection, "insert into crew (name, age) values (?, ?)", "pobi", 30))
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
                     .isInstanceOf(DataAccessException.class)
-                    .hasRootCauseInstanceOf(SQLException.class)
                     .hasRootCauseMessage("실행 실패");
 
             verify(preparedStatement).close();
@@ -541,63 +611,28 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("update가 성공하면 PreparedStatement는 닫지만 빌린 Connection은 닫지 않는다")
-        void updateDoesNotCloseBorrowedConnection() throws SQLException {
-            jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
+        @DisplayName("query는 묶인 Connection으로 조회하고, ResultSet과 PreparedStatement는 닫지만 묶인 Connection은 닫지 않는다")
+        void queryUsesBoundConnectionWithoutClosingIt() throws SQLException {
+            given(resultSet.next()).willReturn(true, false);
+            given(resultSet.getString("name")).willReturn("pobi");
 
-            verify(preparedStatement).close();
-            verify(connection, never()).close();
-        }
+            final List<String> names = jdbcTemplate.query("select name from crew", rs -> rs.getString("name"));
 
-        @Test
-        @DisplayName("update 실행 중 SQLException이 나면 DataAccessException으로 바꿔 던지고, 빌린 Connection은 닫지 않는다")
-        void updateDoesNotCloseBorrowedConnectionOnFailure() throws SQLException {
-            given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
-
-            assertThatThrownBy(() -> jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L))
-                    .isInstanceOf(DataAccessException.class)
-                    .hasRootCauseInstanceOf(SQLException.class)
-                    .hasRootCauseMessage("실행 실패");
-
-            verify(preparedStatement).close();
-            verify(connection, never()).close();
-        }
-
-        @Test
-        @DisplayName("PreparedStatement를 만들다 SQLException이 나도 빌린 Connection은 닫지 않는다")
-        void doesNotCloseBorrowedConnectionOnPrepareFailure() throws SQLException {
-            given(connection.prepareStatement(anyString())).willThrow(new SQLException("준비 실패"));
-
-            assertThatThrownBy(() -> jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L))
-                    .isInstanceOf(DataAccessException.class)
-                    .hasRootCauseInstanceOf(SQLException.class)
-                    .hasRootCauseMessage("준비 실패");
-
-            verify(connection, never()).close();
-        }
-
-        @Test
-        @DisplayName("같은 Connection을 넘기면 여러 번 update해도 그 Connection 하나로 실행한다")
-        void multipleUpdatesShareBorrowedConnection() throws SQLException {
-            jdbcTemplate.update(connection, "update crew set name = ? where id = ?", "neo", 1L);
-            jdbcTemplate.update(connection, "update crew set age = ? where id = ?", 31, 1L);
-
-            verify(connection).prepareStatement("update crew set name = ? where id = ?");
-            verify(connection).prepareStatement("update crew set age = ? where id = ?");
-            verify(connection, never()).close();
+            assertThat(names).containsExactly("pobi");
+            verify(connection).prepareStatement("select name from crew");
             verify(dataSource, never()).getConnection();
+            verify(resultSet).close();
+            verify(preparedStatement).close();
+            verify(connection, never()).close();
         }
 
         @Test
-        @DisplayName("queryForObject는 넘겨받은 Connection으로 조회하고, ResultSet과 PreparedStatement는 닫지만 빌린 Connection은 닫지 않는다")
-        void queryForObjectUsesBorrowedConnectionWithoutClosingIt() throws SQLException {
-            final ResultSet resultSet = mock(ResultSet.class);
-            given(preparedStatement.executeQuery()).willReturn(resultSet);
+        @DisplayName("queryForObject는 묶인 Connection으로 조회하고, ResultSet과 PreparedStatement는 닫지만 묶인 Connection은 닫지 않는다")
+        void queryForObjectUsesBoundConnectionWithoutClosingIt() throws SQLException {
             given(resultSet.next()).willReturn(true, false);
             given(resultSet.getString("name")).willReturn("pobi");
 
             final String name = jdbcTemplate.queryForObject(
-                    connection,
                     "select name from crew where id = ?",
                     rs -> rs.getString("name"),
                     1L
@@ -605,43 +640,59 @@ class JdbcTemplateTest {
 
             assertThat(name).isEqualTo("pobi");
             verify(connection).prepareStatement("select name from crew where id = ?");
-            verify(preparedStatement).setObject(1, 1L);
-            final var inOrder = inOrder(resultSet, preparedStatement);
-            inOrder.verify(resultSet).close();
-            inOrder.verify(preparedStatement).close();
-            verify(connection, never()).close();
             verify(dataSource, never()).getConnection();
-        }
-
-        @Test
-        @DisplayName("queryForObject는 빌린 Connection으로 조회해도 결과가 없으면 DataAccessException을 던지고, Connection은 닫지 않는다")
-        void queryForObjectWithBorrowedConnectionFailsWhenNoResult() throws SQLException {
-            final ResultSet resultSet = mock(ResultSet.class);
-            given(preparedStatement.executeQuery()).willReturn(resultSet);
-            given(resultSet.next()).willReturn(false);
-
-            assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                    connection,
-                    "select name from crew where id = ?",
-                    rs -> rs.getString("name"),
-                    999L
-            )).isInstanceOf(DataAccessException.class);
-
             verify(resultSet).close();
             verify(preparedStatement).close();
             verify(connection, never()).close();
         }
 
         @Test
-        @DisplayName("queryForObject는 빌린 Connection으로 조회해도 결과가 둘 이상이면 DataAccessException을 던지고, Connection은 닫지 않는다")
-        void queryForObjectWithBorrowedConnectionFailsWhenMoreThanOneResult() throws SQLException {
-            final ResultSet resultSet = mock(ResultSet.class);
-            given(preparedStatement.executeQuery()).willReturn(resultSet);
+        @DisplayName("여러 번 쿼리해도 묶인 Connection 하나로 실행하고, 끝난 뒤에도 바인딩은 그대로 남는다")
+        void multipleQueriesShareBoundConnection() throws SQLException {
+            given(resultSet.next()).willReturn(true, false);
+            given(resultSet.getString("name")).willReturn("neo");
+
+            jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L);
+            jdbcTemplate.insert("insert into crew (name, age) values (?, ?)", "pobi", 30);
+            jdbcTemplate.queryForObject("select name from crew where id = ?", rs -> rs.getString("name"), 1L);
+
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        }
+
+        @Test
+        @DisplayName("insert 실행 중 SQLException이 나면 DataAccessException으로 바꿔 던지고, 묶인 Connection은 닫지 않는다")
+        void insertDoesNotCloseBoundConnectionOnFailure() throws SQLException {
+            given(preparedStatement.executeUpdate()).willThrow(new SQLException("실행 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.insert("insert into crew (name, age) values (?, ?)", "pobi", 30))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseMessage("실행 실패");
+
+            verify(preparedStatement).close();
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("PreparedStatement를 만들다 SQLException이 나도 묶인 Connection은 닫지 않는다")
+        void doesNotCloseBoundConnectionOnPrepareFailure() throws SQLException {
+            given(connection.prepareStatement(anyString())).willThrow(new SQLException("준비 실패"));
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update crew set name = ? where id = ?", "neo", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasRootCauseMessage("준비 실패");
+
+            verify(connection, never()).close();
+        }
+
+        @Test
+        @DisplayName("queryForObject는 묶인 Connection으로 조회해도 결과가 둘 이상이면 DataAccessException을 던지고, 묶인 Connection은 닫지 않는다")
+        void queryForObjectFailsWhenMoreThanOneResultWithoutClosingBoundConnection() throws SQLException {
             given(resultSet.next()).willReturn(true, true, false);
             given(resultSet.getString("name")).willReturn("pobi", "crong");
 
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                    connection,
                     "select name from crew where age = ?",
                     rs -> rs.getString("name"),
                     30
@@ -651,12 +702,11 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("queryForObject 실행 중 SQLException이 나면 원인을 보존한 DataAccessException으로 바꿔 던지고, 빌린 Connection은 닫지 않는다")
-        void queryForObjectDoesNotCloseBorrowedConnectionOnFailure() throws SQLException {
+        @DisplayName("queryForObject 실행 중 SQLException이 나면 원인을 보존한 DataAccessException으로 바꿔 던지고, 묶인 Connection은 닫지 않는다")
+        void queryForObjectDoesNotCloseBoundConnectionOnFailure() throws SQLException {
             given(preparedStatement.executeQuery()).willThrow(new SQLException("조회 실패"));
 
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                    connection,
                     "select name from crew where id = ?",
                     rs -> rs.getString("name"),
                     1L
