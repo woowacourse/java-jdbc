@@ -52,7 +52,7 @@ public class UserDao {
     }
 
     private RowMapper<User> userRowMapper() {
-        return (resultSet, rowNumber) -> {
+        return resultSet -> {
             long id = resultSet.getLong("id");
             String account = resultSet.getString("account");
             String password = resultSet.getString("password");
