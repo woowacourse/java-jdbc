@@ -16,7 +16,11 @@ public class TxUserService implements UserService {
     private final UserService userService;
 
     public TxUserService(final UserService userService) {
-        this.dataSource = DataSourceConfig.getInstance();
+        this(DataSourceConfig.getInstance(), userService);
+    }
+
+    public TxUserService(final DataSource dataSource, final UserService userService) {
+        this.dataSource = dataSource;
         this.userService = userService;
     }
 
@@ -40,10 +44,11 @@ public class TxUserService implements UserService {
 
             conn.commit();
         } catch (SQLException e) {
-            rollback(conn);
-            throw new DataAccessException(e);
+            final var exception = new DataAccessException(e);
+            rollback(conn, exception);
+            throw exception;
         } catch (RuntimeException e) {
-            rollback(conn);
+            rollback(conn, e);
             throw e;
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
@@ -51,11 +56,12 @@ public class TxUserService implements UserService {
         }
     }
 
-    private void rollback(final Connection conn) {
+    private void rollback(final Connection conn, final RuntimeException cause) {
         try {
             conn.rollback();
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            // 롤백까지 실패해도 처음 실패한 원인이 사라지지 않도록 함께 남긴다.
+            cause.addSuppressed(e);
         }
     }
 }
