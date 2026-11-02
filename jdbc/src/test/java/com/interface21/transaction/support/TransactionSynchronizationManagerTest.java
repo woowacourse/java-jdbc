@@ -15,17 +15,20 @@ import static org.mockito.Mockito.mock;
 class TransactionSynchronizationManagerTest {
 
     private DataSource dataSource;
+    private DataSource otherDataSource;
     private Connection connection;
 
     @BeforeEach
     void setUp() {
         dataSource = mock(DataSource.class);
+        otherDataSource = mock(DataSource.class);
         connection = mock(Connection.class);
     }
 
     @AfterEach
     void tearDown() {
         TransactionSynchronizationManager.unbindResource(dataSource);
+        TransactionSynchronizationManager.unbindResource(otherDataSource);
     }
 
     @Test
@@ -42,15 +45,12 @@ class TransactionSynchronizationManagerTest {
 
     @Test
     void DataSource마다_다른_Connection을_보관한다() {
-        final var otherDataSource = mock(DataSource.class);
         final var otherConnection = mock(Connection.class);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
         TransactionSynchronizationManager.bindResource(otherDataSource, otherConnection);
 
         assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
         assertThat(TransactionSynchronizationManager.getResource(otherDataSource)).isSameAs(otherConnection);
-
-        TransactionSynchronizationManager.unbindResource(otherDataSource);
     }
 
     @Test
