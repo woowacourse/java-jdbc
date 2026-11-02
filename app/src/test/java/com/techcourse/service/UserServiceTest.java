@@ -9,6 +9,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -207,6 +208,34 @@ class UserServiceTest {
                 """, resultSet -> resultSet.getLong(1));
 
         assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void 서로_다른_DataSource를_사용하면_실패해도_비밀번호와_이력이_롤백되지_않는다() {
+        final var transactionDataSource = new JdbcDataSource();
+        transactionDataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;");
+        transactionDataSource.setUser("");
+        transactionDataSource.setPassword("");
+        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(transactionDataSource, appUserService);
+        final var newPassword = "newPassword";
+        final var createdBy = "gugu";
+
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, newPassword, createdBy));
+
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(newPassword);
+        final var histories = jdbcTemplate.query("""
+                select user_id, password, created_by
+                from user_history
+                """, resultSet -> List.of(
+                resultSet.getLong("user_id"),
+                resultSet.getString("password"),
+                resultSet.getString("created_by")
+        ));
+        assertThat(histories).containsExactly(List.of(1L, newPassword, createdBy));
     }
 
     @Test
