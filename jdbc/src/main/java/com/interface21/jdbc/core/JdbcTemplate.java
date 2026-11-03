@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,28 +24,28 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return update(conn, sql, createSetter(args));
+    public int update(final String sql, final Object... args) {
+        return update(sql, createSetter(args));
     }
 
-    public int update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
-        return execute(conn, sql, pss, PreparedStatement::executeUpdate);
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
-    public <T> Optional<T> queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryForObject(conn, sql, rowMapper, createSetter(args));
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, rowMapper, createSetter(args));
     }
 
-    public <T> Optional<T> queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        return single(query(conn, sql, rowMapper, pss), sql);
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return execute(sql, pss, pstmt -> mapRows(pstmt, rowMapper));
     }
 
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(conn, sql, rowMapper, createSetter(args));
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return queryForObject(sql, rowMapper, createSetter(args));
     }
 
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        return execute(conn, sql, pss, pstmt -> mapRows(pstmt, rowMapper));
+    public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
+        return single(query(sql, rowMapper, pss), sql);
     }
 
     private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
@@ -54,6 +55,15 @@ public class JdbcTemplate {
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행 실패: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
+            return execute(conn, sql, pss, action);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 

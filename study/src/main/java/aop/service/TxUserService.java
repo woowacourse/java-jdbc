@@ -32,7 +32,6 @@ public class TxUserService implements UserService {
 
         try {
         /* ===== 트랜잭션 영역 ===== */
-
         /* ===== 애플리케이션 영역 ===== */
             userService.changePassword(id, newPassword, createBy);
         /* ===== 애플리케이션 영역 ===== */

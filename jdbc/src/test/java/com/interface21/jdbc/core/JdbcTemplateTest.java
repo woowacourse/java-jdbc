@@ -46,7 +46,7 @@ class JdbcTemplateTest {
     void update는_인자를_순서대로_바인딩하고_영향받은_행_수를_반환한다() throws SQLException {
         given(pstmt.executeUpdate()).willReturn(1);
 
-        final int result = jdbcTemplate.update(connection, "insert into users (account, id) values (?, ?)", "gugu", 1L);
+        final int result = jdbcTemplate.update("insert into users (account, id) values (?, ?)", "gugu", 1L);
 
         assertThat(result).isEqualTo(1);
         final InOrder order = inOrder(pstmt);
@@ -59,7 +59,7 @@ class JdbcTemplateTest {
     void 정상_종료_시_자신이_연_자원만_닫고_받은_커넥션은_닫지_않는다() throws SQLException {
         given(rs.next()).willReturn(false);
 
-        jdbcTemplate.query(connection, "select * from users", (r, n) -> r.getString("account"));
+        jdbcTemplate.query("select * from users", (r, n) -> r.getString("account"));
 
         verify(rs).close();
         verify(pstmt).close();
@@ -70,7 +70,7 @@ class JdbcTemplateTest {
     void 예외가_발생해도_자신이_연_자원은_닫고_DataAccessException으로_변환한다() throws SQLException {
         given(pstmt.executeUpdate()).willThrow(new SQLException("boom"));
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "insert into users values (?)", "gugu"))
+        assertThatThrownBy(() -> jdbcTemplate.update("insert into users values (?)", "gugu"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCauseInstanceOf(SQLException.class);
 
@@ -83,7 +83,7 @@ class JdbcTemplateTest {
         given(rs.next()).willReturn(true, true, false);
         given(rs.getString("account")).willReturn("gugu", "hkkang");
 
-        final List<String> result = jdbcTemplate.query(connection, "select account from users", (r, n) -> r.getString("account"));
+        final List<String> result = jdbcTemplate.query("select account from users", (r, n) -> r.getString("account"));
 
         assertThat(result).containsExactly("gugu", "hkkang");
     }
@@ -93,7 +93,6 @@ class JdbcTemplateTest {
         given(rs.next()).willReturn(false);
 
         final Optional<String> result = jdbcTemplate.queryForObject(
-                connection,
                 "select account from users where id = ?", (r, n) -> r.getString("account"), 1L);
 
         assertThat(result).isEmpty();
@@ -105,7 +104,6 @@ class JdbcTemplateTest {
         given(rs.getString("account")).willReturn("gugu", "gugu");
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                connection,
                 "select account from users where account = ?", (r, n) -> r.getString("account"), "gugu"))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("2건");
