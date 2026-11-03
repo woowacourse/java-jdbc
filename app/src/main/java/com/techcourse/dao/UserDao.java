@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.core.AbstractJdbcTemplate;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -43,12 +44,12 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
+            protected void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, user.getAccount());
                 statement.setString(2, user.getPassword());
                 statement.setString(3, user.getEmail());
             }
-        }.update(user);
+        }.update();
         log.debug("User inserted, affectedRows={}", affectedRows);
     }
 
@@ -65,13 +66,13 @@ public class UserDao {
             }
 
             @Override
-            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
+            protected void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, user.getAccount());
                 statement.setString(2, user.getPassword());
                 statement.setString(3, user.getEmail());
                 statement.setLong(4, user.getId());
             }
-        }.update(user);
+        }.update();
         if (affectedRows == 0) {
             throw new NoSuchElementException("User not found, userId=" + user.getId());
         }

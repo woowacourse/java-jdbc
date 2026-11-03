@@ -1,7 +1,6 @@
-package com.techcourse.dao;
+package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,12 +12,12 @@ public abstract class AbstractJdbcTemplate {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractJdbcTemplate.class);
 
-    public final int update(final User user) {
+    public final int update() {
         final var sql = createQuery();
         log.debug("query : {}", sql);
         try (final var connection = getDataSource().getConnection();
              final var statement = connection.prepareStatement(sql)) {
-            setValues(user, statement);
+            setValues(statement);
             return statement.executeUpdate();
         } catch (final SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
@@ -29,5 +28,5 @@ public abstract class AbstractJdbcTemplate {
 
     protected abstract DataSource getDataSource();
 
-    protected abstract void setValues(User user, PreparedStatement statement) throws SQLException;
+    protected abstract void setValues(PreparedStatement statement) throws SQLException;
 }
