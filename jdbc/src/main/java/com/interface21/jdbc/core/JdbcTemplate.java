@@ -70,10 +70,15 @@ public class JdbcTemplate {
             setArgs(args, pstmt);
 
             try (ResultSet resultSet = pstmt.executeQuery()) {
-                if (resultSet.next()) {
-                    return rowMapper.mapRow(resultSet, 0);
+                if (!resultSet.next()) {
+                    return null;
                 }
-                return null;
+
+                final T result = rowMapper.mapRow(resultSet, 0);
+                if (resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과는 최대 1행이어야 합니다.");
+                }
+                return result;
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
