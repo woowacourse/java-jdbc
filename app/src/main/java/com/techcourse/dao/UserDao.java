@@ -55,6 +55,6 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, new Object[]{account});
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, new Object[]{account}).stream().findAny().get();
     }
 }
