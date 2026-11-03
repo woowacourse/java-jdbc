@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -168,12 +169,18 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("조회 결과가 두 건 이상이면 DataAccessException이 발생한다.")
-        void throwDataAccessExceptionWhenMultiple() throws SQLException {
+        @DisplayName("조회 결과가 두 건 이상이면 기대 건수와 실제 건수를 담은 IncorrectResultSizeDataAccessException이 발생한다.")
+        void throwIncorrectResultSizeExceptionWhenMultiple() throws SQLException {
             when(rs.next()).thenReturn(true, true, false);
 
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L))
-                    .isInstanceOf(DataAccessException.class);
+                    .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                    .isInstanceOf(DataAccessException.class)
+                    .satisfies(e -> {
+                        final var exception = (IncorrectResultSizeDataAccessException) e;
+                        assertThat(exception.getExpectedSize()).isEqualTo(1);
+                        assertThat(exception.getActualSize()).isEqualTo(2);
+                    });
         }
 
         @Test
