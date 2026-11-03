@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -184,5 +185,79 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void queryForObject에서도_직접_지정한_바인더를_사용한다() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        final String name = jdbcTemplate.queryForObject("select name from users where email is ?",
+                statement -> statement.setNull(1, Types.VARCHAR), NAME_ROW_MAPPER);
+
+        assertThat(name).isEqualTo("gugu");
+        verify(preparedStatement).setNull(1, Types.VARCHAR);
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void 바인더를_지정해도_조회_결과가_없으면_예외를_던진다() throws SQLException {
+        when(resultSet.next()).thenReturn(false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select name from users where id = ?",
+                statement -> statement.setLong(1, 42L), NAME_ROW_MAPPER))
+                .isInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    void 바인더를_지정해도_조회_결과가_여러_행이면_예외를_던진다() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select name from users where id = ?",
+                statement -> statement.setLong(1, 42L), NAME_ROW_MAPPER))
+                .isInstanceOf(IncorrectResultSizeDataAccessException.class);
+    }
+
+    @Test
+    void 전달받은_연결로_update하면_문장만_닫고_트랜잭션은_건드리지_않는다() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        assertThat(jdbcTemplate.update(connection, "update users set account = ?", "gugu")).isEqualTo(1);
+
+        verify(preparedStatement).setObject(1, "gugu");
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void 전달받은_연결로_조회하면_결과와_문장만_닫는다() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        final String name = jdbcTemplate.queryForObject(connection, "select name from users where id = ?",
+                NAME_ROW_MAPPER, 42L);
+
+        assertThat(name).isEqualTo("gugu");
+        verify(preparedStatement).setObject(1, 42L);
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 전달받은_연결에서_SQL이_실패해도_연결을_닫지_않는다() throws SQLException {
+        final var failure = new SQLException("update failed");
+        when(preparedStatement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "wrong sql"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(connection, never()).rollback();
     }
 }
