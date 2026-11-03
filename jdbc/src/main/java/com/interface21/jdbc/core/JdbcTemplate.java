@@ -22,11 +22,18 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> List<T> query(final String sql, final PreparedStatementSetter pss,
-        final RowMapper<T> rowMapper) {
-        try (final Connection conn = dataSource.getConnection();
-            final PreparedStatement pstmt = conn.prepareStatement(sql);
-            final ResultSet rs = executeQuery(pss, pstmt)) {
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (final Connection conn = dataSource.getConnection()) {
+            return query(conn, sql, rowMapper, args);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper,
+        final Object... args) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql);
+            final ResultSet rs = executeQuery(createPreparedStatementSetter(args), pstmt)) {
             log.debug("query : {}", sql);
 
             final List<T> results = new ArrayList<>();
@@ -40,28 +47,30 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return query(sql, createPreparedStatementSetter(args), rowMapper);
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
         final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            throw new DataAccessException("결과가 없습니다.");
-        }
-        if (results.size() > 1) {
-            throw new DataAccessException("결과가 1개보다 많습니다. size=" + results.size());
-        }
-        return results.get(0);
+        return singleResult(query(sql, rowMapper, args));
     }
 
-    public int update(final String sql, final PreparedStatementSetter pss) {
-        try (final Connection conn = dataSource.getConnection();
-            final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T queryForObject(final Connection conn, final String sql,
+        final RowMapper<T> rowMapper,
+        final Object... args) {
+        return singleResult(query(conn, sql, rowMapper, args));
+    }
+
+    public int update(final String sql, final Object... args) {
+        try (final Connection conn = dataSource.getConnection()) {
+            return update(conn, sql, args);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public int update(final Connection conn, final String sql, final Object... args) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
-            pss.setValues(pstmt);
+            createPreparedStatementSetter(args).setValues(pstmt);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -69,8 +78,15 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final String sql, final Object... args) {
-        return update(sql, createPreparedStatementSetter(args));
+    private <T> T singleResult(final List<T> results) {
+        if (results.isEmpty()) {
+            throw new DataAccessException("결과가 없습니다.");
+        }
+        if (results.size() > 1) {
+            throw new DataAccessException("결과가 1개보다 많습니다. size=" + results.size());
+        }
+
+        return results.get(0);
     }
 
     private ResultSet executeQuery(final PreparedStatementSetter pss,
