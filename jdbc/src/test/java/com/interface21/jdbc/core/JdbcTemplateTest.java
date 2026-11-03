@@ -123,6 +123,72 @@ class JdbcTemplateTest {
         verify(connection).close();
     }
 
+    @Test
+    void updateWithSetterBindsBeforeExecution() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        int affectedRows = jdbcTemplate.update(sql, pstmt -> {
+            pstmt.setLong(1, 1L);
+            pstmt.setString(2, "gugu");
+        });
+
+        assertThat(affectedRows).isEqualTo(1);
+        var order = inOrder(statement);
+        order.verify(statement).setLong(1, 1L);
+        order.verify(statement).setString(2, "gugu");
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryWithSetterBindsBeforeExecutionAndMapsRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "ever");
+
+        var accounts = jdbcTemplate.query(sql, rs -> rs.getString("account"), pstmt -> {
+            pstmt.setLong(1, 1L);
+            pstmt.setString(2, "gugu");
+        });
+
+        assertThat(accounts).containsExactly("gugu", "ever");
+        var order = inOrder(statement);
+        order.verify(statement).setLong(1, 1L);
+        order.verify(statement).setString(2, "gugu");
+        order.verify(statement).executeQuery();
+        verifyResourcesClosed();
+    }
+
+    @Test
+    void updateClosesResourcesWhenSetterFails() throws SQLException {
+        SQLException failure = new SQLException("setter failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, pstmt -> {
+            throw failure;
+        }))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(failure);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryClosesResourcesWhenSetterFails() throws SQLException {
+        SQLException failure = new SQLException("setter failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.query(sql, rs -> rs.getString("account"), pstmt -> {
+            throw failure;
+        }))
+                .isInstanceOf(RuntimeException.class)
+                .hasCause(failure);
+
+        verify(statement, never()).executeQuery();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
     private void verifyResourcesClosed() throws SQLException {
         verify(resultSet).close();
         verify(statement).close();
