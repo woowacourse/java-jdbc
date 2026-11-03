@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockMakers;
@@ -65,7 +66,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(sql, rs -> {
             throw failure;
         }, 1L, "gugu"))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
         verifyResourcesClosed();
@@ -115,7 +116,7 @@ class JdbcTemplateTest {
         doThrow(failure).when(statement).setObject(1, 1L);
 
         assertThatThrownBy(() -> jdbcTemplate.update(sql, 1L))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
         verify(statement, never()).executeUpdate();
@@ -166,7 +167,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update(sql, pstmt -> {
             throw failure;
         }))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
         verify(statement, never()).executeUpdate();
@@ -181,7 +182,7 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.query(sql, rs -> rs.getString("account"), pstmt -> {
             throw failure;
         }))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
         verify(statement, never()).executeQuery();
