@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -7,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -20,25 +23,39 @@ public class UserDao {
             resultSet.getString("password"),
             resultSet.getString("email"));
 
+    private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
-
-    public UserDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        final var affectedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        final var sql = createQueryForInsert();
+        log.debug("query : {}", sql);
+        final int affectedRows;
+        try (final var connection = dataSource.getConnection();
+             final var statement = connection.prepareStatement(sql)) {
+            setValuesForInsert(user, statement);
+            affectedRows = statement.executeUpdate();
+        } catch (final SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
         log.debug("User inserted, affectedRows={}", affectedRows);
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final var affectedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final var sql = createQueryForUpdate();
+        log.debug("query : {}", sql);
+        final int affectedRows;
+        try (final var connection = dataSource.getConnection();
+             final var statement = connection.prepareStatement(sql)) {
+            setValuesForUpdate(user, statement);
+            affectedRows = statement.executeUpdate();
+        } catch (final SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
         if (affectedRows == 0) {
             throw new NoSuchElementException("User not found, userId=" + user.getId());
         }
@@ -64,5 +81,26 @@ public class UserDao {
         final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
         log.debug("User lookup by account, found={}", user != null);
         return user;
+    }
+
+    private String createQueryForInsert() {
+        return "insert into users (account, password, email) values (?, ?, ?)";
+    }
+
+    private void setValuesForInsert(final User user, final PreparedStatement statement) throws SQLException {
+        statement.setString(1, user.getAccount());
+        statement.setString(2, user.getPassword());
+        statement.setString(3, user.getEmail());
+    }
+
+    private String createQueryForUpdate() {
+        return "update users set account = ?, password = ?, email = ? where id = ?";
+    }
+
+    private void setValuesForUpdate(final User user, final PreparedStatement statement) throws SQLException {
+        statement.setString(1, user.getAccount());
+        statement.setString(2, user.getPassword());
+        statement.setString(3, user.getEmail());
+        statement.setLong(4, user.getId());
     }
 }
