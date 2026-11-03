@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +39,11 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -141,27 +148,34 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithConnectionDoesNotCloseConnection() throws SQLException {
-        when(preparedStatement.executeUpdate()).thenReturn(1);
+    void updateWithoutTransactionClosesConnectionAndLeavesNothingBound() throws SQLException {
+        jdbcTemplate.update("update users set account = ?", "gugu");
 
-        final var affectedRows = jdbcTemplate.update(connection, "update users set account = ? where id = ?", "gugu", 1L);
-
-        assertThat(affectedRows).isEqualTo(1);
-        verify(preparedStatement).setObject(1, "gugu");
-        verify(preparedStatement).setObject(2, 1L);
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
-        verify(dataSource, never()).getConnection();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
-    void queryForObjectWithConnectionDoesNotCloseConnection() throws SQLException {
+    void updateInTransactionUsesBoundConnectionWithoutClosing() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update("update users set account = ?", "gugu");
+
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void queryInTransactionUsesBoundConnectionWithoutClosing() throws SQLException {
         final var resultSet = mock(ResultSet.class);
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        final var account = jdbcTemplate.queryForObject(connection, "select account from users where id = ?", ACCOUNT_MAPPER, 1L);
+        final var account = jdbcTemplate.queryForObject("select account from users where id = ?", ACCOUNT_MAPPER, 1L);
 
         assertThat(account).isEqualTo("gugu");
         verify(resultSet).close();
