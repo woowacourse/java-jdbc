@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -29,12 +31,47 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var affectedRows = new InsertJdbcTemplate(this).insert(user);
+        final var affectedRows = new AbstractJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "insert into users (account, password, email) values (?, ?, ?)";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
+                statement.setString(1, user.getAccount());
+                statement.setString(2, user.getPassword());
+                statement.setString(3, user.getEmail());
+            }
+        }.update(user);
         log.debug("User inserted, affectedRows={}", affectedRows);
     }
 
     public void update(final User user) {
-        final var affectedRows = new UpdateJdbcTemplate(this).update(user);
+        final var affectedRows = new AbstractJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return "update users set account = ?, password = ?, email = ? where id = ?";
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final User user, final PreparedStatement statement) throws SQLException {
+                statement.setString(1, user.getAccount());
+                statement.setString(2, user.getPassword());
+                statement.setString(3, user.getEmail());
+                statement.setLong(4, user.getId());
+            }
+        }.update(user);
         if (affectedRows == 0) {
             throw new NoSuchElementException("User not found, userId=" + user.getId());
         }
@@ -60,9 +97,5 @@ public class UserDao {
         final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
         log.debug("User lookup by account, found={}", user != null);
         return user;
-    }
-
-    DataSource getDataSource() {
-        return dataSource;
     }
 }
