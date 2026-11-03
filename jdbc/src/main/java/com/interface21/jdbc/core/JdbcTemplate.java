@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,14 +29,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter setter) {
         return execute(sql, setter, PreparedStatement::executeUpdate);
-    }
-
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return update(connection, sql, parameterSetter(parameters));
-    }
-
-    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -80,20 +73,25 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                          final PreparedStatementCallback<T> callback) {
-        try (final var connection = dataSource.getConnection()) {
-            return executeStatement(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
-        }
-    }
-
-    // 호출자가 트랜잭션을 관리하는 Connection이므로 닫지 않는다.
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
-                          final PreparedStatementCallback<T> callback) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try {
             return executeStatement(connection, sql, setter, callback);
         } catch (SQLException e) {
+            failure = e;
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException e) {
+                if (failure == null) {
+                    throw e;
+                }
+                failure.addSuppressed(e);
+            }
         }
     }
 

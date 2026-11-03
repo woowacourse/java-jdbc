@@ -6,7 +6,6 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.Test;
 
-import java.sql.SQLException;
 import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,16 +14,14 @@ import static org.assertj.core.api.Assertions.within;
 class UserHistoryDaoTest {
 
     @Test
-    void logStoresEveryHistoryField() throws SQLException {
+    void logStoresEveryHistoryField() {
         final var dataSource = DataSourceConfig.getInstance();
         DatabasePopulatorUtils.execute(dataSource);
         final var jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update("truncate table user_history restart identity");
         final var userHistory = new UserHistory(null, 1L, "gugu", "password", "gugu@example.com", "admin");
 
-        try (final var connection = dataSource.getConnection()) {
-            new UserHistoryDao(jdbcTemplate).log(connection, userHistory);
-        }
+        new UserHistoryDao(jdbcTemplate).log(userHistory);
 
         final var saved = jdbcTemplate.queryForObject("select * from user_history", rs -> {
             assertThat(rs.getLong("user_id")).isEqualTo(userHistory.getUserId());

@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,57 +56,6 @@ class JdbcTemplateTest {
         verify(statement).setObject(3, 1L);
         verify(statement).close();
         verify(connection).close();
-    }
-
-    @Test
-    void updateWithGivenConnectionDoesNotOpenOrCloseConnection() throws SQLException {
-        final var givenConnection = mock(Connection.class);
-        when(givenConnection.prepareStatement(anyString())).thenReturn(statement);
-        when(statement.executeUpdate()).thenReturn(1);
-
-        final var affectedRows = jdbcTemplate.update(givenConnection,
-                "update users set password = ? where id = ?", "newPassword", 1L);
-
-        assertThat(affectedRows).isEqualTo(1);
-        verify(statement).setObject(1, "newPassword");
-        verify(statement).setObject(2, 1L);
-        verify(statement).close();
-        verify(dataSource, never()).getConnection();
-        verify(givenConnection, never()).close();
-    }
-
-    @Test
-    void updateWithGivenConnectionUsesCustomSetterWithoutClosingConnection() throws SQLException {
-        final var givenConnection = mock(Connection.class);
-        when(givenConnection.prepareStatement(anyString())).thenReturn(statement);
-        when(statement.executeUpdate()).thenReturn(1);
-
-        final var affectedRows = jdbcTemplate.update(givenConnection, "update users set email = ? where id = ?", ps -> {
-            ps.setNull(1, Types.VARCHAR);
-            ps.setLong(2, 1L);
-        });
-
-        assertThat(affectedRows).isEqualTo(1);
-        verify(statement).setNull(1, Types.VARCHAR);
-        verify(statement).setLong(2, 1L);
-        verify(statement).close();
-        verify(dataSource, never()).getConnection();
-        verify(givenConnection, never()).close();
-    }
-
-    @Test
-    void updateWithGivenConnectionTranslatesFailureWithoutClosingConnection() throws SQLException {
-        final var givenConnection = mock(Connection.class);
-        final var cause = new SQLException("update failed");
-        when(givenConnection.prepareStatement(anyString())).thenReturn(statement);
-        when(statement.executeUpdate()).thenThrow(cause);
-
-        assertThatThrownBy(() -> jdbcTemplate.update(givenConnection, "update users set password = ?", "newPassword"))
-                .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("update users set password = ?")
-                .hasCause(cause);
-        verify(statement).close();
-        verify(givenConnection, never()).close();
     }
 
     @Test
@@ -337,7 +288,10 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
-        assertThat(cause.getSuppressed()).containsExactly(statementCloseFailure, connectionCloseFailure);
+        assertThat(cause.getSuppressed()).hasSize(2);
+        assertThat(cause.getSuppressed()[0]).isSameAs(statementCloseFailure);
+        assertThat(cause.getSuppressed()[1]).isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(connectionCloseFailure);
         verify(statement).close();
         verify(connection).close();
     }
@@ -366,5 +320,42 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void queriesAndUpdatesReuseBoundConnectionWithoutClosingIt() throws SQLException {
+        final var transactionalConnection = mock(Connection.class);
+        when(transactionalConnection.prepareStatement(anyString())).thenReturn(statement);
+        TransactionSynchronizationManager.bindResource(dataSource, transactionalConnection);
+        try {
+            jdbcTemplate.query("select account from users", rs -> rs.getString("account"));
+            jdbcTemplate.update("update users set password = ?", "newPassword");
+
+            verify(dataSource, never()).getConnection();
+            verify(transactionalConnection, times(2)).prepareStatement(anyString());
+            verify(transactionalConnection, never()).close();
+            verify(statement, times(2)).close();
+            verify(resultSet).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void sqlFailureLeavesBoundConnectionOpenForRollback() throws SQLException {
+        final var cause = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                    .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+            verify(statement).close();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 }
