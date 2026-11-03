@@ -136,4 +136,38 @@ class JdbcTemplateTest {
                 .extracting("actualSize")
                 .isEqualTo(2);
     }
+
+    @Test
+    void queryForOptional은_결과가_한_건이면_값을_담아_반환한다() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("account")).willReturn("gugu");
+
+        final var account = jdbcTemplate.queryForOptional(
+                "select account from users where id = ?", (rs, rowNum) -> rs.getString("account"), 1L);
+
+        assertThat(account).contains("gugu");
+    }
+
+    @Test
+    void queryForOptional은_결과가_없으면_빈_Optional을_반환한다() throws SQLException {
+        given(resultSet.next()).willReturn(false);
+
+        final var account = jdbcTemplate.queryForOptional(
+                "select account from users where id = ?", (rs, rowNum) -> rs.getString("account"), 1L);
+
+        assertThat(account).isEmpty();
+        verify(resultSet).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryForOptional은_결과가_두_건_이상이면_IncorrectResultSizeDataAccessException을_던진다() throws SQLException {
+        given(resultSet.next()).willReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForOptional(
+                "select account from users where account = ?", (rs, rowNum) -> rs.getString("account"), "gugu"))
+                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class)
+                .extracting("actualSize")
+                .isEqualTo(2);
+    }
 }

@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -41,10 +42,15 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
         }
-        if (results.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        return singleResult(results);
+    }
+
+    public <T> Optional<T> queryForOptional(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        final List<T> results = query(sql, rowMapper, args);
+        if (results.isEmpty()) {
+            return Optional.empty();
         }
-        return results.getFirst();
+        return Optional.ofNullable(singleResult(results));
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
@@ -72,6 +78,13 @@ public class JdbcTemplate {
             results.add(rowMapper.mapRow(rs, rowNum++));
         }
         return results;
+    }
+
+    private <T> T singleResult(final List<T> results) {
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
+        }
+        return results.getFirst();
     }
 
     @FunctionalInterface
