@@ -1,15 +1,18 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.AbstractJdbcTemplate;
-import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.jdbc.core.SelectJdbcTemplate;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -24,11 +27,9 @@ public class UserDao {
             resultSet.getString("email"));
 
     private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
         this.dataSource = dataSource;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
@@ -79,24 +80,103 @@ public class UserDao {
         log.debug("User updated, userId={}, affectedRows={}", user.getId(), affectedRows);
     }
 
+    @SuppressWarnings("unchecked")
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final var users = jdbcTemplate.query(sql, USER_ROW_MAPPER);
+        final var users = (List<User>) new SelectJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return sql;
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement statement) {
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+                return mapUsers(resultSet);
+            }
+        }.query();
         log.debug("Users found, count={}", users.size());
         return users;
     }
 
+    @SuppressWarnings("unchecked")
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        final var users = (List<User>) new SelectJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return sql;
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement statement) throws SQLException {
+                statement.setObject(1, id);
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+                return mapUsers(resultSet);
+            }
+        }.query();
+        final var user = singleResult(users, sql);
         log.debug("User lookup by id, userId={}, found={}", id, user != null);
         return user;
     }
 
+    @SuppressWarnings("unchecked")
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        final var users = (List<User>) new SelectJdbcTemplate() {
+            @Override
+            protected String createQuery() {
+                return sql;
+            }
+
+            @Override
+            protected DataSource getDataSource() {
+                return dataSource;
+            }
+
+            @Override
+            protected void setValues(final PreparedStatement statement) throws SQLException {
+                statement.setString(1, account);
+            }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) throws SQLException {
+                return mapUsers(resultSet);
+            }
+        }.query();
+        final var user = singleResult(users, sql);
         log.debug("User lookup by account, found={}", user != null);
         return user;
+    }
+
+    private List<User> mapUsers(final ResultSet resultSet) throws SQLException {
+        final List<User> users = new ArrayList<>();
+        while (resultSet.next()) {
+            users.add(USER_ROW_MAPPER.mapRow(resultSet));
+        }
+        return users;
+    }
+
+    private User singleResult(final List<User> users, final String sql) {
+        if (users.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException("Expected at most one row but found " + users.size() + ": " + sql);
+        }
+        return users.isEmpty() ? null : users.getFirst();
     }
 }
