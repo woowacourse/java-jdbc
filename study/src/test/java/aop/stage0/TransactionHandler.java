@@ -1,10 +1,9 @@
 package aop.stage0;
 
-import aop.service.UserService;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -25,13 +24,17 @@ public class TransactionHandler implements InvocationHandler {
         DefaultTransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
         TransactionStatus transactionStatus = manager.getTransaction(transactionDefinition);
-        Object invoked = null;
+        final Object invoked;
         try {
             invoked = method.invoke(target, args);
-            manager.commit(transactionStatus);
-        } catch (RuntimeException | Error e) {
+        } catch (InvocationTargetException e) {
             manager.rollback(transactionStatus);
+            throw e.getCause();
+        } catch (IllegalAccessException | RuntimeException | Error e) {
+            manager.rollback(transactionStatus);
+            throw e;
         }
+        manager.commit(transactionStatus);
         return invoked;
     }
 }
