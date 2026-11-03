@@ -30,18 +30,8 @@ class JdbcTemplateSetterTest {
     private final String sql = "select account from users where id = ?";
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-    private final PreparedStatementSetter setter = new PreparedStatementSetter() {
-        @Override
-        public void setValues(final PreparedStatement statement) throws SQLException {
-            statement.setLong(1, 1L);
-        }
-    };
-    private final RowMapper<String> rowMapper = new RowMapper<>() {
-        @Override
-        public String mapRow(final ResultSet resultSet) throws SQLException {
-            return resultSet.getString("account");
-        }
-    };
+    private final PreparedStatementSetter setter = statement -> statement.setLong(1, 1L);
+    private final RowMapper<String> rowMapper = resultSet -> resultSet.getString("account");
 
     @BeforeEach
     void setUp() throws SQLException {
