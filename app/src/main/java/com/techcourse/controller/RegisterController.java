@@ -1,6 +1,7 @@
 package com.techcourse.controller;
 
 import com.techcourse.domain.User;
+import com.interface21.dao.DuplicateKeyException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +15,15 @@ import com.interface21.web.bind.annotation.RequestMethod;
 @Controller
 public class RegisterController {
 
-    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+    private final UserDao userDao;
+
+    public RegisterController() {
+        this(new UserDao(DataSourceConfig.getInstance()));
+    }
+
+    public RegisterController(final UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public ModelAndView register(final HttpServletRequest request, final HttpServletResponse response) {
@@ -22,7 +31,13 @@ public class RegisterController {
                 request.getParameter("account"),
                 request.getParameter("password"),
                 request.getParameter("email"));
-        userDao.insert(user);
+        try {
+            userDao.insert(user);
+        } catch (DuplicateKeyException e) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            return new ModelAndView(new JspView("/register.jsp"))
+                    .addObject("error", "이미 사용 중인 아이디입니다.");
+        }
 
         return new ModelAndView(new JspView("redirect:/index.jsp"));
     }

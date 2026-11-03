@@ -1,6 +1,6 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
+import com.techcourse.support.TestDataSource;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,14 +11,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserDaoTest {
 
     private UserDao userDao;
+    private javax.sql.DataSource dataSource;
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        dataSource = TestDataSource.create();
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
-        new com.interface21.jdbc.core.JdbcTemplate(DataSourceConfig.getInstance())
-                .update("truncate table users restart identity");
+        userDao = new UserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -84,7 +84,44 @@ class UserDaoTest {
 
     @Test
     void templateConstructor() {
-        final var dao = new UserDao(new com.interface21.jdbc.core.JdbcTemplate(DataSourceConfig.getInstance()));
+        final var dao = new UserDao(new com.interface21.jdbc.core.JdbcTemplate(dataSource));
         assertThat(dao.findByAccount("gugu").getEmail()).isEqualTo("hkkang@woowahan.com");
+    }
+    @Test
+    void duplicateAccountDoesNotChangeExistingUser() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                userDao.insert(new User("gugu", "other-password", "other@example.com")))
+                .isInstanceOf(com.interface21.dao.DuplicateKeyException.class);
+        assertThat(userDao.findAll()).hasSize(1);
+        assertThat(userDao.findByAccount("gugu").checkPassword("password")).isTrue();
+    }
+
+    @Test
+    void concurrentRegistrationsOnlyInsertOneUser() throws Exception {
+        final var ready = new java.util.concurrent.CountDownLatch(2);
+        final var start = new java.util.concurrent.CountDownLatch(1);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            java.util.concurrent.Callable<Boolean> register = () -> {
+                ready.countDown();
+                if (!start.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting for start");
+                }
+                try {
+                    userDao.insert(new User("concurrent", "password", "test@example.com"));
+                    return true;
+                } catch (com.interface21.dao.DuplicateKeyException e) {
+                    return false;
+                }
+            };
+            final var first = executor.submit(register);
+            final var second = executor.submit(register);
+            assertThat(ready.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            assertThat(java.util.List.of(first.get(5, java.util.concurrent.TimeUnit.SECONDS),
+                    second.get(5, java.util.concurrent.TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(true, false);
+        }
+        assertThat(userDao.findAll()).hasSize(2);
+        assertThat(userDao.findByAccount("concurrent").checkPassword("password")).isTrue();
     }
 }

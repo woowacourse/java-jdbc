@@ -25,6 +25,37 @@ class UserPersistenceTest {
                 .isEqualTo("test@example.com");
     }
 
+    @Test
+    void existingTableReceivesUniqueConstraintWithoutLosingUsers() {
+        final var source = dataSource();
+        final var jdbc = new com.interface21.jdbc.core.JdbcTemplate(source);
+        jdbc.update("create table users (id bigint auto_increment primary key, "
+                + "account varchar(100) not null, password varchar(100) not null, email varchar(100) not null)");
+        final var dao = new UserDao(source);
+        dao.insert(new User("existing", "password", "test@example.com"));
+        DatabasePopulatorUtils.execute(source);
+        DatabasePopulatorUtils.execute(source);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                dao.insert(new User("existing", "other", "other@example.com")))
+                .isInstanceOf(com.interface21.dao.DuplicateKeyException.class);
+        assertThat(dao.findAll()).hasSize(1);
+        assertThat(dao.findByAccount("existing").checkPassword("password")).isTrue();
+    }
+
+    @Test
+    void existingDuplicatesFailInitializationWithoutDeletingData() {
+        final var source = dataSource();
+        final var jdbc = new com.interface21.jdbc.core.JdbcTemplate(source);
+        jdbc.update("create table users (id bigint auto_increment primary key, "
+                + "account varchar(100) not null, password varchar(100) not null, email varchar(100) not null)");
+        final var dao = new UserDao(source);
+        dao.insert(new User("existing", "first", "first@example.com"));
+        dao.insert(new User("existing", "second", "second@example.com"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> DatabasePopulatorUtils.execute(source))
+                .isInstanceOf(com.interface21.dao.DataAccessException.class);
+        assertThat(dao.findAll()).hasSize(2);
+    }
+
     private JdbcDataSource dataSource() {
         final var source = new JdbcDataSource();
         source.setURL("jdbc:h2:file:" + directory.resolve("users"));

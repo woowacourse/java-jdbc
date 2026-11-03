@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.DuplicateKeyException;
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -16,19 +17,20 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (var connection = dataSource.getConnection();
-             var statement = connection.prepareStatement(sql)) {
-            bind(statement, args);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update: " + sql, e);
-        }
+        return update(sql, statement -> bind(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (var connection = dataSource.getConnection();
-             var statement = connection.prepareStatement(sql)) {
-            bind(statement, args);
+        return query(sql, statement -> bind(statement, args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
+                           final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (var resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 int rowNum = 0;
@@ -37,9 +39,26 @@ public class JdbcTemplate {
                 }
                 return results;
             }
+        });
+    }
+
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final StatementCallback<T> callback) {
+        try (var connection = dataSource.getConnection();
+             var statement = connection.prepareStatement(sql)) {
+            setter.setValues(statement);
+            return callback.execute(statement);
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute query: " + sql, e);
+            if ("23505".equals(e.getSQLState())) {
+                throw new DuplicateKeyException("Duplicate key while executing SQL: " + sql, e);
+            }
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
+    }
+
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+        T execute(PreparedStatement statement) throws SQLException;
     }
 
     /** Returns null when no row matches; rejects ambiguous multiple-row results. */

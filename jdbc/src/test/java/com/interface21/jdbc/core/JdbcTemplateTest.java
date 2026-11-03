@@ -97,4 +97,69 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
         verify(connection).close();
     }
+    @Test
+    void customSetterSupportsExplicitSqlTypes() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+        assertThat(template.update("update example set name = ?", ps ->
+                ps.setNull(1, java.sql.Types.VARCHAR))).isEqualTo(1);
+        verify(statement).setNull(1, java.sql.Types.VARCHAR);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryUsesCustomSetterBeforeExecution() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        assertThat(template.query("select name from example where id = ?",
+                ps -> ps.setLong(1, 7L), (rs, row) -> "value")).containsExactly("value");
+        final var order = inOrder(statement);
+        order.verify(statement).setLong(1, 7L);
+        order.verify(statement).executeQuery();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void querySetterFailureClosesResourcesWithoutExecuting() throws SQLException {
+        final var failure = new SQLException("setter failed");
+        assertThatThrownBy(() -> template.query("select name from example",
+                ps -> { throw failure; }, (rs, row) -> "value"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+        verify(statement, never()).executeQuery();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void executionFailurePreservesCauseAndSuppressedCloseFailure() throws SQLException {
+        final var failure = new SQLException("execution failed");
+        final var closeFailure = new SQLException("close failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(statement).close();
+        assertThatThrownBy(() -> template.update("delete from example"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionFailureIsTranslated() throws SQLException {
+        final var failure = new SQLException("connection failed");
+        when(dataSource.getConnection()).thenThrow(failure);
+        assertThatThrownBy(() -> template.update("delete from example"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+        verifyNoInteractions(statement);
+    }
+
+    @Test
+    void uncheckedMappingFailureStillClosesResources() throws SQLException {
+        when(resultSet.next()).thenReturn(true);
+        final var failure = new IllegalArgumentException("invalid value");
+        assertThatThrownBy(() -> template.query("select name from example",
+                (rs, row) -> { throw failure; })).isSameAs(failure);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
 }

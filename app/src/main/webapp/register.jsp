@@ -15,6 +15,9 @@
                                 <div class="card shadow-lg border-0 rounded-lg mt-5">
                                     <div class="card-header"><h3 class="text-center font-weight-light my-4">회원 가입</h3></div>
                                     <div class="card-body">
+                                        <% if (request.getAttribute("error") != null) { %>
+                                            <div class="alert alert-danger" role="alert">이미 사용 중인 아이디입니다.</div>
+                                        <% } %>
                                         <form method="post" action="/register">
                                             <div class="form-floating mb-3">
                                                 <input class="form-control" id="inputLoginId" name="account" type="Text" placeholder="아이디를 입력하세요" />
