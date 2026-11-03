@@ -78,10 +78,9 @@ public class UserDao {
         log.debug("User updated, userId={}, affectedRows={}", user.getId(), affectedRows);
     }
 
-    @SuppressWarnings("unchecked")
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final var users = (List<User>) new AbstractJdbcTemplate() {
+        final var users = new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
                 return sql;
@@ -96,10 +95,9 @@ public class UserDao {
         return users;
     }
 
-    @SuppressWarnings("unchecked")
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final var users = (List<User>) new AbstractJdbcTemplate() {
+        final var users = new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
                 return sql;
@@ -120,10 +118,9 @@ public class UserDao {
         return user;
     }
 
-    @SuppressWarnings("unchecked")
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final var users = (List<User>) new AbstractJdbcTemplate() {
+        final var users = new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
                 return sql;

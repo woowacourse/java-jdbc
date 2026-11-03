@@ -26,7 +26,7 @@ public abstract class AbstractJdbcTemplate {
         }
     }
 
-    public final Object query(final RowMapper<?> rowMapper) {
+    public final <T> List<T> query(final RowMapper<T> rowMapper) {
         return query(new PreparedStatementSetter() {
             @Override
             public void setValues(final PreparedStatement statement) {
@@ -34,14 +34,14 @@ public abstract class AbstractJdbcTemplate {
         }, rowMapper);
     }
 
-    public final Object query(final PreparedStatementSetter setter, final RowMapper<?> rowMapper) {
+    public final <T> List<T> query(final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
         final var sql = createQuery();
         log.debug("query : {}", sql);
         try (final var connection = getDataSource().getConnection();
              final var statement = connection.prepareStatement(sql)) {
             setter.setValues(statement);
             try (final var resultSet = statement.executeQuery()) {
-                final List<Object> results = new ArrayList<>();
+                final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
                     results.add(rowMapper.mapRow(resultSet));
                 }
