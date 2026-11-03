@@ -1,10 +1,13 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -33,16 +36,16 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (
-                final var connection = dataSource.getConnection()
-        ) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             connection.setAutoCommit(false);
 
             try {
-                final var user = userDao.findById(connection, id);
+                final var user = userDao.findById(id);
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
 
                 connection.commit();
             } catch (Throwable exception) {
@@ -54,8 +57,27 @@ public class UserService {
                 throw exception;
             }
         } catch (SQLException exception) {
-            throw new DataAccessException(exception);
+            final var dataAccessException = new DataAccessException(exception);
+            failure = dataAccessException;
+            throw dataAccessException;
+        } catch (Throwable exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            releaseConnection(connection, failure);
         }
+    }
 
+    private void releaseConnection(Connection connection, Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (RuntimeException closeException) {
+            if (failure == null) {
+                throw closeException;
+            }
+            failure.addSuppressed(closeException);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 }

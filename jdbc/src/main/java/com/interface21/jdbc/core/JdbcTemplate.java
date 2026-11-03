@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,11 +30,18 @@ public class JdbcTemplate {
             String sql,
             Object... params
     ) {
-        try (Connection connection = dataSource.getConnection()) {
+        boolean ownsConnection = TransactionSynchronizationManager.getResource(dataSource) == null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             update(connection, sql, params);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new DataAccessException(exception);
+        } catch (Throwable exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            if (ownsConnection) {
+                releaseConnection(connection, failure);
+            }
         }
     }
 
@@ -53,11 +62,18 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... params
     ) {
-        try (Connection connection = dataSource.getConnection()) {
+        boolean ownsConnection = TransactionSynchronizationManager.getResource(dataSource) == null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return selectOne(connection, sql, rowMapper, params);
-        } catch (SQLException exception) {
-            log.error(exception.getMessage(), exception);
-            throw new DataAccessException(exception);
+        } catch (Throwable exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            if (ownsConnection) {
+                releaseConnection(connection, failure);
+            }
         }
     }
 
@@ -93,10 +109,23 @@ public class JdbcTemplate {
             RowMapper<T> rowMapper,
             Object... params
     ) {
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        boolean ownsConnection = TransactionSynchronizationManager.getResource(dataSource) == null;
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
+            return selectMany(connection, sql, rowMapper, params);
+        } catch (Throwable exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            if (ownsConnection) {
+                releaseConnection(connection, failure);
+            }
+        }
+    }
+
+    private <T> List<T> selectMany(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setParams(params, statement);
             log.debug("query : {}", sql);
 
@@ -110,6 +139,19 @@ public class JdbcTemplate {
         } catch (SQLException exception) {
             log.error(exception.getMessage(), exception);
             throw new DataAccessException(exception);
+        }
+    }
+
+    private void releaseConnection(Connection connection, Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (RuntimeException closeException) {
+            if (failure == null) {
+                throw closeException;
+            }
+            failure.addSuppressed(closeException);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 
