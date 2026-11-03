@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,15 +33,12 @@ class AbstractJdbcTemplateTest {
         protected DataSource getDataSource() {
             return dataSource;
         }
+    };
 
+    private final PreparedStatementSetter setter = new PreparedStatementSetter() {
         @Override
-        protected void setValues(final PreparedStatement statement) throws SQLException {
+        public void setValues(final PreparedStatement statement) throws SQLException {
             statement.setString(1, "gugu");
-        }
-
-        @Override
-        protected Object mapRow(final ResultSet resultSet) {
-            return null;
         }
     };
 
@@ -55,7 +51,7 @@ class AbstractJdbcTemplateTest {
     @Test
     @DisplayName("변경 건수가 0이면 그대로 반환하고 자원을 해제한다")
     void update_with_no_affected_rows() throws SQLException {
-        assertThat(jdbcTemplate.update()).isZero();
+        assertThat(jdbcTemplate.update(setter)).isZero();
 
         verify(statement).close();
         verify(connection).close();
@@ -67,7 +63,7 @@ class AbstractJdbcTemplateTest {
         final var failure = new SQLException("쿼리 준비 실패");
         when(connection.prepareStatement(sql)).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.update())
+        assertThatThrownBy(() -> jdbcTemplate.update(setter))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining(sql)
                 .hasCause(failure);
@@ -80,7 +76,7 @@ class AbstractJdbcTemplateTest {
         final var failure = new IllegalArgumentException("계정 확인 실패");
         doThrow(failure).when(statement).setString(1, "gugu");
 
-        assertThatThrownBy(() -> jdbcTemplate.update()).isSameAs(failure);
+        assertThatThrownBy(() -> jdbcTemplate.update(setter)).isSameAs(failure);
         verify(statement).close();
         verify(connection).close();
     }

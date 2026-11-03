@@ -10,9 +10,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,15 +36,18 @@ class AbstractJdbcTemplateQueryTest {
         protected DataSource getDataSource() {
             return dataSource;
         }
+    };
 
+    private final PreparedStatementSetter setter = new PreparedStatementSetter() {
         @Override
-        protected void setValues(final PreparedStatement statement) throws SQLException {
+        public void setValues(final PreparedStatement statement) throws SQLException {
             statement.setLong(1, 1L);
         }
-
+    };
+    private final RowMapper<String> rowMapper = new RowMapper<>() {
         @Override
-        protected Object mapRow(final ResultSet resultSet) throws SQLException {
-            return resultSet.next() ? resultSet.getString("account") : null;
+        public String mapRow(final ResultSet resultSet) throws SQLException {
+            return resultSet.getString("account");
         }
     };
 
@@ -56,10 +61,10 @@ class AbstractJdbcTemplateQueryTest {
     @Test
     @DisplayName("매핑한 결과를 반환하고 모든 자원을 해제한다")
     void query() throws SQLException {
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        assertThat(jdbcTemplate.query()).isEqualTo("gugu");
+        assertThat(jdbcTemplate.query(setter, rowMapper)).isEqualTo(List.of("gugu"));
 
         verify(statement).setLong(1, 1L);
         verify(resultSet).close();
@@ -73,7 +78,7 @@ class AbstractJdbcTemplateQueryTest {
         final var failure = new SQLException("조회 실행 실패");
         when(statement.executeQuery()).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.query())
+        assertThatThrownBy(() -> jdbcTemplate.query(setter, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining(sql)
                 .hasCause(failure);
@@ -85,10 +90,10 @@ class AbstractJdbcTemplateQueryTest {
     @DisplayName("매핑이 실패하면 SQL과 원인을 보존하고 모든 자원을 해제한다")
     void mapping_failure() throws SQLException {
         final var failure = new SQLException("결과 매핑 실패");
-        when(resultSet.next()).thenReturn(true);
+        when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.query())
+        assertThatThrownBy(() -> jdbcTemplate.query(setter, rowMapper))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining(sql)
                 .hasCause(failure);
@@ -103,8 +108,37 @@ class AbstractJdbcTemplateQueryTest {
         final var failure = new IllegalArgumentException("결과 변환 실패");
         when(resultSet.next()).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.query()).isSameAs(failure);
+        assertThatThrownBy(() -> jdbcTemplate.query(setter, rowMapper)).isSameAs(failure);
         verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("조회 결과가 없으면 빈 목록을 반환한다")
+    void query_with_no_rows() {
+        assertThat(jdbcTemplate.query(rowMapper)).isEqualTo(List.of());
+    }
+
+    @Test
+    @DisplayName("조회한 여러 행을 순서대로 매핑한다")
+    void query_with_multiple_rows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "brown");
+
+        assertThat(jdbcTemplate.query(rowMapper)).isEqualTo(List.of("gugu", "brown"));
+    }
+
+    @Test
+    @DisplayName("조회 값을 설정하다 실패하면 SQL과 원인을 보존하고 자원을 해제한다")
+    void setter_failure() throws SQLException {
+        final var failure = new SQLException("조회 값 설정 실패");
+        doThrow(failure).when(statement).setLong(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(setter, rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining(sql)
+                .hasCause(failure);
         verify(statement).close();
         verify(connection).close();
     }

@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.AbstractJdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
@@ -9,9 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -42,19 +41,14 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
+        }.update(new PreparedStatementSetter() {
             @Override
-            protected void setValues(final PreparedStatement statement) throws SQLException {
+            public void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, user.getAccount());
                 statement.setString(2, user.getPassword());
                 statement.setString(3, user.getEmail());
             }
-
-            @Override
-            protected Object mapRow(final ResultSet resultSet) {
-                return null;
-            }
-        }.update();
+        });
         log.debug("User inserted, affectedRows={}", affectedRows);
     }
 
@@ -69,20 +63,15 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
+        }.update(new PreparedStatementSetter() {
             @Override
-            protected void setValues(final PreparedStatement statement) throws SQLException {
+            public void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, user.getAccount());
                 statement.setString(2, user.getPassword());
                 statement.setString(3, user.getEmail());
                 statement.setLong(4, user.getId());
             }
-
-            @Override
-            protected Object mapRow(final ResultSet resultSet) {
-                return null;
-            }
-        }.update();
+        });
         if (affectedRows == 0) {
             throw new NoSuchElementException("User not found, userId=" + user.getId());
         }
@@ -102,16 +91,7 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
-            @Override
-            protected void setValues(final PreparedStatement statement) {
-            }
-
-            @Override
-            protected Object mapRow(final ResultSet resultSet) throws SQLException {
-                return mapUsers(resultSet);
-            }
-        }.query();
+        }.query(USER_ROW_MAPPER);
         log.debug("Users found, count={}", users.size());
         return users;
     }
@@ -129,17 +109,12 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
+        }.query(new PreparedStatementSetter() {
             @Override
-            protected void setValues(final PreparedStatement statement) throws SQLException {
+            public void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setObject(1, id);
             }
-
-            @Override
-            protected Object mapRow(final ResultSet resultSet) throws SQLException {
-                return mapUsers(resultSet);
-            }
-        }.query();
+        }, USER_ROW_MAPPER);
         final var user = singleResult(users, sql);
         log.debug("User lookup by id, userId={}, found={}", id, user != null);
         return user;
@@ -158,28 +133,15 @@ public class UserDao {
             protected DataSource getDataSource() {
                 return dataSource;
             }
-
+        }.query(new PreparedStatementSetter() {
             @Override
-            protected void setValues(final PreparedStatement statement) throws SQLException {
+            public void setValues(final PreparedStatement statement) throws SQLException {
                 statement.setString(1, account);
             }
-
-            @Override
-            protected Object mapRow(final ResultSet resultSet) throws SQLException {
-                return mapUsers(resultSet);
-            }
-        }.query();
+        }, USER_ROW_MAPPER);
         final var user = singleResult(users, sql);
         log.debug("User lookup by account, found={}", user != null);
         return user;
-    }
-
-    private List<User> mapUsers(final ResultSet resultSet) throws SQLException {
-        final List<User> users = new ArrayList<>();
-        while (resultSet.next()) {
-            users.add(USER_ROW_MAPPER.mapRow(resultSet));
-        }
-        return users;
     }
 
     private User singleResult(final List<User> users, final String sql) {
