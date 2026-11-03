@@ -8,10 +8,12 @@ import java.sql.Connection;
 import java.util.concurrent.CompletableFuture;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 class TransactionSynchronizationManagerTest {
 
     @Test
+    @DisplayName("데이터소스별 연결을 독립적으로 관리한다")
     void bindAndUnbindConnectionsByDataSource() {
         DataSource first = mock(DataSource.class);
         DataSource second = mock(DataSource.class);
@@ -35,6 +37,7 @@ class TransactionSynchronizationManagerTest {
     }
 
     @Test
+    @DisplayName("스레드 간 트랜잭션 연결이 섞이지 않는다")
     void isolateConnectionsBetweenThreads() {
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);

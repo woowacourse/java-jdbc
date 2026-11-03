@@ -10,6 +10,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,6 +33,7 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("비밀번호 변경과 이력 저장을 함께 확정한다")
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
         final UserService userService = new TxUserService(
@@ -50,6 +52,7 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 저장 실패 시 비밀번호 변경도 취소한다")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(DataSourceConfig.getInstance());

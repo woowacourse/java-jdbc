@@ -44,6 +44,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("트랜잭션 내 작업은 하나의 연결을 공유한다")
     void reuseTransactionConnectionForAllOperationsWithoutClosingIt() throws SQLException {
         when(statement.executeQuery()).thenReturn(resultSet);
         DataSourceUtils.getConnection(dataSource);
@@ -62,6 +63,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("SQL 예외가 발생해도 연결을 닫지 않는다")
     void keepTransactionConnectionBoundWhenMappingFails() throws SQLException {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
@@ -80,6 +82,7 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("트랜잭션 없이 실행한 작업은 사용한 연결을 해제한다")
     void standaloneCallClosesConnectionAndUnbindsResource() throws SQLException {
         jdbcTemplate.update("UPDATE users SET name = ?", "피카츄");
 
