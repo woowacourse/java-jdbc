@@ -23,28 +23,32 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindParameters(statement, args);
-            return statement.executeUpdate();
+        return update(sql, statement -> bindParameters(statement, args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        try {
+            return execute(sql, setter, PreparedStatement::executeUpdate);
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute update: " + sql, e);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            bindParameters(statement, args);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, results.size()));
+        return query(sql, statement -> bindParameters(statement, args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        try {
+            return execute(sql, setter, statement -> {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    final List<T> results = new ArrayList<>();
+                    while (resultSet.next()) {
+                        results.add(rowMapper.mapRow(resultSet, results.size()));
+                    }
+                    return results;
                 }
-                return results;
-            }
+            });
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute query: " + sql, e);
         }
@@ -58,9 +62,25 @@ public class JdbcTemplate {
         return results.isEmpty() ? null : results.getFirst();
     }
 
+    private <T> T execute(final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) throws SQLException {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            setter.setValues(statement);
+            return callback.doInPreparedStatement(statement);
+        }
+    }
+
     private void bindParameters(final PreparedStatement statement, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+
+        T doInPreparedStatement(PreparedStatement statement) throws SQLException;
     }
 }

@@ -12,7 +12,9 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +42,64 @@ class JdbcTemplateTest {
         verify(statement).setObject(1, "gugu");
         verify(statement).setObject(2, null);
         verify(statement).setObject(3, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void updateAcceptsTypedParameterSetter() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var count = jdbcTemplate.update(SQL, ps -> ps.setLong(1, 1L));
+
+        assertThat(count).isEqualTo(1);
+        verify(statement).setLong(1, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryAcceptsTypedParameterSetter() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var results = jdbcTemplate.query(SQL,
+                ps -> ps.setLong(1, 1L), (rs, rowNum) -> rs.getString("account"));
+
+        assertThat(results).containsExactly("gugu");
+        verify(statement).setLong(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void parameterBindingFailureClosesResourcesWithoutExecutingUpdate() throws SQLException {
+        final var cause = new SQLException("binding failed");
+        doThrow(cause).when(statement).setObject(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("Failed to execute update: " + SQL)
+                .hasCause(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void uncheckedMappingFailureIsPreservedAndClosesResources() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        final var cause = new IllegalArgumentException("invalid user");
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, (rs, rowNum) -> {
+            throw cause;
+        })).isSameAs(cause);
+
+        verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }
