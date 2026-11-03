@@ -85,6 +85,46 @@ public class JdbcTemplate {
         );
     }
 
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        return queryForObject(
+                connection,
+                sql,
+                pstmt -> setParameters(pstmt, params),
+                rowMapper
+        );
+    }
+
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter,
+            final RowMapper<T> rowMapper
+    ) {
+        return executeQuery(
+                connection,
+                sql,
+                setter,
+                resultSet -> {
+                    if (!resultSet.next()) {
+                        throw new DataAccessException("조회 결과가 없습니다.");
+                    }
+
+                    T result = rowMapper.mapRow(resultSet);
+
+                    if (resultSet.next()) {
+                        throw new DataAccessException("조회 결과는 1행이어야 합니다. 2행 이상 조회되었습니다.");
+                    }
+
+                    return result;
+                }
+        );
+    }
+
     public int update(final String sql, final Object... params) {
         return update(sql, pstmt -> setParameters(pstmt, params));
     }
@@ -144,6 +184,25 @@ public class JdbcTemplate {
             final ResultSetExtractor<T> extractor
     ) {
         return execute(
+                sql,
+                setter,
+                pstmt -> {
+                    try (ResultSet resultSet = pstmt.executeQuery()) {
+                        return extractor.extractData(resultSet);
+                    }
+                }
+
+        );
+    }
+
+    private <T> T executeQuery(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter,
+            final ResultSetExtractor<T> extractor
+    ) {
+        return execute(
+                connection,
                 sql,
                 setter,
                 pstmt -> {

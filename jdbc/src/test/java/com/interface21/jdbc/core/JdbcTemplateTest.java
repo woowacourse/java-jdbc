@@ -45,6 +45,40 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryForObjectWithConnection() throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement pstmt = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
+
+        String sql = "select id from users where account = ?";
+
+        when(connection.prepareStatement(sql)).thenReturn(pstmt);
+        when(pstmt.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getInt("id")).thenReturn(1);
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        RowMapper<Integer> rowMapper = rs -> rs.getInt("id");
+
+        Integer actual = jdbcTemplate.queryForObject(
+                connection,
+                sql,
+                rowMapper,
+                "gugu"
+        );
+
+        assertThat(actual).isEqualTo(1);
+
+        verify(connection).prepareStatement(sql);
+        verify(pstmt).setObject(1, "gugu");
+        verify(resultSet).close();
+        verify(pstmt).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
     void update() throws SQLException {
         // given
         DataSource dataSource = mock(DataSource.class);
