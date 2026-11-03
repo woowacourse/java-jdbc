@@ -28,11 +28,12 @@ public class JdbcTemplate {
     ) {
         return query(sql, pstmt -> setParameters(pstmt, params), rowMapper);
     }
+
     public <T> List<T> query(
             final String sql,
             final PreparedStatementSetter setter,
             final RowMapper<T> rowMapper
-            ) {
+    ) {
         return executeQuery(
                 sql,
                 setter,
@@ -59,12 +60,53 @@ public class JdbcTemplate {
                 rowMapper
         );
     }
+
     public <T> T queryForObject(
             final String sql,
             final PreparedStatementSetter setter,
             final RowMapper<T> rowMapper
-            ) {
+    ) {
         return executeQuery(
+                sql,
+                setter,
+                resultSet -> {
+                    if (!resultSet.next()) {
+                        throw new DataAccessException("조회 결과가 없습니다.");
+                    }
+
+                    T result = rowMapper.mapRow(resultSet);
+
+                    if (resultSet.next()) {
+                        throw new DataAccessException("조회 결과는 1행이어야 합니다. 2행 이상 조회되었습니다.");
+                    }
+
+                    return result;
+                }
+        );
+    }
+
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... params
+    ) {
+        return queryForObject(
+                connection,
+                sql,
+                pstmt -> setParameters(pstmt, params),
+                rowMapper
+        );
+    }
+
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter,
+            final RowMapper<T> rowMapper
+    ) {
+        return executeQuery(
+                connection,
                 sql,
                 setter,
                 resultSet -> {
@@ -91,15 +133,42 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    public int update(
+            final Connection connection,
+            final String sql,
+            final Object... params
+    ) {
+        return update(connection, sql, pstmt -> setParameters(pstmt, params));
+    }
+
+    public int update(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter
+    ) {
+        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
+    }
 
     private <T> T execute(
             final String sql,
             final PreparedStatementSetter setter,
             final PreparedStatementCallback<T> callback
-            ) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    ) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행 실패 : " + sql, e);
+        }
 
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter,
+            final PreparedStatementCallback<T> callback
+    ) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(pstmt);
 
@@ -113,8 +182,27 @@ public class JdbcTemplate {
             final String sql,
             final PreparedStatementSetter setter,
             final ResultSetExtractor<T> extractor
-            ) {
+    ) {
         return execute(
+                sql,
+                setter,
+                pstmt -> {
+                    try (ResultSet resultSet = pstmt.executeQuery()) {
+                        return extractor.extractData(resultSet);
+                    }
+                }
+
+        );
+    }
+
+    private <T> T executeQuery(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementSetter setter,
+            final ResultSetExtractor<T> extractor
+    ) {
+        return execute(
+                connection,
                 sql,
                 setter,
                 pstmt -> {
