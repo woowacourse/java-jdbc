@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +63,23 @@ class JdbcTemplateTest {
 
             verify(pstmt).close();
             verify(conn).close();
+        }
+
+        @Test
+        @DisplayName("외부에서 받은 커넥션으로 실행하고, 커넥션은 닫지 않는다.")
+        void updateWithConnection() throws SQLException {
+            final var externalConn = mock(Connection.class);
+            final var externalPstmt = mock(PreparedStatement.class);
+            when(externalConn.prepareStatement(anyString())).thenReturn(externalPstmt);
+            when(externalPstmt.executeUpdate()).thenReturn(1);
+
+            final var rowCount = jdbcTemplate.update(externalConn, SQL, "password99", 1L);
+
+            verify(externalPstmt).setObject(1, "password99");
+            verify(externalPstmt).setObject(2, 1L);
+            assertThat(rowCount).isEqualTo(1);
+            verify(externalPstmt).close();
+            verify(externalConn, never()).close();
         }
 
         @Test

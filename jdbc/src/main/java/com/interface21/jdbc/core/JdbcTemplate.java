@@ -26,6 +26,10 @@ public class JdbcTemplate {
         return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, argumentsSetter(args), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
