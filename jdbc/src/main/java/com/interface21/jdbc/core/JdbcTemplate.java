@@ -30,11 +30,16 @@ public class JdbcTemplate {
     }
 
     public final <T> List<T> query(String sql, PreparedStatementSetter statementSetter, RowMapper<T> rowMapper) {
-        return execute(sql, statement -> {
-            try (ResultSet resultSet = executeQuery(statementSetter, statement)) {
-                return mapRows(resultSet, rowMapper);
-            }
-        });
+        return execute(sql, queryCallback(statementSetter, rowMapper));
+    }
+
+    public final <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
+        return query(connection, sql, parameterSetter(args), rowMapper);
+    }
+
+    public final <T> List<T> query(Connection connection, String sql, PreparedStatementSetter statementSetter,
+                                 RowMapper<T> rowMapper) {
+        return execute(connection, sql, queryCallback(statementSetter, rowMapper));
     }
 
     public final void update(String sql, Object... args) {
@@ -42,10 +47,15 @@ public class JdbcTemplate {
     }
 
     public final void update(String sql, PreparedStatementSetter statementSetter) {
-        execute(sql, statement -> {
-            statementSetter.setValues(statement);
-            return statement.executeUpdate();
-        });
+        execute(sql, updateCallback(statementSetter));
+    }
+
+    public final void update(Connection connection, String sql, Object... args) {
+        update(connection, sql, parameterSetter(args));
+    }
+
+    public final void update(Connection connection, String sql, PreparedStatementSetter statementSetter) {
+        execute(connection, sql, updateCallback(statementSetter));
     }
 
     protected ResultSet executeQuery(PreparedStatementSetter statementSetter, PreparedStatement statement)
@@ -55,14 +65,48 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback) {
-        try (Connection connection = getDataSource().getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = getDataSource().getConnection()) {
+            return executeStatement(connection, sql, callback);
+        } catch (SQLException e) {
+            throw translateException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> callback) {
+        try {
+            return executeStatement(connection, sql, callback);
+        } catch (SQLException e) {
+            throw translateException(e);
+        }
+    }
+
+    private <T> T executeStatement(Connection connection, String sql, PreparedStatementCallback<T> callback)
+            throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             return callback.execute(statement);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
+    }
+
+    private DataAccessException translateException(SQLException exception) {
+        log.error(exception.getMessage(), exception);
+        return new DataAccessException(exception);
+    }
+
+    private <T> PreparedStatementCallback<List<T>> queryCallback(PreparedStatementSetter statementSetter,
+                                                               RowMapper<T> rowMapper) {
+        return statement -> {
+            try (ResultSet resultSet = executeQuery(statementSetter, statement)) {
+                return mapRows(resultSet, rowMapper);
+            }
+        };
+    }
+
+    private PreparedStatementCallback<Integer> updateCallback(PreparedStatementSetter statementSetter) {
+        return statement -> {
+            statementSetter.setValues(statement);
+            return statement.executeUpdate();
+        };
     }
 
     private PreparedStatementSetter parameterSetter(Object[] args) {

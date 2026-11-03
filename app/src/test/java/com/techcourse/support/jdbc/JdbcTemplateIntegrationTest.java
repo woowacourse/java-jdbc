@@ -11,8 +11,10 @@ import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+@DisplayName("실제 데이터베이스를 사용하는 JdbcTemplate 통합 테스트")
 class JdbcTemplateIntegrationTest {
 
     private static final RowMapper<Product> PRODUCT_MAPPER = row -> new Product(
@@ -35,6 +37,7 @@ class JdbcTemplateIntegrationTest {
     }
 
     @Test
+    @DisplayName("가변 인자로 도메인 객체를 저장하고 수정한 뒤 조회한다")
     void insertsUpdatesAndQueriesDomainObjectsUsingVarargs() {
         jdbcTemplate.update("insert into products values (?, ?, ?, ?)",
                 1L, "keyboard", 1000, "compact");
@@ -49,6 +52,7 @@ class JdbcTemplateIntegrationTest {
     }
 
     @Test
+    @DisplayName("값 설정 람다로 데이터를 저장하고 조회한다")
     void usesSetterLambdasForWritesAndReads() {
         jdbcTemplate.update("insert into products values (?, ?, ?, ?)", statement -> {
             statement.setLong(1, 2L);
@@ -64,6 +68,7 @@ class JdbcTemplateIntegrationTest {
     }
 
     @Test
+    @DisplayName("null 값과 매개변수 없는 SQL을 처리하고 대상이 없는 수정도 허용한다")
     void supportsNullValuesAndStatementsWithoutParameters() {
         jdbcTemplate.update("insert into products values (?, ?, ?, ?)", 3L, "monitor", 3000, null);
 
@@ -78,6 +83,7 @@ class JdbcTemplateIntegrationTest {
     }
 
     @Test
+    @DisplayName("데이터베이스 오류를 데이터 접근 예외로 변환하고 이후 조회도 수행한다")
     void translatesDatabaseErrorsWithoutPreventingSubsequentOperations() {
         jdbcTemplate.update("insert into products values (?, ?, ?, ?)", 1L, "keyboard", 1000, null);
 
@@ -91,6 +97,44 @@ class JdbcTemplateIntegrationTest {
 
         assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER))
                 .containsExactly(new Product(1L, "keyboard", 1000, null));
+    }
+
+    @Test
+    @DisplayName("호출자가 전달한 Connection으로 저장과 조회를 수행하고 직접 커밋한다")
+    void commitsUsingTheConnectionOwnedByTheCaller() throws SQLException {
+        try (final var connection = jdbcTemplate.getDataSource().getConnection()) {
+            connection.setAutoCommit(false);
+
+            jdbcTemplate.update(connection, "insert into products values (?, ?, ?, ?)",
+                    1L, "keyboard", 1000, null);
+            final var products = jdbcTemplate.query(connection, "select * from products", PRODUCT_MAPPER);
+
+            assertThat(products).containsExactly(new Product(1L, "keyboard", 1000, null));
+            assertThat(connection.isClosed()).isFalse();
+            assertThat(connection.getAutoCommit()).isFalse();
+            connection.commit();
+        }
+
+        assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER))
+                .containsExactly(new Product(1L, "keyboard", 1000, null));
+    }
+
+    @Test
+    @DisplayName("외부 Connection의 미커밋 변경은 다른 연결에 보이지 않고 호출자가 직접 롤백한다")
+    void leavesTransactionCompletionToTheCaller() throws SQLException {
+        try (final var connection = jdbcTemplate.getDataSource().getConnection()) {
+            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection, "insert into products values (?, ?, ?, ?)",
+                    1L, "keyboard", 1000, null);
+
+            assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER)).isEmpty();
+            assertThat(jdbcTemplate.query(connection, "select * from products", PRODUCT_MAPPER)).hasSize(1);
+
+            connection.rollback();
+            assertThat(connection.isClosed()).isFalse();
+        }
+
+        assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER)).isEmpty();
     }
 
     private record Product(long id, String name, int price, String description) {
