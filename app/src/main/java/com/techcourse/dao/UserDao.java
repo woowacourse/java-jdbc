@@ -1,16 +1,12 @@
 package com.techcourse.dao;
 
-import com.interface21.dao.IncorrectResultSizeDataAccessException;
-import com.interface21.jdbc.core.AbstractJdbcTemplate;
-import com.interface21.jdbc.core.PreparedStatementSetter;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -24,54 +20,21 @@ public class UserDao {
             resultSet.getString("password"),
             resultSet.getString("email"));
 
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final DataSource dataSource) {
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void insert(final User user) {
-        final var affectedRows = new AbstractJdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "insert into users (account, password, email) values (?, ?, ?)";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        }.update(new PreparedStatementSetter() {
-            @Override
-            public void setValues(final PreparedStatement statement) throws SQLException {
-                statement.setString(1, user.getAccount());
-                statement.setString(2, user.getPassword());
-                statement.setString(3, user.getEmail());
-            }
-        });
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final var affectedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
         log.debug("User inserted, affectedRows={}", affectedRows);
     }
 
     public void update(final User user) {
-        final var affectedRows = new AbstractJdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return "update users set account = ?, password = ?, email = ? where id = ?";
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        }.update(new PreparedStatementSetter() {
-            @Override
-            public void setValues(final PreparedStatement statement) throws SQLException {
-                statement.setString(1, user.getAccount());
-                statement.setString(2, user.getPassword());
-                statement.setString(3, user.getEmail());
-                statement.setLong(4, user.getId());
-            }
-        });
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        final var affectedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
         if (affectedRows == 0) {
             throw new NoSuchElementException("User not found, userId=" + user.getId());
         }
@@ -80,71 +43,22 @@ public class UserDao {
 
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final var users = new AbstractJdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return sql;
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        }.query(USER_ROW_MAPPER);
+        final var users = jdbcTemplate.query(sql, USER_ROW_MAPPER);
         log.debug("Users found, count={}", users.size());
         return users;
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final var users = new AbstractJdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return sql;
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        }.query(new PreparedStatementSetter() {
-            @Override
-            public void setValues(final PreparedStatement statement) throws SQLException {
-                statement.setObject(1, id);
-            }
-        }, USER_ROW_MAPPER);
-        final var user = singleResult(users, sql);
+        final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
         log.debug("User lookup by id, userId={}, found={}", id, user != null);
         return user;
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final var users = new AbstractJdbcTemplate() {
-            @Override
-            protected String createQuery() {
-                return sql;
-            }
-
-            @Override
-            protected DataSource getDataSource() {
-                return dataSource;
-            }
-        }.query(new PreparedStatementSetter() {
-            @Override
-            public void setValues(final PreparedStatement statement) throws SQLException {
-                statement.setString(1, account);
-            }
-        }, USER_ROW_MAPPER);
-        final var user = singleResult(users, sql);
+        final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
         log.debug("User lookup by account, found={}", user != null);
         return user;
-    }
-
-    private User singleResult(final List<User> users, final String sql) {
-        if (users.size() > 1) {
-            throw new IncorrectResultSizeDataAccessException("Expected at most one row but found " + users.size() + ": " + sql);
-        }
-        return users.isEmpty() ? null : users.getFirst();
     }
 }

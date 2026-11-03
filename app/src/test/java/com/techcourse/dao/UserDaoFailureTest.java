@@ -50,7 +50,7 @@ class UserDaoFailureTest {
     @DisplayName("수정할 값을 바인딩하다 실패하면 원인을 보존하고 자원을 해제한다")
     void update_binding_failure() throws SQLException {
         final var failure = new SQLException("값 바인딩 실패");
-        doThrow(failure).when(statement).setString(1, "gugu");
+        doThrow(failure).when(statement).setObject(1, "gugu");
         final var user = new User(1L, "gugu", "password", "gugu@woowahan.com");
 
         assertThatThrownBy(() -> userDao.update(user))
