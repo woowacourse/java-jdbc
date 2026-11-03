@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.AbstractJdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import com.interface21.jdbc.core.SelectJdbcTemplate;
 import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +49,11 @@ public class UserDao {
                 statement.setString(2, user.getPassword());
                 statement.setString(3, user.getEmail());
             }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) {
+                return null;
+            }
         }.update();
         log.debug("User inserted, affectedRows={}", affectedRows);
     }
@@ -73,6 +77,11 @@ public class UserDao {
                 statement.setString(3, user.getEmail());
                 statement.setLong(4, user.getId());
             }
+
+            @Override
+            protected Object mapRow(final ResultSet resultSet) {
+                return null;
+            }
         }.update();
         if (affectedRows == 0) {
             throw new NoSuchElementException("User not found, userId=" + user.getId());
@@ -83,7 +92,7 @@ public class UserDao {
     @SuppressWarnings("unchecked")
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
-        final var users = (List<User>) new SelectJdbcTemplate() {
+        final var users = (List<User>) new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
                 return sql;
@@ -110,7 +119,7 @@ public class UserDao {
     @SuppressWarnings("unchecked")
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        final var users = (List<User>) new SelectJdbcTemplate() {
+        final var users = (List<User>) new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
                 return sql;
@@ -139,7 +148,7 @@ public class UserDao {
     @SuppressWarnings("unchecked")
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        final var users = (List<User>) new SelectJdbcTemplate() {
+        final var users = (List<User>) new AbstractJdbcTemplate() {
             @Override
             protected String createQuery() {
                 return sql;

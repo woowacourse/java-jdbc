@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +38,11 @@ class AbstractJdbcTemplateTest {
         @Override
         protected void setValues(final PreparedStatement statement) throws SQLException {
             statement.setString(1, "gugu");
+        }
+
+        @Override
+        protected Object mapRow(final ResultSet resultSet) {
+            return null;
         }
     };
 

@@ -17,14 +17,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class SelectJdbcTemplateTest {
+class AbstractJdbcTemplateQueryTest {
 
     private final DataSource dataSource = mock(DataSource.class);
     private final Connection connection = mock(Connection.class);
     private final PreparedStatement statement = mock(PreparedStatement.class);
     private final ResultSet resultSet = mock(ResultSet.class);
     private final String sql = "select account from users where id = ?";
-    private final SelectJdbcTemplate jdbcTemplate = new SelectJdbcTemplate() {
+    private final AbstractJdbcTemplate jdbcTemplate = new AbstractJdbcTemplate() {
         @Override
         protected String createQuery() {
             return sql;
