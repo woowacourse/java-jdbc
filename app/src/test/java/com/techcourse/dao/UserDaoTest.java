@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -8,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -43,6 +46,20 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByIdWithNoResult() {
+        assertThatThrownBy(() -> userDao.findById(999L))
+                .isExactlyInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    void findByAccountWithMultipleResults() {
+        userDao.insert(new User("gugu", "password2", "hkkang@woowahan.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
