@@ -34,12 +34,12 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-
         try (Connection connection = dataSource.getConnection()) {
+            boolean originalAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
 
             try {
-                final var user = userDao.findById(connection, id);
+                User user = userDao.findById(connection, id);
                 user.changePassword(newPassword);
 
                 userDao.update(connection, user);
@@ -47,17 +47,20 @@ public class UserService {
 
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
-                rollback(connection, e);
+                rollback(connection, originalAutoCommit, e);
                 throw e;
             }
+
+            connection.setAutoCommit(originalAutoCommit);
         } catch (SQLException e) {
             throw new DataAccessException("트랜잭션 실패 : 비밀번호 변경", e);
         }
     }
 
-    private void rollback(final Connection connection, final Exception cause) {
+    private void rollback(final Connection connection, final boolean originalAutoCommit,final Exception cause) {
         try {
             connection.rollback();
+            connection.setAutoCommit(originalAutoCommit);
         } catch (SQLException e) {
             cause.addSuppressed(e);
         }
