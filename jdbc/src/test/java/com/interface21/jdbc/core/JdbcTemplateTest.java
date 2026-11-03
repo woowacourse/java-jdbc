@@ -92,4 +92,48 @@ class JdbcTemplateTest {
     assertThat(updatedRows).isEqualTo(1);
     verify(preparedStatement).setObject(1, null);
   }
+
+  @Test
+  void updateWithSuppliedConnectionDoesNotCloseConnection() throws SQLException {
+    when(preparedStatement.executeUpdate()).thenReturn(1);
+
+    final int updatedRows = jdbcTemplate.update(
+        connection, "update users set password = ?", "new-password");
+
+    assertThat(updatedRows).isEqualTo(1);
+    verify(preparedStatement).close();
+    verify(connection, never()).close();
+    verify(dataSource, never()).getConnection();
+  }
+
+  @Test
+  void updateFailureKeepsSuppliedConnectionOpenForRollback() throws SQLException {
+    final SQLException cause = new SQLException("SQL execution failed");
+    when(preparedStatement.executeUpdate()).thenThrow(cause);
+
+    assertThatThrownBy(() -> jdbcTemplate.update(
+        connection, "update users set password = ?", "new-password"))
+        .isInstanceOf(DataAccessException.class)
+        .hasCause(cause);
+
+    verify(preparedStatement).close();
+    verify(connection, never()).close();
+    verify(dataSource, never()).getConnection();
+  }
+
+  @Test
+  void queryForObjectClosesResultSetButKeepsSuppliedConnectionOpen() throws SQLException {
+    when(preparedStatement.executeQuery()).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(true, false);
+    when(resultSet.getString("account")).thenReturn("gugu");
+
+    final String account = jdbcTemplate.queryForObject(
+        connection, "select account from users", row -> row.getString("account"));
+
+    assertThat(account).isEqualTo("gugu");
+    verify(resultSet).close();
+    verify(preparedStatement).close();
+    verify(connection, never()).close();
+    verify(dataSource, never()).getConnection();
+  }
 }
