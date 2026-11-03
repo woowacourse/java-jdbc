@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,18 +26,8 @@ public class JdbcTemplate {
         return execute(sql, statement -> bindParameters(statement, args), PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, statement -> bindParameters(statement, args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, statement -> bindParameters(statement, args), statement -> mapRows(statement, rowMapper));
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql,
-                           final RowMapper<T> rowMapper, final Object... args) {
-        return execute(connection, sql, statement -> bindParameters(statement, args),
-                statement -> mapRows(statement, rowMapper));
     }
 
     /**
@@ -53,11 +44,6 @@ public class JdbcTemplate {
         return singleResult(query(sql, rowMapper, args));
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql,
-                                final RowMapper<T> rowMapper, final Object... args) {
-        return singleResult(query(connection, sql, rowMapper, args));
-    }
-
     private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row but found " + results.size());
@@ -68,11 +54,20 @@ public class JdbcTemplate {
     private <T> T execute(final String sql,
                           final PreparedStatementSetter statementSetter,
                           final PreparedStatementCallback<T> callback) {
-        try (final var connection = dataSource.getConnection()) {
-            return execute(connection, sql, statementSetter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        final T result;
+        try {
+            result = execute(connection, sql, statementSetter, callback);
+        } catch (RuntimeException | Error e) {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
         }
+        DataSourceUtils.releaseConnection(connection, dataSource);
+        return result;
     }
 
     private <T> T execute(final Connection connection, final String sql,
