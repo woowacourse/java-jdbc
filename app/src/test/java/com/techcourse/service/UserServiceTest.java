@@ -7,8 +7,10 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,13 +33,16 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("비밀번호 변경과 이력 저장을 함께 확정한다")
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, userHistoryDao), DataSourceConfig.getInstance());
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
 
         final var actual = userService.findById(1L);
 
@@ -47,16 +52,19 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 저장 실패 시 비밀번호 변경도 취소한다")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(DataSourceConfig.getInstance());
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, userHistoryDao), DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
 
         final var actual = userService.findById(1L);
 
@@ -64,4 +72,5 @@ class UserServiceTest {
         assertThat(jdbcTemplate.selectMany("select id from user_history",
                 resultSet -> resultSet.getLong("id"))).isEmpty();
     }
+
 }
