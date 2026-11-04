@@ -22,8 +22,16 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            update(conn, sql, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public void update(final Connection connection, final String sql, final Object... args) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setArgs(pstmt, args);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -50,9 +58,9 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             setArgs(pstmt, args);
 
             try (ResultSet resultSet = pstmt.executeQuery()) {
@@ -66,6 +74,15 @@ public class JdbcTemplate {
                 }
                 return result;
             }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        try (Connection conn = dataSource.getConnection()) {
+            return queryForObject(conn, sql, rowMapper, args);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
