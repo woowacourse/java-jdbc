@@ -66,6 +66,8 @@ class UserDaoTest {
 
         final var actual = userDao.findById(1L);
 
+        assertThat(actual.getAccount()).isEqualTo(user.getAccount());
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(actual.getEmail()).isEqualTo(user.getEmail());
     }
 }

@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -13,6 +14,8 @@ import org.slf4j.LoggerFactory;
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -36,28 +39,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        jdbcTemplate.update(
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
+        jdbcTemplate.update(UPDATE_SQL, createUpdateSetter(user));
     }
 
     public void update(final User user, final Connection connection) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
-        jdbcTemplate.update(
-                connection,
-                sql,
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        );
+        jdbcTemplate.update(connection, UPDATE_SQL, createUpdateSetter(user));
     }
 
     public List<User> findAll() {
@@ -66,18 +52,25 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, this::mapUser, id);
+        return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, this::mapUser, id);
     }
 
     public User findById(final Long id, final Connection connection) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(connection, sql, this::mapUser, id);
+        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, this::mapUser, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, this::mapUser, account);
+    }
+
+    private PreparedStatementSetter createUpdateSetter(final User user) {
+        return pstmt -> {
+            pstmt.setObject(1, user.getAccount());
+            pstmt.setObject(2, user.getPassword());
+            pstmt.setObject(3, user.getEmail());
+            pstmt.setObject(4, user.getId());
+        };
     }
 
     private User mapUser(ResultSet rs) throws SQLException {
