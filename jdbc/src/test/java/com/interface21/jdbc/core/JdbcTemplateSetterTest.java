@@ -100,7 +100,7 @@ class JdbcTemplateSetterTest {
     @Test
     @DisplayName("조회 결과가 없으면 빈 목록을 반환한다")
     void query_with_no_rows() {
-        assertThat(jdbcTemplate.query(sql, rowMapper)).isEqualTo(List.of());
+        assertThat(jdbcTemplate.query(sql, setter, rowMapper)).isEqualTo(List.of());
     }
 
     @Test
@@ -109,7 +109,7 @@ class JdbcTemplateSetterTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "brown");
 
-        assertThat(jdbcTemplate.query(sql, rowMapper)).isEqualTo(List.of("gugu", "brown"));
+        assertThat(jdbcTemplate.query(sql, setter, rowMapper)).isEqualTo(List.of("gugu", "brown"));
     }
 
     @Test
