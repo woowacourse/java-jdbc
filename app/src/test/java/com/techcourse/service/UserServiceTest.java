@@ -45,8 +45,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -68,8 +68,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
 
         final var originalPassword = userService.findById(1L).getPassword();
         final var newPassword = "newPassword";
@@ -88,8 +88,8 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollbackWhenHistoryInsertFails() {
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, new UserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
         final var originalPassword = userService.findById(1L).getPassword();
 
         final var failure = assertThrows(DataAccessException.class,
@@ -116,8 +116,8 @@ class UserServiceTest {
         doThrow(originalException).when(transactionHistoryDao)
                 .log(any(UserHistory.class));
         doThrow(rollbackException).when(connection).rollback();
-        final var userService = new UserService(
-                dataSource, transactionUserDao, transactionHistoryDao);
+        final var appUserService = new AppUserService(transactionUserDao, transactionHistoryDao);
+        final var userService = new TxUserService(dataSource, appUserService);
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "new-password", "gugu"));
