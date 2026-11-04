@@ -39,12 +39,16 @@ public class JdbcTemplate {
     }
 
     /**
-     * 결과가 없으면 null, 여러 행이면 첫 번째 결과를 반환한다.
+     * 결과가 없으면 null을, 한 건이면 매핑한 객체를 반환한다.
+     * 두 건 이상이면 DataAccessException을 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         final var rows = query(sql, rowMapper, parameters);
         if (rows.isEmpty()) {
             return null;
+        }
+        if (rows.size() > 1) {
+            throw new DataAccessException("단건 조회에서 %d건이 반환되었습니다.".formatted(rows.size()));
         }
         return rows.getFirst();
     }

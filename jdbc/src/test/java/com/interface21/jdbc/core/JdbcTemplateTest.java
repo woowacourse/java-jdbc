@@ -233,7 +233,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단건 조회 결과가 여러 개면 기존 계약대로 첫 결과를 반환한다")
+    @DisplayName("단건 조회 결과가 두 건 이상이면 데이터 접근 예외를 던진다")
     void queryForObjectWithMultipleRows() throws SQLException {
         // given
         final var sql = "select name from people";
@@ -241,10 +241,10 @@ class JdbcTemplateTest {
         when(resultSet.getString("name")).thenReturn("gugu", "other");
 
         // when
-        final var name = jdbcTemplate.queryForObject(sql, NAME_MAPPER);
+        final var thrown = catchThrowable(() -> jdbcTemplate.queryForObject(sql, NAME_MAPPER));
 
         // then
-        assertThat(name).isEqualTo("gugu");
+        assertThat(thrown).isInstanceOf(DataAccessException.class);
     }
 
     @Test
