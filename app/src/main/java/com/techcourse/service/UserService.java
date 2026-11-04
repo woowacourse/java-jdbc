@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -30,21 +32,33 @@ public class UserService {
     userDao.insert(user);
   }
 
-  public void changePassword(final long id, final String newPassword, final String createBy) {
-    try (Connection connection = dataSource.getConnection()) {
+  public void changePassword(final long id, final String newPassword, final String createdBy) {
+    if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+      throw new IllegalStateException("A transaction is already active for this DataSource");
+    }
+    final Connection connection = DataSourceUtils.getConnection(dataSource);
+    Throwable originalException = null;
+    try {
+      TransactionSynchronizationManager.bindResource(dataSource, connection);
       connection.setAutoCommit(false);
-      try {
-        final User user = userDao.findById(connection, id);
-        user.changePassword(newPassword);
-        userDao.update(connection, user);
-        userHistoryDao.log(connection, new UserHistory(user, createBy));
-        connection.commit();
-      } catch (SQLException | RuntimeException | Error exception) {
-        rollback(connection, exception);
-        throw exception;
-      }
+      final User user = userDao.findById(id);
+      user.changePassword(newPassword);
+      userDao.update(user);
+      userHistoryDao.log(new UserHistory(user, createdBy));
+      connection.commit();
     } catch (SQLException exception) {
-      throw new DataAccessException("Failed to complete password change transaction", exception);
+      final DataAccessException dataAccessException =
+          new DataAccessException("Failed to complete password change transaction", exception);
+      originalException = dataAccessException;
+      rollback(connection, dataAccessException);
+      throw dataAccessException;
+    } catch (RuntimeException | Error exception) {
+      originalException = exception;
+      rollback(connection, exception);
+      throw exception;
+    } finally {
+      TransactionSynchronizationManager.unbindResource(dataSource);
+      DataSourceUtils.releaseConnection(connection, dataSource, originalException);
     }
   }
 

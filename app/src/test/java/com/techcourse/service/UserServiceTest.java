@@ -8,6 +8,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -60,6 +60,8 @@ class UserServiceTest {
                 "select created_by from user_history where user_id = ?",
                 resultSet -> resultSet.getString("created_by"), 1L);
         assertThat(author).isEqualTo(createBy);
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance()))
+                .isNull();
     }
 
     @Test
@@ -80,6 +82,8 @@ class UserServiceTest {
 
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
         assertThat(historyPasswords()).isEmpty();
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance()))
+                .isNull();
     }
 
     @Test
@@ -94,6 +98,8 @@ class UserServiceTest {
         assertThat(failure).hasCauseInstanceOf(SQLException.class);
         assertThat(userService.findById(1L).getPassword()).isEqualTo(originalPassword);
         assertThat(historyPasswords()).isEmpty();
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance()))
+                .isNull();
     }
 
     @Test
@@ -105,10 +111,10 @@ class UserServiceTest {
         final var originalException = new DataAccessException("History logging failed");
         final var rollbackException = new SQLException("Rollback failed");
         when(dataSource.getConnection()).thenReturn(connection);
-        when(transactionUserDao.findById(connection, 1L))
+        when(transactionUserDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
         doThrow(originalException).when(transactionHistoryDao)
-                .log(eq(connection), any(UserHistory.class));
+                .log(any(UserHistory.class));
         doThrow(rollbackException).when(connection).rollback();
         final var userService = new UserService(
                 dataSource, transactionUserDao, transactionHistoryDao);
@@ -120,6 +126,7 @@ class UserServiceTest {
         assertThat(actual.getSuppressed()).containsExactly(rollbackException);
         verify(connection).close();
         verify(connection, never()).setAutoCommit(true);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     private List<String> historyPasswords() {
