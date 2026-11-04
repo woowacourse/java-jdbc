@@ -128,22 +128,6 @@ class UserDaoTest {
     }
 
     @Test
-    @DisplayName("주입받은 JdbcTemplate으로 저장과 조회를 수행한다")
-    void use_injected_jdbc_template() {
-        final var dao = new UserDao(jdbcTemplate);
-        dao.insert(new User("template", "before", "template@woowahan.com"));
-        final var user = dao.findByAccount("template");
-        user.changePassword("after");
-
-        dao.update(user);
-
-        assertThat(dao.findById(user.getId()))
-                .usingRecursiveComparison()
-                .isEqualTo(new User(2L, "template", "after", "template@woowahan.com"));
-        assertThat(dao.findAll()).hasSize(2);
-    }
-
-    @Test
     @DisplayName("계정에 SQL 구문이 포함되어도 문자열 값으로 처리한다")
     void bind_account_parameter() {
         final var account = "gugu' OR '1' = '1";
