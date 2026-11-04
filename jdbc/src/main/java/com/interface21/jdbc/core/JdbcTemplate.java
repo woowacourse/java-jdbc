@@ -30,7 +30,11 @@ public class JdbcTemplate {
     }
 
     public int update(Connection connection, String sql, Object... args) {
-        return execute(connection, sql, createPreparedStatementSetter(args), PreparedStatement::executeUpdate);
+        return update(connection, sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(Connection connection, String sql, PreparedStatementSetter setter) {
+        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> T queryForObject(

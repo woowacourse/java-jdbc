@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -25,13 +26,14 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setup() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         jdbcTemplate = new JdbcTemplate(dataSource);
@@ -96,7 +98,59 @@ class JdbcTemplateTest {
         verify(suppliedConnection, never()).close();
         verify(suppliedConnection, never()).commit();
         verify(suppliedConnection, never()).rollback();
-        verifyNoInteractions(connection);
+        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verifyNoInteractions(dataSource, connection);
+    }
+
+    @Test
+    @DisplayName("외부 Connection에서도 Setter로 SQL 타입을 지정하고 연결을 유지한다")
+    void updateWithSuppliedConnectionUsesCustomSetter() throws SQLException {
+        Connection suppliedConnection = mock(Connection.class);
+        String sql = "update events set description = ?, event_date = ?";
+        Date date = Date.valueOf("2026-01-01");
+        when(suppliedConnection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(2);
+
+        int affectedRows = jdbcTemplate.update(suppliedConnection, sql, pstmt -> {
+            pstmt.setNull(1, Types.VARCHAR);
+            pstmt.setDate(2, date);
+        });
+
+        assertThat(affectedRows).isEqualTo(2);
+        verify(suppliedConnection).prepareStatement(sql);
+        var order = inOrder(statement);
+        order.verify(statement).setNull(1, Types.VARCHAR);
+        order.verify(statement).setDate(2, date);
+        order.verify(statement).executeUpdate();
+        order.verify(statement).close();
+        verify(suppliedConnection, never()).close();
+        verify(suppliedConnection, never()).commit();
+        verify(suppliedConnection, never()).rollback();
+        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verifyNoInteractions(dataSource, connection);
+    }
+
+    @Test
+    @DisplayName("외부 Connection의 Setter 바인딩이 실패하면 Statement만 닫고 원인을 보존한다")
+    void setterBindingFailureWithSuppliedConnectionClosesOnlyStatement() throws SQLException {
+        Connection suppliedConnection = mock(Connection.class);
+        SQLException cause = new SQLException("Setter 바인딩 실패");
+        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        doThrow(cause).when(statement).setNull(1, Types.VARCHAR);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                suppliedConnection, "update events set description = ?",
+                pstmt -> pstmt.setNull(1, Types.VARCHAR)))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(suppliedConnection, never()).close();
+        verify(suppliedConnection, never()).commit();
+        verify(suppliedConnection, never()).rollback();
+        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verifyNoInteractions(dataSource, connection);
     }
 
     @Test
@@ -114,8 +168,10 @@ class JdbcTemplateTest {
 
         verify(statement).close();
         verify(suppliedConnection, never()).close();
+        verify(suppliedConnection, never()).commit();
         verify(suppliedConnection, never()).rollback();
-        verifyNoInteractions(connection);
+        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verifyNoInteractions(dataSource, connection);
     }
 
     @Test
