@@ -3,10 +3,14 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class UserDao {
+
+    private static final String UPDATE_SQL = "update users set account=?, password=?, email=? where users.id=?";
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -24,8 +28,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account=?, password=?, email=? where users.id=?";
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(UPDATE_SQL, updateParameters(user));
+    }
+
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(connection, UPDATE_SQL, updateParameters(user));
     }
 
     public List<User> findAll() {
@@ -34,21 +41,27 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        List<User> result = jdbcTemplate.query(sql, userRowMapper(), id);
-        if (result.isEmpty()) {
-            throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
-        }
-        return result.getFirst();
+        return requireUser(jdbcTemplate.query(FIND_BY_ID_SQL, userRowMapper(), id));
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        return requireUser(jdbcTemplate.query(connection, FIND_BY_ID_SQL, userRowMapper(), id));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        List<User> result = jdbcTemplate.query(sql, userRowMapper(), account);
-        if (result.isEmpty()) {
+        return requireUser(jdbcTemplate.query(sql, userRowMapper(), account));
+    }
+
+    private User requireUser(final List<User> users) {
+        if (users.isEmpty()) {
             throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
         }
-        return result.getFirst();
+        return users.getFirst();
+    }
+
+    private Object[] updateParameters(final User user) {
+        return new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
     }
 
     private RowMapper<User> userRowMapper() {
