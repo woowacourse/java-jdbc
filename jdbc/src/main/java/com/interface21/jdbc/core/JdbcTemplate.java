@@ -22,28 +22,15 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public void update(String sql, Object ... args)  {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
-            executeSql(args, pstmt);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
-        }
+    public int update(String sql, Object... args) {
+        return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object ... args) {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
-            setArgs(args, pstmt);
-            try(ResultSet rs = pstmt.executeQuery()) {
-                return mapRows(rs, rowMapper);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
-        }
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(sql, argumentsSetter(args), pstmt -> mapRows(pstmt, rowMapper));
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object ... args) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... args) {
         List<T> results = query(sql, rowMapper, args);
         if (results.isEmpty()) {
             return null;
@@ -51,27 +38,36 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
+    private <T> T execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> action) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
+            setter.setValues(pstmt);
+            return action.execute(pstmt);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        }
+    }
+
     private PreparedStatement getPreparedStatement(Connection conn, String sql) throws SQLException {
         log.debug("query : {}", sql);
         return conn.prepareStatement(sql);
     }
 
-    private <T> List<T> mapRows(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
-        List<T> results = new ArrayList<>();
-        while(rs.next()){
-            results.add(rowMapper.mapRow(rs));
-        }
-        return results;
+    private PreparedStatementSetter argumentsSetter(Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 
-    private void executeSql(Object[] args, PreparedStatement pstmt) throws SQLException {
-        setArgs(args, pstmt);
-        pstmt.executeUpdate();
-    }
-
-    private void setArgs(Object[] args, PreparedStatement pstmt) throws SQLException {
-        for(int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    private <T> List<T> mapRows(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
         }
     }
 }
