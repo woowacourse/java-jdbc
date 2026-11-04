@@ -23,24 +23,27 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, argumentSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter pstmtSetter) {
+        return execute(sql, pstmtSetter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs, rowNum++));
-                }
-                return results;
-            }
-        }, args);
+        return query(sql, argumentSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper<T> rowMapper) {
+        return execute(sql, pstmtSetter, pstmt -> mapRows(pstmt, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, argumentSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter pstmtSetter, final RowMapper<T> rowMapper) {
+        final List<T> results = query(sql, pstmtSetter, rowMapper);
         if (results.isEmpty()) {
             return null;
         }
@@ -50,11 +53,11 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementSetter pstmtSetter, final StatementCallback<T> callback) {
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-            setParameters(pstmt, args);
+            pstmtSetter.setValues(pstmt);
             return callback.doInStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
@@ -62,10 +65,23 @@ public class JdbcTemplate {
         }
     }
 
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
+    private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet rs = pstmt.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            int rowNum = 0;
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs, rowNum++));
+            }
+            return results;
         }
+    }
+
+    private PreparedStatementSetter argumentSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     @FunctionalInterface
