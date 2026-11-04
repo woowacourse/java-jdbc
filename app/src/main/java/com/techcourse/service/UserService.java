@@ -1,32 +1,58 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 
 public class UserService {
 
-    private final UserDao userDao;
-    private final UserHistoryDao userHistoryDao;
+  private final DataSource dataSource;
+  private final UserDao userDao;
+  private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this.userDao = userDao;
-        this.userHistoryDao = userHistoryDao;
-    }
+  public UserService(
+      final DataSource dataSource, final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    this.dataSource = dataSource;
+    this.userDao = userDao;
+    this.userHistoryDao = userHistoryDao;
+  }
 
-    public User findById(final long id) {
-        return userDao.findById(id);
-    }
+  public User findById(final long id) {
+    return userDao.findById(id);
+  }
 
-    public void insert(final User user) {
-        userDao.insert(user);
-    }
+  public void insert(final User user) {
+    userDao.insert(user);
+  }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+  public void changePassword(final long id, final String newPassword, final String createBy) {
+    try (Connection connection = dataSource.getConnection()) {
+      connection.setAutoCommit(false);
+      try {
+        final User user = userDao.findById(connection, id);
         user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        userDao.update(connection, user);
+        userHistoryDao.log(connection, new UserHistory(user, createBy));
+        connection.commit();
+      } catch (SQLException | RuntimeException | Error exception) {
+        rollback(connection, exception);
+        throw exception;
+      }
+    } catch (SQLException exception) {
+      throw new DataAccessException("Failed to complete password change transaction", exception);
     }
+  }
+
+  private void rollback(final Connection connection, final Throwable originalException) {
+    try {
+      connection.rollback();
+    } catch (SQLException rollbackException) {
+      originalException.addSuppressed(rollbackException);
+    }
+  }
 }
