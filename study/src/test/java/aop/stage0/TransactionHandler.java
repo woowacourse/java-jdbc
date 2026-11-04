@@ -1,5 +1,6 @@
 package aop.stage0;
 
+import aop.Transactional;
 import aop.service.UserService;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -22,6 +23,10 @@ public class TransactionHandler implements InvocationHandler {
      */
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        if (!isTransactional(method)) {
+            return invokeWithoutTransaction(method, args);
+        }
+
         final var status = transactionManager.getTransaction(new DefaultTransactionDefinition());
         try {
             final var ret = method.invoke(target, args);
@@ -29,6 +34,19 @@ public class TransactionHandler implements InvocationHandler {
             return ret;
         } catch (InvocationTargetException e) {
             transactionManager.rollback(status);
+            throw e.getTargetException();
+        }
+    }
+
+    private boolean isTransactional(Method method) throws NoSuchMethodException {
+        Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
+        return targetMethod.isAnnotationPresent(Transactional.class);
+    }
+
+    private Object invokeWithoutTransaction(Method method, Object[] args) throws Throwable {
+        try {
+            return method.invoke(target, args);
+        } catch (InvocationTargetException e) {
             throw e.getTargetException();
         }
     }
