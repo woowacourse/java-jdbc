@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +51,11 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -130,10 +137,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_Connection으로_갱신하면_새_Connection을_얻지_않고_닫지도_않는다() throws SQLException {
-        jdbcTemplate.update(connection, UPDATE_SQL, "password99", 1L);
+    void 트랜잭션에_바인딩된_Connection이_있으면_그_Connection으로_실행하고_닫지_않는다() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update(UPDATE_SQL, "password99", 1L);
 
         verify(dataSource, never()).getConnection();
+        verify(connection).prepareStatement(UPDATE_SQL);
         verify(preparedStatement).close();
         verify(connection, never()).close();
     }
@@ -175,6 +185,16 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL, "gugu"))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining(INSERT_SQL)
+                .hasCause(sqlException);
+    }
+
+    @Test
+    void Connection을_얻지_못하면_DataAccessException이_발생한다() throws SQLException {
+        final var sqlException = new SQLException("connection refused");
+        when(dataSource.getConnection()).thenThrow(sqlException);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL, "gugu"))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(sqlException);
     }
 
