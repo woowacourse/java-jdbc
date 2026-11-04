@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,7 +27,7 @@ public class JdbcTemplate {
             PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
             executeSql(args, pstmt);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 
@@ -38,7 +39,7 @@ public class JdbcTemplate {
                 return mapRows(rs, rowMapper);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 

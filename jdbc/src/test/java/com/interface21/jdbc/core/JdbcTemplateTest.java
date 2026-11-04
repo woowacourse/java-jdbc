@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,6 +45,7 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
         verify(pstmt).close();
@@ -72,7 +74,8 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rs -> {
             throw cause;
-        })).hasCause(cause);
+        })).isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
 
         verify(rs).close();
         verify(pstmt).close();
