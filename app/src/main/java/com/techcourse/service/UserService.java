@@ -39,16 +39,17 @@ public class UserService {
                 userDao.update(conn, user);
                 userHistoryDao.log(conn, new UserHistory(user, createBy));
                 conn.commit();
-            } catch (final RuntimeException e) {
+            }
+            catch (final RuntimeException | SQLException e) {
                 try {
                     conn.rollback();
+                    conn.setAutoCommit(true);
                 } catch (final SQLException rollbackEx) {
                     e.addSuppressed(rollbackEx);
                 }
                 throw e;
-            } finally {
-                conn.setAutoCommit(true);
             }
+            conn.setAutoCommit(true);
         } catch (final SQLException e) {
             throw new DataAccessException(e);
         }
