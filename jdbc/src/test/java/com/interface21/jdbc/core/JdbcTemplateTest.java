@@ -94,6 +94,14 @@ class JdbcTemplateTest {
 
     @Test
     void emptyQueryReturnsEmptyList() throws SQLException {
+        assertThat(jdbcTemplate.query(SQL, ACCOUNT_MAPPER, 7L)).isEmpty();
+
+        verify(statement).setObject(1, 7L);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void emptyQueryWithCustomSetterReturnsEmptyList() throws SQLException {
         assertThat(jdbcTemplate.query(SQL, stmt -> stmt.setLong(1, 7L), ACCOUNT_MAPPER)).isEmpty();
 
         verify(statement).setLong(1, 7L);
@@ -102,6 +110,17 @@ class JdbcTemplateTest {
 
     @Test
     void queryForObjectReturnsSingleRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.queryForObject(SQL, ACCOUNT_MAPPER, 7L)).isEqualTo("gugu");
+
+        verify(statement).setObject(1, 7L);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectWithCustomSetterReturnsSingleRow() throws SQLException {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
