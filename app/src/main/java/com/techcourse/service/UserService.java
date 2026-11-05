@@ -1,18 +1,24 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
+    private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
+        this.dataSource = dataSource;
     }
 
     public User findById(final long id) {
@@ -24,9 +30,24 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-        userDao.update(user);
-        userHistoryDao.log(new UserHistory(user, createBy));
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                final var user = userDao.findById(id, connection);
+                user.changePassword(newPassword);
+                userDao.update(user, connection);
+                userHistoryDao.log(new UserHistory(user, createBy), connection);
+                connection.commit();
+            } catch (SQLException | RuntimeException e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackException) {
+                    e.addSuppressed(rollbackException);
+                }
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("비밀번호 변경 트랜잭션 처리에 실패했습니다.", e);
+        }
     }
 }
