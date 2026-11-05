@@ -10,11 +10,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +53,34 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateAcceptsCustomSetter() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        assertThat(jdbcTemplate.update("update users set account = ? where id = ?", stmt -> {
+            stmt.setNull(1, Types.VARCHAR);
+            stmt.setLong(2, 7L);
+        })).isEqualTo(1);
+
+        verify(statement).setNull(1, Types.VARCHAR);
+        verify(statement).setLong(2, 7L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void setterFailurePreservesCauseAndClosesResources() throws SQLException {
+        final var cause = new SQLException("binding failed");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users where id = ?", stmt -> {
+            throw cause;
+        })).isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement, never()).executeUpdate();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     void queryMapsEveryRow() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "other");
@@ -66,6 +96,15 @@ class JdbcTemplateTest {
     void emptyQueryReturnsEmptyList() throws SQLException {
         assertThat(jdbcTemplate.query(SQL, ACCOUNT_MAPPER, 7L)).isEmpty();
 
+        verify(statement).setObject(1, 7L);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void emptyQueryWithCustomSetterReturnsEmptyList() throws SQLException {
+        assertThat(jdbcTemplate.query(SQL, stmt -> stmt.setLong(1, 7L), ACCOUNT_MAPPER)).isEmpty();
+
+        verify(statement).setLong(1, 7L);
         verifyQueryResourcesClosed();
     }
 
@@ -75,6 +114,19 @@ class JdbcTemplateTest {
         when(resultSet.getString("account")).thenReturn("gugu");
 
         assertThat(jdbcTemplate.queryForObject(SQL, ACCOUNT_MAPPER, 7L)).isEqualTo("gugu");
+
+        verify(statement).setObject(1, 7L);
+        verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void queryForObjectWithCustomSetterReturnsSingleRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.queryForObject(SQL, stmt -> stmt.setLong(1, 7L), ACCOUNT_MAPPER))
+                .isEqualTo("gugu");
+        verify(statement).setLong(1, 7L);
         verifyQueryResourcesClosed();
     }
 
