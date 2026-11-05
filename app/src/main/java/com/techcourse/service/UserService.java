@@ -4,27 +4,28 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.util.Optional;
 
 public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
     }
 
-    public User findById(final long id) {
+    public Optional<User> findById(final long id) {
         return userDao.findById(id);
     }
 
-    public void insert(final User user) {
+    public void insert(User user) {
         userDao.insert(user);
     }
 
-    public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
+    public void changePassword(final long id, String newPassword, String createBy) {
+        User user = findById(id).orElseThrow(() -> new UserNotFoundException(id));
         user.changePassword(newPassword);
         userDao.update(user);
         userHistoryDao.log(new UserHistory(user, createBy));
