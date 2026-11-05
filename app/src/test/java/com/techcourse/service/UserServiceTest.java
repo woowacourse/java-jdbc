@@ -5,7 +5,6 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import java.sql.SQLException;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
@@ -82,8 +81,8 @@ class UserServiceTest {
     void rollbackAfterHistoryWasInserted() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance()) {
             @Override
-            public void log(final Connection connection, final UserHistory history) {
-                super.log(connection, history);
+            public void log(final UserHistory history) {
+                super.log(history);
                 throw new DataAccessException("이력 저장 후 실패");
             }
         };

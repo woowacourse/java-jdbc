@@ -1,11 +1,13 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -15,8 +17,8 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,9 +40,18 @@ class UserServiceTransactionTest {
         final var userDao = mock(UserDao.class);
         userHistoryDao = mock(UserHistoryDao.class);
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(connection, 1L))
+        when(userDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+            return null;
+        }).when(userDao).update(any(User.class));
         userService = new UserService(userDao, userHistoryDao, dataSource);
+    }
+
+    @AfterEach
+    void hasNoBoundConnectionAfterTransaction() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
@@ -58,7 +69,7 @@ class UserServiceTransactionTest {
     @Test
     void closesConnectionAfterRollbackAndPreservesOriginalException() throws SQLException {
         final var failure = new DataAccessException("이력 저장 실패");
-        doThrow(failure).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(failure).when(userHistoryDao).log(any(UserHistory.class));
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -89,7 +100,7 @@ class UserServiceTransactionTest {
     void preservesRollbackFailureAndStillClosesConnection() throws SQLException {
         final var failure = new DataAccessException("이력 저장 실패");
         final var rollbackFailure = new SQLException("롤백 실패");
-        doThrow(failure).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(failure).when(userHistoryDao).log(any(UserHistory.class));
         doThrow(rollbackFailure).when(connection).rollback();
 
         final var actual = assertThrows(DataAccessException.class,
@@ -97,6 +108,50 @@ class UserServiceTransactionTest {
 
         assertThat(actual).isSameAs(failure);
         assertThat(actual.getSuppressed()).containsExactly(rollbackFailure);
+        verify(connection).close();
+        verify(connection, never()).commit();
+    }
+
+    @Test
+    void closesAndUnbindsConnectionWhenTransactionSetupFails() throws SQLException {
+        final var failure = new SQLException("트랜잭션 시작 실패");
+        doThrow(failure).when(connection).setAutoCommit(false);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).hasCause(failure);
+        verify(connection).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void preservesBusinessFailureWhenConnectionReleaseAlsoFails() throws SQLException {
+        final var failure = new DataAccessException("이력 저장 실패");
+        final var closeFailure = new SQLException("커넥션 반납 실패");
+        doThrow(failure).when(userHistoryDao).log(any(UserHistory.class));
+        doThrow(closeFailure).when(connection).close();
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(failure);
+        assertThat(actual.getSuppressed()).hasSize(1);
+        assertThat(actual.getSuppressed()[0]).hasCause(closeFailure);
+        verify(connection).rollback();
+    }
+
+    @Test
+    void rollsBackAndUnbindsConnectionWhenErrorOccurs() throws SQLException {
+        final var failure = new AssertionError("이력 저장 실패");
+        doThrow(failure).when(userHistoryDao).log(any(UserHistory.class));
+
+        final var actual = assertThrows(AssertionError.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(failure);
+        verify(connection).rollback();
         verify(connection).close();
         verify(connection, never()).commit();
     }
