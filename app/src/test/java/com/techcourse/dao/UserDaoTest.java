@@ -28,7 +28,10 @@ class UserDaoTest {
 
     @Test
     void 사용자_목록을_조회하면_저장한_사용자가_모두_포함된다() {
+        // given
         userDao.insert(new User("other", "secret", "other@example.com"));
+
+        // then
         assertThat(userDao.findAll()).extracting(User::getAccount).containsExactlyInAnyOrder("gugu", "other");
     }
 
@@ -58,7 +61,10 @@ class UserDaoTest {
 
     @Test
     void 사용자를_저장하면_계정과_비밀번호와_이메일을_다시_조회할_수_있다() {
+        // when
         userDao.insert(new User("other", "secret", "other@example.com"));
+
+        // then
         assertThat(userDao.findByAccount("other")).hasValueSatisfying(user -> {
             assertThat(user.getAccount()).isEqualTo("other");
             assertThat(user.getPassword()).isEqualTo("secret");
@@ -68,10 +74,14 @@ class UserDaoTest {
 
     @Test
     void 비밀번호를_수정한_뒤_다시_조회하면_새_비밀번호가_저장돼_있다() {
+        // given
         User user = userDao.findById(1L).orElseThrow();
         user.changePassword("changed");
+
+        // when
         final int updatedCount = userDao.update(user);
 
+        // then
         assertThat(updatedCount).isEqualTo(1);
         assertThat(userDao.findById(1L)).hasValueSatisfying(saved -> {
             assertThat(saved.getPassword()).isEqualTo("changed");
@@ -82,10 +92,13 @@ class UserDaoTest {
 
     @Test
     void 존재하지_않는_사용자를_수정하면_0을_반환한다() {
+        // given
         User user = new User(999L, "missing", "secret", "missing@example.com");
 
+        // when
         final int updatedCount = userDao.update(user);
 
+        // then
         assertThat(updatedCount).isZero();
     }
 

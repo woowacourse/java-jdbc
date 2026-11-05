@@ -15,12 +15,17 @@ class UserHistoryDaoTest {
 
     @Test
     void 사용자_이력을_저장하면_사용자_정보와_변경_시각과_변경자를_다시_조회할_수_있다() {
+        // given
         JdbcTemplate template = new JdbcTemplate(DataSourceConfig.getInstance());
         template.update("drop table if exists user_history");
         template.update("drop table if exists users");
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         UserHistory history = new UserHistory(new User(42L, "account", "password", "email"), "admin");
+
+        // when
         new UserHistoryDao(template).log(history);
+
+        // then
         assertThat(template.query("select * from user_history", row -> {
             assertThat(row.getLong("user_id")).isEqualTo(42L);
             assertThat(row.getString("account")).isEqualTo("account");
