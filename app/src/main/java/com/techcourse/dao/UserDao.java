@@ -33,12 +33,11 @@ public class UserDao {
         requireOneRow(affectedRows);
     }
 
-    public void update(User user) {
+    public int update(User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        final int affectedRows = jdbcTemplate.update(
+        return jdbcTemplate.update(
             sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
         );
-        requireOneRow(affectedRows);
     }
 
     public List<User> findAll() {

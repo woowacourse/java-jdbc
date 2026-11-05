@@ -70,7 +70,9 @@ class UserDaoTest {
     void 비밀번호를_수정한_뒤_다시_조회하면_새_비밀번호가_저장돼_있다() {
         User user = userDao.findById(1L).orElseThrow();
         user.changePassword("changed");
-        userDao.update(user);
+        final int updatedCount = userDao.update(user);
+
+        assertThat(updatedCount).isEqualTo(1);
         assertThat(userDao.findById(1L)).hasValueSatisfying(saved -> {
             assertThat(saved.getPassword()).isEqualTo("changed");
             assertThat(saved.getAccount()).isEqualTo("gugu");
@@ -79,9 +81,12 @@ class UserDaoTest {
     }
 
     @Test
-    void 존재하지_않는_사용자를_수정하면_예외를_던진다() {
-        assertThatThrownBy(() -> userDao.update(new User(999L, "missing", "secret", "missing@example.com")))
-            .isInstanceOf(DataAccessException.class);
+    void 존재하지_않는_사용자를_수정하면_0을_반환한다() {
+        User user = new User(999L, "missing", "secret", "missing@example.com");
+
+        final int updatedCount = userDao.update(user);
+
+        assertThat(updatedCount).isZero();
     }
 
     @Test

@@ -27,7 +27,10 @@ public class UserService {
     public void changePassword(final long id, String newPassword, String createBy) {
         User user = findById(id).orElseThrow(() -> new UserNotFoundException(id));
         user.changePassword(newPassword);
-        userDao.update(user);
+        final int updatedCount = userDao.update(user);
+        if (updatedCount == 0) {
+            throw new UserNotFoundException(id);
+        }
         userHistoryDao.log(new UserHistory(user, createBy));
     }
 }
