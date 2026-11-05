@@ -5,12 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,7 +37,7 @@ class UserServiceTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
         userDao = new UserDao(jdbcTemplate);
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
-        userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        userService = new TxUserService(new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)), dataSource);
     }
 
     @AfterEach
@@ -52,6 +52,7 @@ class UserServiceTest {
 
         userService.changePassword(1L, "new-password", "admin");
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("new-password");
         final var histories = histories();
         assertThat(histories).hasSize(1);
@@ -68,7 +69,7 @@ class UserServiceTest {
     @DisplayName("이력 저장 중 예외가 발생하면 비밀번호 변경을 롤백한다")
     void testTransactionRollback() {
         final var failingHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var service = new UserService(dataSource, userDao, failingHistoryDao);
+        final var service = new TxUserService(new AppUserService(userDao, failingHistoryDao), dataSource);
 
         assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
                 .isInstanceOf(DataAccessException.class);
@@ -92,12 +93,12 @@ class UserServiceTest {
         final var failure = new IllegalStateException("이력 저장 후 실패");
         final var failingHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory userHistory) {
-                super.log(connection, userHistory);
+            public void log(final UserHistory userHistory) {
+                super.log(userHistory);
                 throw failure;
             }
         };
-        final var service = new UserService(dataSource, userDao, failingHistoryDao);
+        final var service = new TxUserService(new AppUserService(userDao, failingHistoryDao), dataSource);
 
         assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
                 .isSameAs(failure);
@@ -115,7 +116,27 @@ class UserServiceTest {
         assertPasswordAndHistoryUnchanged();
     }
 
+    @Test
+    @DisplayName("성공과 실패를 연속 호출해도 이전 트랜잭션의 연결을 재사용하지 않는다")
+    void startsFreshTransactionsAfterSuccessAndFailure() {
+        userService.changePassword(1L, "first-password", "admin");
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "failed-password", null))
+                .isInstanceOf(DataAccessException.class);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("first-password");
+
+        userService.changePassword(1L, "second-password", "admin");
+
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("second-password");
+        assertThat(histories()).extracting(PasswordHistory::password)
+                .containsExactlyInAnyOrder("first-password", "second-password");
+    }
+
     private void assertPasswordAndHistoryUnchanged() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
         assertThat(histories()).isEmpty();
     }
