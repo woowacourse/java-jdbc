@@ -20,25 +20,17 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            bindParameters(statement, params);
-            return statement.executeUpdate();
-        } catch (SQLException exception) {
-            throw new DataAccessException("Failed to execute update: " + sql, exception);
-        }
+        return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            bindParameters(statement, params);
+        PreparedStatementCallback<List<T>> queryAction = statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 return mapRows(resultSet, rowMapper);
             }
-        } catch (SQLException exception) {
-            throw new DataAccessException("Failed to execute query: " + sql, exception);
-        }
+        };
+
+        return execute(sql, queryAction, params);
     }
 
     public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
@@ -47,6 +39,16 @@ public class JdbcTemplate {
             throw new IncorrectResultSizeDataAccessException(results.size());
         }
         return results.stream().findFirst();
+    }
+
+    private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            bindParameters(statement, params);
+            return callback.execute(statement);
+        } catch (SQLException exception) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, exception);
+        }
     }
 
     private void bindParameters(PreparedStatement statement, Object[] params) throws SQLException {
@@ -61,5 +63,10 @@ public class JdbcTemplate {
             results.add(rowMapper.mapRow(resultSet));
         }
         return results;
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
