@@ -13,25 +13,32 @@ public abstract class DataSourceUtils {
     private DataSourceUtils() {}
 
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
+        if (dataSource == null) {
+            throw new IllegalArgumentException("DataSource must not be null");
+        }
         Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection != null) {
             return connection;
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null) {
+            return;
+        }
+        if (connection == TransactionSynchronizationManager.getResource(dataSource)) {
+            return;
+        }
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
         }
     }
 }
