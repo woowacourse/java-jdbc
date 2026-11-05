@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,20 +24,22 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             bindParameters(statement, args);
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             bindParameters(statement, args);
@@ -50,6 +53,8 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,42 @@ class JdbcTemplateTest {
     private PreparedStatement statement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    @DisplayName("여러 SQL 작업이 동기화된 연결을 재사용하고 연결은 닫지 않는다")
+    void reusesBoundConnectionAcrossUpdateAndQuery() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update(INSERT_SQL, "gugu", "password", "email");
+        jdbcTemplate.query(SELECT_SQL, rs -> rs.getString("account"));
+
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(resultSet).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    @DisplayName("SQL 실패 시에도 동기화된 연결은 트랜잭션 종료까지 유지한다")
+    void keepsBoundConnectionOpenOnFailure() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var cause = new SQLException("실행 실패");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
 
     @BeforeEach
     void setUp() throws SQLException {

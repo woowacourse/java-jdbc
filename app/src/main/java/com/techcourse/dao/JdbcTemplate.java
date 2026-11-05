@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +22,12 @@ public abstract class JdbcTemplate {
     }
 
     public final void update(final String sql, final PreparedStatementSetter setter) {
-        try (Connection connection = getDataSource().getConnection()) {
+        final var dataSource = getDataSource();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             update(connection, sql, setter);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -52,10 +55,12 @@ public abstract class JdbcTemplate {
 
     public final <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                                  final RowMapper<T> rowMapper) {
-        try (Connection connection = getDataSource().getConnection()) {
+        final var dataSource = getDataSource();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return query(connection, sql, setter, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
