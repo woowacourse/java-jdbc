@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,39 +31,12 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return update(connection, sql, preparedStatement -> setParameters(preparedStatement, parameters));
-    }
-
-    public int update(
-            final Connection connection,
-            final String sql,
-            final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
         return query(sql, rowMapper, preparedStatement -> setParameters(preparedStatement, parameters));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter setter) {
         return execute(sql, setter, preparedStatement -> mapResultSetToObject(preparedStatement, rowMapper));
-    }
-
-    public <T> List<T> query(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... parameters) {
-        return query(connection, sql, rowMapper, preparedStatement -> setParameters(preparedStatement, parameters));
-    }
-
-    public <T> List<T> query(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, preparedStatement -> mapResultSetToObject(preparedStatement, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -73,26 +47,27 @@ public class JdbcTemplate {
         return results.isEmpty() ? null : results.get(0);
     }
 
-    public <T> T queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... parameters) {
-        List<T> results = query(connection, sql, rowMapper, parameters);
-        if (results.size() > 1) {
-            throw new DataAccessException("Expected at most one row, but got " + results.size());
-        }
-        return results.isEmpty() ? null : results.get(0);
-    }
-
     private <T> T execute(
             final String sql,
             final PreparedStatementSetter setter,
             final PreparedStatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } catch (RuntimeException | Error exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException | Error releaseException) {
+                if (failure != null) {
+                    failure.addSuppressed(releaseException);
+                } else {
+                    throw releaseException;
+                }
+            }
         }
     }
 

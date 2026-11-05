@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -84,6 +85,31 @@ class JdbcTemplateTest {
                 .hasCause(cause);
 
         verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionAcquisitionFailureIsADataAccessExceptionAndPreservesCause() throws SQLException {
+        final var cause = new SQLException("Could not obtain connection");
+        when(dataSource.getConnection()).thenThrow(cause);
+        final var jdbcTemplate = new JdbcTemplate(dataSource);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set name = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+    }
+
+    @Test
+    void connectionCloseFailureIsADataAccessExceptionAndPreservesCause() throws SQLException {
+        final var jdbcTemplate = jdbcTemplate();
+        final var cause = new SQLException("Could not close connection");
+        doThrow(cause).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set name = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
         verify(preparedStatement).close();
         verify(connection).close();
     }
