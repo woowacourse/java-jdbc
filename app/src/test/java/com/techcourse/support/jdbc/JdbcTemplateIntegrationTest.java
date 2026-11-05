@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.SQLException;
 import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
@@ -135,6 +136,53 @@ class JdbcTemplateIntegrationTest {
         }
 
         assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Connection을 전달하지 않아도 같은 스레드의 저장과 조회가 하나의 커밋에 참여한다")
+    void commitsUsingThreadBoundConnection() throws SQLException {
+        final var dataSource = jdbcTemplate.getDataSource();
+        try (final var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                jdbcTemplate.update("insert into products values (?, ?, ?, ?)", 1L, "keyboard", 1000, null);
+                assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER))
+                        .containsExactly(new Product(1L, "keyboard", 1000, null));
+                assertThat(connection.isClosed()).isFalse();
+                connection.commit();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        }
+
+        assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER))
+                .containsExactly(new Product(1L, "keyboard", 1000, null));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    @DisplayName("동기화된 Connection의 저장은 별도 연결에 보이지 않고 롤백 후 사라진다")
+    void rollsBackUsingThreadBoundConnection() throws SQLException {
+        final var dataSource = jdbcTemplate.getDataSource();
+        try (final var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                jdbcTemplate.update("insert into products values (?, ?, ?, ?)", 1L, "keyboard", 1000, null);
+                try (final var otherConnection = dataSource.getConnection()) {
+                    assertThat(jdbcTemplate.query(otherConnection, "select * from products", PRODUCT_MAPPER)).isEmpty();
+                }
+                assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER)).hasSize(1);
+                connection.rollback();
+                assertThat(connection.isClosed()).isFalse();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        }
+
+        assertThat(jdbcTemplate.query("select * from products", PRODUCT_MAPPER)).isEmpty();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     private record Product(long id, String name, int price, String description) {

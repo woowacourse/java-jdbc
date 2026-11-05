@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,6 +22,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -485,6 +487,43 @@ class JdbcTemplateTest {
                 .hasCause(failure);
 
         verifyNoInteractions(preparedStatement, resultSet);
+        verifyCallerConnectionWasNotManaged();
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
+    @Test
+    @DisplayName("조회 시 스레드에 연결된 Connection을 재사용하고 조회 자원만 닫는다")
+    void queryReusesBoundConnectionWithoutClosingIt() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("keyboard");
+
+        final var rows = jdbcTemplate.query("select name from products", row -> row.getString("name"));
+
+        assertThat(rows).containsExactly("keyboard");
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        verifyCallerConnectionWasNotManaged();
+    }
+
+    @Test
+    @DisplayName("수정에 실패해도 스레드에 연결된 Connection의 롤백과 종료는 소유자에게 맡긴다")
+    void updateFailureLeavesBoundConnectionForTransactionOwner() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var failure = new SQLException("수정 실패");
+        when(preparedStatement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update products set price = ?", 1000))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(preparedStatement).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
         verifyCallerConnectionWasNotManaged();
     }
 
