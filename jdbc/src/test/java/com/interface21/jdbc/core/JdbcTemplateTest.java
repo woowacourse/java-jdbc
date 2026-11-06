@@ -38,6 +38,16 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
+    @DisplayName("update는 영향받은 행 수를 반환한다")
+    @Test
+    void update() throws SQLException {
+        when(pstmt.executeUpdate()).thenReturn(3);
+
+        int affectedRows = jdbcTemplate.update("update users set account = ?", "gugu");
+
+        assertThat(affectedRows).isEqualTo(3);
+    }
+
     @DisplayName("update 실행 중 예외가 발생해도 자원을 반납하고 원인 예외를 보존한다")
     @Test
     void updateFail() throws SQLException {
