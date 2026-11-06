@@ -3,6 +3,7 @@ package aop.stage1;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
@@ -22,11 +23,23 @@ public class TransactionAdvice  implements MethodInterceptor {
         final Object ret;
         try {
             ret = invocation.proceed();
-        } catch (RuntimeException e) {
-            transactionManager.rollback(status);
+        } catch (Throwable e) {
+            completeAfterThrowing(status, e);
             throw e;
         }
         transactionManager.commit(status);
         return ret;
+    }
+
+    private void completeAfterThrowing(TransactionStatus status, Throwable e) {
+        if (isRollbackTarget(e)) {
+            transactionManager.rollback(status);
+            return;
+        }
+        transactionManager.commit(status);
+    }
+
+    private boolean isRollbackTarget(Throwable e) {
+        return e instanceof RuntimeException || e instanceof Error;
     }
 }
