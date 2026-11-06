@@ -32,7 +32,7 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         if (TransactionSynchronizationManager.getResource(dataSource) != null) {
-            userService.changePassword(id, newPassword, createdBy);
+            participateInTransaction(id, newPassword, createdBy);
             return;
         }
 
@@ -56,6 +56,15 @@ public class TxUserService implements UserService {
         }
     }
 
+    private void participateInTransaction(final long id, final String newPassword, final String createdBy) {
+        try {
+            userService.changePassword(id, newPassword, createdBy);
+        } catch (RuntimeException | Error e) {
+            TransactionSynchronizationManager.setRollbackOnly(dataSource);
+            throw e;
+        }
+    }
+
     private void executeTransaction(final Connection connection, final long id,
                                     final String newPassword, final String createdBy) {
         final boolean autoCommit;
@@ -71,6 +80,9 @@ public class TxUserService implements UserService {
         boolean completed = false;
         try {
             userService.changePassword(id, newPassword, createdBy);
+            if (TransactionSynchronizationManager.isRollbackOnly(dataSource)) {
+                throw new DataAccessException("Transaction marked as rollback-only by a participating operation");
+            }
             connection.commit();
             completed = true;
         } catch (SQLException e) {
