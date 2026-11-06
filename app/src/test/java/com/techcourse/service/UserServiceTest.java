@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -48,6 +49,16 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        final var histories = jdbcTemplate.query(
+                "select user_id, password, created_by, created_at from user_history",
+                rs -> new HistoryRow(rs.getLong("user_id"), rs.getString("password"),
+                        rs.getString("created_by"), rs.getObject("created_at", LocalDateTime.class)));
+        assertThat(histories).singleElement().satisfies(history -> {
+            assertThat(history.userId()).isEqualTo(1L);
+            assertThat(history.password()).isEqualTo(newPassword);
+            assertThat(history.createdBy()).isEqualTo(createBy);
+            assertThat(history.createdAt()).isNotNull();
+        });
     }
 
     @Test
@@ -65,5 +76,11 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo("password");
+        final Long historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history", rs -> rs.getLong(1));
+        assertThat(historyCount).isZero();
+    }
+
+    private record HistoryRow(long userId, String password, String createdBy, LocalDateTime createdAt) {
     }
 }
