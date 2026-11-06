@@ -46,7 +46,7 @@ class UserServiceTransactionTest {
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
             return null;
         }).when(userDao).update(any(User.class));
-        userService = new AppUserService(userDao, userHistoryDao, dataSource);
+        userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
     }
 
     @AfterEach

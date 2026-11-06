@@ -29,15 +29,15 @@ class UserServiceTest {
             statement.executeUpdate("truncate table users restart identity");
         }
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        final UserService userService = new AppUserService(userDao,
-                new UserHistoryDao(DataSourceConfig.getInstance()), DataSourceConfig.getInstance());
+        final UserService userService = new TxUserService(new AppUserService(userDao,
+                new UserHistoryDao(DataSourceConfig.getInstance())));
         userService.save(user);
     }
 
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
-        final UserService userService = new AppUserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -65,7 +65,7 @@ class UserServiceTest {
     void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(DataSourceConfig.getInstance());
-        final UserService userService = new AppUserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -88,7 +88,7 @@ class UserServiceTest {
                 throw new DataAccessException("이력 저장 후 실패");
             }
         };
-        final UserService service = new AppUserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService service = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         assertThrows(DataAccessException.class,
                 () -> service.changePassword(1L, "newPassword", "gugu"));
