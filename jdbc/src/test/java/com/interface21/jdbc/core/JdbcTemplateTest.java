@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,6 +38,16 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
+    @DisplayName("update는 영향받은 행 수를 반환한다")
+    @Test
+    void update() throws SQLException {
+        when(pstmt.executeUpdate()).thenReturn(3);
+
+        int affectedRows = jdbcTemplate.update("update users set account = ?", "gugu");
+
+        assertThat(affectedRows).isEqualTo(3);
+    }
+
     @DisplayName("update 실행 중 예외가 발생해도 자원을 반납하고 원인 예외를 보존한다")
     @Test
     void updateFail() throws SQLException {
@@ -44,6 +55,7 @@ class JdbcTemplateTest {
         when(pstmt.executeUpdate()).thenThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
         verify(pstmt).close();
@@ -72,7 +84,8 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rs -> {
             throw cause;
-        })).hasCause(cause);
+        })).isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
 
         verify(rs).close();
         verify(pstmt).close();
