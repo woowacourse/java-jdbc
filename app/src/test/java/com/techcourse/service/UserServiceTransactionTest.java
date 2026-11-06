@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -12,10 +13,12 @@ import org.mockito.InOrder;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -24,21 +27,36 @@ import static org.mockito.Mockito.when;
 
 class UserServiceTransactionTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private UserHistoryDao userHistoryDao;
     private UserService userService;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         final UserDao userDao = mock(UserDao.class);
         connection = mock(Connection.class);
         userHistoryDao = mock(UserHistoryDao.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L)).thenReturn(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
+        when(userDao.findById(1L)).thenReturn(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
         userService = new UserService(dataSource, userDao, userHistoryDao);
+    }
+
+    @Test
+    void 비밀번호를_변경하는_동안_커넥션을_바인딩하고_끝나면_해제한다() {
+        final AtomicReference<Connection> boundConnection = new AtomicReference<>();
+        doAnswer(invocation -> {
+            boundConnection.set(TransactionSynchronizationManager.getResource(dataSource));
+            return null;
+        }).when(userHistoryDao).log(any(UserHistory.class));
+
+        userService.changePassword(1L, "newPassword", "gugu");
+
+        assertThat(boundConnection.get()).isSameAs(connection);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
@@ -54,7 +72,7 @@ class UserServiceTransactionTest {
 
     @Test
     void 롤백한_뒤에도_원래_autoCommit_상태로_복구하고_커넥션을_닫는다() throws SQLException {
-        doThrow(new DataAccessException()).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(new DataAccessException()).when(userHistoryDao).log(any(UserHistory.class));
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
                 .isInstanceOf(DataAccessException.class);
@@ -67,11 +85,12 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    void autoCommit_복구에_실패해도_커넥션을_닫는다() throws SQLException {
+    void autoCommit_복구에_실패해도_바인딩을_해제하고_커넥션을_닫는다() throws SQLException {
         doThrow(new SQLException("restore failed")).when(connection).setAutoCommit(true);
 
         userService.changePassword(1L, "newPassword", "gugu");
 
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 }

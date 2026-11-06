@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -35,15 +37,16 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final Connection connection = getConnection();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         final boolean autoCommit = getAutoCommit(connection);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
             connection.setAutoCommit(false);
 
-            final var user = userDao.findById(connection, id);
+            final var user = findById(id);
             user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
 
             connection.commit();
         } catch (SQLException e) {
@@ -53,16 +56,9 @@ public class UserService {
             rollback(connection, e);
             throw e;
         } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
             restoreAutoCommit(connection, autoCommit);
-            close(connection);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -70,7 +66,7 @@ public class UserService {
         try {
             return connection.getAutoCommit();
         } catch (SQLException e) {
-            close(connection);
+            DataSourceUtils.releaseConnection(connection, dataSource);
             throw new DataAccessException(e);
         }
     }
@@ -86,14 +82,6 @@ public class UserService {
     private void restoreAutoCommit(final Connection connection, final boolean autoCommit) {
         try {
             connection.setAutoCommit(autoCommit);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    private void close(final Connection connection) {
-        try {
-            connection.close();
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
         }
