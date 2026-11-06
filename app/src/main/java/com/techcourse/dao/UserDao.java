@@ -19,9 +19,6 @@ public class UserDao {
             rs.getString("email")
     );
 
-    private static final String UPDATE_SQL =
-            "update users set account = ?, password = ?, email = ? where id = ?";
-
     private final JdbcTemplate jdbcTemplate;
 
     public UserDao(final JdbcTemplate jdbcTemplate) {
@@ -38,7 +35,9 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        jdbcTemplate.update(UPDATE_SQL,
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
@@ -46,7 +45,9 @@ public class UserDao {
     }
 
     public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, UPDATE_SQL,
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+
+        jdbcTemplate.update(connection, sql,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
