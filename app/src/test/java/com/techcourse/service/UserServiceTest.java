@@ -8,6 +8,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -45,8 +45,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -60,14 +60,16 @@ class UserServiceTest {
                 "select created_by from user_history where user_id = ?",
                 resultSet -> resultSet.getString("created_by"), 1L);
         assertThat(author).isEqualTo(createBy);
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance()))
+                .isNull();
     }
 
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
 
         final var originalPassword = userService.findById(1L).getPassword();
         final var newPassword = "newPassword";
@@ -80,12 +82,14 @@ class UserServiceTest {
 
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
         assertThat(historyPasswords()).isEmpty();
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance()))
+                .isNull();
     }
 
     @Test
     void testTransactionRollbackWhenHistoryInsertFails() {
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, new UserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(DataSourceConfig.getInstance(), appUserService);
         final var originalPassword = userService.findById(1L).getPassword();
 
         final var failure = assertThrows(DataAccessException.class,
@@ -94,6 +98,8 @@ class UserServiceTest {
         assertThat(failure).hasCauseInstanceOf(SQLException.class);
         assertThat(userService.findById(1L).getPassword()).isEqualTo(originalPassword);
         assertThat(historyPasswords()).isEmpty();
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance()))
+                .isNull();
     }
 
     @Test
@@ -105,13 +111,13 @@ class UserServiceTest {
         final var originalException = new DataAccessException("History logging failed");
         final var rollbackException = new SQLException("Rollback failed");
         when(dataSource.getConnection()).thenReturn(connection);
-        when(transactionUserDao.findById(connection, 1L))
+        when(transactionUserDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
         doThrow(originalException).when(transactionHistoryDao)
-                .log(eq(connection), any(UserHistory.class));
+                .log(any(UserHistory.class));
         doThrow(rollbackException).when(connection).rollback();
-        final var userService = new UserService(
-                dataSource, transactionUserDao, transactionHistoryDao);
+        final var appUserService = new AppUserService(transactionUserDao, transactionHistoryDao);
+        final var userService = new TxUserService(dataSource, appUserService);
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "new-password", "gugu"));
@@ -120,6 +126,7 @@ class UserServiceTest {
         assertThat(actual.getSuppressed()).containsExactly(rollbackException);
         verify(connection).close();
         verify(connection, never()).setAutoCommit(true);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     private List<String> historyPasswords() {

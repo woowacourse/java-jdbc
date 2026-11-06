@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -10,11 +11,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +33,11 @@ class JdbcTemplateTest {
   void setUp() throws SQLException {
     when(dataSource.getConnection()).thenReturn(connection);
     when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+  }
+
+  @AfterEach
+  void tearDown() {
+    TransactionSynchronizationManager.unbindResource(dataSource);
   }
 
   @Test
@@ -94,11 +102,12 @@ class JdbcTemplateTest {
   }
 
   @Test
-  void updateWithSuppliedConnectionDoesNotCloseConnection() throws SQLException {
+  void updateWithBoundConnectionDoesNotCloseConnection() throws SQLException {
+    TransactionSynchronizationManager.bindResource(dataSource, connection);
     when(preparedStatement.executeUpdate()).thenReturn(1);
 
     final int updatedRows = jdbcTemplate.update(
-        connection, "update users set password = ?", "new-password");
+        "update users set password = ?", "new-password");
 
     assertThat(updatedRows).isEqualTo(1);
     verify(preparedStatement).close();
@@ -107,12 +116,13 @@ class JdbcTemplateTest {
   }
 
   @Test
-  void updateFailureKeepsSuppliedConnectionOpenForRollback() throws SQLException {
+  void updateFailureKeepsBoundConnectionOpenForRollback() throws SQLException {
+    TransactionSynchronizationManager.bindResource(dataSource, connection);
     final SQLException cause = new SQLException("SQL execution failed");
     when(preparedStatement.executeUpdate()).thenThrow(cause);
 
     assertThatThrownBy(() -> jdbcTemplate.update(
-        connection, "update users set password = ?", "new-password"))
+        "update users set password = ?", "new-password"))
         .isInstanceOf(DataAccessException.class)
         .hasCause(cause);
 
@@ -122,18 +132,35 @@ class JdbcTemplateTest {
   }
 
   @Test
-  void queryForObjectClosesResultSetButKeepsSuppliedConnectionOpen() throws SQLException {
+  void queryForObjectClosesResultSetButKeepsBoundConnectionOpen() throws SQLException {
+    TransactionSynchronizationManager.bindResource(dataSource, connection);
     when(preparedStatement.executeQuery()).thenReturn(resultSet);
     when(resultSet.next()).thenReturn(true, false);
     when(resultSet.getString("account")).thenReturn("gugu");
 
     final String account = jdbcTemplate.queryForObject(
-        connection, "select account from users", row -> row.getString("account"));
+        "select account from users", row -> row.getString("account"));
 
     assertThat(account).isEqualTo("gugu");
     verify(resultSet).close();
     verify(preparedStatement).close();
     verify(connection, never()).close();
     verify(dataSource, never()).getConnection();
+  }
+
+  @Test
+  void closingFailureDoesNotReplaceSqlFailure() throws SQLException {
+    final SQLException sqlException = new SQLException("SQL execution failed");
+    final SQLException closeException = new SQLException("Connection close failed");
+    when(preparedStatement.executeUpdate()).thenThrow(sqlException);
+    doThrow(closeException).when(connection).close();
+
+    final DataAccessException actual = assertThrows(
+        DataAccessException.class, () -> jdbcTemplate.update("update users set password = ?", "new"));
+
+    assertThat(actual).hasCause(sqlException);
+    assertThat(actual.getSuppressed()).hasSize(1);
+    assertThat(actual.getSuppressed()[0]).hasCause(closeException);
+    assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
   }
 }
