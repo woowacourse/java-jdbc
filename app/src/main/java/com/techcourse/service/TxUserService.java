@@ -1,9 +1,9 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.config.DataSourceConfig;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -56,20 +56,43 @@ public class TxUserService implements UserService {
 
     private void changePasswordInTransaction(final Connection connection, final long id,
                                              final String newPassword, final String createBy) throws SQLException {
+        final boolean autoCommit = connection.getAutoCommit();
         connection.setAutoCommit(false);
+        boolean completed = false;
+        Throwable failure = null;
         try {
             userService.changePassword(id, newPassword, createBy);
             connection.commit();
+            completed = true;
         } catch (SQLException | RuntimeException | Error e) {
-            rollback(connection, e);
+            failure = e;
+            completed = rollback(connection, e);
             throw e;
+        } finally {
+            if (completed) {
+                restoreAutoCommit(connection, autoCommit, failure);
+            }
         }
     }
 
-    private void rollback(final Connection connection, final Throwable originalException) {
+    private boolean rollback(final Connection connection, final Throwable originalException) {
         try {
             connection.rollback();
+            return true;
         } catch (SQLException e) {
+            originalException.addSuppressed(e);
+            return false;
+        }
+    }
+
+    private void restoreAutoCommit(final Connection connection, final boolean autoCommit,
+                                   final Throwable originalException) throws SQLException {
+        try {
+            connection.setAutoCommit(autoCommit);
+        } catch (SQLException e) {
+            if (originalException == null) {
+                throw e;
+            }
             originalException.addSuppressed(e);
         }
     }
