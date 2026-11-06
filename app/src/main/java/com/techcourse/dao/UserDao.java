@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -17,6 +18,9 @@ public class UserDao {
             rs.getString("password"),
             rs.getString("email")
     );
+
+    private static final String UPDATE_SQL =
+            "update users set account = ?, password = ?, email = ? where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -34,13 +38,15 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set " +
-                "account =?, " +
-                "password = ?, " +
-                "email = ? " +
-                "where id = ?";
+        jdbcTemplate.update(UPDATE_SQL,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId());
+    }
 
-        jdbcTemplate.update(sql,
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(connection, UPDATE_SQL,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
