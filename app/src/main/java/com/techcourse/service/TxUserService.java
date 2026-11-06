@@ -3,7 +3,6 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -14,10 +13,6 @@ public class TxUserService implements UserService {
 
     private final DataSource dataSource;
     private final UserService userService;
-
-    public TxUserService(final UserService userService) {
-        this(DataSourceConfig.getInstance(), userService);
-    }
 
     public TxUserService(final DataSource dataSource, final UserService userService) {
         this.dataSource = dataSource;
