@@ -171,4 +171,70 @@ class JdbcTemplateTest {
         verify(statement).close();
         verify(connection).close();
     }
+
+    @Test
+    void updateWithExternalConnectionLeavesConnectionOpen() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(connection, "update users set password = ? where id = ?",
+                "new-password", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setObject(1, "new-password");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void queryWithExternalConnectionClosesOnlyQueryResources() throws SQLException {
+        final var resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var accounts = jdbcTemplate.query(connection, "select account from users where id = ?",
+                row -> row.getString("account"), 1L);
+
+        assertThat(accounts).containsExactly("gugu");
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void updateWithExternalConnectionLeavesConnectionOpenOnFailure() throws SQLException {
+        final var cause = new SQLException("execution failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void queryWithExternalConnectionLeavesConnectionOpenWhenMappingFails() throws SQLException {
+        final var resultSet = mock(ResultSet.class);
+        final var cause = new SQLException("mapping failed");
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, "select account from users", row -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+    }
 }
