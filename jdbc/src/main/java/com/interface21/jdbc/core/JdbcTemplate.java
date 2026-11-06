@@ -31,10 +31,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
@@ -59,11 +55,6 @@ public class JdbcTemplate {
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                 final PreparedStatementSetter preparedStatementSetter) {
         return execute(sql, preparedStatementSetter, singleResult(rowMapper));
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return execute(connection, sql, argumentsSetter(args), singleResult(rowMapper));
     }
 
     private <T> PreparedStatementCallback<T> singleResult(final RowMapper<T> rowMapper) {
