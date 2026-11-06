@@ -43,13 +43,17 @@ class JdbcTemplateTest {
     }
 
     @AfterEach
-    void 커넥션과_PreparedStatement를_해제한다() throws SQLException {
+    void PreparedStatement를_해제한다() throws SQLException {
         verify(preparedStatement).close();
-        verify(connection).close();
     }
 
     @Nested
     class Update {
+
+        @AfterEach
+        void 커넥션을_해제한다() throws SQLException {
+            verify(connection).close();
+        }
 
         @Test
         void 파라미터를_순서대로_바인딩하고_영향받은_행_수를_반환한다() throws SQLException {
@@ -93,6 +97,11 @@ class JdbcTemplateTest {
         @AfterEach
         void ResultSet을_해제한다() throws SQLException {
             verify(resultSet).close();
+        }
+
+        @AfterEach
+        void 커넥션을_해제한다() throws SQLException {
+            verify(connection).close();
         }
 
         @Test
@@ -140,6 +149,11 @@ class JdbcTemplateTest {
         @AfterEach
         void ResultSet을_해제한다() throws SQLException {
             verify(resultSet).close();
+        }
+
+        @AfterEach
+        void 커넥션을_해제한다() throws SQLException {
+            verify(connection).close();
         }
 
 
