@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 class UserDaoTest {
@@ -59,7 +61,9 @@ class UserDaoTest {
 
     @Test
     void findByIdWithoutMatchingUser() {
-        assertThat(userDao.findById(999L)).isNull();
+        assertThatThrownBy(() -> userDao.findById(999L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("단건 조회 결과가 없습니다");
     }
 
     @Test
@@ -81,16 +85,18 @@ class UserDaoTest {
 
     @Test
     void findByAccountWithoutMatchingUser() {
-        assertThat(userDao.findByAccount("unknown")).isNull();
+        assertThatThrownBy(() -> userDao.findByAccount("unknown"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("단건 조회 결과가 없습니다");
     }
 
     @Test
-    void findByAccountWithDuplicateAccountsReturnsUser() {
+    void findByAccountWithDuplicateAccountsThrowsException() {
         userDao.insert(new User("gugu", "another-password", "another@example.com"));
 
-        final var user = userDao.findByAccount("gugu");
-
-        assertThat(user.getAccount()).isEqualTo("gugu");
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("단건 조회 결과가 여러 건입니다");
     }
 
     @Test

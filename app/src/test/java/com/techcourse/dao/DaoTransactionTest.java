@@ -1,5 +1,7 @@
 package com.techcourse.dao;
 
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
@@ -45,21 +47,29 @@ class DaoTransactionTest {
     }
 
     private void changePasswordAndFinishTransaction(final boolean commit) throws SQLException {
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+        final var dataSource = DataSourceConfig.getInstance();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
             connection.setAutoCommit(false);
-            final var user = userDao.findById(connection, 1L);
+            final var user = userDao.findById(1L);
             user.changePassword("newPassword");
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, "gugu"));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, "gugu"));
 
             assertThat(connection.isClosed()).isFalse();
-            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("newPassword");
+            assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
             if (commit) {
                 connection.commit();
             } else {
                 connection.rollback();
             }
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        assertThat(connection.isClosed()).isTrue();
     }
 
     private void assertHistoryCount(final int expected) throws SQLException {

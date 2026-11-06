@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,18 +22,16 @@ public abstract class JdbcTemplate {
     }
 
     public final void update(final String sql, final PreparedStatementSetter setter) {
-        try (Connection connection = getDataSource().getConnection()) {
+        final var dataSource = getDataSource();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             update(connection, sql, setter);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    public final void update(final Connection connection, final String sql, final Object... args) {
-        update(connection, sql, statement -> bindParameters(statement, args));
-    }
-
-    public final void update(final Connection connection, final String sql,
+    private void update(final Connection connection, final String sql,
                              final PreparedStatementSetter setter) {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -52,19 +51,16 @@ public abstract class JdbcTemplate {
 
     public final <T> List<T> query(final String sql, final PreparedStatementSetter setter,
                                  final RowMapper<T> rowMapper) {
-        try (Connection connection = getDataSource().getConnection()) {
+        final var dataSource = getDataSource();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return query(connection, sql, setter, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
-    public final <T> List<T> query(final Connection connection, final String sql,
-                                 final RowMapper<T> rowMapper, final Object... args) {
-        return query(connection, sql, statement -> bindParameters(statement, args), rowMapper);
-    }
-
-    public final <T> List<T> query(final Connection connection, final String sql,
+    private <T> List<T> query(final Connection connection, final String sql,
                                  final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -82,14 +78,27 @@ public abstract class JdbcTemplate {
     }
 
     public final <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        return results.isEmpty() ? null : results.getFirst();
-    }
+        final var dataSource = getDataSource();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            bindParameters(statement, args);
 
-    public final <T> T queryForObject(final Connection connection, final String sql,
-                                    final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(connection, sql, rowMapper, args);
-        return results.isEmpty() ? null : results.getFirst();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과가 없습니다: " + sql);
+                }
+                final T result = rowMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과가 여러 건입니다: " + sql);
+                }
+                return result;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     private ResultSet executeQuery(final PreparedStatementSetter setter, final PreparedStatement statement)

@@ -4,17 +4,11 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.UserHistory;
 import com.interface21.dao.DataAccessException;
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class MockUserHistoryDao extends UserHistoryDao {
 
     public MockUserHistoryDao(final DataSource dataSource) {
         super(dataSource);
-    }
-
-    @Override
-    public void log(final Connection connection, final UserHistory userHistory) {
-        throw new DataAccessException();
     }
 
     @Override

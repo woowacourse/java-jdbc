@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -33,6 +36,13 @@ class JdbcTemplateQueryTest {
     private JdbcTemplate jdbcTemplate;
     private PreparedStatementSetter setter;
     private RowMapper<String> rowMapper;
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -153,11 +163,12 @@ class JdbcTemplateQueryTest {
     }
 
     @Test
-    void queryWithExternalConnection() throws SQLException {
+    void queryWithBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        assertThat(jdbcTemplate.query(connection, SQL, rowMapper, 1L)).containsExactly("gugu");
+        assertThat(jdbcTemplate.query(SQL, rowMapper, 1L)).containsExactly("gugu");
 
         verify(statement).setObject(1, 1L);
         verify(resultSet).close();
@@ -169,12 +180,13 @@ class JdbcTemplateQueryTest {
     }
 
     @Test
-    void externalConnectionStaysOpenWhenMappingFails() throws SQLException {
+    void boundConnectionStaysOpenWhenMappingFails() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var cause = new SQLException("매핑 실패");
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("account")).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.query(connection, SQL, setter, rowMapper))
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, setter, rowMapper))
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(resultSet).close();
@@ -184,29 +196,87 @@ class JdbcTemplateQueryTest {
         verifyNoInteractions(dataSource);
     }
     @Test
-    void queryForObjectReturnsNullWhenEmpty() {
-        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isNull();
+    void queryForObjectThrowsWhenEmpty() throws SQLException {
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rowMapper, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("단건 조회 결과가 없습니다");
+
+        verify(resultSet, never()).getString("account");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    void queryForObjectReturnsFirstRowWhenMultipleRowsExist() throws SQLException {
+    void queryForObjectThrowsWithoutMappingRemainingRowsWhenMultipleRowsExist() throws SQLException {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "pobi");
 
-        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isEqualTo("gugu");
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rowMapper, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("단건 조회 결과가 여러 건입니다");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getString("account");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    void queryForObjectUsesExternalConnection() throws SQLException {
+    void queryForObjectUsesBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        assertThat(jdbcTemplate.queryForObject(connection, SQL, rowMapper, 1L)).isEqualTo("gugu");
+        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isEqualTo("gugu");
 
         verify(statement).setObject(1, 1L);
         verify(resultSet).close();
         verify(statement).close();
         verify(connection, never()).close();
         verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void queryForObjectWithoutResultsKeepsBoundConnectionOpen() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rowMapper, 1L))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void queryForObjectFailsDuringBinding() throws SQLException {
+        final var cause = new SQLException("단건 조회 인자 바인딩 실패");
+        doThrow(cause).when(statement).setObject(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rowMapper, 1L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement, never()).executeQuery();
+        verify(statement).close();
+        verify(connection).close();
+        verifyNoInteractions(resultSet);
+    }
+
+    @Test
+    void queryForObjectFailsDuringMapping() throws SQLException {
+        final var cause = new SQLException("단건 매핑 실패");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, rowMapper, 1L))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 }
