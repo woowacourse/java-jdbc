@@ -162,4 +162,30 @@ class JdbcTemplateTest {
         verify(statement).close();
         verify(connection).close();
     }
+
+    @Test
+    void externalConnectionRemainsOpenAfterUpdateFailure() throws SQLException {
+        final var failure = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+
+        assertThatThrownBy(() -> template.update(connection, "update example set name = ?", "value"))
+                .isInstanceOf(DataAccessException.class).hasCause(failure);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void externalConnectionQueryClosesOnlyStatementAndResultSet() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+
+        assertThat(template.<String>queryForObject(connection, "select name from example",
+                (rs, row) -> "value")).isEqualTo("value");
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
 }
