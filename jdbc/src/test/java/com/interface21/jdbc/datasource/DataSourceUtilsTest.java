@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -89,13 +90,11 @@ class DataSourceUtilsTest {
         }
 
         @Test
-        void 커넥션을_닫지_못하면_원인_예외를_보존한_예외를_던진다() throws SQLException {
-            final SQLException failure = new SQLException("close failed");
-            doThrow(failure).when(connection).close();
+        void 커넥션을_닫지_못해도_예외를_던지지_않는다() throws SQLException {
+            doThrow(new SQLException("close failed")).when(connection).close();
 
-            assertThatThrownBy(() -> DataSourceUtils.releaseConnection(connection, dataSource))
-                    .isInstanceOf(CannotGetJdbcConnectionException.class)
-                    .hasCause(failure);
+            assertThatCode(() -> DataSourceUtils.releaseConnection(connection, dataSource))
+                    .doesNotThrowAnyException();
         }
     }
 }

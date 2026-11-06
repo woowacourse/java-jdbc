@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -73,6 +74,17 @@ class JdbcTemplateTest {
         void SQL_실행에_실패하면_원인_예외를_보존한_DataAccessException을_던진다() throws SQLException {
             final SQLException failure = new SQLException("update failed");
             when(preparedStatement.executeUpdate()).thenThrow(failure);
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "handa"))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCause(failure);
+        }
+
+        @Test
+        void SQL_실행에_실패한_뒤_커넥션_반납에_실패해도_원래_예외를_던진다() throws SQLException {
+            final SQLException failure = new SQLException("update failed");
+            when(preparedStatement.executeUpdate()).thenThrow(failure);
+            doThrow(new SQLException("close failed")).when(connection).close();
 
             assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "handa"))
                     .isInstanceOf(DataAccessException.class)
