@@ -67,4 +67,28 @@ class UserServiceConnectionTest {
         verify(connection).close();
         assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
+
+    @Test
+    void rollsBackWhenParticipatingOperationMarksRollbackOnly() throws SQLException {
+        final var failingDelegate = mock(UserService.class);
+        doThrow(new DataAccessException("history failed"))
+                .when(failingDelegate).changePassword(1L, "after", "operator");
+        final var innerService = new TxUserService(dataSource, failingDelegate);
+        doAnswer(invocation -> {
+            assertThrows(DataAccessException.class, () -> innerService.changePassword(1L, "after", "operator"));
+            assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isTrue();
+            return null;
+        }).when(delegate).changePassword(1L, "after", "operator");
+
+        assertThrows(DataAccessException.class, () -> service.changePassword(1L, "after", "operator"));
+
+        verify(dataSource, times(1)).getConnection();
+        verify(connection, never()).commit();
+        var order = inOrder(connection);
+        order.verify(connection).rollback();
+        order.verify(connection).setAutoCommit(true);
+        order.verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        assertThat(TransactionSynchronizationManager.isRollbackOnly(dataSource)).isFalse();
+    }
 }

@@ -91,6 +91,35 @@ class UserServiceTest {
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("retry");
     }
 
+    @Test
+    void rollsBackOuterTransactionWhenParticipatingOperationFails() {
+        final var failingHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var innerService = service(failingHistoryDao);
+        final var outerService = new TxUserService(DataSourceConfig.getInstance(), new UserService() {
+            @Override
+            public User findById(final long id) {
+                return userDao.findById(id);
+            }
+
+            @Override
+            public void save(final User user) {
+                userDao.insert(user);
+            }
+
+            @Override
+            public void changePassword(final long id, final String newPassword, final String createdBy) {
+                try {
+                    innerService.changePassword(id, newPassword, createdBy);
+                } catch (DataAccessException ignored) {
+                    // 바깥 서비스가 안쪽 실패를 삼키고 정상 종료하는 상황
+                }
+            }
+        });
+
+        assertThrows(DataAccessException.class, () -> outerService.changePassword(1L, "changed", "operator"));
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+    }
+
     private UserService service(final UserHistoryDao historyDao) {
         return new TxUserService(DataSourceConfig.getInstance(), new AppUserService(userDao, historyDao));
     }
