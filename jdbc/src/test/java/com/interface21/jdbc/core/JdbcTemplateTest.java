@@ -25,13 +25,14 @@ import static org.mockito.Mockito.when;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -43,13 +44,17 @@ class JdbcTemplateTest {
     }
 
     @AfterEach
-    void 커넥션과_PreparedStatement를_해제한다() throws SQLException {
+    void PreparedStatement를_해제한다() throws SQLException {
         verify(preparedStatement).close();
-        verify(connection).close();
     }
 
     @Nested
     class Update {
+
+        @AfterEach
+        void 커넥션을_해제한다() throws SQLException {
+            verify(connection).close();
+        }
 
         @Test
         void 파라미터를_순서대로_바인딩하고_영향받은_행_수를_반환한다() throws SQLException {
@@ -93,6 +98,11 @@ class JdbcTemplateTest {
         @AfterEach
         void ResultSet을_해제한다() throws SQLException {
             verify(resultSet).close();
+        }
+
+        @AfterEach
+        void 커넥션을_해제한다() throws SQLException {
+            verify(connection).close();
         }
 
         @Test
@@ -142,6 +152,11 @@ class JdbcTemplateTest {
             verify(resultSet).close();
         }
 
+        @AfterEach
+        void 커넥션을_해제한다() throws SQLException {
+            verify(connection).close();
+        }
+
 
         @Test
         void 단건_조회_결과가_없으면_null을_반환한다() throws SQLException {
@@ -188,6 +203,53 @@ class JdbcTemplateTest {
 
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(
                     "select account from users", row -> row.getString("account")))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCause(failure);
+        }
+    }
+
+    @Nested
+    class WithConnection {
+
+        @AfterEach
+        void 전달받은_커넥션은_닫지_않는다() throws SQLException {
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+        }
+
+        @Test
+        void update는_전달받은_커넥션으로_SQL을_실행한다() throws SQLException {
+            when(preparedStatement.executeUpdate()).thenReturn(1);
+
+            final int actual = jdbcTemplate.update(connection,
+                    "update users set account = ? where id = ?", "handa", 1L);
+
+            assertThat(actual).isEqualTo(1);
+            verify(connection).prepareStatement("update users set account = ? where id = ?");
+            verify(preparedStatement).setObject(1, "handa");
+            verify(preparedStatement).setObject(2, 1L);
+        }
+
+        @Test
+        void queryForObject는_전달받은_커넥션으로_단건_조회한다() throws SQLException {
+            when(resultSet.next()).thenReturn(true, false);
+            when(resultSet.getString("account")).thenReturn("handa");
+
+            final String actual = jdbcTemplate.queryForObject(connection,
+                    "select account from users where id = ?", row -> row.getString("account"), 1L);
+
+            assertThat(actual).isEqualTo("handa");
+            verify(connection).prepareStatement("select account from users where id = ?");
+            verify(preparedStatement).setObject(1, 1L);
+            verify(resultSet).close();
+        }
+
+        @Test
+        void SQL_실행에_실패해도_커넥션을_닫지_않고_DataAccessException을_던진다() throws SQLException {
+            final SQLException failure = new SQLException("update failed");
+            when(preparedStatement.executeUpdate()).thenThrow(failure);
+
+            assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set account = ?", "handa"))
                     .isInstanceOf(DataAccessException.class)
                     .hasCause(failure);
         }
