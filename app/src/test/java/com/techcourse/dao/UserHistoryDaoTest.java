@@ -27,6 +27,7 @@ class UserHistoryDaoTest {
         try (var connection = dataSource.getConnection();
              var statement = connection.createStatement()) {
             statement.execute("truncate table user_history restart identity");
+            statement.execute("truncate table users restart identity");
         }
     }
 
@@ -38,6 +39,33 @@ class UserHistoryDaoTest {
     @Test
     void logWithJdbcTemplate() throws SQLException {
         assertHistorySaved(new UserHistoryDao(new JdbcTemplate(dataSource)));
+    }
+
+    @Test
+    void rollbackUserAndHistoryChangesOnSharedConnection() throws SQLException {
+        final var jdbcTemplate = new JdbcTemplate(dataSource);
+        final var userDao = new UserDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        userDao.insert(new User("gugu", "password", "gugu@example.com"));
+
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            final var user = userDao.findById(connection, 1L);
+            user.changePassword("new-password");
+
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, "admin"));
+
+            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("new-password");
+            assertThat(jdbcTemplate.query(connection, "select password from user_history",
+                    row -> row.getString("password"))).containsExactly("new-password");
+
+            connection.rollback();
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select password from user_history", row -> row.getString("password")))
+                .isEmpty();
     }
 
     private void assertHistorySaved(final UserHistoryDao userHistoryDao) throws SQLException {
