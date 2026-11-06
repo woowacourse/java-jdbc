@@ -155,8 +155,9 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithExternalConnection() throws SQLException {
-        jdbcTemplate.update(connection, SQL, "password", 1L);
+    void updateWithBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        jdbcTemplate.update(SQL, "password", 1L);
 
         verify(statement).setObject(1, "password");
         verify(statement).setObject(2, 1L);
@@ -169,11 +170,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void externalConnectionStaysOpenWhenUpdateFails() throws SQLException {
+    void boundConnectionStaysOpenWhenUpdateFails() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var cause = new SQLException("수정 실패");
         when(statement.executeUpdate()).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, setter))
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, setter))
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(statement).close();

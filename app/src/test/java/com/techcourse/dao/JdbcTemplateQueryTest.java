@@ -1,6 +1,8 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,13 @@ class JdbcTemplateQueryTest {
     private JdbcTemplate jdbcTemplate;
     private PreparedStatementSetter setter;
     private RowMapper<String> rowMapper;
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -153,11 +162,12 @@ class JdbcTemplateQueryTest {
     }
 
     @Test
-    void queryWithExternalConnection() throws SQLException {
+    void queryWithBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        assertThat(jdbcTemplate.query(connection, SQL, rowMapper, 1L)).containsExactly("gugu");
+        assertThat(jdbcTemplate.query(SQL, rowMapper, 1L)).containsExactly("gugu");
 
         verify(statement).setObject(1, 1L);
         verify(resultSet).close();
@@ -169,12 +179,13 @@ class JdbcTemplateQueryTest {
     }
 
     @Test
-    void externalConnectionStaysOpenWhenMappingFails() throws SQLException {
+    void boundConnectionStaysOpenWhenMappingFails() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var cause = new SQLException("매핑 실패");
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("account")).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.query(connection, SQL, setter, rowMapper))
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, setter, rowMapper))
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(resultSet).close();
@@ -197,11 +208,12 @@ class JdbcTemplateQueryTest {
     }
 
     @Test
-    void queryForObjectUsesExternalConnection() throws SQLException {
+    void queryForObjectUsesBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        assertThat(jdbcTemplate.queryForObject(connection, SQL, rowMapper, 1L)).isEqualTo("gugu");
+        assertThat(jdbcTemplate.queryForObject(SQL, rowMapper, 1L)).isEqualTo("gugu");
 
         verify(statement).setObject(1, 1L);
         verify(resultSet).close();

@@ -31,11 +31,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public final void update(final Connection connection, final String sql, final Object... args) {
-        update(connection, sql, statement -> bindParameters(statement, args));
-    }
-
-    public final void update(final Connection connection, final String sql,
+    private void update(final Connection connection, final String sql,
                              final PreparedStatementSetter setter) {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -64,12 +60,7 @@ public abstract class JdbcTemplate {
         }
     }
 
-    public final <T> List<T> query(final Connection connection, final String sql,
-                                 final RowMapper<T> rowMapper, final Object... args) {
-        return query(connection, sql, statement -> bindParameters(statement, args), rowMapper);
-    }
-
-    public final <T> List<T> query(final Connection connection, final String sql,
+    private <T> List<T> query(final Connection connection, final String sql,
                                  final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
@@ -88,12 +79,6 @@ public abstract class JdbcTemplate {
 
     public final <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
-        return results.isEmpty() ? null : results.getFirst();
-    }
-
-    public final <T> T queryForObject(final Connection connection, final String sql,
-                                    final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(connection, sql, rowMapper, args);
         return results.isEmpty() ? null : results.getFirst();
     }
 
