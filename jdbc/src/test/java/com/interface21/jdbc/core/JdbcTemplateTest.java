@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -205,6 +206,45 @@ class JdbcTemplateTest {
                     "select account from users", row -> row.getString("account")))
                     .isInstanceOf(DataAccessException.class)
                     .hasCause(failure);
+        }
+    }
+
+    @Nested
+    class InTransaction {
+
+        @BeforeEach
+        void 트랜잭션_커넥션을_바인딩한다() {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+        }
+
+        @AfterEach
+        void 트랜잭션_커넥션은_닫지_않는다() throws SQLException {
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+
+        @Test
+        void update는_트랜잭션에_바인딩된_커넥션으로_SQL을_실행한다() throws SQLException {
+            when(preparedStatement.executeUpdate()).thenReturn(1);
+
+            final int actual = jdbcTemplate.update("update users set account = ? where id = ?", "handa", 1L);
+
+            assertThat(actual).isEqualTo(1);
+            verify(connection).prepareStatement("update users set account = ? where id = ?");
+        }
+
+        @Test
+        void queryForObject는_트랜잭션에_바인딩된_커넥션으로_단건_조회한다() throws SQLException {
+            when(resultSet.next()).thenReturn(true, false);
+            when(resultSet.getString("account")).thenReturn("handa");
+
+            final String actual = jdbcTemplate.queryForObject(
+                    "select account from users where id = ?", row -> row.getString("account"), 1L);
+
+            assertThat(actual).isEqualTo("handa");
+            verify(connection).prepareStatement("select account from users where id = ?");
+            verify(resultSet).close();
         }
     }
 
