@@ -15,6 +15,7 @@ import java.sql.Types;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -198,5 +199,49 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void updateWithSuppliedConnectionKeepsItOpen() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        assertThat(jdbcTemplate.update(connection, "update users set account = ?", "gugu")).isEqualTo(1);
+
+        verify(statement).setObject(1, "gugu");
+        verify(statement).close();
+        verifyCallerOwnsConnection();
+    }
+
+    @Test
+    void updateFailureKeepsSuppliedConnectionOpenForRollback() throws SQLException {
+        final var cause = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement).close();
+        verifyCallerOwnsConnection();
+    }
+
+    @Test
+    void queryForObjectClosesResultsAndKeepsSuppliedConnectionOpen() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        assertThat(jdbcTemplate.queryForObject(connection, SQL, ACCOUNT_MAPPER, 7L)).isEqualTo("gugu");
+
+        verify(statement).setObject(1, 7L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyCallerOwnsConnection();
+    }
+
+    private void verifyCallerOwnsConnection() throws SQLException {
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+        verify(connection, never()).setAutoCommit(anyBoolean());
     }
 }
