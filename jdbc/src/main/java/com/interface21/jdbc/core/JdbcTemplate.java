@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +31,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
@@ -60,11 +57,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, singleResult(rowMapper));
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return execute(connection, sql, argumentsSetter(args), singleResult(rowMapper));
-    }
-
     private <T> PreparedStatementCallback<T> singleResult(final RowMapper<T> rowMapper) {
         return preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -84,11 +76,11 @@ public class JdbcTemplate {
     private <T> T execute(final String sql,
                           final PreparedStatementSetter preparedStatementSetter,
                           final PreparedStatementCallback<T> action) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(connection, sql, preparedStatementSetter, action);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

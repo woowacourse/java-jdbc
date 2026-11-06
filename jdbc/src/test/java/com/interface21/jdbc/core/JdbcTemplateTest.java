@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -72,6 +74,17 @@ class JdbcTemplateTest {
         void SQL_실행에_실패하면_원인_예외를_보존한_DataAccessException을_던진다() throws SQLException {
             final SQLException failure = new SQLException("update failed");
             when(preparedStatement.executeUpdate()).thenThrow(failure);
+
+            assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "handa"))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCause(failure);
+        }
+
+        @Test
+        void SQL_실행에_실패한_뒤_커넥션_반납에_실패해도_원래_예외를_던진다() throws SQLException {
+            final SQLException failure = new SQLException("update failed");
+            when(preparedStatement.executeUpdate()).thenThrow(failure);
+            doThrow(new SQLException("close failed")).when(connection).close();
 
             assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "handa"))
                     .isInstanceOf(DataAccessException.class)
@@ -209,49 +222,41 @@ class JdbcTemplateTest {
     }
 
     @Nested
-    class WithConnection {
+    class InTransaction {
+
+        @BeforeEach
+        void 트랜잭션_커넥션을_바인딩한다() {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+        }
 
         @AfterEach
-        void 전달받은_커넥션은_닫지_않는다() throws SQLException {
+        void 트랜잭션_커넥션은_닫지_않는다() throws SQLException {
             verify(dataSource, never()).getConnection();
             verify(connection, never()).close();
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
 
         @Test
-        void update는_전달받은_커넥션으로_SQL을_실행한다() throws SQLException {
+        void update는_트랜잭션에_바인딩된_커넥션으로_SQL을_실행한다() throws SQLException {
             when(preparedStatement.executeUpdate()).thenReturn(1);
 
-            final int actual = jdbcTemplate.update(connection,
-                    "update users set account = ? where id = ?", "handa", 1L);
+            final int actual = jdbcTemplate.update("update users set account = ? where id = ?", "handa", 1L);
 
             assertThat(actual).isEqualTo(1);
             verify(connection).prepareStatement("update users set account = ? where id = ?");
-            verify(preparedStatement).setObject(1, "handa");
-            verify(preparedStatement).setObject(2, 1L);
         }
 
         @Test
-        void queryForObject는_전달받은_커넥션으로_단건_조회한다() throws SQLException {
+        void queryForObject는_트랜잭션에_바인딩된_커넥션으로_단건_조회한다() throws SQLException {
             when(resultSet.next()).thenReturn(true, false);
             when(resultSet.getString("account")).thenReturn("handa");
 
-            final String actual = jdbcTemplate.queryForObject(connection,
+            final String actual = jdbcTemplate.queryForObject(
                     "select account from users where id = ?", row -> row.getString("account"), 1L);
 
             assertThat(actual).isEqualTo("handa");
             verify(connection).prepareStatement("select account from users where id = ?");
-            verify(preparedStatement).setObject(1, 1L);
             verify(resultSet).close();
-        }
-
-        @Test
-        void SQL_실행에_실패해도_커넥션을_닫지_않고_DataAccessException을_던진다() throws SQLException {
-            final SQLException failure = new SQLException("update failed");
-            when(preparedStatement.executeUpdate()).thenThrow(failure);
-
-            assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set account = ?", "handa"))
-                    .isInstanceOf(DataAccessException.class)
-                    .hasCause(failure);
         }
     }
 }
