@@ -40,6 +40,7 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
+        validateNoTransactionInProgress();
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         final boolean autoCommit = getAutoCommit(connection);
         TransactionSynchronizationManager.bindResource(dataSource, connection);
@@ -59,6 +60,12 @@ public class TxUserService implements UserService {
             TransactionSynchronizationManager.unbindResource(dataSource);
             restoreAutoCommit(connection, autoCommit);
             DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    private void validateNoTransactionInProgress() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("이미 진행 중인 트랜잭션이 있습니다.");
         }
     }
 

@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class TxUserServiceTest {
@@ -39,6 +41,11 @@ class TxUserServiceTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
         txUserService = new TxUserService(dataSource, userService);
+    }
+
+    @AfterEach
+    void 바인딩을_해제한다() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Nested
@@ -83,6 +90,21 @@ class TxUserServiceTest {
             inOrder.verify(connection).setAutoCommit(true);
             inOrder.verify(connection).close();
             assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+        }
+
+        @Test
+        void 이미_트랜잭션이_진행_중이면_커넥션을_얻지_않고_예외를_던진다() throws SQLException {
+            final Connection outerConnection = mock(Connection.class);
+            TransactionSynchronizationManager.bindResource(dataSource, outerConnection);
+
+            assertThatThrownBy(() -> txUserService.changePassword(1L, "newPassword", "gugu"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("이미 진행 중인 트랜잭션이 있습니다.");
+
+            verify(dataSource, never()).getConnection();
+            verify(userService, never()).changePassword(1L, "newPassword", "gugu");
+            verifyNoInteractions(outerConnection);
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(outerConnection);
         }
 
         @Test
