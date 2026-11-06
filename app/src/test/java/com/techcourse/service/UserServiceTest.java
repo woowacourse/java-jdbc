@@ -35,7 +35,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = service(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -50,7 +50,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = service(userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -64,7 +64,7 @@ class UserServiceTest {
     }
     @Test
     void commitsPasswordAndHistoryTogether() {
-        final var service = new UserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var service = service(new UserHistoryDao(jdbcTemplate));
         service.changePassword(1L, "changed", "operator");
         final var histories = jdbcTemplate.query(
                 "select password, created_by from user_history where user_id = ?",
@@ -77,19 +77,50 @@ class UserServiceTest {
     void rollsBackEvenWhenHistoryWasAlreadyInserted() {
         final var historyDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final java.sql.Connection connection,
-                            final com.techcourse.domain.UserHistory history) {
-                super.log(connection, history);
+            public void log(final com.techcourse.domain.UserHistory history) {
+                super.log(history);
                 throw new DataAccessException("failure after history insert");
             }
         };
-        final var service = new UserService(userDao, historyDao);
+        final var service = service(historyDao);
         assertThrows(DataAccessException.class, () -> service.changePassword(1L, "changed", "operator"));
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
         assertThat(jdbcTemplate.query("select id from user_history", (rs, row) -> rs.getLong(1))).isEmpty();
         // 실패 이후 다음 요청이 새 연결에서 정상 처리되는지 확인한다.
-        new UserService(userDao, new UserHistoryDao(jdbcTemplate)).changePassword(1L, "retry", "operator");
+        service(new UserHistoryDao(jdbcTemplate)).changePassword(1L, "retry", "operator");
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("retry");
     }
 
+    @Test
+    void rollsBackOuterTransactionWhenParticipatingOperationFails() {
+        final var failingHistoryDao = new MockUserHistoryDao(jdbcTemplate);
+        final var innerService = service(failingHistoryDao);
+        final var outerService = new TxUserService(DataSourceConfig.getInstance(), new UserService() {
+            @Override
+            public User findById(final long id) {
+                return userDao.findById(id);
+            }
+
+            @Override
+            public void save(final User user) {
+                userDao.insert(user);
+            }
+
+            @Override
+            public void changePassword(final long id, final String newPassword, final String createdBy) {
+                try {
+                    innerService.changePassword(id, newPassword, createdBy);
+                } catch (DataAccessException ignored) {
+                    // 바깥 서비스가 안쪽 실패를 삼키고 정상 종료하는 상황
+                }
+            }
+        });
+
+        assertThrows(DataAccessException.class, () -> outerService.changePassword(1L, "changed", "operator"));
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+    }
+
+    private UserService service(final UserHistoryDao historyDao) {
+        return new TxUserService(DataSourceConfig.getInstance(), new AppUserService(userDao, historyDao));
+    }
 }

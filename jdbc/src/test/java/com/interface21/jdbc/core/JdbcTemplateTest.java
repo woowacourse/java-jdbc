@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
@@ -113,12 +114,26 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void callerOwnsExplicitConnection() throws SQLException {
+    void boundConnectionIsReusedAndOwnedByTransaction() throws SQLException {
         when(statement.executeUpdate()).thenReturn(1);
-        assertThat(template.update(connection, "delete from test")).isEqualTo(1);
-        verify(statement).close();
-        verify(connection, never()).close();
-        verify(dataSource, never()).getConnection();
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            assertThat(template.update("delete from test")).isEqualTo(1);
+            verify(statement).close();
+            verify(connection, never()).close();
+            verify(dataSource, never()).getConnection();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void callsWithoutTransactionObtainAndReleaseTheirOwnConnections() throws SQLException {
+        template.update("delete from test");
+        template.update("delete from test");
+
+        verify(dataSource, times(2)).getConnection();
+        verify(connection, times(2)).close();
     }
 
 }
