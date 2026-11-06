@@ -78,8 +78,27 @@ public abstract class JdbcTemplate {
     }
 
     public final <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        return results.isEmpty() ? null : results.getFirst();
+        final var dataSource = getDataSource();
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            log.debug("query : {}", sql);
+            bindParameters(statement, args);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과가 없습니다: " + sql);
+                }
+                final T result = rowMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("단건 조회 결과가 여러 건입니다: " + sql);
+                }
+                return result;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     private ResultSet executeQuery(final PreparedStatementSetter setter, final PreparedStatement statement)
