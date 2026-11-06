@@ -53,7 +53,7 @@ public class JdbcTemplate {
         try (Connection connection = dataSource.getConnection()) {
             return execute(connection, sql, callback, args);
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 
@@ -64,7 +64,7 @@ public class JdbcTemplate {
             setParameters(statement, args);
             return callback.execute(statement);
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 

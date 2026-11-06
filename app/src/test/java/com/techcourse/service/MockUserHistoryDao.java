@@ -15,6 +15,6 @@ public class MockUserHistoryDao extends UserHistoryDao {
 
     @Override
     public void log(final Connection connection, final UserHistory userHistory) {
-        throw new DataAccessException();
+        throw new DataAccessException("이력 저장에 실패했습니다.");
     }
 }

@@ -46,7 +46,7 @@ public class UserService {
             }
             connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to change password", e);
+            throw new DataAccessException("비밀번호 변경에 실패했습니다.", e);
         }
     }
 

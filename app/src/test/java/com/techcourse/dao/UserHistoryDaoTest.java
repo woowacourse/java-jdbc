@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -31,16 +32,19 @@ class UserHistoryDaoTest {
         }
     }
 
+    @DisplayName("DataSource로 생성한 DAO에서 변경 이력을 저장한다")
     @Test
     void logWithDataSource() throws SQLException {
         assertHistorySaved(new UserHistoryDao(dataSource));
     }
 
+    @DisplayName("JdbcTemplate으로 생성한 DAO에서 변경 이력을 저장한다")
     @Test
     void logWithJdbcTemplate() throws SQLException {
         assertHistorySaved(new UserHistoryDao(new JdbcTemplate(dataSource)));
     }
 
+    @DisplayName("같은 연결에서 실행한 사용자 수정과 이력 저장을 함께 롤백한다")
     @Test
     void rollbackUserAndHistoryChangesOnSharedConnection() throws SQLException {
         final var jdbcTemplate = new JdbcTemplate(dataSource);

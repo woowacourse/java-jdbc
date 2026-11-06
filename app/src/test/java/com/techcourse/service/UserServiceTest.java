@@ -9,6 +9,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -46,6 +47,7 @@ class UserServiceTest {
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
+    @DisplayName("비밀번호를 변경하고 변경자와 변경 시각을 포함한 이력을 저장한다")
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
@@ -70,6 +72,7 @@ class UserServiceTest {
         }
     }
 
+    @DisplayName("이력 저장 중 예외가 발생하면 비밀번호 변경을 롤백한다")
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
@@ -82,6 +85,7 @@ class UserServiceTest {
         assertNoHistory();
     }
 
+    @DisplayName("이력 저장 쿼리가 실패하면 비밀번호 변경을 롤백한다")
     @Test
     void rollsBackWhenHistoryInsertFails() {
         final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
@@ -94,9 +98,10 @@ class UserServiceTest {
         assertNoHistory();
     }
 
+    @DisplayName("이력 저장 후 예외가 발생하면 비밀번호와 이력을 함께 롤백한다")
     @Test
     void rollsBackPasswordAndHistoryWhenFailureOccursAfterInsert() {
-        final var cause = new IllegalStateException("failure after history insert");
+        final var cause = new IllegalStateException("이력 저장 후 오류가 발생했습니다.");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
             public void log(final Connection connection, final UserHistory history) {
@@ -113,6 +118,7 @@ class UserServiceTest {
         assertNoHistory();
     }
 
+    @DisplayName("트랜잭션 종료 후 기존 자동 커밋 설정을 복구하고 연결을 닫는다")
     @Test
     void restoresOriginalAutoCommitAndClosesConnection() throws SQLException {
         final var transactionDataSource = mock(DataSource.class);
@@ -133,12 +139,13 @@ class UserServiceTest {
         verify(connection).close();
     }
 
+    @DisplayName("커밋이 실패하면 롤백하고 연결을 닫는다")
     @Test
     void rollsBackWhenCommitFails() throws SQLException {
         final var transactionDataSource = mock(DataSource.class);
         final var connection = mock(Connection.class);
         final var transactionUserDao = mock(UserDao.class);
-        final var cause = new SQLException("commit failed");
+        final var cause = new SQLException("트랜잭션 커밋에 실패했습니다.");
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
         when(transactionUserDao.findById(connection, 1L))
@@ -155,13 +162,14 @@ class UserServiceTest {
         verify(connection).close();
     }
 
+    @DisplayName("롤백이 실패해도 원래 예외를 보존하고 연결을 닫는다")
     @Test
     void preservesOriginalExceptionWhenRollbackFails() throws SQLException {
         final var transactionDataSource = mock(DataSource.class);
         final var connection = mock(Connection.class);
         final var transactionUserDao = mock(UserDao.class);
-        final var cause = new DataAccessException("query failed");
-        final var rollbackFailure = new SQLException("rollback failed");
+        final var cause = new DataAccessException("사용자 조회에 실패했습니다.");
+        final var rollbackFailure = new SQLException("트랜잭션 롤백에 실패했습니다.");
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
         when(transactionUserDao.findById(connection, 1L)).thenThrow(cause);
