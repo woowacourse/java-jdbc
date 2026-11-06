@@ -19,13 +19,14 @@ public class TransactionAdvice  implements MethodInterceptor {
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         final var status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+        final Object ret;
         try {
-            final var ret = invocation.proceed();
-            transactionManager.commit(status);
-            return ret;
+            ret = invocation.proceed();
         } catch (RuntimeException e) {
             transactionManager.rollback(status);
             throw e;
         }
+        transactionManager.commit(status);
+        return ret;
     }
 }
