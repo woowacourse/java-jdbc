@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcOperations;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
@@ -34,8 +35,12 @@ public class UserDao {
     }
 
     public int update(User user) {
+        return update(jdbcTemplate::update, user);
+    }
+
+    public int update(JdbcOperations jdbc, User user) {
         String sql = "update users set account = ?, password = ?, email = ? where id = ?";
-        return jdbcTemplate.update(
+        return jdbc.update(
             sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId()
         );
     }
