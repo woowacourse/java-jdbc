@@ -4,17 +4,18 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
@@ -22,42 +23,67 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
-
+        jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        userDao = new UserDao(jdbcTemplate);
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        jdbcTemplate.update("truncate table user_history restart identity");
+        jdbcTemplate.update("truncate table users restart identity");
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
     }
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var service = service(new UserHistoryDao(jdbcTemplate));
+        service.changePassword(1L, "qqqqq", "gugu");
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
-
-        final var actual = userService.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(service.findById(1L).getPassword()).isEqualTo("qqqqq");
+        final var histories = jdbcTemplate.query("select * from user_history where user_id = ?", (rs, rowNum) -> {
+            assertThat(rs.getLong("user_id")).isEqualTo(1L);
+            assertThat(rs.getString("account")).isEqualTo("gugu");
+            assertThat(rs.getString("password")).isEqualTo("qqqqq");
+            assertThat(rs.getString("email")).isEqualTo("hkkang@woowahan.com");
+            assertThat(rs.getString("created_by")).isEqualTo("gugu");
+            assertThat(rs.getTimestamp("created_at")).isNotNull();
+            return rs.getLong("id");
+        }, 1L);
+        assertThat(histories).hasSize(1);
     }
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var service = service(new MockUserHistoryDao(jdbcTemplate));
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> service.changePassword(1L, "newPassword", "gugu"));
 
-        final var actual = userService.findById(1L);
+        assertOriginalState(service);
+    }
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    @Test
+    void rollsBackPasswordAndAlreadyInsertedHistory() {
+        final var failure = new DataAccessException("failure after history insert");
+        final var historyDao = new UserHistoryDao(jdbcTemplate) {
+            @Override
+            public void log(final Connection connection, final UserHistory history) {
+                super.log(connection, history);
+                throw failure;
+            }
+        };
+        final var service = service(historyDao);
+
+        assertThat(assertThrows(DataAccessException.class,
+                () -> service.changePassword(1L, "newPassword", "gugu"))).isSameAs(failure);
+
+        assertOriginalState(service);
+    }
+
+    private UserService service(final UserHistoryDao historyDao) {
+        return new UserService(DataSourceConfig.getInstance(), userDao, historyDao);
+    }
+
+    private void assertOriginalState(final UserService service) {
+        assertThat(service.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select id from user_history where user_id = ?",
+                (rs, rowNum) -> rs.getLong("id"), 1L)).isEmpty();
     }
 }
