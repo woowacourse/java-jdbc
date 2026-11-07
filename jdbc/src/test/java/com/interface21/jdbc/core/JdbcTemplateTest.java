@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement pstmt;
     private ResultSet rs;
@@ -25,7 +28,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
@@ -78,6 +81,48 @@ class JdbcTemplateTest {
 
         assertThat(actual).containsExactly("gugu");
         verify(pstmt).setLong(1, 1L);
+    }
+
+    @Test
+    void 전달받은_커넥션으로_update하면_커넥션을_닫지_않는다() throws SQLException {
+        final var sql = "update users set password = ? where id = ?";
+
+        jdbcTemplate.update(connection, sql, "new-password", 1L);
+
+        verifyNoInteractions(dataSource);
+        verify(connection).prepareStatement(sql);
+        verify(pstmt).setObject(1, "new-password");
+        verify(pstmt).setObject(2, 1L);
+        verify(pstmt).executeUpdate();
+        verify(pstmt).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 전달받은_커넥션으로_queryForObject하면_커넥션을_닫지_않는다() throws SQLException {
+        given(rs.next()).willReturn(true, false);
+        given(rs.getString("account")).willReturn("gugu");
+
+        final var actual = jdbcTemplate.queryForObject(
+                connection, "select account from users where id = ?", r -> r.getString("account"), 1L);
+
+        assertThat(actual).isEqualTo("gugu");
+        verifyNoInteractions(dataSource);
+        verify(rs).close();
+        verify(pstmt).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 전달받은_커넥션에서_SQLException이_발생해도_커넥션을_닫지_않는다() throws SQLException {
+        final var cause = new SQLException("DB 오류");
+        given(pstmt.executeUpdate()).willThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(pstmt).close();
+        verify(connection, never()).close();
     }
 
     @Test
