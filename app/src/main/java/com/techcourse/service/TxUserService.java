@@ -21,12 +21,24 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userService.findById(id);
+미        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            return userService.findById(id);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     @Override
     public void save(final User user) {
-        userService.save(user);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            userService.save(user);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 
     @Override
