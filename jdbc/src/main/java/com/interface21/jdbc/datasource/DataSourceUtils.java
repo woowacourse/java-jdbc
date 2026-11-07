@@ -24,7 +24,8 @@ public abstract class DataSourceUtils {
     }
 
     public static void releaseConnection(Connection connection, DataSource dataSource) {
-        if (TransactionSynchronizationManager.findConnection(dataSource).isPresent()) {
+        if (TransactionSynchronizationManager
+                .findConnection(dataSource).filter(found -> found == connection).isPresent()) {
             return;
         }
 
