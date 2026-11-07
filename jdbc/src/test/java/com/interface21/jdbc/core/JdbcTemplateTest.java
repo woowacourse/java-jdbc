@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,18 +39,29 @@ class JdbcTemplateTest {
 
     @Test
     void SQL에_필요한_값이_빠지면_원인을_보존한_예외를_던진다() {
-        assertThatThrownBy(() -> jdbcTemplate.update("insert into items values (?, ?)", 1))
+        // when
+        Throwable exception = catchThrowable(() -> jdbcTemplate.update("insert into items values (?, ?)", 1));
+
+        // then
+        assertThat(exception)
             .isInstanceOf(DataAccessException.class).hasCauseInstanceOf(SQLException.class);
     }
 
     @Test
     void SQL에_필요한_개수보다_많은_값을_전달하면_예외를_던진다() {
-        assertThatThrownBy(() -> jdbcTemplate.update("insert into items values (?, ?)", 1, "name", "extra"))
+        // when
+        Throwable exception = catchThrowable(
+            () -> jdbcTemplate.update("insert into items values (?, ?)", 1, "name", "extra")
+        );
+
+        // then
+        assertThat(exception)
             .isInstanceOf(DataAccessException.class).hasCauseInstanceOf(SQLException.class);
     }
 
     @Test
     void 조회_SQL_실행에_실패해도_SQL_실행_객체와_DB_연결을_닫는다() throws SQLException {
+        // given
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
@@ -57,7 +69,12 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement("sql")).thenReturn(statement);
         when(statement.executeQuery()).thenThrow(failure);
-        assertThatThrownBy(() -> new JdbcTemplate(dataSource).query("sql", row -> "value"))
+
+        // when
+        Throwable exception = catchThrowable(() -> new JdbcTemplate(dataSource).query("sql", row -> "value"));
+
+        // then
+        assertThat(exception)
             .isInstanceOf(DataAccessException.class).hasCause(failure);
         verify(statement).close();
         verify(connection).close();
@@ -65,6 +82,7 @@ class JdbcTemplateTest {
 
     @Test
     void 조회한_행을_객체로_바꾸다_런타임_예외가_발생해도_DB_연결을_닫는다() throws SQLException {
+        // given
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
@@ -74,8 +92,14 @@ class JdbcTemplateTest {
         when(connection.prepareStatement("sql")).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
-        assertThatThrownBy(() -> new JdbcTemplate(dataSource).query("sql", row -> { throw failure; }))
-            .isSameAs(failure);
+
+        // when
+        Throwable exception = catchThrowable(
+            () -> new JdbcTemplate(dataSource).query("sql", row -> { throw failure; })
+        );
+
+        // then
+        assertThat(exception).isSameAs(failure);
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
@@ -83,7 +107,10 @@ class JdbcTemplateTest {
 
     @Test
     void 여러_행을_조회하면_각_행을_객체로_바꿔_목록으로_반환한다() {
+        // given
         jdbcTemplate.update("insert into items values (?, ?), (?, ?)", 1, "first", 2, "second");
+
+        // then
         assertThat(jdbcTemplate.query("select name from items order by id", row -> row.getString("name")))
             .containsExactly("first", "second");
     }
@@ -101,51 +128,83 @@ class JdbcTemplateTest {
 
     @Test
     void 단건_조회에서_결과가_하나면_조회한_객체를_반환한다() {
+        // given
         jdbcTemplate.update("insert into items values (?, ?)", 1, "first");
+
+        // then
         assertThat(jdbcTemplate.queryForObject("select name from items where id = ?", row -> row.getString(1), 1))
             .contains("first");
     }
 
     @Test
     void 단건_조회에서_결과가_둘_이상이면_예외를_던진다() {
+        // given
         jdbcTemplate.update("insert into items values (1, 'first'), (2, 'second')");
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select name from items", row -> row.getString(1)))
+
+        // when
+        Throwable exception = catchThrowable(() -> jdbcTemplate.queryForObject("select name from items", row -> row.getString(1)));
+
+        // then
+        assertThat(exception)
             .isInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
     void 데이터를_삽입하면_DB에_저장되고_저장한_행_수를_반환한다() {
-        assertThat(jdbcTemplate.update("insert into items values (?, ?)", 1, "saved")).isEqualTo(1);
+        // when
+        final int affectedRows = jdbcTemplate.update("insert into items values (?, ?)", 1, "saved");
+
+        // then
+        assertThat(affectedRows).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("select name from items where id = 1", row -> row.getString(1)))
             .contains("saved");
     }
 
     @Test
     void 데이터를_수정하면_DB에_반영되고_수정한_행_수를_반환한다() {
+        // given
         jdbcTemplate.update("insert into items values (1, 'before'), (2, 'other')");
-        assertThat(jdbcTemplate.update("update items set name = ? where id = ?", "after", 1)).isEqualTo(1);
+
+        // when
+        final int affectedRows = jdbcTemplate.update("update items set name = ? where id = ?", "after", 1);
+
+        // then
+        assertThat(affectedRows).isEqualTo(1);
         assertThat(jdbcTemplate.query("select name from items order by id", row -> row.getString(1)))
             .containsExactly("after", "other");
     }
 
     @Test
     void 데이터를_삭제하면_DB에서_사라지고_삭제한_행_수를_반환한다() {
+        // given
         jdbcTemplate.update("insert into items values (1, 'first')");
-        assertThat(jdbcTemplate.update("delete from items where id = ?", 1)).isEqualTo(1);
+
+        // when
+        final int affectedRows = jdbcTemplate.update("delete from items where id = ?", 1);
+
+        // then
+        assertThat(affectedRows).isEqualTo(1);
         assertThat(jdbcTemplate.query("select id from items", row -> row.getInt(1))).isEmpty();
     }
 
     @Test
     void DB_연결에_실패하면_원인을_보존한_예외를_던진다() throws SQLException {
+        // given
         DataSource dataSource = mock(DataSource.class);
         SQLException failure = new SQLException("connection failed");
         when(dataSource.getConnection()).thenThrow(failure);
-        assertThatThrownBy(() -> new JdbcTemplate(dataSource).update("delete from items"))
+
+        // when
+        Throwable exception = catchThrowable(() -> new JdbcTemplate(dataSource).update("delete from items"));
+
+        // then
+        assertThat(exception)
             .isInstanceOf(DataAccessException.class).hasCause(failure);
     }
 
     @Test
     void SQL_실행에_실패하면_원인을_보존한_예외를_던진다() throws SQLException {
+        // given
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
@@ -153,7 +212,12 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement("sql")).thenReturn(statement);
         when(statement.executeUpdate()).thenThrow(failure);
-        assertThatThrownBy(() -> new JdbcTemplate(dataSource).update("sql"))
+
+        // when
+        Throwable exception = catchThrowable(() -> new JdbcTemplate(dataSource).update("sql"));
+
+        // then
+        assertThat(exception)
             .isInstanceOf(DataAccessException.class).hasCause(failure);
         verify(statement).close();
         verify(connection).close();
@@ -194,24 +258,35 @@ class JdbcTemplateTest {
 
     @Test
     void SQL_실행_객체를_만들다_실패해도_이미_얻은_DB_연결을_닫는다() throws SQLException {
+        // given
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         SQLException failure = new SQLException("prepare failed");
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement("sql")).thenThrow(failure);
-        assertThatThrownBy(() -> new JdbcTemplate(dataSource).update("sql"))
+
+        // when
+        Throwable exception = catchThrowable(() -> new JdbcTemplate(dataSource).update("sql"));
+
+        // then
+        assertThat(exception)
             .isInstanceOf(DataAccessException.class).hasCause(failure);
         verify(connection).close();
     }
 
     @Test
     void 수정을_마치면_SQL_실행_객체와_DB_연결을_닫는다() throws SQLException {
+        // given
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement("sql")).thenReturn(statement);
+
+        // when
         new JdbcTemplate(dataSource).update("sql");
+
+        // then
         verify(statement).close();
         verify(connection).close();
     }
