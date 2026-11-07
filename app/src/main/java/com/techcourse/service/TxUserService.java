@@ -21,7 +21,7 @@ public class TxUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-미        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
             return userService.findById(id);
         } finally {
@@ -55,12 +55,12 @@ public class TxUserService implements UserService {
             } catch (RuntimeException e) {
                 connection.rollback();
                 throw e;
-            } finally {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
             throw new DataAccessException("sql exception occurred", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
