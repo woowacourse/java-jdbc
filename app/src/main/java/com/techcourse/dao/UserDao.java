@@ -5,13 +5,9 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
-
-    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
-    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private static final RowMapper<User> USER_ROW_MAPPER = (resultSet, rowNum) -> new User(
             resultSet.getLong("id"),
@@ -36,12 +32,8 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        jdbcTemplate.update(UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
-    public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, UPDATE_SQL,
-                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -50,11 +42,8 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
+        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
