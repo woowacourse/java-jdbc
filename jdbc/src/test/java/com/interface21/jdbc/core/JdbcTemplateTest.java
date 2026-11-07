@@ -58,6 +58,32 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void update는_PreparedStatementSetter로_값을_바인딩한다() throws SQLException {
+        jdbcTemplate.update("update users set password = ? where id = ?", pstmt -> {
+            pstmt.setString(1, "password99");
+            pstmt.setLong(2, 1L);
+        });
+
+        final InOrder inOrder = inOrder(preparedStatement);
+        inOrder.verify(preparedStatement).setString(1, "password99");
+        inOrder.verify(preparedStatement).setLong(2, 1L);
+        inOrder.verify(preparedStatement).executeUpdate();
+    }
+
+    @Test
+    void PreparedStatementSetter에서_SQLException이_나면_DataAccessException으로_바꾸고_자원을_닫는다() throws SQLException {
+        final var cause = new SQLException("invalid parameter index");
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", pstmt -> {
+            throw cause;
+        }))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(preparedStatement).close();
+        verify(connection).close();
+    }
+
+    @Test
     void update가_끝나면_PreparedStatement와_Connection을_닫는다() throws SQLException {
         jdbcTemplate.update("delete from users");
 
@@ -90,6 +116,20 @@ class JdbcTemplateTest {
 
         assertThat(accounts).containsExactly("gugu", "kirby");
         assertThat(rowNums).containsExactly(0, 1);
+    }
+
+    @Test
+    void query는_PreparedStatementSetter로_값을_바인딩한다() throws SQLException {
+        given(resultSet.next()).willReturn(true, false);
+        given(resultSet.getString("account")).willReturn("gugu");
+
+        final var accounts = jdbcTemplate.query(
+                "select account from users where id = ?",
+                pstmt -> pstmt.setLong(1, 1L),
+                (rs, rowNum) -> rs.getString("account"));
+
+        assertThat(accounts).containsExactly("gugu");
+        verify(preparedStatement).setLong(1, 1L);
     }
 
     @Test

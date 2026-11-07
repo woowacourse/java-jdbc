@@ -25,16 +25,24 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+    public int update(final String sql, final PreparedStatementSetter pss) {
+        return execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
-    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
+    public int update(final String sql, final Object... args) {
+        return update(sql, new ArgumentPreparedStatementSetter(args));
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
+        return execute(sql, pss, pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 return mapRows(rs, rowMapper);
             }
-        }, args);
+        });
+    }
+
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return query(sql, new ArgumentPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -53,21 +61,15 @@ public class JdbcTemplate {
         return Optional.ofNullable(singleResult(results));
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
         log.debug("query : {}", sql);
 
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setParameters(pstmt, args);
+            pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다. sql=" + sql, e);
-        }
-    }
-
-    private void setParameters(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
         }
     }
 
