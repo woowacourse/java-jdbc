@@ -1,63 +1,104 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
+    private static final long USER_ID = 1L;
+    private static final String ORIGINAL_PASSWORD = "password";
+
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var testDataSource = new JdbcDataSource();
+        testDataSource.setUrl("jdbc:h2:mem:user-service-test;DB_CLOSE_DELAY=-1");
+        this.dataSource = testDataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        DatabasePopulatorUtils.execute(dataSource);
+        jdbcTemplate.update("truncate table user_history");
+        jdbcTemplate.update("truncate table users restart identity");
+        userDao.insert(new User("gugu", ORIGINAL_PASSWORD, "hkkang@woowahan.com"));
     }
 
     @Test
-    void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
-
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
-
-        final var actual = userService.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
-    }
-
-    @Test
-    void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
-
+    @DisplayName("비밀번호 변경에 성공하면 새 비밀번호와 변경 이력이 함께 저장된다")
+    void savesPasswordAndHistory() {
+        // given
+        final var userService = new UserService(userDao, new UserHistoryDao(jdbcTemplate), dataSource);
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+        final var changedBy = "operator";
 
-        final var actual = userService.findById(1L);
+        // when
+        userService.changePassword(USER_ID, newPassword, changedBy);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        // then
+        assertThat(userDao.findById(USER_ID).getPassword()).isEqualTo(newPassword);
+        assertThat(findPasswordChanges()).singleElement().satisfies(change -> {
+            assertThat(change.userId()).isEqualTo(USER_ID);
+            assertThat(change.password()).isEqualTo(newPassword);
+            assertThat(change.changedBy()).isEqualTo(changedBy);
+            assertThat(change.changedAt()).isNotNull();
+        });
+    }
+
+    @Test
+    @DisplayName("이력 저장 직후 실패하면 비밀번호 변경과 이력 저장이 모두 롤백된다")
+    void rollsBackPasswordAndHistory() {
+        // given
+        final var historyFailure = new DataAccessException("이력 저장 직후 발생한 실패");
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
+            @Override
+            public void log(final Connection connection, final UserHistory history) {
+                super.log(connection, history);
+                throw historyFailure;
+            }
+        };
+        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+
+        // when
+        final var thrown = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(USER_ID, "newPassword", "operator"));
+
+        // then
+        assertThat(thrown).isSameAs(historyFailure);
+        assertAll(
+                () -> assertThat(userDao.findById(USER_ID).getPassword()).isEqualTo(ORIGINAL_PASSWORD),
+                () -> assertThat(findPasswordChanges()).isEmpty());
+    }
+
+    private List<PasswordChange> findPasswordChanges() {
+        final var sql = "select user_id, password, created_by, created_at from user_history";
+        return jdbcTemplate.query(sql, row -> new PasswordChange(
+                row.getLong("user_id"),
+                row.getString("password"),
+                row.getString("created_by"),
+                row.getObject("created_at", LocalDateTime.class)));
+    }
+
+    private record PasswordChange(long userId, String password, String changedBy, LocalDateTime changedAt) {
     }
 }

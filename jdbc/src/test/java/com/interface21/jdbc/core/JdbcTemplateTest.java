@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +71,25 @@ class JdbcTemplateTest {
     }
 
     @Test
+    @DisplayName("전달받은 연결에서 변경 작업을 실행하고 Statement만 닫는다")
+    void updateWithBorrowedConnection() throws SQLException {
+        // given
+        final var sql = "update people set name = ?";
+        when(statement.executeUpdate()).thenReturn(1);
+
+        // when
+        final var affectedRows = jdbcTemplate.update(connection, sql, "gugu");
+
+        // then
+        assertThat(affectedRows).isEqualTo(1);
+        verify(connection).prepareStatement(sql);
+        verify(statement).setObject(1, "gugu");
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
     @DisplayName("조회 조건을 바인딩하고 모든 행을 호출자가 지정한 객체로 변환한다")
     void queryWithParameters() throws SQLException {
         // given
@@ -112,6 +132,27 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("전달받은 연결에서 단건을 조회하고 ResultSet과 Statement만 닫는다")
+    void queryForObjectWithBorrowedConnection() throws SQLException {
+        // given
+        final var sql = "select name from people where id = ?";
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("gugu");
+
+        // when
+        final var name = jdbcTemplate.queryForObject(connection, sql, NAME_MAPPER, 2L);
+
+        // then
+        assertThat(name).isEqualTo("gugu");
+        verify(connection).prepareStatement(sql);
+        verify(statement).setObject(1, 2L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     @Test
