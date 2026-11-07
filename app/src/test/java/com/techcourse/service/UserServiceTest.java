@@ -28,6 +28,12 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);
+
+        jdbcTemplate.update("delete from user_history");
+        jdbcTemplate.update("delete from users");
+        jdbcTemplate.update("alter table user_history alter column id restart with 1");
+        jdbcTemplate.update("alter table users alter column id restart with 1");
+
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
