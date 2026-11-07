@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,21 +25,11 @@ public class JdbcTemplate {
     }
 
     public int update(String sql, Object... args) {
+        boolean ownsConnection = TransactionSynchronizationManager.getResource(dataSource) == null;
 
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
+        Connection conn = DataSourceUtils.getConnection(dataSource);
 
-            bindParams(pstmt, args);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    public int update(String sql, Connection connection, Object... args) {
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)){
 
             bindParams(pstmt, args);
 
@@ -45,6 +37,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            if (ownsConnection) {
+                try {
+                    DataSourceUtils.releaseConnection(conn, dataSource);
+                } finally {
+                    TransactionSynchronizationManager.unbindResource(dataSource);
+                }
+            }
         }
     }
 
@@ -52,8 +52,10 @@ public class JdbcTemplate {
 
         List<T> list = new ArrayList<>();
 
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
+        boolean ownsConnection = TransactionSynchronizationManager.getResource(dataSource) == null;
+
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)
             ){
 
             log.debug("query: {}", sql);
@@ -68,6 +70,14 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            if (ownsConnection) {
+                try {
+                    DataSourceUtils.releaseConnection(conn, dataSource);
+                } finally {
+                    TransactionSynchronizationManager.unbindResource(dataSource);
+                }
+            }
         }
         return list;
     }
