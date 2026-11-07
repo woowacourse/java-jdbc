@@ -1,5 +1,6 @@
 package com.techcourse.service;
 
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -40,6 +41,7 @@ class UserServiceTest {
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         final var actual = userService.findById(1L);
 
@@ -57,6 +59,8 @@ class UserServiceTest {
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
+
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
 
         final var actual = userService.findById(1L);
 

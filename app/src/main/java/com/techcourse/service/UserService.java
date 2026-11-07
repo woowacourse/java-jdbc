@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -31,28 +33,33 @@ public class UserService {
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
 
-        try(Connection connection = dataSource.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try {
             connection.setAutoCommit(false);
+            final var user = findById(id);
 
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+
+            connection.commit();
+        } catch (final SQLException | RuntimeException e) {
             try {
-                final var user = findById(id);
-
-                user.changePassword(newPassword);
-                userDao.update(user, connection);
-                userHistoryDao.log(new UserHistory(user, createBy), connection);
-
-                connection.commit();
-            } catch (final SQLException | RuntimeException e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackException) {
-                    e.addSuppressed(rollbackException);
-                }
-                throw e;
+                connection.rollback();
+            } catch (SQLException rollbackException) {
+                e.addSuppressed(rollbackException);
             }
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+            if (e instanceof SQLException sqlException) {
+                throw new DataAccessException(sqlException);
+            }
+            throw (RuntimeException) e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
-
     }
 }
