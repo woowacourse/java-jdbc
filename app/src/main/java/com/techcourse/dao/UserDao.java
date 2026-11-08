@@ -8,6 +8,11 @@ import java.util.List;
 
 public class UserDao {
 
+    private static final String UPDATE_SQL =
+            "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+    private static final String FIND_BY_ID_SQL =
+            "select id, account, password, email from users where id = ?";
+
     private static final RowMapper<User> USER_ROW_MAPPER =
             rs -> new User(
                     rs.getLong("id"),
@@ -29,15 +34,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(UPDATE_SQL, updateArgs(user));
     }
 
     public void update(final Connection connection, final User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
-
-        jdbcTemplate.update(connection, sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        jdbcTemplate.update(connection, UPDATE_SQL, updateArgs(user));
     }
 
     public List<User> findAll() {
@@ -47,20 +48,25 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
     }
 
     public User findById(final Connection connection, final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-
-        return jdbcTemplate.queryForObject(connection, sql, USER_ROW_MAPPER, id);
+        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "SELECT id, account, password, email from users where account = ?";
 
         return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+    }
+
+    private Object[] updateArgs(final User user) {
+        return new Object[]{
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        };
     }
 }
