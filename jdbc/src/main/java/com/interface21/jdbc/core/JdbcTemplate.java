@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,10 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... parameters) {
         return execute(PreparedStatement::executeUpdate, sql, parameters);
+    }
+
+    public int update(final Connection conn, final String sql, final Object... parameters) {
+        return execute(conn, PreparedStatement::executeUpdate, sql, parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -56,10 +61,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final PreparedStatementCallback<T> pstmtcb, final String sql, final Object... parameters) {
-        try (
-                final var conn = dataSource.getConnection();
-                final var pstmt = conn.prepareStatement(sql)
-        ) {
+        try (final var conn = dataSource.getConnection()) {
+            return execute(conn, pstmtcb, sql, parameters);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    // 전달받은 Connection은 트랜잭션을 연 쪽이 관리하므로 여기서 닫지 않는다.
+    private <T> T execute(final Connection conn, final PreparedStatementCallback<T> pstmtcb, final String sql, final Object... parameters) {
+        try (final var pstmt = conn.prepareStatement(sql)) {
             createPreparedStatementSetter(parameters).setParameters(pstmt);
             return pstmtcb.execute(pstmt);
         } catch (SQLException e) {
