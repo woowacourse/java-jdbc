@@ -6,8 +6,12 @@ import com.interface21.transaction.support.TransactionSynchronizationManager;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DataSourceUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSourceUtils.class);
 
     private DataSourceUtils() {}
 
@@ -31,8 +35,8 @@ public abstract class DataSourceUtils {
 
         try {
             connection.close();
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
+        } catch (SQLException | RuntimeException ex) {
+            log.warn("JDBC Connection 반환에 실패했습니다.", ex);
         }
     }
 }

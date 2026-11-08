@@ -69,21 +69,10 @@ public class JdbcTemplate {
             PreparedStatementCallback<T> callback
     ) {
         final Connection connection = DataSourceUtils.getConnection(dataSource);
-        Throwable failure = null;
         try {
             return execute(connection, sql, setter, callback);
-        } catch (RuntimeException | Error e) {
-            failure = e;
-            throw e;
         } finally {
-            try {
-                DataSourceUtils.releaseConnection(connection, dataSource);
-            } catch (RuntimeException closeException) {
-                if (failure == null) {
-                    throw closeException;
-                }
-                failure.addSuppressed(closeException);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

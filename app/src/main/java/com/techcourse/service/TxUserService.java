@@ -8,8 +8,12 @@ import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TxUserService implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final UserService userService;
     private final DataSource dataSource;
@@ -37,18 +41,13 @@ public class TxUserService implements UserService {
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         validateNoTransactionInProgress();
         final Connection connection = DataSourceUtils.getConnection(dataSource);
-        Throwable failure = null;
         try {
             executeTransaction(connection, id, newPassword, createdBy);
         } catch (SQLException e) {
-            failure = e;
             throw new DataAccessException("비밀번호 변경 트랜잭션 처리에 실패했습니다.", e);
-        } catch (RuntimeException | Error e) {
-            failure = e;
-            throw e;
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
-            releaseConnection(connection, failure);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -68,43 +67,28 @@ public class TxUserService implements UserService {
             connection.commit();
         } catch (SQLException | RuntimeException | Error e) {
             if (rollback(connection, e)) {
-                restoreAutoCommit(connection, previousAutoCommit, e);
+                restoreAutoCommit(connection, previousAutoCommit);
             }
             throw e;
         }
-        restoreAutoCommit(connection, previousAutoCommit, null);
+        restoreAutoCommit(connection, previousAutoCommit);
     }
 
-    private boolean rollback(final Connection connection, final Throwable failure) {
+    private boolean rollback(final Connection connection, final Throwable originalException) {
         try {
             connection.rollback();
             return true;
-        } catch (SQLException | RuntimeException rollbackFailure) {
-            failure.addSuppressed(rollbackFailure);
+        } catch (SQLException | RuntimeException rollbackException) {
+            originalException.addSuppressed(rollbackException);
             return false;
         }
     }
 
-    private void restoreAutoCommit(final Connection connection, final boolean previousAutoCommit,
-                                   final Throwable failure) {
+    private void restoreAutoCommit(final Connection connection, final boolean previousAutoCommit) {
         try {
             connection.setAutoCommit(previousAutoCommit);
-        } catch (SQLException | RuntimeException restoreFailure) {
-            if (failure == null) {
-                throw new DataAccessException("트랜잭션 연결 상태 복원에 실패했습니다.", restoreFailure);
-            }
-            failure.addSuppressed(restoreFailure);
-        }
-    }
-
-    private void releaseConnection(final Connection connection, final Throwable failure) {
-        try {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        } catch (RuntimeException closeFailure) {
-            if (failure == null) {
-                throw new DataAccessException("트랜잭션 연결 반환에 실패했습니다.", closeFailure);
-            }
-            failure.addSuppressed(closeFailure);
+        } catch (SQLException | RuntimeException e) {
+            log.warn("트랜잭션 연결 상태 복원에 실패했습니다.", e);
         }
     }
 }
