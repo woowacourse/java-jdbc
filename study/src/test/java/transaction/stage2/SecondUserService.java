@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
@@ -23,6 +24,24 @@ public class SecondUserService {
         userRepository.save(User.createTest());
         logActualTransactionActive();
         return TransactionSynchronizationManager.getCurrentTransactionName();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void saveWithRequiredAndFail() {
+        userRepository.save(User.createTest());
+        throw new IllegalStateException("required learning failure");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public boolean saveWithRequiredAndCatchInside() {
+        userRepository.save(User.createTest());
+        try {
+            // DB 오류가 아닌, 메서드 내부에서 직접 발생시킨 애플리케이션 예외다.
+            throw new IllegalStateException("handled inside");
+        } catch (IllegalStateException e) {
+            log.info("메서드 내부에서 예외 처리: {}", e.getMessage());
+        }
+        return TransactionAspectSupport.currentTransactionStatus().isRollbackOnly();
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

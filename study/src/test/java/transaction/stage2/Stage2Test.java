@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.NestedTransactionNotSupportedException;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,6 +64,26 @@ class Stage2Test {
      * 생성된 트랜잭션이 몇 개인가?
      * 왜 그런 결과가 나왔을까?
      */
+    @Test
+    void testRequiredInnerFailureCaughtOutsideStillRollsBack() {
+        assertThat(userRepository.count()).isZero();
+
+        assertThatThrownBy(() -> firstUserService.saveWithRequiredAndCatchInnerFailure())
+                .isInstanceOf(UnexpectedRollbackException.class);
+
+        assertThat(userRepository.count()).isZero();
+    }
+
+    @Test
+    void testRequiredApplicationExceptionCaughtInsideCanCommit() {
+        assertThat(userRepository.count()).isZero();
+
+        final var rollbackOnly = secondUserService.saveWithRequiredAndCatchInside();
+
+        assertThat(rollbackOnly).isFalse();
+        assertThat(userRepository.count()).isEqualTo(1);
+    }
+
     @Test
     void testRequiredNew() {
         assertThat(userRepository.count()).isZero();
