@@ -49,6 +49,13 @@ public class JdbcTemplate {
         }
     }
 
+    /**
+     * 최대 한 건을 조회한다.
+     * <p>
+     * 조회 결과가 없으면 {@code null}을 반환하고, 두 건 이상이면 {@link DataAccessException}을 던진다.
+     * 한 행이 존재하지만 {@link RowMapper}가 {@code null}을 반환한 경우도 {@code null}이므로,
+     * "행 없음"과 구분할 필요가 있다면 {@link RowMapper}가 {@code null}을 반환하지 않도록 작성해야 한다.
+     */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final var results = query(sql, rowMapper, args);
         if (results.size() > 1) {
