@@ -14,6 +14,7 @@ public class UserHistoryDao {
             rs.getString("account"),
             rs.getString("password"),
             rs.getString("email"),
+            rs.getTimestamp("created_at").toLocalDateTime(),
             rs.getString("created_by")
     );
 
@@ -37,7 +38,7 @@ public class UserHistoryDao {
     }
 
     public List<UserHistory> findByUserId(final long userId) {
-        final var sql = "select id, user_id, account, password, email, created_by from user_history where user_id = ?";
+        final var sql = "select id, user_id, account, password, email, created_at, created_by from user_history where user_id = ?";
         return jdbcTemplate.query(sql, USER_HISTORY_ROW_MAPPER, userId);
     }
 }
