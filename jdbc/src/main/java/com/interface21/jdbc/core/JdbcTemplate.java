@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,10 +63,28 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e.getCause());
+        }
+        Throwable failure = null;
+        try {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (CannotGetJdbcConnectionException e) {
+                if (failure != null) {
+                    failure.addSuppressed(e);
+                } else {
+                    throw new DataAccessException("Failed to release Connection for SQL: " + sql, e.getCause());
+                }
+            }
         }
     }
 
