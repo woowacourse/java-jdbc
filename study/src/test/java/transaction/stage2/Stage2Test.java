@@ -6,6 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.NestedTransactionNotSupportedException;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,7 +32,13 @@ class Stage2Test {
     private FirstUserService firstUserService;
 
     @Autowired
+    private SecondUserService secondUserService;
+
+    @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @AfterEach
     void tearDown() {
@@ -45,8 +55,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
@@ -55,12 +65,16 @@ class Stage2Test {
      */
     @Test
     void testRequiredNew() {
+        assertThat(userRepository.count()).isZero();
         final var actual = firstUserService.saveFirstTransactionWithRequiredNew();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactlyInAnyOrder(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew");
+        assertThat(userRepository.count()).isEqualTo(2);
     }
 
     /**
@@ -69,12 +83,13 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).isEmpty();
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        // 외부 트랜잭션은 롤백되지만, REQUIRES_NEW로 먼저 커밋한 내부 저장은 남는다.
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
@@ -83,12 +98,33 @@ class Stage2Test {
      */
     @Test
     void testSupports() {
+        assertThat(userRepository.count()).isZero();
         final var actual = firstUserService.saveFirstTransactionWithSupports();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                // 이름이 있어도 실제 트랜잭션이 활성 상태라는 뜻은 아니다.
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
+        // 두 save()가 각각 트랜잭션을 시작하고 커밋한다.
+        assertThat(userRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void testSupportsWithExistingTransaction() {
+        assertThat(userRepository.count()).isZero();
+        final var transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setName("supports-learning-outer");
+
+        transactionTemplate.executeWithoutResult(status -> {
+            final var actual = firstUserService.saveFirstTransactionWithSupports();
+
+            assertThat(actual).containsExactly("supports-learning-outer");
+            assertThat(userRepository.count()).isEqualTo(2);
+            // 외부 트랜잭션에 참여한 두 저장이 함께 취소되는지 확인한다.
+            status.setRollbackOnly();
+        });
+
+        assertThat(userRepository.count()).isZero();
     }
 
     /**
@@ -98,12 +134,31 @@ class Stage2Test {
      */
     @Test
     void testMandatory() {
-        final var actual = firstUserService.saveFirstTransactionWithMandatory();
+        assertThat(userRepository.count()).isZero();
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithMandatory())
+                .isInstanceOf(IllegalTransactionStateException.class);
+
+        // 첫 번째 save()는 이미 커밋됐고, MANDATORY인 두 번째 서비스는 실행되지 않는다.
+        assertThat(userRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void testMandatoryWithExistingTransaction() {
+        assertThat(userRepository.count()).isZero();
+        final var transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setName("mandatory-learning-outer");
+
+        transactionTemplate.executeWithoutResult(status -> {
+            final var actual = firstUserService.saveFirstTransactionWithMandatory();
+
+            assertThat(actual).containsExactly("mandatory-learning-outer");
+            assertThat(userRepository.count()).isEqualTo(2);
+            // 두 저장이 기존 트랜잭션에 참여하므로 외부 롤백으로 함께 취소된다.
+            status.setRollbackOnly();
+        });
+
+        assertThat(userRepository.count()).isZero();
     }
 
     /**
@@ -115,12 +170,35 @@ class Stage2Test {
      */
     @Test
     void testNotSupported() {
+        assertThat(userRepository.count()).isZero();
         final var actual = firstUserService.saveFirstTransactionWithNotSupported();
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                // NOT_SUPPORTED 범위의 이름은 실제 DB 트랜잭션의 존재를 뜻하지 않는다.
+                .containsExactlyInAnyOrder(
+                        "transaction.stage2.FirstUserService.saveFirstTransactionWithNotSupported",
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
+        assertThat(userRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void testNotSupportedWithOuterRollback() {
+        assertThat(userRepository.count()).isZero();
+        final var transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setName("not-supported-learning-outer");
+
+        transactionTemplate.executeWithoutResult(status -> {
+            final var actual = firstUserService.saveFirstTransactionWithNotSupported();
+
+            assertThat(actual).containsExactlyInAnyOrder(
+                    "not-supported-learning-outer",
+                    "transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
+            status.setRollbackOnly();
+        });
+
+        // 외부 트랜잭션을 보류한 동안 Repository.save()가 별도로 커밋한 저장은 남는다.
+        assertThat(userRepository.count()).isEqualTo(1);
     }
 
     /**
@@ -129,12 +207,24 @@ class Stage2Test {
      */
     @Test
     void testNested() {
-        final var actual = firstUserService.saveFirstTransactionWithNested();
+        assertThat(userRepository.count()).isZero();
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNested())
+                .isInstanceOf(NestedTransactionNotSupportedException.class);
+
+        // 현재 JPA 구성에서는 저장점 생성에 실패하고 외부 저장도 롤백된다.
+        assertThat(userRepository.count()).isZero();
+    }
+
+    @Test
+    void testNestedWithoutExistingTransaction() {
+        assertThat(userRepository.count()).isZero();
+
+        final var actual = secondUserService.saveSecondTransactionWithNested();
+
+        // 외부 트랜잭션이 없으면 REQUIRED처럼 새 트랜잭션으로 실행된다.
+        assertThat(actual).isEqualTo("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
+        assertThat(userRepository.count()).isEqualTo(1);
     }
 
     /**
@@ -142,11 +232,23 @@ class Stage2Test {
      */
     @Test
     void testNever() {
-        final var actual = firstUserService.saveFirstTransactionWithNever();
+        assertThat(userRepository.count()).isZero();
 
-        log.info("transactions : {}", actual);
-        assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+        assertThatThrownBy(() -> firstUserService.saveFirstTransactionWithNever())
+                .isInstanceOf(IllegalTransactionStateException.class);
+
+        // NEVER의 예외가 외부 REQUIRED까지 전파되어 첫 번째 저장도 롤백된다.
+        assertThat(userRepository.count()).isZero();
+    }
+
+    @Test
+    void testNeverWithoutExistingTransaction() {
+        assertThat(userRepository.count()).isZero();
+
+        // REQUIRED인 첫 번째 서비스를 거치지 않고 스프링 빈을 직접 호출한다.
+        secondUserService.saveSecondTransactionWithNever();
+
+        // NEVER는 진입 시 트랜잭션을 거부하지만, 내부 save()의 트랜잭션을 금지하지 않는다.
+        assertThat(userRepository.count()).isEqualTo(1);
     }
 }
