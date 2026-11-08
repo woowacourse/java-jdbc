@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 격리 레벨(Isolation Level)에 따라 여러 사용자가 동시에 db에 접근했을 때 어떤 문제가 발생하는지 확인해보자.
  * ❗phantom reads는 docker를 실행한 상태에서 테스트를 실행한다.
- * ❗phantom reads는 MySQL로 확인한다. H2 데이터베이스에서는 발생하지 않는다.
+ * ❗이 테스트의 phantom reads 및 UPDATE 혼합 조회는 MySQL InnoDB로 확인한다.
  *
  * 참고 링크
  * https://en.wikipedia.org/wiki/Isolation_(database_systems)
@@ -36,10 +36,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Read phenomena | Dirty reads | Non-repeatable reads | Phantom reads
  * Isolation level  |             |                      |
  * -----------------|-------------|----------------------|--------------
- * Read Uncommitted |             |                      |
- * Read Committed   |             |                      |
- * Repeatable Read  |             |                      |
- * Serializable     |             |                      |
+ * Read Uncommitted |      +      |          +           |
+ * Read Committed   |      -      |          +           |
+ * Repeatable Read  |      -      |          -           |
+ * Serializable     |      -      |          -           |
  */
 class Stage1Test {
 
@@ -181,78 +181,71 @@ class Stage1Test {
     }
 
     /**
-     * phantom read는 h2에서 발생하지 않는다. mysql로 확인해보자.
-     * 격리 수준에 따라 어떤 현상이 발생하는지 테스트를 돌려 직접 눈으로 확인하고 표를 채워보자.
-     * + : 발생
-     * - : 발생하지 않음
-     *   Read phenomena | Phantom reads
-     * Isolation level  |
-     * -----------------|--------------
-     * Read Uncommitted |
-     * Read Committed   |
-     * Repeatable Read  |
-     * Serializable     |
+     * MySQL InnoDB에서 일반 범위 조회와 UPDATE를 섞은 조회를 구분한다.
+     * READ_COMMITTED: 일반 재조회 1 -> 2
+     * REPEATABLE_READ: 일반 재조회 1 -> 1, 직접 UPDATE 후 재조회 1 -> 2
      */
-    @Test
-    void phantomReading() throws SQLException {
+    @ParameterizedTest(name = "{0}: update = {2}, second row count = {3}")
+    @CsvSource({
+            "READ_COMMITTED, 2, false, 2",
+            "REPEATABLE_READ, 4, false, 1",
+            "REPEATABLE_READ, 4, true, 2"
+    })
+    void phantomReading(final String isolationName, final int isolationLevel,
+                        final boolean updateBeforeRead, final int expectedCount) throws SQLException {
+        try (final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))) {
+            mysql.start();
+            try (final var source = createMySQLDataSource(mysql);
+                 final var reader = source.getConnection();
+                 final var writer = source.getConnection()) {
+                final var dao = new UserDao(source);
+                try (final var statement = writer.createStatement()) {
+                    statement.execute("create table users (id bigint auto_increment primary key, "
+                            + "account varchar(100), password varchar(100), email varchar(100)) engine=InnoDB");
+                }
+                dao.insert(writer, new User("gugu", "password", "hkkang@woowahan.com"));
 
-        // testcontainer로 docker를 실행해서 mysql에 연결한다.
-        final var mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.30"))
-                .withLogConsumer(new Slf4jLogConsumer(log));
-        mysql.start();
-        setUp(createMySQLDataSource(mysql));
+                reader.setTransactionIsolation(isolationLevel);
+                reader.setAutoCommit(false);
+                writer.setAutoCommit(false);
+                try {
+                    assertThat(dao.findGreaterThan(reader, 1)).hasSize(1);
 
-        // 테스트 전에 필요한 데이터를 추가한다.
-        userDao.insert(dataSource.getConnection(), new User("gugu", "password", "hkkang@woowahan.com"));
+                    // 별도 연결 B가 새 행을 넣고 커밋한다. A는 아직 같은 트랜잭션이다.
+                    dao.insert(writer, new User("bird", "password", "bird@woowahan.com"));
+                    writer.commit();
 
-        // db에 새로운 연결(사용자A)을 받아와서
-        final var connection = dataSource.getConnection();
+                    final var beforeUpdate = dao.findGreaterThan(reader, 1);
+                    assertThat(beforeUpdate).hasSize(
+                            isolationLevel == Connection.TRANSACTION_READ_COMMITTED ? 2 : 1);
 
-        // 트랜잭션을 시작한다.
-        connection.setAutoCommit(false);
+                    // InnoDB의 UPDATE는 일반 SELECT의 과거 스냅샷에만 제한되지 않는다.
+                    if (updateBeforeRead) {
+                        dao.updatePasswordGreaterThan(reader, "qqqq", 1);
+                    }
+                    final var actual = dao.findGreaterThan(reader, 1);
+                    assertThat(actual).hasSize(expectedCount);
+                    if (updateBeforeRead) {
+                        assertThat(actual).extracting(User::getPassword).containsOnly("qqqq");
+                    }
+                    log.info("{}: first=1, B commit 후={}, UPDATE={}, final={}",
+                            isolationName, beforeUpdate.size(), updateBeforeRead, actual.size());
 
-        // 적절한 격리 레벨을 찾는다.
-        final int isolationLevel = Connection.TRANSACTION_NONE;
-
-        // 트랜잭션 격리 레벨을 설정한다.
-        connection.setTransactionIsolation(isolationLevel);
-
-        // 사용자A가 id로 범위를 조회했다.
-        userDao.findGreaterThan(connection, 1);
-
-        new Thread(RunnableWrapper.accept(() -> {
-            // 사용자B가 새로 연결하여
-            final var subConnection = dataSource.getConnection();
-
-            // 트랜잭션 시작
-            subConnection.setAutoCommit(false);
-
-            // 새로운 user 객체를 저장했다.
-            // id는 2로 저장된다.
-            userDao.insert(subConnection, new User("bird", "password", "bird@woowahan.com"));
-
-            subConnection.commit();
-        })).start();
-
-        sleep(0.5);
-
-        // MySQL에서 팬텀 읽기를 시연하려면 update를 실행해야 한다.
-        // http://stackoverflow.com/questions/42794425/unable-to-produce-a-phantom-read/42796969#42796969
-        userDao.updatePasswordGreaterThan(connection, "qqqq", 1);
-
-        // 사용자A가 다시 id로 범위를 조회했다.
-        final var actual = userDao.findGreaterThan(connection, 1);
-
-        // 트랜잭션 격리 레벨에 따라 아래 테스트가 통과한다.
-        // 각 격리 레벨은 어떤 결과가 나오는지 직접 확인해보자.
-        log.info("isolation level : {}, user : {}", isolationLevel, actual);
-        assertThat(actual).hasSize(1);
-
-        connection.rollback();
-        mysql.close();
+                    // A의 변경만 취소된다. B가 커밋한 bird는 남는다.
+                    reader.rollback();
+                    final var afterRollback = dao.findGreaterThan(reader, 1);
+                    assertThat(afterRollback).extracting(User::getAccount)
+                            .containsExactlyInAnyOrder("gugu", "bird");
+                    assertThat(afterRollback).extracting(User::getPassword).containsOnly("password");
+                } finally {
+                    reader.rollback();
+                    writer.rollback();
+                }
+            }
+        }
     }
 
-    private static DataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
+    private static HikariDataSource createMySQLDataSource(final JdbcDatabaseContainer<?> container) {
         final var config = new HikariConfig();
         config.setJdbcUrl(container.getJdbcUrl());
         config.setUsername(container.getUsername());
