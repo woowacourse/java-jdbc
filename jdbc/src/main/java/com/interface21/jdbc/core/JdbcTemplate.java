@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,12 +42,6 @@ public class JdbcTemplate {
         return singleResult(query(sql, rowMapper, args));
     }
 
-    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... args) {
-        final List<T> rows = execute(connection, sql, createSetter(args),
-                preparedStatement -> extractRows(preparedStatement, rowMapper));
-        return singleResult(rows);
-    }
-
     private <T> T singleResult(List<T> rows) {
         if (rows.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
@@ -65,10 +60,6 @@ public class JdbcTemplate {
         return execute(sql, preparedStatementSetter, PreparedStatement::executeUpdate);
     }
 
-    public int update(Connection connection, String query, Object... args) {
-        return execute(connection, query, createSetter(args), PreparedStatement::executeUpdate);
-    }
-
     private PreparedStatementSetter createSetter(Object... args) {
         return preparedStatement -> {
             for (int i = 0; i < args.length; i++) {
@@ -82,10 +73,11 @@ public class JdbcTemplate {
             PreparedStatementSetter preparedStatementSetter,
             PreparedStatementCallback<T> preparedStatementCallback
     ) {
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(connection, sql, preparedStatementSetter, preparedStatementCallback);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

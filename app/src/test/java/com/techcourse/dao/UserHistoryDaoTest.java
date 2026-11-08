@@ -5,6 +5,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,18 @@ class UserHistoryDaoTest {
         jdbcTemplate.update("truncate table user_history restart identity");
 
         userHistoryDao = new UserHistoryDao(jdbcTemplate);
+    }
+
+    @Test
+    void findByUserIdPreservesCreatedAt() {
+        final var createdAt = LocalDateTime.of(2026, 10, 30, 12, 34, 56);
+        final var userHistory = new UserHistory(null, 1L, "gugu", "password", "gugu@example.com", createdAt, "gugu");
+        userHistoryDao.log(userHistory);
+
+        final var histories = userHistoryDao.findByUserId(1L);
+
+        assertThat(histories).singleElement()
+                .satisfies(history -> assertThat(history.getCreatedAt()).isEqualTo(createdAt));
     }
 
     @Test
