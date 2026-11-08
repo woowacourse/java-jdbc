@@ -143,17 +143,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 외부에서_전달받은_Connection으로_update하면_Connection은_닫지_않는다() throws SQLException {
-        jdbcTemplate.update(connection, SQL, "gugu", 1L);
-
-        verify(pstmt).setObject(1, "gugu");
-        verify(pstmt).setObject(2, 1L);
-        verify(pstmt).executeUpdate();
-        verify(pstmt).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
     void 트랜잭션에_바인딩된_Connection이_있으면_재사용하고_닫지_않는다() throws SQLException {
         final DataSource dataSource = mock(DataSource.class);
         final Connection boundConnection = mock(Connection.class);

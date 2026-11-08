@@ -36,13 +36,6 @@ public class JdbcTemplate {
         });
     }
 
-    public void update(final Connection conn, final String sql, final Object... args) {
-        execute(conn, sql, pstmt -> {
-            createSetter(args).setValues(pstmt);
-            return pstmt.executeUpdate();
-        });
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
@@ -83,16 +76,6 @@ public class JdbcTemplate {
                 TransactionSynchronizationManager.unbindResource(dataSource);
                 DataSourceUtils.releaseConnection(conn, dataSource);
             }
-        }
-    }
-
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementCallback<T> callback) {
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-            return callback.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
     }
 
