@@ -1,7 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,15 +24,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        return executeWithNewConnection(sql, PreparedStatement::executeUpdate, parameters);
-    }
-
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return executeWithGivenConnection(connection, sql, PreparedStatement::executeUpdate, parameters);
+        return execute(sql, PreparedStatement::executeUpdate, parameters);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object ... parameters) {
-        return executeWithNewConnection(sql, preparedStatement -> {
+        return execute(sql, preparedStatement -> {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 int rowNum = 0;
@@ -56,12 +52,13 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private <T> T executeWithGivenConnection(
-            final Connection connection,
+    private <T> T execute(
             final String sql,
-            final PreparedStatementCallback<T> callback,
+            final PreparedStatementExecutor<T> preparedStatementExecutor,
             final Object... parameters
     ) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
@@ -69,36 +66,17 @@ public class JdbcTemplate {
                 preparedStatement.setObject(i + 1, parameters[i]);
             }
 
-            return callback.doInPreparedStatement(preparedStatement);
+            return preparedStatementExecutor.execute(preparedStatement);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("SQL 실행 중 오류가 발생했습니다", e);
-        }
-    }
-
-    private <T> T executeWithNewConnection(
-            final String sql,
-            final PreparedStatementCallback<T> callback,
-            final Object... parameters
-    ) {
-        try (Connection connection = getConnection()) {
-            return executeWithGivenConnection(connection, sql, callback, parameters);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("JDBC 커넥션을 닫는 데 실패했습니다.", e);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new CannotGetJdbcConnectionException("JDBC 커넥션을 얻는 데 실패했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
     @FunctionalInterface
-    private interface PreparedStatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement preparedStatement) throws SQLException;
+    private interface PreparedStatementExecutor<T> {
+        T execute(PreparedStatement preparedStatement) throws SQLException;
     }
 }

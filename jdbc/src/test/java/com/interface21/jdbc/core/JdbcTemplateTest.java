@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -14,11 +13,11 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -187,19 +186,24 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 커넥션이_주어지면_update_시_새_커넥션을_얻지_않고_닫지도_않는다() throws SQLException {
+    void 바인딩된_커넥션이_있으면_update_시_새_커넥션을_얻지_않고_닫지도_않는다() throws SQLException {
         //given
-        Connection givenConnection = mock(Connection.class);
-        when(givenConnection.prepareStatement(anyString())).thenReturn(pstmt);
+        Connection boundConnection = mock(Connection.class);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(pstmt);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
 
         //when
-        jdbcTemplate.update(givenConnection, SQL, "gugu", "password", "hkkang@woowahan.com");
+        try {
+            jdbcTemplate.update(SQL, "gugu", "password", "hkkang@woowahan.com");
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
 
         //then
         verify(dataSource, never()).getConnection();
         verify(pstmt).executeUpdate();
         verify(pstmt).close();
-        verify(givenConnection, never()).close();
+        verify(boundConnection, never()).close();
     }
 
     @Test
