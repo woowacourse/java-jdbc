@@ -3,7 +3,6 @@ package com.techcourse.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -20,27 +19,29 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 class UserServiceTransactionTest {
 
     @Test
     void testTransactionRollbackWhenCommitFails() throws SQLException {
-        final var dataSource = mock(DataSource.class);
-        final var connection = mock(Connection.class);
-        final var userDao = mock(UserDao.class);
-        final var userHistoryDao = mock(UserHistoryDao.class);
-        final var commitFailure = new SQLException("커밋 실패");
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final UserDao userDao = mock(UserDao.class);
+        final UserHistoryDao userHistoryDao = mock(UserHistoryDao.class);
+        final SQLException commitFailure = new SQLException("커밋 실패");
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(1L, connection))
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(userDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
         doThrow(commitFailure).when(connection).commit();
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final UserService userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
 
-        final var actual = assertThrows(DataAccessException.class,
+        final DataAccessException actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
 
         assertThat(actual).hasCause(commitFailure);
-        final var order = inOrder(connection);
+        final InOrder order = inOrder(connection);
         order.verify(connection).commit();
         order.verify(connection).rollback();
         order.verify(connection).close();
@@ -48,26 +49,27 @@ class UserServiceTransactionTest {
 
     @Test
     void testTransactionRollbackFailurePreservesOriginalException() throws SQLException {
-        final var dataSource = mock(DataSource.class);
-        final var connection = mock(Connection.class);
-        final var userDao = mock(UserDao.class);
-        final var userHistoryDao = mock(UserHistoryDao.class);
-        final var originalFailure = new DataAccessException("이력 저장 실패");
-        final var rollbackFailure = new SQLException("롤백 실패");
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final UserDao userDao = mock(UserDao.class);
+        final UserHistoryDao userHistoryDao = mock(UserHistoryDao.class);
+        final DataAccessException originalFailure = new DataAccessException("이력 저장 실패");
+        final SQLException rollbackFailure = new SQLException("롤백 실패");
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(1L, connection))
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(userDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
-        doThrow(originalFailure).when(userHistoryDao).log(any(UserHistory.class), eq(connection));
+        doThrow(originalFailure).when(userHistoryDao).log(any(UserHistory.class));
         doThrow(rollbackFailure).when(connection).rollback();
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final UserService userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
 
-        final var actual = assertThrows(DataAccessException.class,
+        final DataAccessException actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
 
         assertThat(actual).isSameAs(originalFailure);
         assertThat(actual.getSuppressed()).containsExactly(rollbackFailure);
         verify(connection, never()).commit();
-        final var order = inOrder(connection);
+        final InOrder order = inOrder(connection);
         order.verify(connection).rollback();
         order.verify(connection).close();
     }

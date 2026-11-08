@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +21,6 @@ public class UserHistoryDao {
         log.debug("query : {}", INSERT_SQL);
 
         jdbcTemplate.update(INSERT_SQL, createLogSetter(userHistory));
-    }
-
-    public void log(final UserHistory userHistory, final Connection connection) {
-        log.debug("query : {}", INSERT_SQL);
-
-        jdbcTemplate.update(connection, INSERT_SQL, createLogSetter(userHistory));
     }
 
     private PreparedStatementSetter createLogSetter(final UserHistory userHistory) {
