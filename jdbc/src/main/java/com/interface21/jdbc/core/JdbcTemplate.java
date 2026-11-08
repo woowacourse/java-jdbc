@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -89,10 +90,22 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             PreparedStatementCallback<T> callback
     ) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다.", e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException closeException) {
+                if (failure == null) {
+                    throw closeException;
+                }
+                failure.addSuppressed(closeException);
+            }
         }
     }
 

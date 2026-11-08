@@ -13,16 +13,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 class JdbcTemplateTest {
 
@@ -42,6 +46,11 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
     }
 
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
     @Test
     @DisplayName("가변 인자를 순서대로 바인딩하고 수정된 행 수를 반환한다")
     void updateBindsArgumentsInOrder() throws SQLException {
@@ -51,7 +60,7 @@ class JdbcTemplateTest {
                 "update users set password = ? where id = ?", "password99", 1L);
 
         assertThat(affectedRows).isEqualTo(1);
-        var order = inOrder(statement);
+        InOrder order = inOrder(statement);
         order.verify(statement).setObject(1, "password99");
         order.verify(statement).setObject(2, 1L);
         order.verify(statement).executeUpdate();
@@ -73,7 +82,7 @@ class JdbcTemplateTest {
                 });
 
         assertThat(affectedRows).isEqualTo(2);
-        var order = inOrder(statement);
+        InOrder order = inOrder(statement);
         order.verify(statement).setNull(1, Types.VARCHAR);
         order.verify(statement).setDate(2, date);
         order.verify(statement).executeUpdate();
@@ -82,134 +91,140 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("전달받은 Connection으로 SQL을 실행하고 Connection을 닫지 않는다")
-    void updateWithSuppliedConnectionLeavesItOpen() throws SQLException {
-        Connection suppliedConnection = mock(Connection.class);
-        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+    @DisplayName("트랜잭션에 등록된 Connection으로 SQL을 실행하고 Connection을 닫지 않는다")
+    void updateWithBoundConnectionLeavesItOpen() throws SQLException {
+        Connection boundConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeUpdate()).thenReturn(1);
 
         int affectedRows = jdbcTemplate.update(
-                suppliedConnection, "update users set password = ? where id = ?", "newPassword", 1L);
+                "update users set password = ? where id = ?", "newPassword", 1L);
 
         assertThat(affectedRows).isEqualTo(1);
         verify(statement).setObject(1, "newPassword");
         verify(statement).setObject(2, 1L);
         verify(statement).close();
-        verify(suppliedConnection, never()).close();
-        verify(suppliedConnection, never()).commit();
-        verify(suppliedConnection, never()).rollback();
-        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verify(boundConnection, never()).close();
+        verify(boundConnection, never()).commit();
+        verify(boundConnection, never()).rollback();
+        verify(boundConnection, never()).setAutoCommit(anyBoolean());
         verifyNoInteractions(dataSource, connection);
     }
 
     @Test
-    @DisplayName("외부 Connection에서도 Setter로 SQL 타입을 지정하고 연결을 유지한다")
-    void updateWithSuppliedConnectionUsesCustomSetter() throws SQLException {
-        Connection suppliedConnection = mock(Connection.class);
+    @DisplayName("트랜잭션에 등록된 Connection에서도 Setter로 SQL 타입을 지정하고 연결을 유지한다")
+    void updateWithBoundConnectionUsesCustomSetter() throws SQLException {
+        Connection boundConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
         String sql = "update events set description = ?, event_date = ?";
         Date date = Date.valueOf("2026-01-01");
-        when(suppliedConnection.prepareStatement(sql)).thenReturn(statement);
+        when(boundConnection.prepareStatement(sql)).thenReturn(statement);
         when(statement.executeUpdate()).thenReturn(2);
 
-        int affectedRows = jdbcTemplate.update(suppliedConnection, sql, pstmt -> {
+        int affectedRows = jdbcTemplate.update(sql, pstmt -> {
             pstmt.setNull(1, Types.VARCHAR);
             pstmt.setDate(2, date);
         });
 
         assertThat(affectedRows).isEqualTo(2);
-        verify(suppliedConnection).prepareStatement(sql);
-        var order = inOrder(statement);
+        verify(boundConnection).prepareStatement(sql);
+        InOrder order = inOrder(statement);
         order.verify(statement).setNull(1, Types.VARCHAR);
         order.verify(statement).setDate(2, date);
         order.verify(statement).executeUpdate();
         order.verify(statement).close();
-        verify(suppliedConnection, never()).close();
-        verify(suppliedConnection, never()).commit();
-        verify(suppliedConnection, never()).rollback();
-        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verify(boundConnection, never()).close();
+        verify(boundConnection, never()).commit();
+        verify(boundConnection, never()).rollback();
+        verify(boundConnection, never()).setAutoCommit(anyBoolean());
         verifyNoInteractions(dataSource, connection);
     }
 
     @Test
-    @DisplayName("외부 Connection의 Setter 바인딩이 실패하면 Statement만 닫고 원인을 보존한다")
-    void setterBindingFailureWithSuppliedConnectionClosesOnlyStatement() throws SQLException {
-        Connection suppliedConnection = mock(Connection.class);
+    @DisplayName("트랜잭션에 등록된 Connection의 Setter 바인딩이 실패하면 Statement만 닫고 원인을 보존한다")
+    void setterBindingFailureWithBoundConnectionClosesOnlyStatement() throws SQLException {
+        Connection boundConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
         SQLException cause = new SQLException("Setter 바인딩 실패");
-        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(statement);
         doThrow(cause).when(statement).setNull(1, Types.VARCHAR);
 
         assertThatThrownBy(() -> jdbcTemplate.update(
-                suppliedConnection, "update events set description = ?",
+                "update events set description = ?",
                 pstmt -> pstmt.setNull(1, Types.VARCHAR)))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
         verify(statement, never()).executeUpdate();
         verify(statement).close();
-        verify(suppliedConnection, never()).close();
-        verify(suppliedConnection, never()).commit();
-        verify(suppliedConnection, never()).rollback();
-        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verify(boundConnection, never()).close();
+        verify(boundConnection, never()).commit();
+        verify(boundConnection, never()).rollback();
+        verify(boundConnection, never()).setAutoCommit(anyBoolean());
         verifyNoInteractions(dataSource, connection);
     }
 
     @Test
-    @DisplayName("전달받은 Connection에서 SQL이 실패해도 Connection을 닫지 않고 원인을 보존한다")
-    void updateFailureWithSuppliedConnectionLeavesItOpen() throws SQLException {
-        Connection suppliedConnection = mock(Connection.class);
+    @DisplayName("트랜잭션에 등록된 Connection에서 SQL이 실패해도 Connection을 닫지 않고 원인을 보존한다")
+    void updateFailureWithBoundConnectionLeavesItOpen() throws SQLException {
+        Connection boundConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
         SQLException cause = new SQLException("SQL 실행 실패");
-        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeUpdate()).thenThrow(cause);
 
         assertThatThrownBy(() -> jdbcTemplate.update(
-                suppliedConnection, "update users set password = ? where id = ?", "newPassword", 1L))
+                "update users set password = ? where id = ?", "newPassword", 1L))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
         verify(statement).close();
-        verify(suppliedConnection, never()).close();
-        verify(suppliedConnection, never()).commit();
-        verify(suppliedConnection, never()).rollback();
-        verify(suppliedConnection, never()).setAutoCommit(anyBoolean());
+        verify(boundConnection, never()).close();
+        verify(boundConnection, never()).commit();
+        verify(boundConnection, never()).rollback();
+        verify(boundConnection, never()).setAutoCommit(anyBoolean());
         verifyNoInteractions(dataSource, connection);
     }
 
     @Test
-    @DisplayName("전달받은 Connection으로 단건 조회하고 조회 자원만 닫는다")
-    void queryForObjectWithSuppliedConnectionLeavesItOpen() throws SQLException {
-        Connection suppliedConnection = mock(Connection.class);
+    @DisplayName("트랜잭션에 등록된 Connection으로 단건 조회하고 조회 자원만 닫는다")
+    void queryForObjectWithBoundConnectionLeavesItOpen() throws SQLException {
+        Connection boundConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
         ResultSet resultSet = mock(ResultSet.class);
-        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
         String result = jdbcTemplate.queryForObject(
-                suppliedConnection, "select account from users where id = ?",
+                "select account from users where id = ?",
                 rs -> rs.getString("account"), 1L);
 
         assertThat(result).isEqualTo("gugu");
         verify(statement).setObject(1, 1L);
         verify(resultSet).close();
         verify(statement).close();
-        verify(suppliedConnection, never()).close();
-        verify(suppliedConnection, never()).commit();
-        verify(suppliedConnection, never()).rollback();
+        verify(boundConnection, never()).close();
+        verify(boundConnection, never()).commit();
+        verify(boundConnection, never()).rollback();
         verifyNoInteractions(connection);
     }
 
     @Test
-    @DisplayName("전달받은 Connection의 조회 결과 변환이 실패해도 조회 자원만 닫고 원인을 보존한다")
-    void queryForObjectMappingFailureWithSuppliedConnectionLeavesItOpen() throws SQLException {
-        Connection suppliedConnection = mock(Connection.class);
+    @DisplayName("트랜잭션에 등록된 Connection의 조회 결과 변환이 실패해도 조회 자원만 닫고 원인을 보존한다")
+    void queryForObjectMappingFailureWithBoundConnectionLeavesItOpen() throws SQLException {
+        Connection boundConnection = mock(Connection.class);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
         ResultSet resultSet = mock(ResultSet.class);
         SQLException cause = new SQLException("조회 결과 변환 실패");
-        when(suppliedConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                suppliedConnection, "select account from users where id = ?",
+                "select account from users where id = ?",
                 rs -> {
                     throw cause;
                 }, 1L))
@@ -218,9 +233,9 @@ class JdbcTemplateTest {
 
         verify(resultSet).close();
         verify(statement).close();
-        verify(suppliedConnection, never()).close();
-        verify(suppliedConnection, never()).commit();
-        verify(suppliedConnection, never()).rollback();
+        verify(boundConnection, never()).close();
+        verify(boundConnection, never()).commit();
+        verify(boundConnection, never()).rollback();
         verifyNoInteractions(connection);
     }
 
@@ -290,7 +305,7 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        var result = jdbcTemplate.query(
+        List<String> result = jdbcTemplate.query(
                 "select account from users", rs -> rs.getString("account"));
 
         assertThat(result).isEmpty();
@@ -307,7 +322,7 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
         when(resultSet.getString("account")).thenReturn("gugu", "bobo");
 
-        var result = jdbcTemplate.query(
+        List<String> result = jdbcTemplate.query(
                 "select account from users", rs -> rs.getString("account"));
 
         assertThat(result).containsExactly("gugu", "bobo");
