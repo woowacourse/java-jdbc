@@ -21,21 +21,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            bindParameters(statement, args);
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update: " + sql, e);
-        }
+        return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        log.debug("query : {}", sql);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
-            bindParameters(statement, args);
+        return execute(sql, args, statement -> {
             try (final var resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 int rowNum = 0;
@@ -44,9 +34,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute query: " + sql, e);
-        }
+        });
     }
 
     /**
@@ -64,9 +52,26 @@ public class JdbcTemplate {
         return results.isEmpty() ? null : results.getFirst();
     }
 
-    private void bindParameters(final PreparedStatement statement, final Object... args) throws SQLException {
+    private <T> T execute(final String sql, final Object[] args, final StatementExecutor<T> executor) {
+        log.debug("query : {}", sql);
+        try (final var connection = dataSource.getConnection();
+             final var statement = connection.prepareStatement(sql)) {
+            bindParameters(statement, args);
+            return executor.execute(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute sql: " + sql, e);
+        }
+    }
+
+    private void bindParameters(final PreparedStatement statement, final Object[] args) throws SQLException {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface StatementExecutor<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
