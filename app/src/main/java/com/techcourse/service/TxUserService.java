@@ -16,7 +16,11 @@ public class TxUserService implements UserService {
     private final UserService userService;
 
     public TxUserService(final UserService userService) {
-        this.dataSource = DataSourceConfig.getInstance();
+        this(DataSourceConfig.getInstance(), userService);
+    }
+
+    TxUserService(final DataSource dataSource, final UserService userService) {
+        this.dataSource = dataSource;
         this.userService = userService;
     }
 
@@ -35,6 +39,17 @@ public class TxUserService implements UserService {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, conn);
         try {
+            changePasswordInTransaction(conn, id, newPassword, createdBy);
+        } catch (RuntimeException e) {
+            releaseConnection(conn, e);
+            throw e;
+        }
+        releaseConnection(conn);
+    }
+
+    private void changePasswordInTransaction(final Connection conn, final long id, final String newPassword,
+                                             final String createdBy) {
+        try {
             conn.setAutoCommit(false);
             userService.changePassword(id, newPassword, createdBy);
             conn.commit();
@@ -44,9 +59,6 @@ public class TxUserService implements UserService {
         } catch (RuntimeException e) {
             rollback(conn, e);
             throw e;
-        } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -55,6 +67,19 @@ public class TxUserService implements UserService {
             conn.rollback();
         } catch (SQLException rollbackException) {
             cause.addSuppressed(rollbackException);
+        }
+    }
+
+    private void releaseConnection(final Connection conn) {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(conn, dataSource);
+    }
+
+    private void releaseConnection(final Connection conn, final RuntimeException cause) {
+        try {
+            releaseConnection(conn);
+        } catch (RuntimeException releaseException) {
+            cause.addSuppressed(releaseException);
         }
     }
 }

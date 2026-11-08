@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -67,6 +69,30 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class);
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void updateKeepsOriginalExceptionWhenCloseAlsoFails() throws SQLException {
+        final var queryException = new SQLException("query failed");
+        final var closeException = new SQLException("close failed");
+        when(preparedStatement.executeUpdate()).thenThrow(queryException);
+        doThrow(closeException).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(queryException)
+                .satisfies(e -> assertThat(e.getSuppressed())
+                        .singleElement()
+                        .satisfies(suppressed -> assertThat(suppressed).hasCause(closeException)));
+    }
+
+    @Test
+    void updateThrowsCloseExceptionWhenOnlyCloseFails() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+        doThrow(new SQLException("close failed")).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class);
     }
 
     @Test

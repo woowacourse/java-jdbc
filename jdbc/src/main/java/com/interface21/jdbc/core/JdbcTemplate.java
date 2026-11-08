@@ -55,10 +55,22 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
+        final T result;
         try {
-            return execute(conn, sql, action);
-        } finally {
+            result = execute(conn, sql, action);
+        } catch (RuntimeException e) {
+            releaseConnection(conn, e);
+            throw e;
+        }
+        DataSourceUtils.releaseConnection(conn, dataSource);
+        return result;
+    }
+
+    private void releaseConnection(final Connection conn, final RuntimeException cause) {
+        try {
             DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (RuntimeException releaseException) {
+            cause.addSuppressed(releaseException);
         }
     }
 
