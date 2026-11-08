@@ -4,7 +4,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,10 +14,9 @@ public class TxUserService implements UserService {
     private final UserService userService;
     private final DataSource dataSource;
 
-    public TxUserService(final UserService userService) {
-        this(userService, DataSourceConfig.getInstance());
-    }
-
+    /**
+     * @param dataSource 업무 서비스의 DAO가 사용하는 것과 동일한 DataSource 인스턴스
+     */
     public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
         this.dataSource = dataSource;
