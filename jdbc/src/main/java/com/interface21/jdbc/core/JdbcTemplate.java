@@ -66,7 +66,7 @@ public class JdbcTemplate {
         }
 
         if (results.size() > 1) {
-            throw new IllegalStateException("조회 결과는 최대 1개여야 합니다.");
+            throw new DataAccessException("조회 결과는 최대 1개여야 합니다. 실제 결과 수: " + results.size());
         }
 
         return results.getFirst();

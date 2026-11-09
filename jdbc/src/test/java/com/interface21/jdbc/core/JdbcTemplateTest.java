@@ -67,7 +67,8 @@ class JdbcTemplateTest {
         when(resultSet.next()).thenReturn(true, true, false);
 
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> "apple"))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(DataAccessException.class)
+                .hasMessage("조회 결과는 최대 1개여야 합니다. 실제 결과 수: 2");
     }
 
     @Test
