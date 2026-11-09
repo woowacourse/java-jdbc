@@ -43,7 +43,7 @@ public class JdbcTemplate {
 
             try (ResultSet rs = pstmt.executeQuery();) {
                 if (!rs.next()) {
-                    return null;
+                    throw new IllegalStateException("단건 조회 결과가 없습니다.");
                 }
 
                 T result = rowMapper.mapRow(rs);
