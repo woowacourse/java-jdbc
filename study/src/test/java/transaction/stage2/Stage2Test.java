@@ -36,8 +36,8 @@ class Stage2Test {
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 1개
+     * 왜 그런 결과가 나왔을까? required 속성으로 하나의 물리적 트랜잭션을 공유한다
      */
     @Test
     void testRequired() {
@@ -45,13 +45,13 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithRequired");
     }
 
     /**
-     * 생성된 트랜잭션이 몇 개인가?
-     * 왜 그런 결과가 나왔을까?
+     * 생성된 트랜잭션이 몇 개인가? 2개
+     * 왜 그런 결과가 나왔을까? requires new 속성으로 인해 새 트랜잭션을 생성한다
      */
     @Test
     void testRequiredNew() {
@@ -59,8 +59,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(2)
+                .containsExactly( "transaction.stage2.SecondUserService.saveSecondTransactionWithRequiresNew", "transaction.stage2.FirstUserService.saveFirstTransactionWithRequiredNew");
     }
 
     /**
@@ -69,17 +69,19 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * @Transactional을 주석 처리하면: First의 이름은 null, Second의 이름만 남는다. Second는 실제 트랜잭션 없이 실행된다.
+     * @Transactional의 주석을 해제하면: 둘 다 First의 트랜잭션에 참여하므로, 중복 제거 후 First의 이름만 남는다.
      */
     @Test
     void testSupports() {
@@ -87,14 +89,16 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithSupports");
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * @Transactional을 주석 처리하면 : Mandatory 속성으로 인해 예외가 발생한다.
+     * @Transactional의 주석을 해제하면 : Second가 First의 트랜잭션에 참여하므로, 중복 제거 후 First의 이름만 남는다.
      */
     @Test
     void testMandatory() {
@@ -102,16 +106,17 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.FirstUserService.saveFirstTransactionWithMandatory");
     }
 
     /**
      * 아래 테스트는 몇 개의 물리적 트랜잭션이 동작할까?
      * FirstUserService.saveFirstTransactionWithNotSupported() 메서드의 @Transactional을 주석 처리하자.
      * 다시 테스트를 실행하면 몇 개의 물리적 트랜잭션이 동작할까?
-     *
      * 스프링 공식 문서에서 물리적 트랜잭션과 논리적 트랜잭션의 차이점이 무엇인지 찾아보자.
+     *
+     *  물리적 트랜잭션은 DB의 실제 커밋/롤백 단위이고, 논리적 트랜잭션은 메서드에 적용된 트랜잭션 경계다.
      */
     @Test
     void testNotSupported() {
@@ -119,13 +124,16 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNotSupported");
     }
 
     /**
      * 아래 테스트는 왜 실패할까?
      * FirstUserService.saveFirstTransactionWithNested() 메서드의 @Transactional을 주석 처리하면 어떻게 될까?
+     * Nested 속성
+     * 기존 트랜잭션 없음: 새로운 트랜잭션을 생성함
+     * 기존 트랜잭션이 있음: 중첩 트랜잭션을 만듬
      */
     @Test
     void testNested() {
@@ -133,8 +141,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly("transaction.stage2.SecondUserService.saveSecondTransactionWithNested");
     }
 
     /**
@@ -146,7 +154,8 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
-                .containsExactly("");
+                .hasSize(1)
+                .containsExactly(
+                        "transaction.stage2.SecondUserService.saveSecondTransactionWithNever");
     }
 }

@@ -25,6 +25,13 @@ import java.sql.Statement;
  * 터미널에 iftop를 설치하고 아래 명령어를 실행한 상태에서 테스트를 실행하자.
  * $ sudo iftop -i lo0 -nf "host localhost"
  * windows 사용자라면 wsl2를 사용하거나 다른 모니터링 툴을 찾아보자.
+ * | 실행 | TOTAL cum |
+ * | No pooling | 8.73 MB |
+ * | Pooling | 874 KB |
+ * cum : 누적 전송량 (네트워크로 주고 받은 데이터의 총 크기)
+ *
+ * 커넥션 하나로도 쿼리를 많이 보내거나, 큰 결과를 받으면 전송량이 커질 수 있으나 현재 테스트에서는 같은 쿼리를
+ * 같은 횟수만큼 실행했으니 커넥션 생성/인증/종료를 반복하는 비용이 전송량 차이의 주된 원인이라고 예상할 수 있다
  */
 class PoolingVsNoPoolingTest {
 
