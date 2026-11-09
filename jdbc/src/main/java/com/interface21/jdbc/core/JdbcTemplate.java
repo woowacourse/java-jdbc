@@ -61,7 +61,7 @@ public class JdbcTemplate {
 
     public <T> List<T> findAll(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             setParameter(params, pstmt);
 

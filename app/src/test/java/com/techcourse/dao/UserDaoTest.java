@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -84,6 +85,22 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 ID로 조회하면 상태 예외가 발생한다")
+    void findByIdThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findById(-1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("단건 조회 결과가 없습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자를 계정으로 조회하면 상태 예외가 발생한다")
+    void findByAccountThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findByAccount("missing-account"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("단건 조회 결과가 없습니다.");
     }
 
     @Test
