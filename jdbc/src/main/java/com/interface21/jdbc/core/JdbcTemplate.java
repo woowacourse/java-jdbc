@@ -23,7 +23,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... args) {
-        List<T> results = query(sql, mapper, args);
+        return singleResult(query(sql, mapper, args));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> mapper, final Object... args) {
+        return singleResult(query(connection, sql, mapper, argumentsSetter(args)));
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.isEmpty()) {
             return null;
         }
@@ -38,8 +45,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> mapper, final PreparedStatementSetter setter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return query(connection, sql, mapper, setter);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> mapper, final PreparedStatementSetter setter) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
 
@@ -61,8 +75,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return update(connection, sql, setter);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return update(connection, sql, argumentsSetter(args));
+    }
+
+    private int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return statement.executeUpdate();
