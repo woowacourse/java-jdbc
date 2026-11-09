@@ -15,8 +15,12 @@ public class TxUserService implements UserService {
     private final DataSource dataSource;
 
     public TxUserService(final UserService userService) {
+        this(userService, DataSourceConfig.getInstance());
+    }
+
+    public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
-        this.dataSource = DataSourceConfig.getInstance();
+        this.dataSource = dataSource;
     }
 
     @Override
