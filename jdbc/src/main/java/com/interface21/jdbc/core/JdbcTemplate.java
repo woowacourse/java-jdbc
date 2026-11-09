@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +31,6 @@ public class JdbcTemplate {
         return execute(sql, pstmtSetter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, argumentSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, argumentSetter(args), rowMapper);
     }
@@ -58,17 +55,7 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter pstmtSetter, final StatementCallback<T> callback) {
-        try (final Connection conn = dataSource.getConnection()) {
-            return execute(conn, sql, pstmtSetter, callback);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
-    }
-
-    // 전달받은 Connection은 트랜잭션을 관리하는 호출자가 닫는다.
-    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pstmtSetter,
-                          final StatementCallback<T> callback) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pstmtSetter.setValues(pstmt);
@@ -76,6 +63,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
