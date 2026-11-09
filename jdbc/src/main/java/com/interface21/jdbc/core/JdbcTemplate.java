@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,10 +22,9 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             final ResultSet resultSet = executeQuery(args, pstmt);
 
             return newRowMapperRsExtractor(rowMapper).extractData(resultSet);
@@ -34,10 +34,9 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (
-            final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             final ResultSet resultSet = executeQuery(args, pstmt);
             final List<T> mapped = newRowMapperRsExtractor(rowMapper).extractData(resultSet);
 
@@ -53,17 +52,8 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (final Connection connection = dataSource.getConnection();
-            final PreparedStatement pstmt = connection.prepareStatement(sql)
-        ) {
-            newArgPreparedStatementSetter(args).setValues(pstmt);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("update/insert failed (sql=" + sql + ")", e);
-        }
-    }
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
-    public void update(final Connection connection, final String sql, final Object... args) {
         try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             newArgPreparedStatementSetter(args).setValues(pstmt);
             pstmt.executeUpdate();
