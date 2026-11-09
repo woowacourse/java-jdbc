@@ -2,10 +2,13 @@ package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -131,6 +134,19 @@ class JdbcTemplateTest {
                 .hasCause(cause);
         verify(pstmt).close();
         verify(connection, never()).close();
+    }
+
+    @Test
+    void PreparedStatementSetter_변수를_넘기면_값으로_바인딩하지_않고_Setter를_실행한다() throws SQLException {
+        given(rs.next()).willReturn(false);
+        final PreparedStatementSetter setter = pstmt -> pstmt.setString(1, "gugu");
+
+        jdbcTemplate.update("update users set account = ?", setter);
+        jdbcTemplate.query("select account from users where account = ?", r -> r.getString("account"), setter);
+        jdbcTemplate.queryForObject("select account from users where account = ?", r -> r.getString("account"), setter);
+
+        verify(pstmt, times(3)).setString(1, "gugu");
+        verify(pstmt, never()).setObject(anyInt(), any());
     }
 
     @Test
