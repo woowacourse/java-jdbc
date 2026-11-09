@@ -16,12 +16,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
 
     private static final RowMapper<String> NAME_ROW_MAPPER = (rs, rowNum) -> rs.getString("name");
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement pstmt;
     private ResultSet rs;
@@ -29,7 +31,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
@@ -50,6 +52,20 @@ class JdbcTemplateTest {
         assertThat(updated).isEqualTo(1);
         verify(pstmt).setObject(1, "gugu");
         verify(pstmt).setObject(2, 1L);
+    }
+
+    @Test
+    void 전달받은_Connection으로_실행하고_Connection은_닫지_않는다() throws SQLException {
+        given(pstmt.executeUpdate()).willReturn(1);
+
+        final int updated = jdbcTemplate.update(connection, "update users set account = ? where id = ?", "gugu", 1L);
+
+        assertThat(updated).isEqualTo(1);
+        verify(pstmt).setObject(1, "gugu");
+        verify(pstmt).setObject(2, 1L);
+        verify(pstmt).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
     }
 
     @Test

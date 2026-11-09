@@ -30,6 +30,10 @@ public class JdbcTemplate {
         return execute(sql, pstmtSetter, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return execute(conn, sql, argumentSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, argumentSetter(args), rowMapper);
     }
@@ -54,8 +58,18 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter pstmtSetter, final StatementCallback<T> callback) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pstmtSetter, callback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    // 전달받은 Connection은 트랜잭션을 관리하는 호출자가 닫는다.
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pstmtSetter,
+                          final StatementCallback<T> callback) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pstmtSetter.setValues(pstmt);
             return callback.doInStatement(pstmt);
