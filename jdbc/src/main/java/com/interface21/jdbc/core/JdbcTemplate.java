@@ -63,6 +63,11 @@ public class JdbcTemplate {
         if (results.isEmpty()) {
             return null;
         }
+
+        if (results.size() > 1) {
+            throw new IllegalStateException("조회 결과는 최대 1개여야 합니다.");
+        }
+
         return results.getFirst();
     }
 }
