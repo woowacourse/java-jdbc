@@ -10,11 +10,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +40,11 @@ class JdbcTemplateTest {
         given(pstmt.executeQuery()).willReturn(rs);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -84,27 +91,27 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_커넥션으로_update하면_커넥션을_닫지_않는다() throws SQLException {
+    void 트랜잭션에_바인딩된_커넥션이_있으면_그_커넥션으로_실행하고_닫지_않는다() throws SQLException {
         final var sql = "update users set password = ? where id = ?";
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        jdbcTemplate.update(connection, sql, "new-password", 1L);
+        jdbcTemplate.update(sql, "new-password", 1L);
 
         verifyNoInteractions(dataSource);
         verify(connection).prepareStatement(sql);
-        verify(pstmt).setObject(1, "new-password");
-        verify(pstmt).setObject(2, 1L);
         verify(pstmt).executeUpdate();
         verify(pstmt).close();
         verify(connection, never()).close();
     }
 
     @Test
-    void 전달받은_커넥션으로_queryForObject하면_커넥션을_닫지_않는다() throws SQLException {
+    void 트랜잭션에_바인딩된_커넥션으로_조회해도_커넥션을_닫지_않는다() throws SQLException {
         given(rs.next()).willReturn(true, false);
         given(rs.getString("account")).willReturn("gugu");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         final var actual = jdbcTemplate.queryForObject(
-                connection, "select account from users where id = ?", r -> r.getString("account"), 1L);
+                "select account from users where id = ?", r -> r.getString("account"), 1L);
 
         assertThat(actual).isEqualTo("gugu");
         verifyNoInteractions(dataSource);
@@ -114,11 +121,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_커넥션에서_SQLException이_발생해도_커넥션을_닫지_않는다() throws SQLException {
+    void 트랜잭션에_바인딩된_커넥션에서_SQLException이_발생해도_커넥션을_닫지_않는다() throws SQLException {
         final var cause = new SQLException("DB 오류");
         given(pstmt.executeUpdate()).willThrow(cause);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
         verify(pstmt).close();
