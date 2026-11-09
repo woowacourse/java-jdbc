@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.interface21.dao.DataAccessException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +50,14 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWrapsSqlExceptionAndPreservesCause() {
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                "update users set account = ? where", "changed"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLException.class);
+    }
+
+    @Test
     void queryWithoutParametersMapsEveryRow() {
         List<String> accounts = jdbcTemplate.query(
                 "select account from users order by id", rs -> rs.getString("account"));
@@ -70,6 +79,27 @@ class JdbcTemplateTest {
                 "select account from users where id > ?", rs -> rs.getString("account"), 2L);
 
         assertThat(accounts).isEmpty();
+    }
+
+    @Test
+    void queryWrapsSqlExceptionAndPreservesCause() {
+        assertThatThrownBy(() -> jdbcTemplate.query(
+                "select account from users where", rs -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLException.class);
+    }
+
+    @Test
+    void queryWrapsRowMapperSqlExceptionAndPreservesOriginalCause() {
+        SQLException cause = new SQLException("Could not map account");
+        RowMapper<String> rowMapper = rs -> {
+            throw cause;
+        };
+
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .cause()
+                .isSameAs(cause);
     }
 
     @Test
