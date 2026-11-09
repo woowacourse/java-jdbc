@@ -7,6 +7,8 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,11 +38,19 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createdBy = "gugu";
+        final var historyCountBefore = countHistories();
+        final var startedAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(countHistories()).isEqualTo(historyCountBefore + 1);
+        final var history = findLatestHistory();
+        assertThat(history)
+                .extracting(HistoryRow::userId, HistoryRow::password, HistoryRow::createdBy)
+                .containsExactly(1L, newPassword, createdBy);
+        assertThat(history.createdAt()).isBetween(startedAt, LocalDateTime.now());
     }
 
     @Test
@@ -61,5 +71,22 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private long countHistories() {
+        return jdbcTemplate.queryForObject("select count(*) from user_history", rs -> rs.getLong(1));
+    }
+
+    private HistoryRow findLatestHistory() {
+        return jdbcTemplate.queryForObject(
+                "select user_id, password, created_at, created_by from user_history order by id desc limit 1",
+                rs -> new HistoryRow(
+                        rs.getLong("user_id"),
+                        rs.getString("password"),
+                        rs.getObject("created_at", LocalDateTime.class),
+                        rs.getString("created_by")));
+    }
+
+    private record HistoryRow(long userId, String password, LocalDateTime createdAt, String createdBy) {
     }
 }
