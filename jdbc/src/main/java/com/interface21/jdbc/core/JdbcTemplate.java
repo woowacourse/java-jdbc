@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.RowMapper;
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.ConnectionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,16 +57,30 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = ConnectionManager.getConnection(dataSource);
+            pstmt = conn.prepareStatement(sql);
 
             log.debug("query : {}", sql);
-
             setValues(pstmt, args);
             pstmt.executeUpdate();
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException("데이터 변경에 실패했습니다.", e);
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            ConnectionManager.releaseConnection(conn, dataSource);
         }
     }
 
