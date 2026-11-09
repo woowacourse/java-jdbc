@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +47,16 @@ class JdbcTemplateTest {
         int affectedRows = jdbcTemplate.update("update users set account = ?", "gugu");
 
         assertThat(affectedRows).isEqualTo(3);
+    }
+
+    @DisplayName("전달받은 Connection으로 update를 실행하고 Connection은 닫지 않는다")
+    @Test
+    void updateWithConnection() throws SQLException {
+        jdbcTemplate.update(conn, "update users set account = ?", "gugu");
+
+        verify(pstmt).executeUpdate();
+        verify(pstmt).close();
+        verify(conn, never()).close();
     }
 
     @DisplayName("update 실행 중 예외가 발생해도 자원을 반납하고 원인 예외를 보존한다")
