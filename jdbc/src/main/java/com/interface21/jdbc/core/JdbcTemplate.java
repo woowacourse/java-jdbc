@@ -68,7 +68,10 @@ public class JdbcTemplate {
             Object... args
     ) {
         final List<T> results = select(sql, mapper, args);
-        return results.isEmpty() ? null : results.getFirst();
+        if (results.size() != 1) {
+            throw new DataAccessException("Expected exactly one row, but found " + results.size());
+        }
+        return results.getFirst();
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback) {
