@@ -26,6 +26,10 @@ public class JdbcTemplate {
         return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
+    public int update(Connection conn, String sql, Object... args) {
+        return execute(conn, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, argumentsSetter(args), pstmt -> mapRows(pstmt, rowMapper));
     }
@@ -39,8 +43,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, setter, action);
+        } catch (SQLException e) {
+            throw new DataAccessException("커넥션 처리에 실패했습니다.", e);
+        }
+    }
+
+    private <T> T execute(Connection conn, String sql, PreparedStatementSetter setter, PreparedStatementCallback<T> action) {
+        try (PreparedStatement pstmt = getPreparedStatement(conn, sql)) {
             setter.setValues(pstmt);
             return action.execute(pstmt);
         } catch (SQLException e) {
