@@ -21,10 +21,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
@@ -32,7 +34,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -101,6 +103,32 @@ class JdbcTemplateTest {
                 .hasCause(cause);
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void 넘겨받은_Connection으로_update하면_PreparedStatement만_닫고_Connection은_닫지_않는다() throws SQLException {
+        given(preparedStatement.executeUpdate()).willReturn(1);
+
+        final var updated = jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password99", 1L);
+
+        assertThat(updated).isEqualTo(1);
+        verify(dataSource, never()).getConnection();
+        verify(preparedStatement).setObject(1, "password99");
+        verify(preparedStatement).setObject(2, 1L);
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void 넘겨받은_Connection으로_update하다_SQLException이_나도_Connection은_닫지_않는다() throws SQLException {
+        final var cause = new SQLException("syntax error");
+        given(preparedStatement.executeUpdate()).willThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "wrong sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
     }
 
     @Test
