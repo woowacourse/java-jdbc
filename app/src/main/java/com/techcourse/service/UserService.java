@@ -47,13 +47,21 @@ public class UserService {
         }
     }
 
-    private void updateWithHistory(Connection conn, User user, String createBy) throws SQLException {
+    private void updateWithHistory(Connection conn, User user, String createBy) {
         try {
             userDao.update(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
         } catch (RuntimeException | Error e) {
-            conn.rollback();
+            rollback(conn, e);
             throw e;
+        }
+    }
+
+    private void rollback(Connection conn, Throwable cause) {
+        try {
+            conn.rollback();
+        } catch (SQLException rollbackException) {
+            cause.addSuppressed(rollbackException);
         }
     }
 }
