@@ -129,7 +129,9 @@ class JdbcTemplateTest {
                 (rs, rowNum) -> rs.getString("account"));
 
         assertThat(accounts).containsExactly("gugu");
-        verify(preparedStatement).setLong(1, 1L);
+        final InOrder inOrder = inOrder(preparedStatement);
+        inOrder.verify(preparedStatement).setLong(1, 1L);
+        inOrder.verify(preparedStatement).executeQuery();
     }
 
     @Test
