@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,6 +26,10 @@ public class JdbcTemplate {
         return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, argumentsSetter(args), pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -44,7 +49,7 @@ public class JdbcTemplate {
             return null;
         }
         if (results.size() > 1) {
-            throw new DataAccessException("조회 결과가 두 건 이상입니다.");
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.getFirst();
     }
@@ -54,9 +59,20 @@ public class JdbcTemplate {
             final PreparedStatementSetter pss,
             final PreparedStatementCallback<T> action
     ) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, action);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(
+            final Connection conn,
+            final String sql,
+            final PreparedStatementSetter pss,
+            final PreparedStatementCallback<T> action
+    ) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pss.setValues(pstmt);

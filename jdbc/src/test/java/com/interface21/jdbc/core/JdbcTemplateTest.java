@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -61,6 +63,23 @@ class JdbcTemplateTest {
 
             verify(pstmt).close();
             verify(conn).close();
+        }
+
+        @Test
+        @DisplayName("외부에서 받은 커넥션으로 실행하고, 커넥션은 닫지 않는다.")
+        void updateWithConnection() throws SQLException {
+            final var externalConn = mock(Connection.class);
+            final var externalPstmt = mock(PreparedStatement.class);
+            when(externalConn.prepareStatement(anyString())).thenReturn(externalPstmt);
+            when(externalPstmt.executeUpdate()).thenReturn(1);
+
+            final var rowCount = jdbcTemplate.update(externalConn, SQL, "password99", 1L);
+
+            verify(externalPstmt).setObject(1, "password99");
+            verify(externalPstmt).setObject(2, 1L);
+            assertThat(rowCount).isEqualTo(1);
+            verify(externalPstmt).close();
+            verify(externalConn, never()).close();
         }
 
         @Test
@@ -168,12 +187,18 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("조회 결과가 두 건 이상이면 DataAccessException이 발생한다.")
-        void throwDataAccessExceptionWhenMultiple() throws SQLException {
+        @DisplayName("조회 결과가 두 건 이상이면 기대 건수와 실제 건수를 담은 IncorrectResultSizeDataAccessException이 발생한다.")
+        void throwIncorrectResultSizeExceptionWhenMultiple() throws SQLException {
             when(rs.next()).thenReturn(true, true, false);
 
             assertThatThrownBy(() -> jdbcTemplate.queryForObject(SQL, ROW_MAPPER, 1L))
-                    .isInstanceOf(DataAccessException.class);
+                    .isInstanceOf(IncorrectResultSizeDataAccessException.class)
+                    .isInstanceOf(DataAccessException.class)
+                    .satisfies(e -> {
+                        final var exception = (IncorrectResultSizeDataAccessException) e;
+                        assertThat(exception.getExpectedSize()).isEqualTo(1);
+                        assertThat(exception.getActualSize()).isEqualTo(2);
+                    });
         }
 
         @Test
