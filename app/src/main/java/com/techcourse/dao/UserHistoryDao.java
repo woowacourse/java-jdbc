@@ -19,10 +19,6 @@ public class UserHistoryDao {
         jdbcTemplate.update(INSERT_SQL, params(userHistory));
     }
 
-    public void log(final Connection conn, final UserHistory userHistory) {
-        jdbcTemplate.update(conn, INSERT_SQL, params(userHistory));
-    }
-
     private Object[] params(final UserHistory userHistory) {
         return new Object[]{
             userHistory.getUserId(),

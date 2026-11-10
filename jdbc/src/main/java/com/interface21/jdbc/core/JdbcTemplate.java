@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,10 +25,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (final Connection conn = dataSource.getConnection()) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return query(conn, sql, rowMapper, args);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            releaseIfNotTransactional(conn);
         }
     }
 
@@ -59,10 +62,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        try (final Connection conn = dataSource.getConnection()) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return update(conn, sql, args);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            releaseIfNotTransactional(conn);
         }
     }
 
@@ -105,5 +109,16 @@ public class JdbcTemplate {
                 pstmt.setObject(i + 1, args[i]);
             }
         };
+    }
+
+    private void releaseIfNotTransactional(final Connection connection) {
+        try {
+            if (connection.getAutoCommit()) {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
     }
 }
