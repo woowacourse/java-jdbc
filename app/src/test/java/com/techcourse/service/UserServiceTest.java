@@ -24,6 +24,8 @@ class UserServiceTest {
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        jdbcTemplate.update("truncate table users restart identity");
+        jdbcTemplate.update("truncate table user_history restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
