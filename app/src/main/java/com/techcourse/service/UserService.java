@@ -5,12 +5,16 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final DataSource dataSource;
     private final UserDao userDao;
@@ -35,18 +39,28 @@ public class UserService {
         final var user = findById(id);
         user.changePassword(newPassword);
 
-        try (final Connection connection = dataSource.getConnection()) {
+        final Connection connection = getConnection();
+        try {
             connection.setAutoCommit(false);
-            try {
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (SQLException | RuntimeException | Error e) {
-                rollback(connection, e);
-                throw e;
-            }
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            connection.commit();
         } catch (SQLException e) {
+            rollback(connection, e);
             throw new DataAccessException("비밀번호 변경에 실패했습니다. id=" + id, e);
+        } catch (RuntimeException | Error e) {
+            rollback(connection, e);
+            throw e;
+        } finally {
+            release(connection);
+        }
+    }
+
+    private Connection getConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new DataAccessException("Connection을 얻지 못했습니다.", e);
         }
     }
 
@@ -55,6 +69,14 @@ public class UserService {
             connection.rollback();
         } catch (SQLException e) {
             cause.addSuppressed(e);
+        }
+    }
+
+    private void release(final Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            log.warn("Connection을 닫지 못했습니다.", e);
         }
     }
 }

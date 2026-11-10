@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -70,6 +71,35 @@ class UserServiceTransactionTest {
         inOrder.verify(connection).rollback();
         inOrder.verify(connection).close();
         verify(connection, never()).commit();
+    }
+
+    @Test
+    void commit이_실패하면_롤백하고_DataAccessException으로_바꿔_던진다() throws SQLException {
+        final var commitFailure = new SQLException("commit failed");
+        willThrow(commitFailure).given(connection).commit();
+        final var userService = new UserService(dataSource, userDao, mock(UserHistoryDao.class));
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(commitFailure);
+
+        final InOrder inOrder = inOrder(connection);
+        inOrder.verify(connection).rollback();
+        inOrder.verify(connection).close();
+    }
+
+    @Test
+    void commit_뒤에_Connection을_닫다_실패해도_예외를_던지지_않는다() throws SQLException {
+        willThrow(new SQLException("close failed")).given(connection).close();
+        final var userService = new UserService(dataSource, userDao, mock(UserHistoryDao.class));
+
+        assertThatCode(() -> userService.changePassword(1L, "qqqqq", "gugu"))
+                .doesNotThrowAnyException();
+
+        final InOrder inOrder = inOrder(connection);
+        inOrder.verify(connection).commit();
+        inOrder.verify(connection).close();
+        verify(connection, never()).rollback();
     }
 
     @Test
