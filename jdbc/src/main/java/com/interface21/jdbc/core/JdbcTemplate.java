@@ -28,6 +28,17 @@ public class JdbcTemplate {
         return update(sql, setterOf(args));
     }
 
+    public int update(Connection connection, String sql, PreparedStatementSetter setter) {
+        return execute(connection, sql, preparedStatement -> {
+            setter.setValues(preparedStatement);
+            return preparedStatement.executeUpdate();
+        });
+    }
+
+    public int update(Connection connection, String sql, Object... args) {
+        return update(connection, sql, setterOf(args));
+    }
+
     private PreparedStatementSetter setterOf(Object... args) {
         return statement -> {
             for (int i = 0; i < args.length; i++) {
@@ -41,7 +52,20 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             RowMapper<T> mapper
     ) {
-        return execute(sql, preparedStatement -> {
+        return execute(sql, selectCallback(setter, mapper));
+    }
+
+    public <T> List<T> select(
+            Connection connection,
+            String sql,
+            PreparedStatementSetter setter,
+            RowMapper<T> mapper
+    ) {
+        return execute(connection, sql, selectCallback(setter, mapper));
+    }
+
+    private <T> StatementCallback<List<T>> selectCallback(PreparedStatementSetter setter, RowMapper<T> mapper) {
+        return preparedStatement -> {
             setter.setValues(preparedStatement);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -51,7 +75,7 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        });
+        };
     }
 
     public <T> List<T> select(
@@ -62,12 +86,33 @@ public class JdbcTemplate {
         return select(sql, setterOf(args), mapper);
     }
 
+    public <T> List<T> select(
+            Connection connection,
+            String sql,
+            RowMapper<T> mapper,
+            Object... args
+    ) {
+        return select(connection, sql, setterOf(args), mapper);
+    }
+
     public <T> T selectOne(
             String sql,
             RowMapper<T> mapper,
             Object... args
     ) {
-        final List<T> results = select(sql, mapper, args);
+        return singleResult(select(sql, mapper, args));
+    }
+
+    public <T> T selectOne(
+            Connection connection,
+            String sql,
+            RowMapper<T> mapper,
+            Object... args
+    ) {
+        return singleResult(select(connection, sql, mapper, args));
+    }
+
+    private <T> T singleResult(List<T> results) {
         if (results.size() != 1) {
             throw new DataAccessException("Expected exactly one row, but found " + results.size());
         }
@@ -75,8 +120,15 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, StatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, StatementCallback<T> callback) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             return callback.doInStatement(preparedStatement);
         } catch (SQLException e) {
             throw new DataAccessException(e);
