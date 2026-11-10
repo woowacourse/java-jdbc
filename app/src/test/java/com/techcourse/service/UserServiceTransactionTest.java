@@ -52,7 +52,7 @@ class UserServiceTransactionTest {
 
         final InOrder inOrder = inOrder(connection, userDao, userHistoryDao);
         inOrder.verify(connection).setAutoCommit(false);
-        inOrder.verify(userDao).update(eq(connection), any(User.class));
+        inOrder.verify(userDao).updatePassword(connection, 1L, "qqqqq");
         inOrder.verify(userHistoryDao).log(eq(connection), any(UserHistory.class));
         inOrder.verify(connection).commit();
         inOrder.verify(connection).close();

@@ -42,7 +42,7 @@ public class UserService {
         final Connection connection = getConnection();
         try {
             connection.setAutoCommit(false);
-            userDao.update(connection, user);
+            userDao.updatePassword(connection, user.getId(), user.getPassword());
             userHistoryDao.log(connection, new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {

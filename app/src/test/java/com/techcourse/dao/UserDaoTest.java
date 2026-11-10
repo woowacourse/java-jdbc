@@ -7,6 +7,8 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -82,5 +84,18 @@ class UserDaoTest {
         final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+
+    @Test
+    void updatePassword() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            userDao.updatePassword(connection, 1L, "password99");
+        }
+
+        final var actual = userDao.findById(1L).orElseThrow();
+
+        assertThat(actual.getPassword()).isEqualTo("password99");
+        assertThat(actual.getAccount()).isEqualTo("gugu");
+        assertThat(actual.getEmail()).isEqualTo("hkkang@woowahan.com");
     }
 }
