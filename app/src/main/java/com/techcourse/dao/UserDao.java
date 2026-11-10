@@ -10,8 +10,6 @@ import java.util.List;
 
 public class UserDao {
 
-    private static final String UPDATE_SQL = "update users set account = ? , password = ? , email = ?  where id = ?";
-
     private final JdbcTemplate jdbcTemplate;
 
     private final RowMapper<User> userRowMapper = rs -> new User(
@@ -35,11 +33,15 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        jdbcTemplate.update(UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+        final var sql = "update users set account = ? , password = ? , email = ?  where id = ?";
+
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(Connection conn, User user) {
-        jdbcTemplate.update(conn, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    public void updatePassword(Connection conn, User user) {
+        String sql = "update users set password = ? where id = ?";
+
+        jdbcTemplate.update(conn, sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {

@@ -44,7 +44,7 @@ public class UserService {
 
     private void updateWithHistory(Connection conn, User user, String createBy) {
         try {
-            userDao.update(conn, user);
+            userDao.updatePassword(conn, user);
             userHistoryDao.log(conn, new UserHistory(user, createBy));
         } catch (RuntimeException | Error e) {
             rollback(conn, e);
