@@ -3,7 +3,10 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +26,47 @@ import org.junit.jupiter.api.Test;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
+
+    @Test
+    void 전달받은_DB_연결로_수정하고_연결은_닫지_않는다() throws SQLException {
+        // given
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        String sql = "update items set name = ? where id = ?";
+        given(connection.prepareStatement(sql)).willReturn(statement);
+        given(statement.executeUpdate()).willReturn(1);
+
+        // when
+        final int updatedCount = jdbcTemplate.update(connection, sql, "changed", 1);
+
+        // then
+        assertThat(updatedCount).isEqualTo(1);
+        then(statement).should().setObject(1, "changed");
+        then(statement).should().setObject(2, 1);
+        then(statement).should().close();
+        then(connection).should(never()).commit();
+        then(connection).should(never()).rollback();
+        then(connection).should(never()).close();
+    }
+
+    @Test
+    void 전달받은_연결에서_SQL이_실패해도_연결을_닫거나_롤백하지_않는다() throws SQLException {
+        // given
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        SQLException failure = new SQLException("update failed");
+        given(connection.prepareStatement("sql")).willReturn(statement);
+        given(statement.executeUpdate()).willThrow(failure);
+
+        // when & then
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "sql"))
+            .isInstanceOf(DataAccessException.class)
+            .hasCause(failure);
+        then(statement).should().close();
+        then(connection).should(never()).commit();
+        then(connection).should(never()).rollback();
+        then(connection).should(never()).close();
+    }
 
     @BeforeEach
     void setUp() {

@@ -23,6 +23,10 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public int update(Connection connection, String sql, Object... params) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         PreparedStatementCallback<List<T>> queryAction = statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -42,8 +46,20 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, params);
+        } catch (SQLException exception) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, exception);
+        }
+    }
+
+    private <T> T execute(
+        Connection connection,
+        String sql,
+        PreparedStatementCallback<T> callback,
+        Object... params
+    ) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             bindParameters(statement, params);
             return callback.execute(statement);
         } catch (SQLException exception) {
