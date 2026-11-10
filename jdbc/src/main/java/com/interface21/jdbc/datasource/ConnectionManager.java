@@ -16,12 +16,8 @@ public class ConnectionManager {
         return conn;
     }
 
-    public static void releaseConnection(Connection conn, DataSource dataSource) {
+    public static void releaseConnection(Connection conn) {
         if (conn == null) return;
-
-        if (connectionHolder.get() == conn) {
-            return;
-        }
 
         try {
             conn.close();

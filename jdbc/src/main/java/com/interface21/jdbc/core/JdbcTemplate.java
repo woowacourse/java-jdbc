@@ -80,7 +80,7 @@ public class JdbcTemplate {
                 }
             }
 
-            ConnectionManager.releaseConnection(conn, dataSource);
+            ConnectionManager.releaseConnection(conn);
         }
     }
 
