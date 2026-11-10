@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -15,10 +14,6 @@ public class UserService {
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource;
-
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao) {
-        this(userDao, userHistoryDao, DataSourceConfig.getInstance());
-    }
 
     public UserService(UserDao userDao, UserHistoryDao userHistoryDao, DataSource dataSource) {
         this.userDao = userDao;
