@@ -47,8 +47,18 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        final var sql = "select * from users";
+
+        List<Map<String, Object>> result = jdbcTemplate.query(sql, List.of());
+
+        return result.stream()
+                .map(row -> new User(
+                        ((Number) row.get("id")).longValue(),
+                        (String) row.get("account"),
+                        (String) row.get("password"),
+                        (String) row.get("email")
+                ))
+                .toList();
     }
 
     public User findById(final Long id) {
