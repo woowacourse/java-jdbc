@@ -28,34 +28,29 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        Connection connection;
-        try {
-            connection = DataSourceConfig.getInstance().getConnection();
+        try(Connection connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            try {
+                final var user = findById(id);
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                connection.commit();
+            } catch (SQLException | RuntimeException e) {
+                rollback(connection, e);
+                throw e;
+            }
         } catch (SQLException e) {
             throw new DataAccessException(e);
-        }
-
-        try {
-            connection.setAutoCommit(false);
-            final var user = findById(id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
-
-            connection.commit();
-        } catch (SQLException | DataAccessException e) {
-            rollback(connection);
-            throw new DataAccessException(e);
-        } finally {
-            close(connection);
         }
     }
 
-    private void rollback(Connection connection) {
+    private void rollback(Connection connection, Exception originalException) {
         try {
             connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } catch (SQLException rollbackException) {
+            originalException.addSuppressed(rollbackException);
         }
     }
 
