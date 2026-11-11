@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,9 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
@@ -19,19 +22,122 @@ class JdbcTemplateTest {
     private static final String SQL = "select account from users where id = ?";
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
+    private Connection connection;
+    private PreparedStatement statement;
     private ResultSet resultSet;
 
     @BeforeEach
     void setup() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
-        final Connection connection = mock(Connection.class);
-        final PreparedStatement statement = mock(PreparedStatement.class);
+        dataSource = mock(DataSource.class);
+        connection = mock(Connection.class);
+        statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @Test
+    void updateBindsParametersAndReturnsAffectedRows() throws SQLException {
+        final String sql = "update users set account = ? where id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update(sql, "gugu", 1L);
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(statement).setObject(1, "gugu");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryMapsAllRowsAndClosesResources() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("account")).thenReturn("gugu", "juni");
+
+        final var accounts = jdbcTemplate.query(SQL, rs -> rs.getString("account"), 1L);
+
+        assertThat(accounts).containsExactly("gugu", "juni");
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionFailureIsWrappedInDataAccessException() throws SQLException {
+        final SQLException cause = new SQLException("connection failed");
+        when(dataSource.getConnection()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+    }
+
+    @Test
+    void statementPreparationFailureClosesConnection() throws SQLException {
+        final SQLException cause = new SQLException("prepare failed");
+        when(connection.prepareStatement(SQL)).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(connection).close();
+    }
+
+    @Test
+    void updateFailureClosesResources() throws SQLException {
+        final SQLException cause = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void parameterBindingFailureClosesResources() throws SQLException {
+        final SQLException cause = new SQLException("binding failed");
+        doThrow(cause).when(statement).setObject(1, 1L);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> rs.getString("account"), 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void queryExecutionFailureClosesResources() throws SQLException {
+        final SQLException cause = new SQLException("query failed");
+        when(statement.executeQuery()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> rs.getString("account"), 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void rowMappingFailureClosesResources() throws SQLException {
+        final SQLException cause = new SQLException("mapping failed");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("account")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, rs -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
