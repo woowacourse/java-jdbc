@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -37,13 +38,14 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new UserService(DataSourceConfig.getInstance(),
+                userDao, new UserHistoryDao(jdbcTemplate));
 
         final var newPassword = "qqqqq";
         final var createdBy = "gugu";
         userService.changePassword(userId, newPassword, createdBy);
 
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
         assertThat(userService.findById(userId).getPassword()).isEqualTo(newPassword);
         assertThat(findHistory()).singleElement().satisfies(history -> {
             assertThat(history.password()).isEqualTo(newPassword);
@@ -54,14 +56,15 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final var userService = new UserService(
-                DataSourceConfig.getInstance(), userDao, new MockUserHistoryDao(jdbcTemplate));
+        final var userService = new UserService(DataSourceConfig.getInstance(),
+                userDao, new MockUserHistoryDao(jdbcTemplate));
         final var originalPassword = userService.findById(userId).getPassword();
 
         final var failure = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(userId, "newPassword", "gugu"));
 
         assertThat(failure).hasMessage("이력 저장 후 발생한 테스트 예외");
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
         assertThat(userService.findById(userId).getPassword()).isEqualTo(originalPassword);
         assertThat(findHistory()).isEmpty();
     }
