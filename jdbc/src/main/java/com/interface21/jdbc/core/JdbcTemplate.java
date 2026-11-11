@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,11 +23,11 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, final Object... args) {
-        try (Connection conn = dataSource.getConnection()) {
-            update(conn, sql, args);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            update(connection, sql, args);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -41,8 +42,8 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setArgs(pstmt, args);
 
             try (ResultSet resultSet = pstmt.executeQuery()) {
@@ -55,6 +56,8 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -81,11 +84,11 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        try (Connection conn = dataSource.getConnection()) {
-            return queryForObject(conn, sql, rowMapper, args);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            return queryForObject(connection, sql, rowMapper, args);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
