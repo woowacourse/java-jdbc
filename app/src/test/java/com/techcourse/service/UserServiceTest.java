@@ -7,6 +7,8 @@ import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,31 +33,60 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        final var createdBy = "gugu";
+        final var historyCountBefore = countHistories();
+        final var startedAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(countHistories()).isEqualTo(historyCountBefore + 1);
+        final var history = findLatestHistory();
+        assertThat(history)
+                .extracting(HistoryRow::userId, HistoryRow::password, HistoryRow::createdBy)
+                .containsExactly(1L, newPassword, createdBy);
+        assertThat(history.createdAt()).isBetween(startedAt, LocalDateTime.now());
     }
 
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    private long countHistories() {
+        return jdbcTemplate.queryForObject("select count(*) from user_history", rs -> rs.getLong(1));
+    }
+
+    private HistoryRow findLatestHistory() {
+        return jdbcTemplate.queryForObject(
+                "select user_id, password, created_at, created_by from user_history order by id desc limit 1",
+                rs -> new HistoryRow(
+                        rs.getLong("user_id"),
+                        rs.getString("password"),
+                        rs.getObject("created_at", LocalDateTime.class),
+                        rs.getString("created_by")));
+    }
+
+    private record HistoryRow(long userId, String password, LocalDateTime createdAt, String createdBy) {
     }
 }
