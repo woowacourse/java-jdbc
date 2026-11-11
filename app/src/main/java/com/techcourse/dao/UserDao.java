@@ -9,6 +9,8 @@ import javax.sql.DataSource;
 
 public class UserDao {
 
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
+
     private final JdbcTemplate jdbcTemplate;
 
     private final RowMapper<User> rowMapper = rs -> new User(
@@ -46,8 +48,11 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, rowMapper, id);
+        return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, rowMapper, id);
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, rowMapper, id);
     }
 
     public User findByAccount(final String account) {

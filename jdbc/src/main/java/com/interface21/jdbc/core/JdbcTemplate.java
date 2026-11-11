@@ -32,19 +32,30 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        }, pstmt -> setParameters(pstmt, params));
+        return execute(sql, pstmt -> readRows(pstmt, rowMapper), pstmt -> setParameters(pstmt, params));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
+        return singleResult(query(sql, rowMapper, params));
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = execute(conn, sql, pstmt -> readRows(pstmt, rowMapper),
+                pstmt -> setParameters(pstmt, params));
+        return singleResult(results);
+    }
+
+    private static <T> List<T> readRows(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        }
+    }
+
+    private static <T> T singleResult(List<T> results) {
         if (results.isEmpty()) {
             throw new EmptyResultDataAccessException(1);
         }

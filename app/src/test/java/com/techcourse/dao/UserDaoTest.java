@@ -6,6 +6,7 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +39,27 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdReadsUncommittedChangesFromGivenConnection() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var originalPassword = user.getPassword();
+        final var newPassword = "newPassword";
+
+        try (var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+
+                assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo(newPassword);
+            } finally {
+                connection.rollback();
+            }
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
     }
 
     @Test
