@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -103,6 +105,35 @@ class JdbcTemplateTest {
                 .hasCause(cause);
         verify(preparedStatement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void 스레드에_묶인_Connection이_있으면_그_Connection으로_실행하고_닫지_않는다() throws SQLException {
+        final var boundConnection = mock(Connection.class);
+        given(boundConnection.prepareStatement(anyString())).willReturn(preparedStatement);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
+
+        try {
+            jdbcTemplate.update("update users set password = ? where id = ?", "password99", 1L);
+
+            verify(dataSource, never()).getConnection();
+            verify(preparedStatement).executeUpdate();
+            verify(preparedStatement).close();
+            verify(boundConnection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void Connection을_얻지_못하면_DataAccessException을_던진다() throws SQLException {
+        final var cause = new SQLException("connection refused");
+        given(dataSource.getConnection()).willThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
     }
 
     @Test
