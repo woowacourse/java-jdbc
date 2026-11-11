@@ -14,11 +14,7 @@ public class UserHistoryDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this(new JdbcTemplate(dataSource));
-    }
-
-    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     public void log(final UserHistory userHistory) {
