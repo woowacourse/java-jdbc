@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +63,30 @@ class UserDaoTest {
     }
 
     @Test
+    @DisplayName("전달받은 커넥션에서 아직 커밋하지 않은 사용자도 조회한다")
+    void find_by_id_with_connection() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection, "insert into users (account, password, email) values (?, ?, ?)",
+                    "brown", "brown-password", "brown@woowahan.com");
+
+            assertThat(userDao.findById(connection, 2L))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new User(2L, "brown", "brown-password", "brown@woowahan.com"));
+            assertThat(userDao.findById(2L)).isNull();
+            connection.rollback();
+        }
+    }
+
+    @Test
+    @DisplayName("전달받은 커넥션에서도 사용자를 찾지 못하면 null을 반환한다")
+    void find_missing_user_with_connection() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            assertThat(userDao.findById(connection, 999L)).isNull();
+        }
+    }
+
+    @Test
     @DisplayName("계정으로 사용자를 조회한다")
     void find_by_account() {
         assertThat(userDao.findByAccount("gugu"))
@@ -97,6 +122,47 @@ class UserDaoTest {
         assertThat(userDao.findById(1L))
                 .usingRecursiveComparison()
                 .isEqualTo(new User(1L, "gugu", "password99", "hkkang@woowahan.com"));
+    }
+
+    @Test
+    @DisplayName("전달받은 커넥션으로 대상 사용자의 비밀번호만 수정하고 호출자가 커밋한다")
+    void update_password_with_connection() throws SQLException {
+        userDao.insert(new User("brown", "brown-password", "brown@woowahan.com"));
+        final var user = new User(1L, "renamed-gugu", "password99", "changed@woowahan.com");
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+
+            userDao.updatePassword(connection, user);
+
+            assertThat(userDao.findById(connection, 1L))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new User(1L, "gugu", "password99", "hkkang@woowahan.com"));
+            assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+            connection.commit();
+        }
+
+        assertThat(userDao.findById(1L))
+                .usingRecursiveComparison()
+                .isEqualTo(new User(1L, "gugu", "password99", "hkkang@woowahan.com"));
+        assertThat(userDao.findById(2L))
+                .usingRecursiveComparison()
+                .isEqualTo(new User(2L, "brown", "brown-password", "brown@woowahan.com"));
+    }
+
+    @Test
+    @DisplayName("비밀번호를 수정할 사용자가 없으면 예외를 던지고 기존 사용자 정보를 유지한다")
+    void update_password_for_missing_user() throws SQLException {
+        final var user = new User(999L, "missing", "changed-password", "changed@woowahan.com");
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            assertThatThrownBy(() -> userDao.updatePassword(connection, user))
+                    .isInstanceOf(NoSuchElementException.class)
+                    .hasMessageContaining("999");
+            assertThat(userDao.findById(connection, 1L))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new User(1L, "gugu", "password", "hkkang@woowahan.com"));
+        }
     }
 
     @Test
