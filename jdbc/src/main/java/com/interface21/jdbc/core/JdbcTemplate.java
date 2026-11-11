@@ -23,11 +23,19 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return execute(sql, PreparedStatement::executeUpdate, args);
+        return update(sql, createPreparedStatementSetter(args));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, pstmt -> {
+        return query(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return execute(sql, setter, pstmt -> {
             try (final ResultSet rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -35,11 +43,15 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, args);
+        });
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return queryForObject(sql, createPreparedStatementSetter(args), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        final List<T> results = query(sql, setter, rowMapper);
         if (results.isEmpty()) {
             throw new DataAccessException("조회 결과가 없습니다. sql : " + sql);
         }
@@ -49,23 +61,24 @@ public class JdbcTemplate {
         return results.getFirst();
     }
 
-    private <T> T execute(final String sql, final PreparedStatementCallback<T> action, final Object... args) {
+    private <T> T execute(final String sql, final PreparedStatementSetter setter, final PreparedStatementCallback<T> action) {
         log.debug("query : {}", sql);
 
         try (final Connection conn = dataSource.getConnection();
              final PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            setArguments(pstmt, args);
+            setter.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e.getMessage(), e);
+            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다. sql : " + sql, e);
         }
     }
 
-    private void setArguments(final PreparedStatement pstmt, final Object... args) throws SQLException {
-        for (int i = 0; i < args.length; i++) {
-            pstmt.setObject(i + 1, args[i]);
-        }
+    private PreparedStatementSetter createPreparedStatementSetter(final Object... args) {
+        return pstmt -> {
+            for (int i = 0; i < args.length; i++) {
+                pstmt.setObject(i + 1, args[i]);
+            }
+        };
     }
 
     @FunctionalInterface

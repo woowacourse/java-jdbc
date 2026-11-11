@@ -1,5 +1,6 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 class UserDaoTest {
 
@@ -26,9 +29,15 @@ class UserDaoTest {
 
     @Test
     void findAll() {
+        userDao.insert(new User("another-user", "another-password", "another@woowahan.com"));
+
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users)
+                .extracting(User::getId, User::getAccount, User::getPassword, User::getEmail)
+                .containsExactlyInAnyOrder(
+                        tuple(1L, "gugu", "password", "hkkang@woowahan.com"),
+                        tuple(2L, "another-user", "another-password", "another@woowahan.com"));
     }
 
     @Test
@@ -36,6 +45,13 @@ class UserDaoTest {
         final var user = userDao.findById(1L);
 
         assertThat(user.getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void findByIdThrowsWhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userDao.findById(2L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("조회 결과가 없습니다.");
     }
 
     @Test
