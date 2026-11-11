@@ -137,32 +137,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 넘겨받은_Connection으로_update하면_PreparedStatement만_닫고_Connection은_닫지_않는다() throws SQLException {
-        given(preparedStatement.executeUpdate()).willReturn(1);
-
-        final var updated = jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password99", 1L);
-
-        assertThat(updated).isEqualTo(1);
-        verify(dataSource, never()).getConnection();
-        verify(preparedStatement).setObject(1, "password99");
-        verify(preparedStatement).setObject(2, 1L);
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
-    void 넘겨받은_Connection으로_update하다_SQLException이_나도_Connection은_닫지_않는다() throws SQLException {
-        final var cause = new SQLException("syntax error");
-        given(preparedStatement.executeUpdate()).willThrow(cause);
-
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "wrong sql"))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(cause);
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
     void query는_모든_행을_RowMapper로_변환하고_rowNum을_0부터_넘긴다() throws SQLException {
         given(resultSet.next()).willReturn(true, true, false);
         given(resultSet.getString("account")).willReturn("gugu", "kirby");

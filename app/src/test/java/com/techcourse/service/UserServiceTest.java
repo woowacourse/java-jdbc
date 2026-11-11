@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -70,7 +71,8 @@ class UserServiceTest {
             @Override
             public Optional<User> findById(final Long id) {
                 final var user = super.findById(id);
-                jdbcTemplate.update("update users set email = ? where id = ?", changedEmail, id);
+                CompletableFuture.runAsync(() -> jdbcTemplate.update("update users set email = ? where id = ?", changedEmail, id))
+                        .join();
                 return user;
             }
         };

@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -13,14 +14,16 @@ import org.mockito.InOrder;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -44,7 +47,7 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    void 비밀번호_변경과_이력_저장이_모두_성공하면_같은_Connection으로_커밋한다() throws SQLException {
+    void 비밀번호_변경과_이력_저장이_모두_성공하면_커밋한다() throws SQLException {
         final var userHistoryDao = mock(UserHistoryDao.class);
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
@@ -52,11 +55,25 @@ class UserServiceTransactionTest {
 
         final InOrder inOrder = inOrder(connection, userDao, userHistoryDao);
         inOrder.verify(connection).setAutoCommit(false);
-        inOrder.verify(userDao).updatePassword(connection, 1L, "qqqqq");
-        inOrder.verify(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        inOrder.verify(userDao).updatePassword(1L, "qqqqq");
+        inOrder.verify(userHistoryDao).log(any(UserHistory.class));
         inOrder.verify(connection).commit();
         inOrder.verify(connection).close();
         verify(connection, never()).rollback();
+    }
+
+    @Test
+    void 트랜잭션_동안에만_Connection을_현재_스레드에_묶어_둔다() {
+        final List<Connection> boundConnections = new ArrayList<>();
+        final var userHistoryDao = mock(UserHistoryDao.class);
+        willAnswer(invocation -> boundConnections.add(TransactionSynchronizationManager.getResource(dataSource)))
+                .given(userHistoryDao).log(any(UserHistory.class));
+        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+
+        userService.changePassword(1L, "qqqqq", "gugu");
+
+        assertThat(boundConnections).containsExactly(connection);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
@@ -71,6 +88,7 @@ class UserServiceTransactionTest {
         inOrder.verify(connection).rollback();
         inOrder.verify(connection).close();
         verify(connection, never()).commit();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test

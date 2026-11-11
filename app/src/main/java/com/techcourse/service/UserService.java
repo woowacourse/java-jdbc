@@ -1,20 +1,18 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final DataSource dataSource;
     private final UserDao userDao;
@@ -36,14 +34,14 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-
-        final Connection connection = getConnection();
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
             connection.setAutoCommit(false);
-            userDao.updatePassword(connection, user.getId(), user.getPassword());
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            final var user = findById(id);
+            user.changePassword(newPassword);
+            userDao.updatePassword(user.getId(), user.getPassword());
+            userHistoryDao.log(new UserHistory(user, createBy));
             connection.commit();
         } catch (SQLException e) {
             rollback(connection, e);
@@ -52,15 +50,8 @@ public class UserService {
             rollback(connection, e);
             throw e;
         } finally {
-            release(connection);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DataAccessException("Connection을 얻지 못했습니다.", e);
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -69,14 +60,6 @@ public class UserService {
             connection.rollback();
         } catch (SQLException e) {
             cause.addSuppressed(e);
-        }
-    }
-
-    private void release(final Connection connection) {
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            log.warn("Connection을 닫지 못했습니다.", e);
         }
     }
 }
