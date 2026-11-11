@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,7 +46,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectWithConnection() throws SQLException {
+    void queryForObjectWithTransaction() throws SQLException {
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         PreparedStatement pstmt = mock(PreparedStatement.class);
@@ -61,21 +62,21 @@ class JdbcTemplateTest {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         RowMapper<Integer> rowMapper = rs -> rs.getInt("id");
 
-        Integer actual = jdbcTemplate.queryForObject(
-                connection,
-                sql,
-                rowMapper,
-                "gugu"
-        );
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            int actual = jdbcTemplate.queryForObject(sql, rowMapper, "gugu");
 
-        assertThat(actual).isEqualTo(1);
+            assertThat(actual).isEqualTo(1);
 
-        verify(connection).prepareStatement(sql);
-        verify(pstmt).setObject(1, "gugu");
-        verify(resultSet).close();
-        verify(pstmt).close();
-        verify(connection, never()).close();
-        verifyNoInteractions(dataSource);
+            verify(connection).prepareStatement(sql);
+            verify(pstmt).setObject(1, "gugu");
+            verify(resultSet).close();
+            verify(pstmt).close();
+            verify(connection, never()).close();
+            verifyNoInteractions(dataSource);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -103,24 +104,5 @@ class JdbcTemplateTest {
         verify(pstmt).setObject(2, 1L);
         verify(pstmt).close();
         verify(connection).close();
-    }
-
-    @Test
-    void updateWithConnection() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        PreparedStatement pstmt = mock(PreparedStatement.class);
-
-        String sql = "update users set password = ? where id = ?";
-
-        when(connection.prepareStatement(sql)).thenReturn(pstmt);
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-
-        jdbcTemplate.update(connection, sql, "newpassword", 1L);
-
-        verify(pstmt).close();
-        verify(connection, never()).close();
-        verifyNoInteractions(dataSource);
     }
 }
