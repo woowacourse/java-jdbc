@@ -43,15 +43,18 @@ public class TxUserService implements UserService {
             connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindResource(dataSource, connection);
 
+            Exception failure = null;
+
             try {
                 userService.changePassword(id, newPassword, createdBy);
 
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
+                failure = e;
                 rollback(connection, e);
                 throw e;
             } finally {
-                connection.setAutoCommit(originalAutoCommit);
+                restoreAutoCommit(connection, originalAutoCommit, failure);
             }
         } catch (SQLException e) {
             throw new DataAccessException("트랜잭션 실패 : 비밀번호 변경", e);
@@ -66,6 +69,21 @@ public class TxUserService implements UserService {
             connection.rollback();
         } catch (SQLException e) {
             cause.addSuppressed(e);
+        }
+    }
+
+    private void restoreAutoCommit(
+            final Connection connection,
+            final boolean originalAutoCommit,
+            final Exception failure
+    ) throws SQLException {
+        try {
+            connection.setAutoCommit(originalAutoCommit);
+        } catch (SQLException e) {
+            if (failure == null) {
+                throw e;
+            }
+            failure.addSuppressed(e);
         }
     }
 }
