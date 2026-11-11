@@ -21,12 +21,23 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
+    /**
+     * 단일 null 값은 (Object) null 또는 new Object[]{null}로 전달해 setter 오버로드와 구분한다.
+     */
     public int update(final String sql, final Object... parameters) {
-        return execute(sql, parameters, PreparedStatement::executeUpdate);
+        return update(sql, createSetter(parameters));
+    }
+
+    public int update(final String sql, final PreparedStatementSetter setter) {
+        return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, parameters, statement -> {
+        return query(sql, createSetter(parameters), rowMapper);
+    }
+
+    public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        return execute(sql, setter, statement -> {
             try (final var resultSet = statement.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (resultSet.next()) {
@@ -41,24 +52,30 @@ public class JdbcTemplate {
      * 조회 결과가 없으면 null을 반환하고, 두 건 이상이면 IncorrectResultSizeDataAccessException을 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final var results = query(sql, rowMapper, parameters);
+        return queryForObject(sql, createSetter(parameters), rowMapper);
+    }
+
+    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
+        final var results = query(sql, setter, rowMapper);
         if (results.size() > 1) {
             throw new IncorrectResultSizeDataAccessException("Expected at most one row but found " + results.size() + ": " + sql);
         }
         return results.isEmpty() ? null : results.getFirst();
     }
 
-    private void bindParameters(final PreparedStatement statement, final Object[] parameters) throws SQLException {
-        for (int index = 0; index < parameters.length; index++) {
-            statement.setObject(index + 1, parameters[index]);
-        }
+    private PreparedStatementSetter createSetter(final Object[] parameters) {
+        return statement -> {
+            for (int index = 0; index < parameters.length; index++) {
+                statement.setObject(index + 1, parameters[index]);
+            }
+        };
     }
 
-    private <T> T execute(final String sql, final Object[] parameters, final StatementCallback<T> callback) {
+    private <T> T execute(final String sql, final PreparedStatementSetter setter, final StatementCallback<T> callback) {
         log.debug("query : {}", sql);
         try (final var connection = dataSource.getConnection();
              final var statement = connection.prepareStatement(sql)) {
-            bindParameters(statement, parameters);
+            setter.setValues(statement);
             return callback.execute(statement);
         } catch (final SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);

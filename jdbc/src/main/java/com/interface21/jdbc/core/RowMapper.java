@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public interface RowMapper<T> {
 
     /**
-     * 현재 행을 객체로 변환한다. 커서 이동과 자원 해제는 JdbcTemplate이 담당한다.
+     * 현재 행을 객체로 변환한다. 커서를 이동하거나 자원을 해제하지 않는다.
      */
     T mapRow(ResultSet resultSet) throws SQLException;
 }

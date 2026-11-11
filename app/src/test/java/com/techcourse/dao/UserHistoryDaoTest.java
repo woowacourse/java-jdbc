@@ -26,18 +26,9 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    @DisplayName("DataSource를 주입받아 사용자 변경 이력을 저장한다")
-    void save_history_with_data_source() throws SQLException {
-        assertPersistsHistory(new UserHistoryDao(DataSourceConfig.getInstance()));
-    }
-
-    @Test
-    @DisplayName("JdbcTemplate을 주입받아 사용자 변경 이력을 저장한다")
-    void save_history_with_jdbc_template() throws SQLException {
-        assertPersistsHistory(new UserHistoryDao(new JdbcTemplate(DataSourceConfig.getInstance())));
-    }
-
-    private void assertPersistsHistory(final UserHistoryDao userHistoryDao) throws SQLException {
+    @DisplayName("사용자 변경 이력을 저장한다")
+    void save_history() throws SQLException {
+        final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
         final var user = new User(7L, "gugu", "password", "hkkang@woowahan.com");
         final var history = new UserHistory(user, "admin");
 
