@@ -38,8 +38,8 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userService = new UserService(DataSourceConfig.getInstance(),
-                userDao, new UserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "qqqqq";
         final var createdBy = "gugu";
@@ -56,8 +56,8 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final var userService = new UserService(DataSourceConfig.getInstance(),
-                userDao, new MockUserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService);
         final var originalPassword = userService.findById(userId).getPassword();
 
         final var failure = assertThrows(DataAccessException.class,
