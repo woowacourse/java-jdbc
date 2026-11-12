@@ -130,6 +130,37 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryWithConnectionSeesUncommittedChangesAndKeepsConnectionOpen() throws SQLException {
+        try (final var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection, "insert into users (id, account) values (?, ?)", 1L, "gugu");
+
+            final var accounts = jdbcTemplate.query(connection, "select account from users",
+                    (rs, rowNum) -> rs.getString("account"));
+            final var account = jdbcTemplate.queryForObject(connection, "select account from users where id = ?",
+                    (rs, rowNum) -> rs.getString("account"), 1L);
+
+            assertThat(accounts).containsExactly("gugu");
+            assertThat(account).isEqualTo("gugu");
+            assertThat(connection.isClosed()).isFalse();
+            connection.rollback();
+        }
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void queryForObjectWithConnectionRejectsMultipleRows() throws SQLException {
+        jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
+
+        try (final var connection = dataSource.getConnection()) {
+            assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select account from users",
+                    (rs, rowNum) -> rs.getString("account")))
+                    .isInstanceOf(DataAccessException.class);
+            assertThat(connection.isClosed()).isFalse();
+        }
+    }
+
+    @Test
     void queryMapsEveryRowWithItsRowNumber() {
         jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
 

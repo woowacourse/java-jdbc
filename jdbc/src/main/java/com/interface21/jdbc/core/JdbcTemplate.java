@@ -36,16 +36,15 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, args, statement -> {
-            try (final var resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                int rowNum = 0;
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet, rowNum++));
-                }
-                return results;
-            }
-        });
+        return execute(sql, args, mapRows(rowMapper));
+    }
+
+    /**
+     * 호출하는 쪽이 넘긴 {@link Connection}으로 조회한다. 커넥션은 닫지 않는다.
+     */
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final Object... args) {
+        return execute(connection, sql, args, mapRows(rowMapper));
     }
 
     /**
@@ -56,11 +55,37 @@ public class JdbcTemplate {
      * "행 없음"과 구분할 필요가 있다면 {@link RowMapper}가 {@code null}을 반환하지 않도록 작성해야 한다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final var results = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    /**
+     * 호출하는 쪽이 넘긴 {@link Connection}으로 최대 한 건을 조회한다. 커넥션은 닫지 않는다.
+     * <p>
+     * 결과 계약은 {@link #queryForObject(String, RowMapper, Object...)}와 같다.
+     */
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return singleResult(query(connection, sql, rowMapper, args));
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row, but found " + results.size());
         }
         return results.isEmpty() ? null : results.getFirst();
+    }
+
+    private <T> StatementExecutor<List<T>> mapRows(final RowMapper<T> rowMapper) {
+        return statement -> {
+            try (final var resultSet = statement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                int rowNum = 0;
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet, rowNum++));
+                }
+                return results;
+            }
+        };
     }
 
     private <T> T execute(final String sql, final Object[] args, final StatementExecutor<T> executor) {
