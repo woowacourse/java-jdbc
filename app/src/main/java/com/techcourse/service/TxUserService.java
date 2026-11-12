@@ -37,6 +37,11 @@ public class TxUserService implements UserService {
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
         try {
+            if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+                userService.changePassword(id, newPassword, createdBy);
+                return;
+            }
+
             final Connection conn = DataSourceUtils.getConnection(dataSource);
             try (TransactionCleanup cleanup = () -> releaseTransactionConnection(conn)) {
                 conn.setAutoCommit(false);

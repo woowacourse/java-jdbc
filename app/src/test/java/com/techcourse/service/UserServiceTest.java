@@ -11,6 +11,7 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
@@ -92,5 +93,58 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo("password");
+    }
+
+    @Test
+    void changePasswordLeavesCommitToOuterTransaction() throws SQLException {
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final UserService userService = new TxUserService(dataSource, appUserService);
+        final var newPassword = "newPassword";
+
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                userService.changePassword(1L, newPassword, "gugu");
+
+                assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+                assertThat(connection.isClosed()).isFalse();
+                assertThat(userService.findById(1L).getPassword()).isEqualTo(newPassword);
+
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        }
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("SELECT id FROM user_history", (rs, rowNum) -> rs.getLong("id")))
+                .isEmpty();
+    }
+
+    @Test
+    void changePasswordFailureLeavesRollbackToOuterTransaction() throws SQLException {
+        final var appUserService = new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate));
+        final UserService userService = new TxUserService(dataSource, appUserService);
+        final var outerEmail = "outer@woowahan.com";
+
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                jdbcTemplate.update("UPDATE users SET email = ? WHERE id = ?", outerEmail, 1L);
+
+                assertThrows(DataAccessException.class,
+                        () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+                assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+                assertThat(connection.isClosed()).isFalse();
+                assertThat(userService.findById(1L).getEmail()).isEqualTo(outerEmail);
+
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        }
     }
 }
