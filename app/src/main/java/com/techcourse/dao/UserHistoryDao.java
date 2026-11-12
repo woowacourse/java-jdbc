@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -22,10 +21,6 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         jdbcTemplate.update(INSERT_SQL, historyArguments(userHistory));
-    }
-
-    public void log(final Connection connection, final UserHistory userHistory) {
-        jdbcTemplate.update(connection, INSERT_SQL, historyArguments(userHistory));
     }
 
     private Object[] historyArguments(final UserHistory history) {
