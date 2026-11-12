@@ -2,6 +2,7 @@ package com.interface21.transaction.support;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class TransactionSynchronizationManager {
@@ -11,13 +12,33 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(DataSource key) {
-        return null;
+        final Map<DataSource, Connection> connections = resources.get();
+        if (connections == null) {
+            return null;
+        }
+        return connections.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
+        Map<DataSource, Connection> connections = resources.get();
+        if (connections == null) {
+            connections = new HashMap<>();
+            resources.set(connections);
+        }
+        if (connections.putIfAbsent(key, value) != null) {
+            throw new IllegalStateException("이미 현재 스레드에 묶인 Connection이 있습니다. dataSource=" + key);
+        }
     }
 
     public static Connection unbindResource(DataSource key) {
-        return null;
+        final Map<DataSource, Connection> connections = resources.get();
+        if (connections == null || !connections.containsKey(key)) {
+            throw new IllegalStateException("현재 스레드에 묶인 Connection이 없습니다. dataSource=" + key);
+        }
+        final Connection value = connections.remove(key);
+        if (connections.isEmpty()) {
+            resources.remove();
+        }
+        return value;
     }
 }

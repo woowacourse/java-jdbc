@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,11 +36,12 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        final var createdBy = "gugu";
+        userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
 
@@ -50,13 +52,16 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        // 애플리케이션 서비스
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        // 트랜잭션 서비스 추상화
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         final var newPassword = "newPassword";
-        final var createBy = "gugu";
+        final var createdBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+                () -> userService.changePassword(1L, newPassword, createdBy));
 
         final var actual = userService.findById(1L);
 
@@ -70,11 +75,13 @@ class UserServiceTest {
             @Override
             public Optional<User> findById(final Long id) {
                 final var user = super.findById(id);
-                jdbcTemplate.update("update users set email = ? where id = ?", changedEmail, id);
+                CompletableFuture.runAsync(() -> jdbcTemplate.update("update users set email = ? where id = ?", changedEmail, id))
+                        .join();
                 return user;
             }
         };
-        final var userService = new UserService(DataSourceConfig.getInstance(), racingUserDao, new UserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(racingUserDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService, DataSourceConfig.getInstance());
 
         userService.changePassword(1L, "qqqqq", "gugu");
 

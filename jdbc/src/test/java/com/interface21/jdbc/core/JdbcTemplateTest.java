@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -106,29 +108,32 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 넘겨받은_Connection으로_update하면_PreparedStatement만_닫고_Connection은_닫지_않는다() throws SQLException {
-        given(preparedStatement.executeUpdate()).willReturn(1);
+    void 스레드에_묶인_Connection이_있으면_그_Connection으로_실행하고_닫지_않는다() throws SQLException {
+        final var boundConnection = mock(Connection.class);
+        given(boundConnection.prepareStatement(anyString())).willReturn(preparedStatement);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
 
-        final var updated = jdbcTemplate.update(connection, "update users set password = ? where id = ?", "password99", 1L);
+        try {
+            jdbcTemplate.update("update users set password = ? where id = ?", "password99", 1L);
 
-        assertThat(updated).isEqualTo(1);
-        verify(dataSource, never()).getConnection();
-        verify(preparedStatement).setObject(1, "password99");
-        verify(preparedStatement).setObject(2, 1L);
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
+            verify(dataSource, never()).getConnection();
+            verify(preparedStatement).executeUpdate();
+            verify(preparedStatement).close();
+            verify(boundConnection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
-    void 넘겨받은_Connection으로_update하다_SQLException이_나도_Connection은_닫지_않는다() throws SQLException {
-        final var cause = new SQLException("syntax error");
-        given(preparedStatement.executeUpdate()).willThrow(cause);
+    void Connection을_얻지_못하면_DataAccessException을_던진다() throws SQLException {
+        final var cause = new SQLException("connection refused");
+        given(dataSource.getConnection()).willThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "wrong sql"))
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
     }
 
     @Test

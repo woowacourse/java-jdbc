@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,10 +32,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return update(sql, new ArgumentPreparedStatementSetter(args));
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, new ArgumentPreparedStatementSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter pss, final RowMapper<T> rowMapper) {
@@ -66,26 +63,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss, final PreparedStatementCallback<T> action) {
-        try (final Connection conn = dataSource.getConnection()) {
-            return execute(conn, sql, pss, action);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다. sql=" + sql, e);
-        }
-    }
-
-    private <T> T execute(
-            final Connection conn,
-            final String sql,
-            final PreparedStatementSetter pss,
-            final PreparedStatementCallback<T> action
-    ) {
         log.debug("query : {}", sql);
 
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
         try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pss.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다. sql=" + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
