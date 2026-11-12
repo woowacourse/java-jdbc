@@ -58,6 +58,59 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithConnectionParticipatesInTheCallersTransaction() throws SQLException {
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            jdbcTemplate.update(connection, "update users set account = ? where id = ?", "changed", 1L);
+
+            assertThat(connection.isClosed()).isFalse();
+            final var uncommittedAccount = jdbcTemplate.queryForObject(connection,
+                    "select account from users where id = ?", rs -> rs.getString("account"), 1L);
+            assertThat(uncommittedAccount).isEqualTo("changed");
+            final var committedAccount = jdbcTemplate.queryForObject(
+                    "select account from users where id = ?", rs -> rs.getString("account"), 1L);
+            assertThat(committedAccount).isEqualTo("gugu");
+
+            connection.rollback();
+        }
+
+        final var account = jdbcTemplate.queryForObject(
+                "select account from users where id = ?", rs -> rs.getString("account"), 1L);
+        assertThat(account).isEqualTo("gugu");
+    }
+
+    @Test
+    void queryWithConnectionSeesUncommittedChangesAndLeavesConnectionOpen() throws SQLException {
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            jdbcTemplate.update(connection, "update users set account = ? where id = ?", "changed", 1L);
+
+            final var accounts = jdbcTemplate.query(connection,
+                    "select account from users where id > ? order by id", rs -> rs.getString("account"), 0L);
+
+            assertThat(accounts).containsExactly("changed", "pobi");
+            assertThat(connection.isClosed()).isFalse();
+            connection.rollback();
+        }
+    }
+
+    @Test
+    void updateWithConnectionLeavesConnectionOpenOnSqlFailure() throws SQLException {
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            assertThatThrownBy(() -> jdbcTemplate.update(connection,
+                    "update users set account = ? where", "changed"))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCauseInstanceOf(SQLException.class);
+
+            assertThat(connection.isClosed()).isFalse();
+            connection.rollback();
+        }
+    }
+
+    @Test
     void queryWithoutParametersMapsEveryRow() {
         List<String> accounts = jdbcTemplate.query(
                 "select account from users order by id", rs -> rs.getString("account"));
