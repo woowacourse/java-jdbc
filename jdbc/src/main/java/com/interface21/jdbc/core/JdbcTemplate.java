@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +34,6 @@ public class JdbcTemplate {
         });
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, pstmt -> {
-            argumentsSetter(args).setValues(pstmt);
-            return pstmt.executeUpdate();
-        });
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
@@ -59,23 +53,24 @@ public class JdbcTemplate {
         return singleResult(query(sql, rowMapper, pss));
     }
 
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(conn, sql, pstmt -> {
-            argumentsSetter(args).setValues(pstmt);
-            return mapRows(pstmt, rowMapper);
-        });
-    }
-
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return singleResult(query(conn, sql, rowMapper, args));
-    }
-
     private <T> T execute(final String sql, final PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection()) {
-            return execute(conn, sql, action);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        final T result;
+        try {
+            result = execute(conn, sql, action);
+        } catch (RuntimeException e) {
+            releaseConnection(conn, e);
+            throw e;
+        }
+        DataSourceUtils.releaseConnection(conn, dataSource);
+        return result;
+    }
+
+    private void releaseConnection(final Connection conn, final RuntimeException cause) {
+        try {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (RuntimeException releaseException) {
+            cause.addSuppressed(releaseException);
         }
     }
 
