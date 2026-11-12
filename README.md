@@ -52,10 +52,6 @@
 
 #### 최종 검증
 
-```sh
-./gradlew :jdbc:test :app:test --rerun-tasks --console=plain
-```
-
 - UserDaoTest 10개, UserHistoryDaoTest 2개, JdbcTemplateTest 9개로 총 21개 통과.
 - 단건 조회의 0건, 1건, 여러 건 처리와 자원 정리, 이력 DAO의 두 생성자 및 전체 저장 필드를 검증한다.
 - UserDaoTest는 각 테스트 전에 사용자 테이블과 ID를 초기화하여 실행 순서에 의존하지 않는다.
@@ -96,11 +92,6 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - [x] 작업 중 예외가 발생하면 롤백하여 기존 비밀번호와 이력 상태를 유지한다.
 - [x] 커밋 또는 롤백 후 Connection을 종료하고, 롤백과 종료 실패 시 원래 예외를 보존한다.
 
-#### 진행 방식
-
-- 기능마다 실패하는 테스트를 먼저 실행하고, 구현 후 같은 테스트가 통과하는지 확인한다.
-- 공유 Connection 실행, DAO 연결 전달, 서비스 트랜잭션을 각각 구현과 테스트를 묶어 커밋한다.
-
 #### 구현 내용
 
 - `UserService(DataSource, UserDao, UserHistoryDao)`로 트랜잭션에 사용할 연결의 출처를 주입한다.
@@ -109,18 +100,6 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - 커밋 또는 롤백이 완료되면 기존 autoCommit 설정을 복구하고 연결을 종료한다.
 - 롤백 자체가 실패하면 autoCommit 복구를 건너뛰어 미완료 작업의 암묵적 커밋을 피한다.
 - 롤백과 연결 종료 실패는 최초 예외의 suppressed에 남긴다.
-
-#### 검증
-
-```sh
-./gradlew :jdbc:test :app:test --console=plain
-```
-
-- JdbcTemplateTest 16개, UserDaoTest 11개, UserHistoryDaoTest 3개,
-  UserServiceTest 3개, UserServiceTransactionTest 6개로 총 39개 통과.
-- 성공 시 이력의 사용자, 변경 비밀번호, 변경자, 변경 시각을 확인한다.
-- 이력 저장 후 예외와 실제 SQL 오류에서 비밀번호와 이력이 함께 롤백되는지 확인한다.
-- 커밋 실패의 롤백, 연결 설정 복구, 자원 종료, 최초 예외 및 suppressed 보존을 확인한다.
 
 </details>
 
