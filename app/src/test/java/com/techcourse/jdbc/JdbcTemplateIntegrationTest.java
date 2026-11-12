@@ -27,4 +27,32 @@ class JdbcTemplateIntegrationTest {
         assertThatThrownBy(() -> template.update("insert into missing_table values (?)", 1))
                 .isInstanceOf(DataAccessException.class).hasCauseInstanceOf(java.sql.SQLException.class);
     }
+    @Test
+    void supportsStatementSettersAndTransactions() {
+        var dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        var template = new JdbcTemplate(dataSource);
+        template.update("create table entries (id bigint, name varchar(100))");
+
+        template.inTransaction(() -> {
+            template.updateWithSetter("insert into entries values (?, ?)", statement -> {
+                statement.setLong(1, 1L);
+                statement.setString(2, "committed");
+            });
+            assertThat(template.queryWithSetter("select name from entries where id = ?",
+                    rs -> rs.getString(1), statement -> statement.setLong(1, 1L)))
+                    .containsExactly("committed");
+        });
+        assertThatThrownBy(() -> template.inTransaction(() -> {
+            template.update("insert into entries values (?, ?)", 2L, "rolled back");
+            throw new IllegalStateException("failure");
+        })).isInstanceOf(IllegalStateException.class);
+        assertThat(template.query("select name from entries order by id", rs -> rs.getString(1)))
+                .containsExactly("committed");
+        assertThatThrownBy(() -> template.inTransaction(() -> template.inTransaction(() -> {})))
+                .isInstanceOf(IllegalStateException.class);
+        template.update("insert into entries values (?, ?)", 3L, "after rollback");
+        assertThat(template.query("select name from entries order by id", rs -> rs.getString(1)))
+                .containsExactly("committed", "after rollback");
+    }
 }
