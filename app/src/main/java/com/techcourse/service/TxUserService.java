@@ -33,13 +33,14 @@ public class TxUserService implements UserService {
             throw new IllegalStateException("이미 진행 중인 트랜잭션이 있습니다.");
         }
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try {
             connection.setAutoCommit(false);
             TransactionSynchronizationManager.bindResource(dataSource, connection);
             try {
                 userService.changePassword(id, newPassword, createdBy);
                 connection.commit();
-            } catch (SQLException | RuntimeException e) {
+            } catch (SQLException | RuntimeException | Error e) {
                 try {
                     connection.rollback();
                 } catch (SQLException rollbackException) {
@@ -50,9 +51,14 @@ public class TxUserService implements UserService {
                 TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            final var exception = new DataAccessException(e);
+            failure = exception;
+            throw exception;
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource, failure);
         }
     }
 }

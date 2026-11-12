@@ -24,10 +24,14 @@ public class JdbcTemplate {
 
     public void update(final String sql, final Object... args) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try {
             update(connection, sql, args);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource, failure);
         }
     }
 
@@ -43,6 +47,7 @@ public class JdbcTemplate {
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setArgs(pstmt, args);
 
@@ -55,9 +60,14 @@ public class JdbcTemplate {
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+            final var exception = new DataAccessException(e);
+            failure = exception;
+            throw exception;
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource, failure);
         }
     }
 
@@ -85,10 +95,14 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
         try {
             return queryForObject(connection, sql, rowMapper, args);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource, failure);
         }
     }
 
