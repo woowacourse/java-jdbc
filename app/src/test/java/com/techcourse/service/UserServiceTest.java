@@ -37,9 +37,22 @@ class UserServiceTest {
     }
 
     @Test
+    void testSave() {
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final UserService userService = new TxUserService(dataSource, appUserService);
+        final var user = new User("bird", "bird-password", "bird@woowahan.com");
+
+        userService.save(user);
+
+        assertThat(userDao.findByAccount("bird"))
+                .hasValueSatisfying(saved -> assertThat(saved.getEmail()).isEqualTo(user.getEmail()));
+    }
+
+    @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(dataSource, appUserService);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -69,7 +82,8 @@ class UserServiceTest {
                 super.log(history);
             }
         };
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(dataSource, appUserService);
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
