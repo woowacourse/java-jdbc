@@ -40,7 +40,8 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        new TxUserService(appUserService, dataSource).save(user);
     }
 
     @AfterEach
@@ -53,7 +54,8 @@ class UserServiceTest {
     @Test
     void changePassword_Success_CommitsPasswordAndHistory() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -86,7 +88,8 @@ class UserServiceTest {
     void changePassword_HistorySaveFails_PreservesOriginalPassword() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -112,7 +115,8 @@ class UserServiceTest {
                 throw failure;
             }
         };
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, dataSource);
         final var originalPassword = userDao.findById(1L).getPassword();
 
         final var actualException = assertThrows(DataAccessException.class,
