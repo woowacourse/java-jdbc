@@ -1,63 +1,84 @@
 package com.techcourse.service;
 
-import com.techcourse.config.DataSourceConfig;
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
-import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 class UserServiceTest {
 
+    private EmbeddedDatabase dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
-        this.userDao = new UserDao(jdbcTemplate);
+        dataSource = new EmbeddedDatabaseBuilder()
+                .setType(EmbeddedDatabaseType.H2)
+                .generateUniqueName(true)
+                .addScript("schema.sql")
+                .build();
+        jdbcTemplate = new JdbcTemplate(dataSource);
+        userDao = new UserDao(jdbcTemplate);
+        userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
+    }
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
-        final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+    @AfterEach
+    void tearDown() {
+        dataSource.shutdown();
     }
 
     @Test
     void testChangePassword() {
-        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
 
-        final var newPassword = "qqqqq";
-        final var createBy = "gugu";
-        userService.changePassword(1L, newPassword, createBy);
+        userService.changePassword(1L, "qqqqq", "gugu");
 
-        final var actual = userService.findById(1L);
-
-        assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("qqqqq");
+        final Integer historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ? and password = ? and created_by = ?",
+                (resultSet, rowNum) -> resultSet.getInt(1), 1L, "qqqqq", "gugu");
+        assertThat(historyCount).isEqualTo(1);
     }
 
     @Test
     void testTransactionRollback() {
-        // 트랜잭션 롤백 테스트를 위해 mock으로 교체
-        final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(dataSource, userDao, new MockUserHistoryDao(jdbcTemplate));
 
-        final var newPassword = "newPassword";
-        final var createBy = "gugu";
-        // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
-        assertThrows(DataAccessException.class,
-                () -> userService.changePassword(1L, newPassword, createBy));
+        final var failure = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
 
-        final var actual = userService.findById(1L);
+        assertThat(failure).hasMessage("Failed after saving password history");
+        assertPasswordAndHistoryRolledBack(userService);
+    }
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    @Test
+    void rollsBackPasswordWhenHistoryInsertFails() {
+        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+
+        final var failure = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "a".repeat(101)));
+
+        assertThat(failure).hasCauseInstanceOf(SQLException.class);
+        assertPasswordAndHistoryRolledBack(userService);
+    }
+
+    private void assertPasswordAndHistoryRolledBack(final UserService userService) {
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
+        final Integer historyCount = jdbcTemplate.queryForObject("select count(*) from user_history",
+                (resultSet, rowNum) -> resultSet.getInt(1));
+        assertThat(historyCount).isZero();
     }
 }
