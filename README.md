@@ -87,19 +87,28 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 <details>
 <summary>Step 3 - Transaction 적용하기</summary>
 
-- [ ] UserServiceTest의 `@Disabled`를 제거하고 성공과 롤백 테스트를 실행한다.
+- [x] UserServiceTest의 `@Disabled`를 제거하고 성공과 롤백 테스트를 실행한다.
 - [x] JdbcTemplate에서 전달받은 Connection으로 조회와 변경 SQL을 실행한다.
 - [x] 전달받은 Connection은 호출자가 종료하고, JdbcTemplate은 Statement와 ResultSet만 정리한다.
 - [x] UserDao의 사용자 조회와 수정, UserHistoryDao의 이력 저장에 같은 Connection을 전달한다.
-- [ ] UserService에서 Connection을 얻고 `setAutoCommit(false)`로 트랜잭션 경계를 설정한다.
-- [ ] 비밀번호 변경과 변경 이력 저장이 모두 성공하면 커밋한다.
-- [ ] 작업 중 예외가 발생하면 롤백하여 기존 비밀번호와 이력 상태를 유지한다.
-- [ ] 커밋 또는 롤백 후 Connection을 종료하고, 롤백과 종료 실패 시 원래 예외를 보존한다.
+- [x] UserService에서 Connection을 얻고 `setAutoCommit(false)`로 트랜잭션 경계를 설정한다.
+- [x] 비밀번호 변경과 변경 이력 저장이 모두 성공하면 커밋한다.
+- [x] 작업 중 예외가 발생하면 롤백하여 기존 비밀번호와 이력 상태를 유지한다.
+- [x] 커밋 또는 롤백 후 Connection을 종료하고, 롤백과 종료 실패 시 원래 예외를 보존한다.
 
 #### 진행 방식
 
 - 기능마다 실패하는 테스트를 먼저 실행하고, 구현 후 같은 테스트가 통과하는지 확인한다.
 - 공유 Connection 실행, DAO 연결 전달, 서비스 트랜잭션을 각각 구현과 테스트를 묶어 커밋한다.
+
+#### 구현 내용
+
+- `UserService(DataSource, UserDao, UserHistoryDao)`로 트랜잭션에 사용할 연결의 출처를 주입한다.
+- `changePassword()`에서 연결 하나를 열어 조회, 비밀번호 수정, 이력 저장에 전달한다.
+- 두 저장이 성공하면 커밋하고, SQL 예외나 런타임 예외, Error가 발생하면 롤백한다.
+- 커밋 또는 롤백이 완료되면 기존 autoCommit 설정을 복구하고 연결을 종료한다.
+- 롤백 자체가 실패하면 autoCommit 복구를 건너뛰어 미완료 작업의 암묵적 커밋을 피한다.
+- 롤백과 연결 종료 실패는 최초 예외의 suppressed에 남긴다.
 
 </details>
 
