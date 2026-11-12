@@ -114,12 +114,12 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - [x] DataSourceUtils에서 동기화된 Connection을 재사용하고, 동기화된 연결은 DAO 작업 후에도 열어 둔다.
 - [x] 트랜잭션 밖에서 얻은 연결은 작업 종료 시 닫는다.
 - [x] JdbcTemplate이 DataSourceUtils를 통해 연결을 얻고 반환하도록 변경한다.
-- [ ] DAO와 서비스 호출에서 Connection 매개변수를 제거한다.
-- [ ] findById, save, changePassword를 선언한 UserService 인터페이스를 정의하고 AppUserService와 TxUserService로 역할을 분리한다.
-- [ ] AppUserService는 사용자 조회, 비밀번호 변경, 이력 저장의 비즈니스 로직을 담당한다.
-- [ ] TxUserService는 연결 등록, 트랜잭션 시작, 커밋과 롤백, 연결 해제와 종료를 담당한다.
-- [ ] 성공 시 비밀번호와 이력을 함께 커밋하고, 실패 시 두 변경을 함께 롤백한다.
-- [ ] 트랜잭션 종료 후 연결 설정과 스레드 저장소가 정리되고, 정리 중 실패해도 최초 예외를 보존한다.
+- [x] DAO와 비즈니스 서비스 호출에서 Connection 매개변수를 제거한다.
+- [x] findById, save, changePassword를 선언한 UserService 인터페이스를 정의하고 AppUserService와 TxUserService로 역할을 분리한다.
+- [x] AppUserService는 사용자 조회, 비밀번호 변경, 이력 저장의 비즈니스 로직을 담당한다.
+- [x] TxUserService는 연결 등록, 트랜잭션 시작, 커밋과 롤백, 연결 해제와 종료를 담당한다.
+- [x] 성공 시 비밀번호와 이력을 함께 커밋하고, 실패 시 두 변경을 함께 롤백한다.
+- [x] 트랜잭션 종료 후 연결 설정과 스레드 저장소가 정리되고, 정리 중 실패해도 최초 예외를 보존한다.
 
 #### 진행 방식
 
@@ -127,6 +127,31 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - 기능별로 테스트와 구현을 묶어 로컬 커밋한다.
 - 트랜잭션 동기화, 연결 획득과 반환, JdbcTemplate 연동, 서비스 역할 분리 순서로 진행한다.
 - 검증은 JDBC와 앱 모듈의 테스트로 수행한다.
+
+#### 구현 내용
+
+- TxUserService가 DataSourceUtils로 연결을 얻고 TransactionSynchronizationManager에 등록한다.
+  같은 스레드의 JdbcTemplate은 같은 DataSource에 등록된 연결을 재사용한다.
+- DataSourceUtils는 일반 연결을 자동 등록하지 않는다. 트랜잭션에 속한 연결의 등록과 해제는 TxUserService가 담당한다.
+- DataSourceUtils는 등록된 연결의 조기 종료를 막는다. 트랜잭션이 끝나면 먼저 unbindResource로 등록을 해제한 뒤 releaseConnection으로 닫는다.
+- AppUserService와 DAO는 Connection을 전달받지 않고 기존 조회, 수정, 이력 저장 API를 사용한다.
+- `new TxUserService(appUserService)`는 DataSourceConfig의 DataSource를 사용한다.
+  별도의 DataSource가 필요하면 `new TxUserService(appUserService, dataSource)`로 주입한다.
+- 커밋 또는 롤백 후 기존 autoCommit 설정을 복구한다. 롤백 자체가 실패하면 암묵적 커밋을 피하도록 복구를 건너뛰고 연결을 종료한다.
+- 연결 획득과 종료 실패는 원인을 가진 DataAccessException 하위 예외로 전달하고, 작업 중 정리 실패는 최초 예외의 suppressed로 남긴다.
+
+#### 검증
+
+```sh
+./gradlew :jdbc:test :app:test --console=plain
+```
+
+- JDBC 모듈의 JdbcTemplateTest 20개, DataSourceUtilsTest 7개, TransactionSynchronizationManagerTest 5개 통과.
+- 앱 모듈의 UserDaoTest 11개, UserHistoryDaoTest 3개, AppUserServiceTest 3개, TxUserServiceTest 11개, UserServiceTest 5개 통과.
+- 총 65개 테스트 통과, 실패와 건너뛴 테스트 0개.
+- 스레드별 연결 격리, DataSource별 연결 구분, 일반 연결 종료와 공유 연결 유지, 트랜잭션 종료 후 등록 해제를 확인한다.
+- 별도 DB 연결에서 커밋 전 변경이 보이지 않는지, 이력 저장 후 실패하면 두 변경이 함께 롤백되는지 확인한다.
+- 이전 이력 보존과 실패 후 재시도, 커밋 및 정리 실패의 원인 보존도 확인한다.
 
 #### 생각해보기
 
