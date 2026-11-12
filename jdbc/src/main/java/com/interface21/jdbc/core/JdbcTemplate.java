@@ -22,17 +22,24 @@ public class JdbcTemplate {
     }
 
     public void update(final String sql, Object... args) {
-        execute(sql, ptstm -> {
-            setObject(ptstm, args);
-            return ptstm.executeUpdate();
-        });
+        execute(sql, updateCallback(args));
     }
 
+    public void update(final Connection connection, final String sql, Object... args) {
+        execute(connection, sql, updateCallback(args));
+    }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, action);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> action) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             T result = action.doInPreparedStatement(pstmt);
 
             log.debug("query : {}", sql);
@@ -44,7 +51,30 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(sql, pstmt -> {
+        return execute(sql, queryCallback(rowMapper, args));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, RowMapper<T> rowMapper, Object... args) {
+        return execute(connection, sql, queryCallback(rowMapper, args));
+    }
+
+    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, RowMapper<T> rowMapper, Object... args) {
+        return singleResult(query(connection, sql, rowMapper, args));
+    }
+
+    private PreparedStatementCallback<Integer> updateCallback(Object... args) {
+        return pstmt -> {
+            setObject(pstmt, args);
+            return pstmt.executeUpdate();
+        };
+    }
+
+    private <T> PreparedStatementCallback<List<T>> queryCallback(RowMapper<T> rowMapper, Object... args) {
+        return pstmt -> {
             if (args != null) {
                 setObject(pstmt, args);
             }
@@ -58,12 +88,10 @@ public class JdbcTemplate {
 
                 return results;
             }
-        });
+        };
     }
 
-    public <T> T queryForObject(final String sql, RowMapper<T> rowMapper, Object... args) {
-        List<T> results = query(sql, rowMapper, args);
-
+    private <T> T singleResult(List<T> results) {
         if (results.isEmpty()) {
             throw new IllegalStateException("조회 결과를 찾을 수 없습니다.");
         }
