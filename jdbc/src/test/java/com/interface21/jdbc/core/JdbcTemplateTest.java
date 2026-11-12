@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -55,17 +58,21 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_Connection으로_실행하고_Connection은_닫지_않는다() throws SQLException {
-        given(pstmt.executeUpdate()).willReturn(1);
+    void 트랜잭션에_바인딩된_Connection을_사용하고_닫지_않는다() throws SQLException {
+        final Connection txConnection = mock(Connection.class);
+        given(txConnection.prepareStatement(anyString())).willReturn(pstmt);
+        TransactionSynchronizationManager.bindResource(dataSource, txConnection);
 
-        final int updated = jdbcTemplate.update(connection, "update users set account = ? where id = ?", "gugu", 1L);
+        try {
+            jdbcTemplate.update("update users set account = ? where id = ?", "gugu", 1L);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
 
-        assertThat(updated).isEqualTo(1);
-        verify(pstmt).setObject(1, "gugu");
-        verify(pstmt).setObject(2, 1L);
+        verify(txConnection).prepareStatement(anyString());
         verify(pstmt).close();
         verify(dataSource, never()).getConnection();
-        verify(connection, never()).close();
+        verify(txConnection, never()).close();
     }
 
     @Test
@@ -157,5 +164,32 @@ class JdbcTemplateTest {
 
         verify(pstmt).close();
         verify(connection).close();
+    }
+
+    @Test
+    void 실행과_Connection_정리가_함께_실패하면_실행_예외를_유지하고_정리_실패는_suppressed로_남긴다() throws SQLException {
+        final SQLException executeFailure = new SQLException("실행 실패");
+        final SQLException closeFailure = new SQLException("닫기 실패");
+        given(pstmt.executeUpdate()).willThrow(executeFailure);
+        willThrow(closeFailure).given(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(executeFailure)
+                .satisfies(e -> assertThat(e.getSuppressed())
+                        .singleElement()
+                        .isInstanceOf(CannotGetJdbcConnectionException.class)
+                        .extracting(Throwable::getCause)
+                        .isSameAs(closeFailure));
+
+        verify(connection).close();
+    }
+
+    @Test
+    void 실행이_성공하고_Connection_정리만_실패하면_정리_예외가_발생한다() throws SQLException {
+        willThrow(new SQLException("닫기 실패")).given(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class);
     }
 }
