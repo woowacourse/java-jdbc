@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -23,11 +24,21 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        return execute(sql, parameters, PreparedStatement::executeUpdate);
+        return withConnection(connection -> update(connection, sql, parameters));
+    }
+
+    /** 전달받은 연결은 호출자가 닫는다. */
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return execute(connection, sql, parameters, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return execute(sql, parameters, statement -> {
+        return withConnection(connection -> query(connection, sql, rowMapper, parameters));
+    }
+
+    private <T> List<T> query(final Connection connection, final String sql,
+                             final RowMapper<T> rowMapper, final Object[] parameters) {
+        return execute(connection, sql, parameters, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 final List<T> rows = new ArrayList<>();
                 while (resultSet.next()) {
@@ -43,7 +54,16 @@ public class JdbcTemplate {
      * 두 건 이상이면 DataAccessException을 던진다.
      */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        final var rows = query(sql, rowMapper, parameters);
+        return singleResult(query(sql, rowMapper, parameters));
+    }
+
+    /** 전달받은 연결은 호출자가 닫는다. */
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... parameters) {
+        return singleResult(query(connection, sql, rowMapper, parameters));
+    }
+
+    private <T> T singleResult(final List<T> rows) {
         if (rows.isEmpty()) {
             return null;
         }
@@ -53,9 +73,17 @@ public class JdbcTemplate {
         return rows.getFirst();
     }
 
-    private <T> T execute(final String sql, final Object[] parameters, final StatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+    private <T> T withConnection(final Function<Connection, T> operation) {
+        try (Connection connection = dataSource.getConnection()) {
+            return operation.apply(connection);
+        } catch (SQLException exception) {
+            throw new DataAccessException("SQL 실행에 실패했습니다.", exception);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final Object[] parameters, final StatementCallback<T> callback) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             setParameters(statement, parameters);
             log.debug("query : {}", sql);
             return callback.execute(statement);
