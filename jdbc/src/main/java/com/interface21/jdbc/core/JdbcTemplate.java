@@ -21,6 +21,25 @@ public class JdbcTemplate {
         return updateWithSetter(sql, statement -> bind(statement, parameters));
     }
 
+    /** Uses the caller-owned connection without closing it. */
+    public int update(final Connection connection, final String sql, final Object... parameters) {
+        return execute(connection, sql, statement -> bind(statement, parameters), PreparedStatement::executeUpdate);
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> mapper,
+                                final Object... parameters) {
+        List<T> results = execute(connection, sql, statement -> bind(statement, parameters), statement -> {
+            try (var resultSet = statement.executeQuery()) {
+                List<T> rows = new ArrayList<>();
+                while (resultSet.next()) {
+                    rows.add(mapper.mapRow(resultSet));
+                }
+                return rows;
+            }
+        });
+        return singleResult(results);
+    }
+
     public int updateWithSetter(final String sql, final PreparedStatementSetter setter) {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
@@ -44,6 +63,10 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... parameters) {
         List<T> results = query(sql, mapper, parameters);
+        return singleResult(results);
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row but found " + results.size());
         }
