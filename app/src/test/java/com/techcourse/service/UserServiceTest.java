@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.never;
 
 import com.interface21.dao.DataAccessException;
@@ -21,6 +22,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +38,7 @@ class UserServiceTest {
         jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
         userDao = new UserDao(jdbcTemplate);
         transactionManager = new JdbcTransactionManager(DataSourceConfig.getInstance());
-        service = new UserService(userDao, new UserHistoryDao(jdbcTemplate), transactionManager);
+        service = transactionalService(userDao, new UserHistoryDao(jdbcTemplate));
 
         jdbcTemplate.update("drop table if exists user_history");
         jdbcTemplate.update("drop table if exists users");
@@ -70,11 +72,7 @@ class UserServiceTest {
     @Test
     void 이력을_저장한_뒤_예외가_발생하면_비밀번호와_이력을_모두_취소한다() {
         // given
-        UserService service = new UserService(
-            userDao,
-            new MockUserHistoryDao(jdbcTemplate),
-            transactionManager
-        );
+        UserService service = transactionalService(userDao, new MockUserHistoryDao(jdbcTemplate));
 
         // when & then
         assertThatThrownBy(() -> service.changePassword(1L, "changed", "admin"))
@@ -103,7 +101,7 @@ class UserServiceTest {
         // given
         UserDao userDao = mock(UserDao.class);
         UserHistoryDao userHistoryDao = mock(UserHistoryDao.class);
-        UserService service = new UserService(userDao, userHistoryDao, transactionManager);
+        UserService service = transactionalService(userDao, userHistoryDao);
         User user = new User(1L, "gugu", "password", "gugu@example.com");
         given(userDao.findById(1L)).willReturn(Optional.of(user));
         given(userDao.update(same(user))).willReturn(0);
@@ -114,6 +112,27 @@ class UserServiceTest {
         then(userDao).should().update(same(user));
         then(userHistoryDao).should(never()).log(any(UserHistory.class));
         assertThat(readHistories(1L)).isEmpty();
+    }
+
+    @Test
+    void 비밀번호를_변경할_사용자를_조회할_때도_트랜잭션의_DB_연결을_사용한다() throws SQLException {
+        // given
+        DataSource dataSource = spy(DataSourceConfig.getInstance());
+        JdbcTemplate template = new JdbcTemplate(dataSource);
+        UserService service = new TxUserService(
+            new AppUserService(new UserDao(template), new UserHistoryDao(template)),
+            new JdbcTransactionManager(dataSource)
+        );
+
+        // when
+        service.changePassword(1L, "changed", "admin");
+
+        // then
+        then(dataSource).should().getConnection();
+    }
+
+    private UserService transactionalService(UserDao userDao, UserHistoryDao historyDao) {
+        return new TxUserService(new AppUserService(userDao, historyDao), transactionManager);
     }
 
     private List<HistoryRow> readHistories(final long userId) {
