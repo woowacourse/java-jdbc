@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
-import com.techcourse.config.DataSourceConfig;
+import org.h2.jdbcx.JdbcDataSource;
+import java.util.UUID;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,11 +15,19 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        final var dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        DatabasePopulatorUtils.execute(dataSource);
 
-        userDao = new UserDao(DataSourceConfig.getInstance());
+        userDao = new UserDao(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @Test
+    void missingUserReturnsNull() {
+        assertThat(userDao.findById(999L)).isNull();
+        assertThat(userDao.findByAccount("missing")).isNull();
     }
 
     @Test
