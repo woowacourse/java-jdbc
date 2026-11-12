@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,6 +23,16 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, args, PreparedStatement::executeUpdate);
+    }
+
+    /**
+     * 호출하는 쪽이 넘긴 {@link Connection}으로 SQL을 실행한다.
+     * <p>
+     * 여러 SQL을 하나의 트랜잭션으로 묶을 때 사용한다. 커넥션의 생명주기와 커밋·롤백은 호출하는 쪽이 소유하므로
+     * 이 메서드는 커넥션을 닫지 않는다.
+     */
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, args, PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -53,9 +64,17 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final Object[] args, final StatementExecutor<T> executor) {
+        try (final var connection = dataSource.getConnection()) {
+            return execute(connection, sql, args, executor);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute sql: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final Object[] args,
+                          final StatementExecutor<T> executor) {
         log.debug("query : {}", sql);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement(sql)) {
+        try (final var statement = connection.prepareStatement(sql)) {
             bindParameters(statement, args);
             return executor.execute(statement);
         } catch (SQLException e) {

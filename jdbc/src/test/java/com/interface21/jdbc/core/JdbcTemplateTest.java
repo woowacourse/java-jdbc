@@ -103,6 +103,33 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateWithConnectionDoesNotCloseItAndJoinsCallerTransaction() throws SQLException {
+        try (final var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            jdbcTemplate.update(connection, "insert into users (id, account) values (?, ?)", 1L, "gugu");
+            jdbcTemplate.update(connection, "insert into users (id, account) values (?, ?)", 2L, "brown");
+
+            assertThat(connection.isClosed()).isFalse();
+            connection.rollback();
+        }
+
+        assertThat(jdbcTemplate.query("select id from users", (rs, rowNum) -> rs.getLong("id"))).isEmpty();
+        assertThat(dataSource.getActiveConnections()).isZero();
+    }
+
+    @Test
+    void updateWithConnectionTranslatesFailureAndKeepsConnectionOpen() throws SQLException {
+        try (final var connection = dataSource.getConnection()) {
+            assertThatThrownBy(() -> jdbcTemplate.update(connection, "insert into missing_table values (?)", 1L))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasCauseInstanceOf(SQLException.class);
+
+            assertThat(connection.isClosed()).isFalse();
+        }
+    }
+
+    @Test
     void queryMapsEveryRowWithItsRowNumber() {
         jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
 
