@@ -42,7 +42,7 @@ public class TxUserService implements UserService {
             userService.changePassword(id, newPassword, createdBy);
             connection.commit();
         } catch (RuntimeException | SQLException e) {
-            rollback(connection);
+            rollback(connection, e);
             throw e instanceof RuntimeException runtimeException ? runtimeException : new DataAccessException(e);
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
@@ -50,11 +50,12 @@ public class TxUserService implements UserService {
         }
     }
 
-    private void rollback(final Connection connection) {
+    // 롤백까지 실패해도 처음 실패한 원인이 사라지지 않도록, 롤백 예외는 원래 예외에 붙여 둔다.
+    private void rollback(final Connection connection, final Exception cause) {
         try {
             connection.rollback();
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } catch (SQLException rollbackException) {
+            cause.addSuppressed(rollbackException);
         }
     }
 }
