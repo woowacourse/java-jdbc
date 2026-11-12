@@ -31,6 +31,11 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    /** 전달받은 Connection의 트랜잭션과 종료는 호출자가 관리한다. */
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, statement -> bindParameters(statement, args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, statement -> bindParameters(statement, args), rowMapper);
     }
@@ -53,7 +58,18 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        return executeQuery(sql, setter, resultSet -> {
+        return executeQuery(sql, setter, singleResultExtractor(sql, rowMapper));
+    }
+
+    /** 단건 조회 규칙을 따르며, 전달받은 Connection의 트랜잭션과 종료는 호출자가 관리한다. */
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, statement -> bindParameters(statement, args),
+                queryCallback(singleResultExtractor(sql, rowMapper)));
+    }
+
+    private <T> ResultSetExtractor<T> singleResultExtractor(final String sql, final RowMapper<T> rowMapper) {
+        return resultSet -> {
             if (!resultSet.next()) {
                 return null;
             }
@@ -63,22 +79,34 @@ public class JdbcTemplate {
                         "Expected at most one row, but found more than one row. SQL: " + sql);
             }
             return result;
-        });
+        };
     }
 
     private <T> T executeQuery(final String sql, final PreparedStatementSetter setter,
                                final ResultSetExtractor<T> extractor) {
-        return execute(sql, setter, statement -> {
+        return execute(sql, setter, queryCallback(extractor));
+    }
+
+    private <T> PreparedStatementCallback<T> queryCallback(final ResultSetExtractor<T> extractor) {
+        return statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 return extractor.extractData(resultSet);
             }
-        });
+        };
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.execute(statement);
