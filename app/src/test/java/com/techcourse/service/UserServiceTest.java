@@ -1,15 +1,17 @@
 package com.techcourse.service;
 
 import com.techcourse.config.DataSourceConfig;
+import com.techcourse.config.UserServiceConfig;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
-import java.sql.Connection;
 import java.sql.SQLException;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UserServiceTest {
 
     private UserDao userDao;
+
+    @AfterEach
+    void hasNoBoundConnectionAfterTransaction() {
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -30,13 +37,13 @@ class UserServiceTest {
             statement.executeUpdate("truncate table users restart identity");
         }
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final UserService userService = UserServiceConfig.getInstance();
+        userService.save(user);
     }
 
     @Test
     void testChangePassword() throws SQLException {
-        final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance());
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService userService = UserServiceConfig.getInstance();
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -64,7 +71,8 @@ class UserServiceTest {
     void testTransactionRollback() throws SQLException {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(DataSourceConfig.getInstance());
-        final var userService = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -82,18 +90,34 @@ class UserServiceTest {
     void rollbackAfterHistoryWasInserted() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(DataSourceConfig.getInstance()) {
             @Override
-            public void log(final Connection connection, final UserHistory history) {
-                super.log(connection, history);
+            public void log(final UserHistory history) {
+                super.log(history);
                 throw new DataAccessException("이력 저장 후 실패");
             }
         };
-        final var service = new UserService(userDao, userHistoryDao, DataSourceConfig.getInstance());
+        final UserService service = new TxUserService(new AppUserService(userDao, userHistoryDao));
 
         assertThrows(DataAccessException.class,
                 () -> service.changePassword(1L, "newPassword", "gugu"));
 
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
         assertHistoryCount(0);
+    }
+
+    @Test
+    void successfulTransactionAfterRollbackDoesNotReuseFailedTransaction() throws SQLException {
+        final var failingService = new TxUserService(new AppUserService(userDao,
+                new MockUserHistoryDao(DataSourceConfig.getInstance())));
+
+        assertThrows(DataAccessException.class,
+                () -> failingService.changePassword(1L, "failedPassword", "gugu"));
+
+        assertThat(TransactionSynchronizationManager.getResource(DataSourceConfig.getInstance())).isNull();
+        final var userService = UserServiceConfig.getInstance();
+        userService.changePassword(1L, "successfulPassword", "gugu");
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("successfulPassword");
+        assertHistoryCount(1);
     }
 
     private void assertHistoryCount(final int expected) throws SQLException {

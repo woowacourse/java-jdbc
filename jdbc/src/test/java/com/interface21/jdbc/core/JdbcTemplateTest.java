@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -35,6 +38,42 @@ class JdbcTemplateTest {
     private PreparedStatement statement;
     private ResultSet resultSet;
     private JdbcTemplate jdbcTemplate;
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    @DisplayName("여러 SQL 작업이 동기화된 연결을 재사용하고 연결은 닫지 않는다")
+    void reusesBoundConnectionAcrossUpdateAndQuery() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update(INSERT_SQL, "gugu", "password", "email");
+        jdbcTemplate.query(SELECT_SQL, rs -> rs.getString("account"));
+
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(resultSet).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    @DisplayName("SQL 실패 시에도 동기화된 연결은 트랜잭션 종료까지 유지한다")
+    void keepsBoundConnectionOpenOnFailure() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var cause = new SQLException("실행 실패");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(INSERT_SQL))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -226,16 +265,24 @@ class JdbcTemplateTest {
 
         assertThat(result).isEqualTo("gugu");
         verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    @DisplayName("단건 조회 결과가 없으면 null을 반환한다")
+    @DisplayName("단건 조회 결과가 없으면 예외를 던지고 자원을 닫는다")
     void queryForObjectWithoutResults() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
-        final var result = jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("account"));
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("단건 조회 결과가 없습니다");
 
-        assertThat(result).isNull();
+        verify(resultSet, never()).getString(anyString());
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
@@ -247,6 +294,53 @@ class JdbcTemplateTest {
         assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("account")))
                 .isInstanceOf(DataAccessException.class)
                 .hasMessageContaining("단건 조회 결과가 여러 건입니다");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getString("account");
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회 실패 시에도 동기화된 커넥션은 유지한다")
+    void queryForObjectWithoutResultsKeepsBoundConnectionOpen() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    @DisplayName("단건 SQL 실행 실패의 원인을 보존하고 자원을 닫는다")
+    void queryForObjectFailsDuringExecution() throws SQLException {
+        final var cause = new SQLException("단건 조회 실패");
+        when(statement.executeQuery()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("account")))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(statement).close();
+        verify(connection).close();
+        verifyNoInteractions(resultSet);
+    }
+
+    @Test
+    @DisplayName("단건 매핑 중 런타임 예외가 발생해도 조회 자원을 닫는다")
+    void queryForObjectFailsDuringMapping() throws SQLException {
+        final var cause = new IllegalArgumentException("잘못된 데이터");
+        when(resultSet.next()).thenReturn(true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> {
+            throw cause;
+        })).isSameAs(cause);
 
         verify(resultSet).close();
         verify(statement).close();
