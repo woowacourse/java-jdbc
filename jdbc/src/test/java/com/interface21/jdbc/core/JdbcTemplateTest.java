@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +29,7 @@ class JdbcTemplateTest {
 
     private static final RowMapper<String> NAME_ROW_MAPPER = (resultSet, rowNum) -> resultSet.getString("name");
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
@@ -33,7 +37,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -43,6 +47,13 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -221,39 +232,38 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_연결로_update하면_문장만_닫고_트랜잭션은_건드리지_않는다() throws SQLException {
-        when(preparedStatement.executeUpdate()).thenReturn(1);
+    void 트랜잭션_밖에서는_호출마다_새_연결을_얻어_닫고_스레드에_남기지_않는다() throws SQLException {
+        jdbcTemplate.update("delete from users");
+        jdbcTemplate.update("delete from users");
 
-        assertThat(jdbcTemplate.update(connection, "update users set account = ?", "gugu")).isEqualTo(1);
-
-        verify(preparedStatement).setObject(1, "gugu");
-        verify(preparedStatement).close();
-        verify(connection, never()).close();
-        verify(connection, never()).commit();
-        verify(connection, never()).rollback();
+        verify(dataSource, times(2)).getConnection();
+        verify(connection, times(2)).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
-    void 전달받은_연결로_조회하면_결과와_문장만_닫는다() throws SQLException {
+    void 트랜잭션에_바인딩된_연결이_있으면_그_연결로_실행하고_닫지_않는다() throws SQLException {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("name")).thenReturn("gugu");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        final String name = jdbcTemplate.queryForObject(connection, "select name from users where id = ?",
-                NAME_ROW_MAPPER, 42L);
+        final String name = jdbcTemplate.queryForObject("select name from users where id = ?", NAME_ROW_MAPPER, 42L);
 
         assertThat(name).isEqualTo("gugu");
-        verify(preparedStatement).setObject(1, 42L);
+        verify(dataSource, never()).getConnection();
         verify(resultSet).close();
         verify(preparedStatement).close();
         verify(connection, never()).close();
+        verify(connection, never()).commit();
     }
 
     @Test
-    void 전달받은_연결에서_SQL이_실패해도_연결을_닫지_않는다() throws SQLException {
+    void 트랜잭션에_바인딩된_연결에서_SQL이_실패해도_연결을_닫거나_롤백하지_않는다() throws SQLException {
         final var failure = new SQLException("update failed");
         when(preparedStatement.executeUpdate()).thenThrow(failure);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "wrong sql"))
+        assertThatThrownBy(() -> jdbcTemplate.update("wrong sql"))
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(preparedStatement).close();
