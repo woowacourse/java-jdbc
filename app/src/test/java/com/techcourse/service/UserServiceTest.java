@@ -8,7 +8,6 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +33,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -52,11 +51,10 @@ class UserServiceTest {
     }
 
     @Test
-    @Disabled("3단계에서 트랜잭션 적용 후 활성화")
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -66,6 +64,23 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo("password");
+        final Long historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history", resultSet -> resultSet.getLong(1));
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void testTransactionRollbackOnHistoryInsertFailure() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+
+        assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", null));
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
+        final Long historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history", resultSet -> resultSet.getLong(1));
+        assertThat(historyCount).isZero();
     }
 }
