@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,6 +54,32 @@ class JdbcTemplateTest {
         verify(statement).setObject(2, 1L);
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void updateUsesSuppliedConnectionWithoutClosingIt() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final int updatedRows = jdbcTemplate.update(connection, SQL, "gugu", 1L);
+
+        assertThat(updatedRows).isEqualTo(1);
+        verify(statement).setObject(1, "gugu");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void updateFailureLeavesSuppliedConnectionOpenForRollback() throws SQLException {
+        final SQLException cause = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+        verify(statement).close();
+        verify(connection, never()).close();
     }
 
     @Test
