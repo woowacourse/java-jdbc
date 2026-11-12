@@ -8,6 +8,7 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -69,6 +70,33 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.selectMany("select id from user_history",
+                resultSet -> resultSet.getLong("id"))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("직접 연 트랜잭션이 아니라면 커밋하지 않는다")
+    void leaveTransactionCompletionToCaller() throws SQLException {
+        final var dataSource = DataSourceConfig.getInstance();
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, new UserHistoryDao(dataSource)), dataSource);
+
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                userService.changePassword(1L, "newPassword", "gugu");
+
+                assertThat(connection.isClosed()).isFalse();
+                assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+                assertThat(userService.findById(1L).getPassword()).isEqualTo("newPassword");
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        }
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
         assertThat(jdbcTemplate.selectMany("select id from user_history",
                 resultSet -> resultSet.getLong("id"))).isEmpty();
     }

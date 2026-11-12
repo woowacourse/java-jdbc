@@ -33,6 +33,11 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            userService.changePassword(id, newPassword, createBy);
+            return;
+        }
+
         final var connection = DataSourceUtils.getConnection(dataSource);
         Throwable failure = null;
         try {
