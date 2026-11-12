@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +41,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("비밀번호 변경과 변경자, 변경 시각을 담은 이력을 함께 저장한다")
-    void change_password() throws SQLException {
+    void change_password() {
         final var userHistoryDao = new UserHistoryDao(dataSource);
         final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
@@ -52,19 +53,15 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
-        try (final var connection = dataSource.getConnection();
-             final var statement = connection.prepareStatement("select * from user_history");
-             final var resultSet = statement.executeQuery()) {
-            assertThat(resultSet.next()).isTrue();
-            assertThat(resultSet.getLong("user_id")).isEqualTo(1L);
-            assertThat(resultSet.getString("account")).isEqualTo(actual.getAccount());
-            assertThat(resultSet.getString("password")).isEqualTo(newPassword);
-            assertThat(resultSet.getString("email")).isEqualTo(actual.getEmail());
-            assertThat(resultSet.getString("created_by")).isEqualTo(createBy);
-            assertThat(resultSet.getObject("created_at", LocalDateTime.class))
-                    .isBetween(before, LocalDateTime.now().plusSeconds(1));
-            assertThat(resultSet.next()).isFalse();
-        }
+        final var histories = findHistories();
+        assertThat(histories).hasSize(1);
+        final var history = histories.getFirst();
+        assertThat(history.userId()).isEqualTo(1L);
+        assertThat(history.account()).isEqualTo("gugu");
+        assertThat(history.password()).isEqualTo(newPassword);
+        assertThat(history.email()).isEqualTo("hkkang@woowahan.com");
+        assertThat(history.createdBy()).isEqualTo(createBy);
+        assertThat(history.createdAt()).isBetween(before, LocalDateTime.now().plusSeconds(1));
     }
 
     @Test
@@ -81,7 +78,27 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo("password");
-        assertThat(historyCount()).isZero();
+        assertThat(findHistories()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("다음 비밀번호 변경이 실패해도 직전 비밀번호와 기존 이력은 유지한다")
+    void preserve_previous_password_and_history_after_failure() {
+        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(dataSource));
+        final var committedPassword = "committed-password";
+        userService.changePassword(1L, committedPassword, "first-editor");
+
+        final var historiesBefore = findHistories();
+        assertThat(historiesBefore).hasSize(1);
+
+        final var failingService = new UserService(dataSource, userDao, new MockUserHistoryDao(dataSource));
+
+        assertThatThrownBy(() -> failingService.changePassword(1L, "failed-password", "second-editor"))
+                .isInstanceOf(DataAccessException.class);
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(committedPassword);
+        assertThat(findHistories())
+                .containsExactlyElementsOf(historiesBefore);
     }
 
     @Test
@@ -94,7 +111,7 @@ class UserServiceTest {
                 .hasCauseInstanceOf(SQLException.class);
 
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
-        assertThat(historyCount()).isZero();
+        assertThat(findHistories()).isEmpty();
     }
 
     @Test
@@ -106,10 +123,16 @@ class UserServiceTest {
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessageContaining("999");
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
-        assertThat(historyCount()).isZero();
+        assertThat(findHistories()).isEmpty();
     }
 
-    private long historyCount() {
-        return jdbcTemplate.queryForObject("select count(*) from user_history", row -> row.getLong(1));
+    private List<HistorySnapshot> findHistories() {
+        return jdbcTemplate.query("select * from user_history order by id", row -> new HistorySnapshot(
+                row.getLong("id"), row.getLong("user_id"), row.getString("account"),
+                row.getString("password"), row.getString("email"),
+                row.getObject("created_at", LocalDateTime.class), row.getString("created_by")));
     }
+
+    private record HistorySnapshot(long id, long userId, String account, String password, String email,
+                                   LocalDateTime createdAt, String createdBy) {}
 }
