@@ -111,8 +111,8 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - [x] TransactionSynchronizationManager에 스레드별로 DataSource와 Connection을 등록, 조회, 해제한다.
 - [x] 같은 스레드와 DataSource에서는 같은 Connection을 사용하고, 다른 스레드의 연결은 분리한다.
 - [x] 마지막 Connection을 해제하면 ThreadLocal을 정리한다.
-- [ ] DataSourceUtils에서 동기화된 Connection을 재사용하고, 동기화된 연결은 DAO 작업 후에도 열어 둔다.
-- [ ] 트랜잭션 밖에서 얻은 연결은 작업 종료 시 닫는다.
+- [x] DataSourceUtils에서 동기화된 Connection을 재사용하고, 동기화된 연결은 DAO 작업 후에도 열어 둔다.
+- [x] 트랜잭션 밖에서 얻은 연결은 작업 종료 시 닫는다.
 - [ ] JdbcTemplate이 DataSourceUtils를 통해 연결을 얻고 반환하도록 변경한다.
 - [ ] DAO와 서비스 호출에서 Connection 매개변수를 제거한다.
 - [ ] findById, save, changePassword를 선언한 UserService 인터페이스를 정의하고 AppUserService와 TxUserService로 역할을 분리한다.
