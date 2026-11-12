@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -73,9 +75,12 @@ public class JdbcTemplate {
 //    }
 
     private <R> R execute(String sql, PreparedStatementSetter setter, PreparedStatementCallback<R> callback) {
-        try (Connection conn = dataSource.getConnection()) {
-            return execute(conn, sql, setter, callback);
-        } catch (SQLException e) {
+        try {
+            Connection conn = DataSourceUtils.getConnection(dataSource);
+            try (ConnectionRelease release = () -> DataSourceUtils.releaseConnection(conn, dataSource)) {
+                return execute(conn, sql, setter, callback);
+            }
+        } catch (CannotGetJdbcConnectionException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
@@ -97,6 +102,12 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             pstmt.setObject(i + 1, args[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface ConnectionRelease extends AutoCloseable {
+        @Override
+        void close();
     }
 
     @FunctionalInterface
