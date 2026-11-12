@@ -1,6 +1,7 @@
 package com.techcourse.controller;
 
-import com.techcourse.repository.InMemoryUserRepository;
+import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.interface21.webmvc.servlet.view.JsonView;
@@ -14,6 +15,8 @@ import org.slf4j.LoggerFactory;
 @Controller
 public class UserController {
 
+    private final UserDao userDao = new UserDao(DataSourceConfig.getInstance());
+
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @RequestMapping(value = "/api/user", method = RequestMethod.GET)
@@ -22,7 +25,7 @@ public class UserController {
         log.debug("user id : {}", account);
 
         final var modelAndView = new ModelAndView(new JsonView());
-        final var user = InMemoryUserRepository.findByAccount(account)
+        final var user = java.util.Optional.ofNullable(userDao.findByAccount(account))
                 .orElseThrow();
 
         modelAndView.addObject("user", user);
