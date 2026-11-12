@@ -154,6 +154,42 @@ class UserServiceTransactionTest {
     }
 
     @Test
+    void unbindsBeforeReleasingConnection() throws SQLException {
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+            return null;
+        }).when(connection).close();
+
+        service.changePassword(1L, "new-password", "admin");
+
+        verify(connection).close();
+    }
+
+    @Test
+    void releaseFailureAfterCommitIsReportedWithoutRollback() throws SQLException {
+        final var cause = new SQLException("close failed");
+        doThrow(cause).when(connection).close();
+
+        assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void setupAndReleaseFailuresPreserveSetupCause() throws SQLException {
+        final var setupFailure = new SQLException("setup failed");
+        final var closeFailure = new SQLException("close failed");
+        doThrow(setupFailure).when(connection).setAutoCommit(false);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
+                .hasCause(setupFailure).hasSuppressedException(closeFailure);
+        verifyNoInteractions(userDao, historyDao);
+    }
+
+    @Test
     void closesConnectionWhenTransactionSetupFails() throws SQLException {
         final var cause = new SQLException("setup failed");
         doThrow(cause).when(connection).setAutoCommit(false);

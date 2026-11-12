@@ -40,56 +40,66 @@ public class TxUserService implements UserService {
         if (TransactionSynchronizationManager.getResource(dataSource) != null) {
             throw new IllegalStateException("TxUserService requires an independent transaction");
         }
-        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
-            final boolean autoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            boolean transactionCompleted = false;
-            Throwable failure = null;
-            try {
-                userService.changePassword(id, newPassword, createBy);
-                connection.commit();
-                transactionCompleted = true;
-            } catch (SQLException | RuntimeException | Error e) {
-                failure = e;
-                transactionCompleted = rollback(connection, e);
-                throw e;
-            } finally {
-                // 롤백 실패 시 자동 커밋을 켜면 미완료 변경이 커밋될 수 있다.
-                try {
-                    if (transactionCompleted) {
-                        restoreAutoCommit(connection, autoCommit, failure);
-                    }
-                } finally {
-                    TransactionSynchronizationManager.unbindResource(dataSource);
-                }
-            }
-        } catch (CannotGetJdbcConnectionException e) {
-            throw new DataAccessException("Failed to change password in transaction", e.getCause());
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to change password in transaction", e);
+        Connection connection = null;
+        Throwable failure = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            executeTransaction(connection, id, newPassword, createBy);
+        } catch (SQLException | CannotGetJdbcConnectionException e) {
+            final var translated = new DataAccessException("Failed to change password in transaction",
+                    e instanceof CannotGetJdbcConnectionException ? e.getCause() : e);
+            failure = translated;
+            throw translated;
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            releaseConnection(connection, failure);
         }
     }
 
-    private boolean rollback(final Connection connection, final Throwable failure) {
+    private void executeTransaction(final Connection connection, final long id,
+                                    final String newPassword, final String createdBy) throws SQLException {
+        final boolean autoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            userService.changePassword(id, newPassword, createdBy);
+            connection.commit();
+        } catch (SQLException | RuntimeException | Error e) {
+            rollbackAndRestore(connection, autoCommit, e);
+            throw e;
+        }
+        // 커밋 이후 복구 실패는 이미 완료된 트랜잭션의 롤백으로 이어지지 않는다.
+        connection.setAutoCommit(autoCommit);
+    }
+
+    private void rollbackAndRestore(final Connection connection, final boolean autoCommit,
+                                    final Throwable failure) {
         try {
             connection.rollback();
-            return true;
+            // 롤백에 성공한 경우에만 복구한다. 실패한 연결의 미완료 변경을 커밋하지 않는다.
+            connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
             failure.addSuppressed(e);
-            return false;
         }
     }
 
-    private void restoreAutoCommit(final Connection connection, final boolean autoCommit,
-                                   final Throwable failure) throws SQLException {
+    private void releaseConnection(final Connection connection, final Throwable failure) {
+        if (connection == null) {
+            return;
+        }
+        if (TransactionSynchronizationManager.getResource(dataSource) == connection) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
         try {
-            connection.setAutoCommit(autoCommit);
-        } catch (SQLException e) {
-            if (failure == null) {
-                throw e;
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            if (failure != null) {
+                failure.addSuppressed(e.getCause());
+            } else {
+                throw new DataAccessException("Failed to release transaction Connection", e.getCause());
             }
-            failure.addSuppressed(e);
         }
     }
 }
