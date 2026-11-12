@@ -72,6 +72,11 @@ public class JdbcTemplate {
         return queryForObject(connection, sql, argumentSetter(args), rowMapper);
     }
 
+    <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
+                         final RowMapper<T> rowMapper) {
+        return queryForObject(null, sql, setter, rowMapper);
+    }
+
     private <T> T queryForObject(final Connection connection, final String sql,
                                  final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
         final var results = query(connection, sql, setter, rowMapper);
