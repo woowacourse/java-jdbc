@@ -7,12 +7,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 public class UserDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private static final RowMapper<User> USER_ROW_MAPPER = resultSet -> new User(
             resultSet.getLong("id"),
@@ -35,10 +38,15 @@ public class UserDao {
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
         final var affectedRows = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-        if (affectedRows == 0) {
-            throw new NoSuchElementException("User not found, userId=" + user.getId());
-        }
+        validateUpdated(user, affectedRows);
         log.debug("User updated, userId={}, affectedRows={}", user.getId(), affectedRows);
+    }
+
+    public void updatePassword(final Connection connection, final User user) {
+        final var sql = "update users set password = ? where id = ?";
+        final var affectedRows = jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
+        validateUpdated(user, affectedRows);
+        log.debug("User password updated, userId={}, affectedRows={}", user.getId(), affectedRows);
     }
 
     public List<User> findAll() {
@@ -49,8 +57,13 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
-        final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        final var user = jdbcTemplate.queryForObject(FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
+        log.debug("User lookup by id, userId={}, found={}", id, user != null);
+        return user;
+    }
+
+    public User findById(final Connection connection, final Long id) {
+        final var user = jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
         log.debug("User lookup by id, userId={}, found={}", id, user != null);
         return user;
     }
@@ -60,5 +73,11 @@ public class UserDao {
         final var user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
         log.debug("User lookup by account, found={}", user != null);
         return user;
+    }
+
+    private void validateUpdated(final User user, final int affectedRows) {
+        if (affectedRows == 0) {
+            throw new NoSuchElementException("User not found, userId=" + user.getId());
+        }
     }
 }

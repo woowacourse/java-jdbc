@@ -6,10 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 
 public class UserHistoryDao {
 
     private static final Logger log = LoggerFactory.getLogger(UserHistoryDao.class);
+
+    private static final String INSERT_SQL = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -18,9 +21,19 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        final var sql = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
-        final var affectedRows = jdbcTemplate.update(sql, userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
-                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy());
+        final var affectedRows = jdbcTemplate.update(INSERT_SQL, toParameters(userHistory));
         log.debug("User history saved, userId={}, affectedRows={}", userHistory.getUserId(), affectedRows);
+    }
+
+    public void log(final Connection connection, final UserHistory userHistory) {
+        final var affectedRows = jdbcTemplate.update(connection, INSERT_SQL, toParameters(userHistory));
+        log.debug("User history saved, userId={}, affectedRows={}", userHistory.getUserId(), affectedRows);
+    }
+
+    private Object[] toParameters(final UserHistory userHistory) {
+        return new Object[]{
+                userHistory.getUserId(), userHistory.getAccount(), userHistory.getPassword(),
+                userHistory.getEmail(), userHistory.getCreatedAt(), userHistory.getCreateBy()
+        };
     }
 }
