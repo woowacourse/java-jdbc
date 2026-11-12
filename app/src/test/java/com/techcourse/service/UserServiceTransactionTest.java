@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,7 +34,7 @@ class UserServiceTransactionTest {
         final var userDao = mock(UserDao.class);
         userHistoryDao = mock(UserHistoryDao.class);
         when(dataSource.getConnection()).thenReturn(connection);
-        when(userDao.findById(1L, connection))
+        when(userDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
         userService = new UserService(userDao, userHistoryDao, dataSource);
     }
@@ -45,7 +44,7 @@ class UserServiceTransactionTest {
             throws SQLException {
         final var originalException = new IllegalStateException("History save failed");
         final var rollbackException = new SQLException("Rollback failed");
-        doThrow(originalException).when(userHistoryDao).log(any(UserHistory.class), eq(connection));
+        doThrow(originalException).when(userHistoryDao).log(any(UserHistory.class));
         doThrow(rollbackException).when(connection).rollback();
 
         final var thrown = catchThrowable(() -> userService.changePassword(1L, "newPassword", "gugu"));

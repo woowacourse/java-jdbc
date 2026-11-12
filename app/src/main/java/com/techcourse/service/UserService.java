@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -31,29 +33,32 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final var connection = dataSource.getConnection()) {
-            try {
-                connection.setAutoCommit(false);
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("A transaction is already active for this DataSource");
+        }
+        try (final var connection = DataSourceUtils.getConnection(dataSource)) {
+            connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-                final var user = userDao.findById(id, connection);
+            try {
+                final var user = userDao.findById(id);
                 user.changePassword(newPassword);
-                userDao.update(user, connection);
-                userHistoryDao.log(new UserHistory(user, createBy), connection);
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
 
                 connection.commit();
-            } catch (SQLException e) {
-                rollback(connection, e);
-                throw new DataAccessException(e);
-            } catch (RuntimeException e) {
+            } catch (SQLException | RuntimeException | Error e) {
                 rollback(connection, e);
                 throw e;
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private void rollback(final Connection connection, final Exception originalException) {
+    private void rollback(final Connection connection, final Throwable originalException) {
         try {
             connection.rollback();
         } catch (SQLException rollbackException) {

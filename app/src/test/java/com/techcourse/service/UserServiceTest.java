@@ -7,6 +7,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,7 @@ class UserServiceTest {
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
@@ -93,6 +95,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
@@ -104,8 +107,8 @@ class UserServiceTest {
         final var failure = new DataAccessException("Failure after history insert");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(UserHistory userHistory, Connection connection) {
-                super.log(userHistory, connection);
+            public void log(UserHistory userHistory) {
+                super.log(userHistory);
                 throw failure;
             }
         };
