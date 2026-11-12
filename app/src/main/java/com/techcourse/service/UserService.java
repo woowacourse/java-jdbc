@@ -34,25 +34,29 @@ public class UserService {
         try (final var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                final var user = findById(id);
+                final var user = userDao.findById(connection, id);
                 user.changePassword(newPassword);
                 userDao.update(connection, user);
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
-            } catch (RuntimeException e) {
-                rollback(connection, e);
-                throw e;
-            } finally {
-                connection.setAutoCommit(true);
+            } catch (SQLException | RuntimeException e) {
+                rollbackAndRestoreAutoCommit(connection, e);
+                throw e instanceof RuntimeException runtimeException ? runtimeException : new DataAccessException(e);
             }
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private void rollback(final Connection connection, final RuntimeException cause) {
+    /**
+     * 롤백에 성공한 경우에만 자동 커밋을 복원한다.
+     * 롤백이 실패했는데 복원하면 {@code setAutoCommit(true)}가 미완료 트랜잭션을 커밋할 수 있으므로, 이때는 복원하지 않는다.
+     */
+    private void rollbackAndRestoreAutoCommit(final Connection connection, final Exception cause) {
         try {
             connection.rollback();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
             cause.addSuppressed(e);
         }
