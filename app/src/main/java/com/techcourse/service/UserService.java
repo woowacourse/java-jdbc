@@ -1,6 +1,6 @@
 package com.techcourse.service;
 
-import com.interface21.transaction.TransactionManager;
+import com.interface21.transaction.JdbcTransactionManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -11,9 +11,9 @@ public class UserService {
 
     private final UserDao userDao;
     private final UserHistoryDao userHistoryDao;
-    private final TransactionManager transactionManager;
+    private final JdbcTransactionManager transactionManager;
 
-    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, TransactionManager transactionManager) {
+    public UserService(UserDao userDao, UserHistoryDao userHistoryDao, JdbcTransactionManager transactionManager) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.transactionManager = transactionManager;
@@ -30,12 +30,12 @@ public class UserService {
     public void changePassword(final long id, String newPassword, String createBy) {
         User user = findById(id).orElseThrow(() -> new UserNotFoundException(id));
         user.changePassword(newPassword);
-        transactionManager.execute(jdbc -> {
-            final int updatedCount = userDao.update(jdbc, user);
+        transactionManager.execute(() -> {
+            final int updatedCount = userDao.update(user);
             if (updatedCount == 0) {
                 throw new UserNotFoundException(id);
             }
-            userHistoryDao.log(jdbc, new UserHistory(user, createBy));
+            userHistoryDao.log(new UserHistory(user, createBy));
         });
     }
 }

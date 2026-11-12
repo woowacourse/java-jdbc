@@ -11,8 +11,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +26,7 @@ class JdbcTransactionManagerTest {
 
     private DataSource dataSource;
     private Connection connection;
-    private TransactionManager manager;
+    private JdbcTransactionManager manager;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -34,16 +37,19 @@ class JdbcTransactionManagerTest {
     }
 
     @Test
-    void 두_SQL을_같은_연결에서_실행한_뒤_커밋하고_DB_연결을_닫는다() throws SQLException {
+    void 한_트랜잭션에서_조회와_수정은_같은_DB_연결을_사용한다() throws SQLException {
         // given
         PreparedStatement statement = mock(PreparedStatement.class);
         given(connection.prepareStatement(anyString())).willReturn(statement);
         given(statement.executeUpdate()).willReturn(1);
+        ResultSet resultSet = mock(ResultSet.class);
+        given(statement.executeQuery()).willReturn(resultSet);
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         // when
-        manager.execute(jdbc -> {
-            assertThat(jdbc.update("first")).isEqualTo(1);
-            assertThat(jdbc.update("second")).isEqualTo(1);
+        manager.execute(() -> {
+            assertThat(jdbcTemplate.query("first", row -> row.getInt(1))).isEmpty();
+            assertThat(jdbcTemplate.update("second")).isEqualTo(1);
         });
 
         // then
@@ -51,7 +57,7 @@ class JdbcTransactionManagerTest {
         order.verify(dataSource).getConnection();
         order.verify(connection).setAutoCommit(false);
         order.verify(connection).prepareStatement("first");
-        order.verify(statement).executeUpdate();
+        order.verify(statement).executeQuery();
         order.verify(statement).close();
         order.verify(connection).prepareStatement("second");
         order.verify(statement).executeUpdate();
@@ -59,17 +65,20 @@ class JdbcTransactionManagerTest {
         order.verify(connection).commit();
         order.verify(connection).close();
         then(connection).should(never()).rollback();
+        then(dataSource).should().getConnection();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
-    void 작업에_실패하면_롤백하고_원래_예외를_전달한다() throws SQLException {
+    void 작업이_실패하면_롤백하고_등록된_DB_연결을_해제한다() throws SQLException {
         // given
         RuntimeException failure = new IllegalStateException("work failed");
 
         // when & then
-        assertThatThrownBy(() -> manager.execute(jdbc -> {
+        assertThatThrownBy(() -> manager.execute(() -> {
             throw failure;
         })).isSameAs(failure);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         then(connection).should().rollback();
         then(connection).should(never()).commit();
         then(connection).should().close();
@@ -84,7 +93,7 @@ class JdbcTransactionManagerTest {
         given(statement.executeUpdate()).willThrow(failure);
 
         // when & then
-        assertThatThrownBy(() -> manager.execute(jdbc -> jdbc.update("sql")))
+        assertThatThrownBy(() -> manager.execute(() -> new JdbcTemplate(dataSource).update("sql")))
             .isInstanceOf(DataAccessException.class)
             .hasCause(failure);
         then(statement).should().close();
@@ -100,7 +109,7 @@ class JdbcTransactionManagerTest {
         doThrow(failure).when(connection).commit();
 
         // when & then
-        assertThatThrownBy(() -> manager.execute(jdbc -> {}))
+        assertThatThrownBy(() -> manager.execute(() -> {}))
             .isInstanceOf(DataAccessException.class)
             .hasCause(failure);
         InOrder order = inOrder(connection);
@@ -117,7 +126,7 @@ class JdbcTransactionManagerTest {
         doThrow(rollbackFailure).when(connection).rollback();
 
         // when & then
-        assertThatThrownBy(() -> manager.execute(jdbc -> {
+        assertThatThrownBy(() -> manager.execute(() -> {
             throw workFailure;
         })).isSameAs(workFailure);
         assertThat(workFailure.getSuppressed()).containsExactly(rollbackFailure);
@@ -132,7 +141,7 @@ class JdbcTransactionManagerTest {
         Error failure = new AssertionError("work failed");
 
         // when & then
-        assertThatThrownBy(() -> manager.execute(jdbc -> {
+        assertThatThrownBy(() -> manager.execute(() -> {
             throw failure;
         })).isSameAs(failure);
         then(connection).should().rollback();
@@ -145,7 +154,7 @@ class JdbcTransactionManagerTest {
         // given
         SQLException failure = new SQLException("connection failed");
         given(dataSource.getConnection()).willThrow(failure);
-        TransactionWork work = mock(TransactionWork.class);
+        Runnable work = mock(Runnable.class);
 
         // when & then
         assertThatThrownBy(() -> manager.execute(work))
@@ -159,7 +168,7 @@ class JdbcTransactionManagerTest {
         // given
         SQLException failure = new SQLException("auto commit setting failed");
         doThrow(failure).when(connection).setAutoCommit(false);
-        TransactionWork work = mock(TransactionWork.class);
+        Runnable work = mock(Runnable.class);
 
         // when & then
         assertThatThrownBy(() -> manager.execute(work))
@@ -178,7 +187,7 @@ class JdbcTransactionManagerTest {
         doThrow(failure).when(connection).close();
 
         // when & then
-        assertThatThrownBy(() -> manager.execute(jdbc -> {}))
+        assertThatThrownBy(() -> manager.execute(() -> {}))
             .isInstanceOf(DataAccessException.class)
             .hasCause(failure);
         then(connection).should().commit();

@@ -10,10 +10,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcOperations;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.JdbcTransactionManager;
-import com.interface21.transaction.TransactionManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -30,7 +28,7 @@ class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
-    private TransactionManager transactionManager;
+    private JdbcTransactionManager transactionManager;
     private UserService service;
 
     @BeforeEach
@@ -108,13 +106,13 @@ class UserServiceTest {
         UserService service = new UserService(userDao, userHistoryDao, transactionManager);
         User user = new User(1L, "gugu", "password", "gugu@example.com");
         given(userDao.findById(1L)).willReturn(Optional.of(user));
-        given(userDao.update(any(JdbcOperations.class), same(user))).willReturn(0);
+        given(userDao.update(same(user))).willReturn(0);
 
         // when & then
         assertThatThrownBy(() -> service.changePassword(1L, "changed", "admin"))
             .isInstanceOf(UserNotFoundException.class);
-        then(userDao).should().update(any(JdbcOperations.class), same(user));
-        then(userHistoryDao).should(never()).log(any(JdbcOperations.class), any(UserHistory.class));
+        then(userDao).should().update(same(user));
+        then(userHistoryDao).should(never()).log(any(UserHistory.class));
         assertThat(readHistories(1L)).isEmpty();
     }
 
