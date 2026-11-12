@@ -523,6 +523,78 @@ class JdbcTemplateTest {
         verifyNoMoreInteractions(connection, statement);
     }
 
+    @Test
+    void queryWithExternalConnectionMapsRowsAndClosesOnlyStatementResources() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(rowMapper.mapRow(resultSet, 0)).thenReturn("alice");
+        when(rowMapper.mapRow(resultSet, 1)).thenReturn("bob");
+
+        List<String> rows = jdbcTemplate.query(connection, QUERY_SQL, rowMapper, 20, true);
+
+        assertThat(rows).containsExactly("alice", "bob");
+        InOrder order = inOrder(connection, statement, resultSet);
+        order.verify(connection).prepareStatement(QUERY_SQL);
+        order.verify(statement).setObject(1, 20);
+        order.verify(statement).setObject(2, true);
+        order.verify(statement).executeQuery();
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verifyNoInteractions(dataSource);
+        verifyNoMoreInteractions(connection);
+    }
+
+    @Test
+    void queryForObjectWithExternalConnectionReturnsOnlyRowWithoutClosingConnection() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet, 0)).thenReturn("alice");
+
+        assertThat(jdbcTemplate.queryForObject(connection, QUERY_SQL, rowMapper, 20)).isEqualTo("alice");
+
+        verify(statement).setObject(1, 20);
+        verify(resultSet).close();
+        verify(statement).close();
+        verifyNoInteractions(dataSource);
+        verify(connection).prepareStatement(QUERY_SQL);
+        verifyNoMoreInteractions(connection);
+    }
+
+    @Test
+    void queryForObjectWithExternalConnectionReturnsNullForNoRows() throws SQLException {
+        when(resultSet.next()).thenReturn(false);
+
+        assertThat(jdbcTemplate.queryForObject(connection, QUERY_SQL, rowMapper)).isNull();
+
+        verifyNoInteractions(dataSource, rowMapper);
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void queryForObjectWithExternalConnectionRejectsMultipleRowsWithoutClosingConnection() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, QUERY_SQL, rowMapper))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void queryWithExternalConnectionConvertsFailureAndPreservesConnection() throws SQLException {
+        SQLException failure = new SQLException("query failed");
+        when(statement.executeQuery()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, QUERY_SQL, rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource, resultSet, rowMapper);
+    }
+
     private void verifyStatementAndConnectionClosed() throws SQLException {
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();

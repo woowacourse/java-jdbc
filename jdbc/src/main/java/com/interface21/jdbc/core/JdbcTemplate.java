@@ -44,11 +44,24 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        return execute(sql, setter, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return mapRows(resultSet, rowMapper);
-            }
-        });
+        return execute(sql, setter, statement -> executeQuery(statement, rowMapper));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                             final Object... args) {
+        try {
+            return execute(connection, sql, statement -> setParameters(statement, args),
+                    statement -> executeQuery(statement, rowMapper));
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> executeQuery(final PreparedStatement statement, final RowMapper<T> rowMapper)
+            throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            return mapRows(resultSet, rowMapper);
+        }
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
@@ -85,7 +98,16 @@ public class JdbcTemplate {
 
     /** Returns null for no rows and throws DataAccessException for multiple rows. */
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    /** Uses the given connection without closing it. Returns null for no rows. */
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
+                                final Object... args) {
+        return singleResult(query(connection, sql, rowMapper, args));
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row but found " + results.size());
         }
