@@ -85,6 +85,19 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("이력 INSERT가 DB 제약 조건을 위반하면 비밀번호 변경도 롤백한다")
+    void rollback_history_constraint_violation() {
+        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(dataSource));
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", null))
+                .isInstanceOf(DataAccessException.class)
+                .hasCauseInstanceOf(SQLException.class);
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(historyCount()).isZero();
+    }
+
+    @Test
     @DisplayName("비밀번호를 변경할 사용자가 없으면 아이디를 담은 예외를 던진다")
     void change_password_for_missing_user() {
         final var userService = new UserService(dataSource, userDao, new UserHistoryDao(dataSource));
