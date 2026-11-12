@@ -25,20 +25,27 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public void update(Connection connection, String sql, Object... params) {
+        execute(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        }, params);
+        return execute(sql, pstmt -> mapRows(pstmt, rowMapper), params);
+    }
+
+    public <T> List<T> query(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(connection, sql, pstmt -> mapRows(pstmt, rowMapper), params);
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
+        return singleResult(query(sql, rowMapper, params));
+    }
+
+    public <T> T queryForObject(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        return singleResult(query(connection, sql, rowMapper, params));
+    }
+
+    private <T> T singleResult(List<T> results) {
         if (results.size() != 1) {
             throw new IllegalStateException("Expected 1 row but found " + results.size());
         }
@@ -46,14 +53,32 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, action, params);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> action, Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, params);
             log.debug("query : {}", sql);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
+        }
+    }
+
+    private <T> List<T> mapRows(PreparedStatement statement, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = statement.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
         }
     }
 
