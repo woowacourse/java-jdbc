@@ -121,13 +121,6 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - [x] 성공 시 비밀번호와 이력을 함께 커밋하고, 실패 시 두 변경을 함께 롤백한다.
 - [x] 트랜잭션 종료 후 연결 설정과 스레드 저장소가 정리되고, 정리 중 실패해도 최초 예외를 보존한다.
 
-#### 진행 방식
-
-- 실패하는 테스트를 먼저 실행하고, 구현 후 같은 테스트의 통과를 확인한다.
-- 기능별로 테스트와 구현을 묶어 로컬 커밋한다.
-- 트랜잭션 동기화, 연결 획득과 반환, JdbcTemplate 연동, 서비스 역할 분리 순서로 진행한다.
-- 검증은 JDBC와 앱 모듈의 테스트로 수행한다.
-
 #### 구현 내용
 
 - TxUserService가 DataSourceUtils로 연결을 얻고 TransactionSynchronizationManager에 등록한다.
@@ -139,27 +132,5 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
   별도의 DataSource가 필요하면 `new TxUserService(appUserService, dataSource)`로 주입한다.
 - 커밋 또는 롤백 후 기존 autoCommit 설정을 복구한다. 롤백 자체가 실패하면 암묵적 커밋을 피하도록 복구를 건너뛰고 연결을 종료한다.
 - 연결 획득과 종료 실패는 원인을 가진 DataAccessException 하위 예외로 전달하고, 작업 중 정리 실패는 최초 예외의 suppressed로 남긴다.
-
-#### 검증
-
-```sh
-./gradlew :jdbc:test :app:test --console=plain
-```
-
-- JDBC 모듈의 JdbcTemplateTest 20개, DataSourceUtilsTest 7개, TransactionSynchronizationManagerTest 5개 통과.
-- 앱 모듈의 UserDaoTest 11개, UserHistoryDaoTest 3개, AppUserServiceTest 3개, TxUserServiceTest 11개, UserServiceTest 5개 통과.
-- 총 65개 테스트 통과, 실패와 건너뛴 테스트 0개.
-- 스레드별 연결 격리, DataSource별 연결 구분, 일반 연결 종료와 공유 연결 유지, 트랜잭션 종료 후 등록 해제를 확인한다.
-- 별도 DB 연결에서 커밋 전 변경이 보이지 않는지, 이력 저장 후 실패하면 두 변경이 함께 롤백되는지 확인한다.
-- 이전 이력 보존과 실패 후 재시도, 커밋 및 정리 실패의 원인 보존도 확인한다.
-
-#### 생각해보기
-
-- PlatformTransactionManager는 getTransaction, commit, rollback으로 트랜잭션 경계를 추상화한다.
-  JDBC와 JPA 등 자원 종류에 맞는 구현체를 선택할 수 있다.
-- 로컬 트랜잭션은 하나의 자원에서 처리한다. 여러 독립 자원의 변경을 하나의 트랜잭션으로 묶으려면 글로벌 트랜잭션을 지원하는 조정자가 필요하다.
-- JTA는 글로벌 트랜잭션을 위한 API다. 스프링의 JtaTransactionManager는 JTA 트랜잭션 관리자와 연동한다.
-  여러 DataSource의 Connection을 스레드에 보관하는 것만으로 여러 DB의 원자성이 보장되지는 않는다.
-- 참고 문서 [스프링 트랜잭션 추상화](https://docs.spring.io/spring-framework/reference/data-access/transaction/strategies.html).
 
 </details>
