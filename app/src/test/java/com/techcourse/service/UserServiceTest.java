@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -83,6 +84,16 @@ class UserServiceTest {
                 .isInstanceOf(DataAccessException.class).hasCauseInstanceOf(SQLException.class);
 
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select id from user_history", rs -> rs.getLong("id"))).isEmpty();
+    }
+
+    @Test
+    void changePasswordFailsWithUserIdWhenUserIsMissing() {
+        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, new UserHistoryDao(jdbcTemplate));
+
+        assertThatThrownBy(() -> userService.changePassword(999L, "newPassword", "gugu"))
+                .isInstanceOf(NoSuchElementException.class).hasMessage("User not found: 999");
+
         assertThat(jdbcTemplate.query("select id from user_history", rs -> rs.getLong("id"))).isEmpty();
     }
 

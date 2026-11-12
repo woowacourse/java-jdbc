@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -40,7 +41,7 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    void commitFailureRollsBackBeforeRestoringAndClosingConnection() throws SQLException {
+    void commitFailureRollsBackBeforeRestoringAutoCommit() throws SQLException {
         final var cause = new SQLException("commit failed");
         doThrow(cause).when(connection).commit();
 
@@ -48,11 +49,9 @@ class UserServiceTransactionTest {
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         final var order = inOrder(connection);
-        order.verify(connection).setAutoCommit(false);
-        order.verify(connection).commit();
         order.verify(connection).rollback();
         order.verify(connection).setAutoCommit(true);
-        order.verify(connection).close();
+        verify(connection).close();
     }
 
     @Test
@@ -68,5 +67,26 @@ class UserServiceTransactionTest {
         verify(connection, never()).commit();
         verify(connection, never()).setAutoCommit(true);
         verify(connection).close();
+    }
+
+    @Test
+    void autoCommitRestoreFailureAfterCommitKeepsPasswordChangeSuccessful() throws SQLException {
+        doThrow(new SQLException("restore failed")).when(connection).setAutoCommit(true);
+
+        assertThatCode(() -> userService.changePassword(1L, "changed", "admin"))
+                .doesNotThrowAnyException();
+
+        verify(connection).commit();
+        verify(connection).close();
+    }
+
+    @Test
+    void closeFailureAfterCommitKeepsPasswordChangeSuccessful() throws SQLException {
+        doThrow(new SQLException("close failed")).when(connection).close();
+
+        assertThatCode(() -> userService.changePassword(1L, "changed", "admin"))
+                .doesNotThrowAnyException();
+
+        verify(connection).commit();
     }
 }
