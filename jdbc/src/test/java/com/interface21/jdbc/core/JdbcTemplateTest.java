@@ -152,6 +152,22 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateFailureKeepsConnectionCloseFailureAsSuppressed() throws SQLException {
+        final var failure = new SQLException("update failed");
+        final var closeFailure = new SQLException("connection close failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     void mappingFailureKeepsCloseFailureAsSuppressed() throws SQLException {
         final var failure = new SQLException("mapping failed");
         final var closeFailure = new SQLException("close failed");

@@ -54,7 +54,7 @@ public class JdbcTemplate {
 
     private <T> T execute(String sql, PreparedStatementCallback<T> action, Object... params) {
         try (Connection connection = dataSource.getConnection()) {
-            return execute(connection, sql, action, params);
+            return executeStatement(connection, sql, action, params);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
@@ -62,13 +62,20 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(Connection connection, String sql, PreparedStatementCallback<T> action, Object... params) {
+        try {
+            return executeStatement(connection, sql, action, params);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T executeStatement(Connection connection, String sql, PreparedStatementCallback<T> action,
+                                   Object... params) throws SQLException {
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameters(pstmt, params);
             log.debug("query : {}", sql);
             return action.doInPreparedStatement(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
         }
     }
 

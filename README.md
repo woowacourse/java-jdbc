@@ -110,6 +110,18 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - 롤백 자체가 실패하면 autoCommit 복구를 건너뛰어 미완료 작업의 암묵적 커밋을 피한다.
 - 롤백과 연결 종료 실패는 최초 예외의 suppressed에 남긴다.
 
+#### 검증
+
+```sh
+./gradlew :jdbc:test :app:test --console=plain
+```
+
+- JdbcTemplateTest 16개, UserDaoTest 11개, UserHistoryDaoTest 3개,
+  UserServiceTest 3개, UserServiceTransactionTest 6개로 총 39개 통과.
+- 성공 시 이력의 사용자, 변경 비밀번호, 변경자, 변경 시각을 확인한다.
+- 이력 저장 후 예외와 실제 SQL 오류에서 비밀번호와 이력이 함께 롤백되는지 확인한다.
+- 커밋 실패의 롤백, 연결 설정 복구, 자원 종료, 최초 예외 및 suppressed 보존을 확인한다.
+
 </details>
 
 <details>
