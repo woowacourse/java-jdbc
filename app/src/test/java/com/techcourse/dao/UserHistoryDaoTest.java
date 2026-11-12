@@ -35,6 +35,31 @@ class UserHistoryDaoTest {
         assertHistorySaved(new UserHistoryDao(dataSource));
     }
 
+    @Test
+    void logsHistoryWithProvidedConnectionAndRollsBack() throws SQLException {
+        final var jdbcTemplate = new JdbcTemplate(dataSource);
+        final var dao = new UserHistoryDao(jdbcTemplate);
+        final var history = new UserHistory(new User(7L, "pino", "new-password", "pino@example.com"), "admin");
+
+        try (final var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            dao.log(connection, history);
+
+            final var uncommittedCount = jdbcTemplate.queryForObject(connection, "select count(*) from user_history",
+                    resultSet -> resultSet.getLong(1));
+            final var committedCount = jdbcTemplate.queryForObject("select count(*) from user_history",
+                    resultSet -> resultSet.getLong(1));
+            assertThat(uncommittedCount).isEqualTo(1L);
+            assertThat(committedCount).isZero();
+
+            connection.rollback();
+        }
+        final var countAfterRollback = jdbcTemplate.queryForObject("select count(*) from user_history",
+                resultSet -> resultSet.getLong(1));
+        assertThat(countAfterRollback).isZero();
+    }
+
     private void assertHistorySaved(UserHistoryDao dao) throws SQLException {
         final var user = new User(7L, "pino", "new-password", "pino@example.com");
         final var history = new UserHistory(user, "admin");
