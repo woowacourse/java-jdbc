@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,29 +27,56 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
     }
 
+    public int update(Connection conn, String sql, Object... params) {
+        return execute(conn, sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
+    }
+
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(sql, pstmt -> {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        }, pstmt -> setParameters(pstmt, params));
+        return execute(sql, pstmt -> readRows(pstmt, rowMapper), pstmt -> setParameters(pstmt, params));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = query(sql, rowMapper, params);
-        if (results.size() != 1) {
-            throw new DataAccessException("조회 결과 오류 : " + results.size());
+        return singleResult(query(sql, rowMapper, params));
+    }
+
+    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
+        List<T> results = execute(conn, sql, pstmt -> readRows(pstmt, rowMapper),
+                pstmt -> setParameters(pstmt, params));
+        return singleResult(results);
+    }
+
+    private static <T> List<T> readRows(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet rs = pstmt.executeQuery()) {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
+        }
+    }
+
+    private static <T> T singleResult(List<T> results) {
+        if (results.isEmpty()) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        if (results.size() > 1) {
+            throw new IncorrectResultSizeDataAccessException(1, results.size());
         }
         return results.getFirst();
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter pstmtSetter) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, callback, pstmtSetter);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection conn, String sql, PreparedStatementCallback<T> callback,
+                          PreparedStatementSetter pstmtSetter) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             pstmtSetter.setValues(pstmt);

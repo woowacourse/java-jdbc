@@ -1,13 +1,17 @@
 package com.techcourse.dao;
 
+import com.interface21.dao.EmptyResultDataAccessException;
+import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -38,11 +42,46 @@ class UserDaoTest {
     }
 
     @Test
+    void findByIdReadsUncommittedChangesFromGivenConnection() throws SQLException {
+        final var user = userDao.findById(1L);
+        final var originalPassword = user.getPassword();
+        final var newPassword = "newPassword";
+
+        try (var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                user.changePassword(newPassword);
+                userDao.update(connection, user);
+
+                assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo(newPassword);
+            } finally {
+                connection.rollback();
+            }
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo(originalPassword);
+    }
+
+    @Test
     void findByAccount() {
         final var account = "gugu";
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByIdWithNoResult() {
+        assertThatThrownBy(() -> userDao.findById(999L))
+                .isExactlyInstanceOf(EmptyResultDataAccessException.class);
+    }
+
+    @Test
+    void findByAccountWithMultipleResults() {
+        userDao.insert(new User("gugu", "password2", "hkkang@woowahan.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isExactlyInstanceOf(IncorrectResultSizeDataAccessException.class);
     }
 
     @Test
