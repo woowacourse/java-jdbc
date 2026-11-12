@@ -85,7 +85,21 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 </details>
 
 <details>
-<summary>Step 3</summary>
+<summary>Step 3 - Transaction 적용하기</summary>
+
+- [ ] UserServiceTest의 `@Disabled`를 제거하고 성공과 롤백 테스트를 실행한다.
+- [ ] JdbcTemplate에서 전달받은 Connection으로 조회와 변경 SQL을 실행한다.
+- [ ] 전달받은 Connection은 호출자가 종료하고, JdbcTemplate은 Statement와 ResultSet만 정리한다.
+- [ ] UserDao의 사용자 조회와 수정, UserHistoryDao의 이력 저장에 같은 Connection을 전달한다.
+- [ ] UserService에서 Connection을 얻고 `setAutoCommit(false)`로 트랜잭션 경계를 설정한다.
+- [ ] 비밀번호 변경과 변경 이력 저장이 모두 성공하면 커밋한다.
+- [ ] 작업 중 예외가 발생하면 롤백하여 기존 비밀번호와 이력 상태를 유지한다.
+- [ ] 커밋 또는 롤백 후 Connection을 종료하고, 롤백과 종료 실패 시 원래 예외를 보존한다.
+
+#### 진행 방식
+
+- 기능마다 실패하는 테스트를 먼저 실행하고, 구현 후 같은 테스트가 통과하는지 확인한다.
+- 공유 Connection 실행, DAO 연결 전달, 서비스 트랜잭션을 각각 구현과 테스트를 묶어 커밋한다.
 
 </details>
 
