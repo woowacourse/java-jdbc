@@ -30,34 +30,18 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = createQueryForInsert();
+        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         log.debug("query : {}", sql);
 
-        setValuesForInsert(user, sql);
-    }
-
-    private String createQueryForInsert() {
-        return "insert into users (account, password, email) values (?, ?, ?)";
-    }
-
-    private void setValuesForInsert(User user, String sql) {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        final var sql = createQueryForUpdate();
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
         log.debug("query : {}", sql);
 
-        setValuesForUpdate(user, sql);
-    }
-
-    private String createQueryForUpdate() {
-        return "update users set account = ?, password = ?, email = ? where id = ?";
-    }
-
-    private void setValuesForUpdate(User user, String sql) {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
