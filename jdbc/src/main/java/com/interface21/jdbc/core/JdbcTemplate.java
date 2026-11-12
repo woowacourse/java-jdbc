@@ -48,8 +48,8 @@ public class JdbcTemplate {
         return queryForObject(sql, argumentSetter(args), rowMapper);
     }
 
-    public <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
-                                final RowMapper<T> rowMapper) {
+    private <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
+                                 final RowMapper<T> rowMapper) {
         final var results = query(sql, setter, rowMapper);
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row, but found " + results.size());
