@@ -6,6 +6,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserDaoTest {
@@ -13,8 +15,13 @@ class UserDaoTest {
     private UserDao userDao;
 
     @BeforeEach
-    void setup() {
+    void setup() throws SQLException {
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+
+        try (final var connection = DataSourceConfig.getInstance().getConnection();
+             final var statement = connection.createStatement()) {
+            statement.executeUpdate("truncate table users restart identity");
+        }
 
         userDao = new UserDao(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -25,7 +32,7 @@ class UserDaoTest {
     void findAll() {
         final var users = userDao.findAll();
 
-        assertThat(users).isNotEmpty();
+        assertThat(users).hasSize(1);
     }
 
     @Test
@@ -41,6 +48,22 @@ class UserDaoTest {
         final var user = userDao.findByAccount(account);
 
         assertThat(user.getAccount()).isEqualTo(account);
+    }
+
+    @Test
+    void findByEmail() {
+        final var email = "other@example.com";
+        userDao.insert(new User("other", "password", email));
+
+        final var user = userDao.findByEmail(email);
+
+        assertThat(user.getAccount()).isEqualTo("other");
+        assertThat(user.getEmail()).isEqualTo(email);
+    }
+
+    @Test
+    void findByEmailReturnsNullWhenNoUserExists() {
+        assertThat(userDao.findByEmail("missing@example.com")).isNull();
     }
 
     @Test
