@@ -14,12 +14,18 @@ import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 class UserServiceTest {
 
@@ -41,14 +47,14 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         jdbcTemplate.update("truncate table user_history");
         jdbcTemplate.update("truncate table users restart identity");
-        userDao.insert(new User("gugu", ORIGINAL_PASSWORD, "hkkang@woowahan.com"));
+        new UserService(dataSource).insert(new User("gugu", ORIGINAL_PASSWORD, "hkkang@woowahan.com"));
     }
 
     @Test
     @DisplayName("비밀번호 변경에 성공하면 새 비밀번호와 변경 이력이 함께 저장된다")
     void savesPasswordAndHistory() {
         // given
-        final var userService = new UserService(userDao, new UserHistoryDao(jdbcTemplate), dataSource);
+        final var userService = new UserService(dataSource);
         final var newPassword = "newPassword";
         final var changedBy = "operator";
 
@@ -56,7 +62,7 @@ class UserServiceTest {
         userService.changePassword(USER_ID, newPassword, changedBy);
 
         // then
-        assertThat(userDao.findById(USER_ID).getPassword()).isEqualTo(newPassword);
+        assertThat(userService.findById(USER_ID).getPassword()).isEqualTo(newPassword);
         assertThat(findPasswordChanges()).singleElement().satisfies(change -> {
             assertThat(change.userId()).isEqualTo(USER_ID);
             assertThat(change.password()).isEqualTo(newPassword);
@@ -88,6 +94,47 @@ class UserServiceTest {
         assertAll(
                 () -> assertThat(userDao.findById(USER_ID).getPassword()).isEqualTo(ORIGINAL_PASSWORD),
                 () -> assertThat(findPasswordChanges()).isEmpty());
+    }
+
+    @Test
+    @DisplayName("이력 INSERT가 DB 제약을 위반하면 이전 비밀번호를 유지한다")
+    void rollsBackPasswordWhenHistoryInsertFails() {
+        // given
+        final var userService = new UserService(dataSource);
+
+        // when
+        final var thrown = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(USER_ID, "newPassword", null));
+
+        // then
+        assertThat(thrown).hasCauseInstanceOf(SQLIntegrityConstraintViolationException.class);
+        assertThat(userDao.findById(USER_ID).getPassword()).isEqualTo(ORIGINAL_PASSWORD);
+        assertThat(findPasswordChanges()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("커밋 뒤 연결 종료에 실패하면 변경이 이미 저장됐음을 전달한다")
+    void reportsConnectionCloseFailureAfterCommit() throws SQLException {
+        // given
+        final var closeFailure = new SQLException("연결 종료 실패");
+        final var connection = spy(dataSource.getConnection());
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw closeFailure;
+        }).when(connection).close();
+        final var failingDataSource = mock(DataSource.class);
+        when(failingDataSource.getConnection()).thenReturn(connection);
+        final var userService = new UserService(failingDataSource);
+        final var newPassword = "newPassword";
+
+        // when
+        final var thrown = assertThrows(PasswordChangeCommittedException.class,
+                () -> userService.changePassword(USER_ID, newPassword, "operator"));
+
+        // then
+        assertThat(thrown).hasCause(closeFailure).hasMessageContaining("커밋");
+        assertThat(userDao.findById(USER_ID).getPassword()).isEqualTo(newPassword);
+        assertThat(findPasswordChanges()).extracting(PasswordChange::password).containsExactly(newPassword);
     }
 
     private List<PasswordChange> findPasswordChanges() {

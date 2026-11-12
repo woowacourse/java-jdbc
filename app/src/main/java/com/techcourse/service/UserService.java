@@ -16,7 +16,11 @@ public class UserService {
     private final UserHistoryDao userHistoryDao;
     private final DataSource dataSource;
 
-    public UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
+    public UserService(final DataSource dataSource) {
+        this(new UserDao(dataSource), new UserHistoryDao(dataSource), dataSource);
+    }
+
+    UserService(final UserDao userDao, final UserHistoryDao userHistoryDao, final DataSource dataSource) {
         this.userDao = userDao;
         this.userHistoryDao = userHistoryDao;
         this.dataSource = dataSource;
@@ -31,16 +35,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        boolean committed = false;
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
                 updatePasswordAndLogHistory(connection, id, newPassword, createBy);
                 connection.commit();
+                committed = true;
             } catch (SQLException | RuntimeException | Error failure) {
                 rollback(connection, failure);
                 throw failure;
             }
         } catch (SQLException exception) {
+            if (committed) {
+                throw new PasswordChangeCommittedException(exception);
+            }
             throw new DataAccessException("비밀번호 변경 트랜잭션에 실패했습니다.", exception);
         }
     }
