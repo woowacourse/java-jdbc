@@ -31,7 +31,7 @@ class UserServiceTransactionTest {
     void setUp() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(1L)).thenReturn(user);
+        when(userDao.findById(connection, 1L)).thenReturn(user);
     }
 
     @Test
@@ -40,6 +40,7 @@ class UserServiceTransactionTest {
 
         final var order = inOrder(connection, userDao, historyDao);
         order.verify(connection).setAutoCommit(false);
+        order.verify(userDao).findById(connection, 1L);
         order.verify(userDao).update(connection, user);
         order.verify(historyDao).log(eq(connection), any(UserHistory.class));
         order.verify(connection).commit();
@@ -47,6 +48,33 @@ class UserServiceTransactionTest {
         order.verify(connection).close();
         verify(connection, never()).rollback();
         verify(dataSource).getConnection();
+        assertThat(user.getPassword()).isEqualTo("newPassword");
+    }
+
+    @Test
+    void doesNotUseDaoMethodsThatOpenSeparateConnections() {
+        changePassword();
+
+        verify(userDao).findById(connection, 1L);
+        verify(userDao).update(connection, user);
+        verify(historyDao).log(eq(connection), any(UserHistory.class));
+        verifyNoMoreInteractions(userDao, historyDao);
+    }
+
+    @Test
+    void lookupFailureRollsBackWithoutWriting() throws SQLException {
+        final var failure = new DataAccessException("lookup failed");
+        when(userDao.findById(connection, 1L)).thenThrow(failure);
+
+        assertThatThrownBy(this::changePassword).isSameAs(failure);
+
+        verify(userDao, never()).update(any(Connection.class), any(User.class));
+        verifyNoInteractions(historyDao);
+        final var order = inOrder(connection);
+        order.verify(connection).rollback();
+        order.verify(connection).setAutoCommit(true);
+        order.verify(connection).close();
+        verify(connection, never()).commit();
     }
 
     @Test
@@ -150,8 +178,7 @@ class UserServiceTransactionTest {
         assertThatThrownBy(this::changePassword)
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
-        verify(userDao, never()).update(any(Connection.class), any(User.class));
-        verifyNoInteractions(historyDao);
+        verifyNoInteractions(userDao, historyDao);
         verify(connection, never()).commit();
         verify(connection, never()).rollback();
         verify(connection).close();

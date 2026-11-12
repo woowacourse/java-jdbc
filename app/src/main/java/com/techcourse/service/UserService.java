@@ -31,20 +31,20 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
         try (final Connection connection = dataSource.getConnection()) {
             final boolean autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            changePassword(connection, user, createBy, autoCommit);
+            changePasswordInTransaction(connection, id, newPassword, createBy, autoCommit);
         } catch (SQLException e) {
             throw new DataAccessException(e);
         }
     }
 
-    private void changePassword(final Connection connection, final User user, final String createBy,
-                                final boolean autoCommit) throws SQLException {
+    private void changePasswordInTransaction(final Connection connection, final long id, final String newPassword,
+                                             final String createBy, final boolean autoCommit) throws SQLException {
         try {
+            final var user = userDao.findById(connection, id);
+            user.changePassword(newPassword);
             userDao.update(connection, user);
             userHistoryDao.log(connection, new UserHistory(user, createBy));
             connection.commit();
