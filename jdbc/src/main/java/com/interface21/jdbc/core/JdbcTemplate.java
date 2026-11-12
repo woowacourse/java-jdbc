@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -11,7 +13,6 @@ import java.util.List;
 
 public class JdbcTemplate {
     private final DataSource dataSource;
-    private final ThreadLocal<Connection> transactionConnection = new ThreadLocal<>();
 
     public JdbcTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -19,25 +20,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... parameters) {
         return updateWithSetter(sql, statement -> bind(statement, parameters));
-    }
-
-    /** Uses the caller-owned connection without closing it. */
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return execute(connection, sql, statement -> bind(statement, parameters), PreparedStatement::executeUpdate);
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> mapper,
-                                final Object... parameters) {
-        List<T> results = execute(connection, sql, statement -> bind(statement, parameters), statement -> {
-            try (var resultSet = statement.executeQuery()) {
-                List<T> rows = new ArrayList<>();
-                while (resultSet.next()) {
-                    rows.add(mapper.mapRow(resultSet));
-                }
-                return rows;
-            }
-        });
-        return singleResult(results);
     }
 
     public int updateWithSetter(final String sql, final PreparedStatementSetter setter) {
@@ -73,42 +55,47 @@ public class JdbcTemplate {
         return results.isEmpty() ? null : results.get(0);
     }
 
-    /** Runs operations on this template on one connection; nested transactions are not supported. */
+    /** Runs operations using this data source on one connection. Nested transactions are not supported. */
     public void inTransaction(final Runnable action) {
-        if (transactionConnection.get() != null) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
             throw new IllegalStateException("Nested transactions are not supported");
         }
-        try (var connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            transactionConnection.set(connection);
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (var ignored = new ConnectionRelease(connection, dataSource)) {
             try {
-                action.run();
-                connection.commit();
-            } catch (RuntimeException | Error | SQLException e) {
+                connection.setAutoCommit(false);
+                TransactionSynchronizationManager.bindResource(dataSource, connection);
                 try {
-                    connection.rollback();
-                } catch (SQLException rollbackFailure) {
-                    e.addSuppressed(rollbackFailure);
+                    action.run();
+                    connection.commit();
+                } catch (RuntimeException | Error | SQLException e) {
+                    try {
+                        connection.rollback();
+                    } catch (SQLException rollbackFailure) {
+                        e.addSuppressed(rollbackFailure);
+                    }
+                    throw e;
+                } finally {
+                    TransactionSynchronizationManager.unbindResource(dataSource);
                 }
-                throw e;
-            } finally {
-                transactionConnection.remove();
+            } catch (SQLException e) {
+                throw new DataAccessException("Failed to execute transaction", e);
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute transaction", e);
         }
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
-        Connection existing = transactionConnection.get();
-        if (existing != null) {
-            return execute(existing, sql, setter, callback);
-        }
-        try (var connection = dataSource.getConnection()) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (var ignored = new ConnectionRelease(connection, dataSource)) {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        }
+    }
+
+    private record ConnectionRelease(Connection connection, DataSource dataSource) implements AutoCloseable {
+        @Override
+        public void close() {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
