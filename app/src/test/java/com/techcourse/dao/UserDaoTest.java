@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -115,5 +116,22 @@ class UserDaoTest {
         final var dao = new UserDao(new JdbcTemplate(DataSourceConfig.getInstance()));
 
         assertThat(dao.findById(1L).getAccount()).isEqualTo("gugu");
+    }
+
+    @Test
+    void updatesAndFindsUserWithProvidedConnection() throws SQLException {
+        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+            connection.setAutoCommit(false);
+            final var user = userDao.findById(connection, 1L);
+            user.changePassword("transaction-password");
+
+            userDao.update(connection, user);
+
+            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("transaction-password");
+            assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+
+            connection.rollback();
+        }
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
     }
 }

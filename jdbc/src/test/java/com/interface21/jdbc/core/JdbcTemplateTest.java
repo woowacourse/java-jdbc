@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -151,6 +152,22 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void updateFailureKeepsConnectionCloseFailureAsSuppressed() throws SQLException {
+        final var failure = new SQLException("update failed");
+        final var closeFailure = new SQLException("connection close failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     void mappingFailureKeepsCloseFailureAsSuppressed() throws SQLException {
         final var failure = new SQLException("mapping failed");
         final var closeFailure = new SQLException("close failed");
@@ -163,6 +180,63 @@ class JdbcTemplateTest {
                 .hasCause(failure);
         assertThat(failure.getSuppressed()).containsExactly(closeFailure);
         verifyQueryResourcesClosed();
+    }
+
+    @Test
+    void updateUsesProvidedConnectionWithoutClosingIt() throws SQLException {
+        jdbcTemplate.update(connection, "sql", "password", 1L);
+
+        verify(statement).setObject(1, "password");
+        verify(statement).setObject(2, 1L);
+        verify(statement).executeUpdate();
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void queryUsesProvidedConnectionAndClosesQueryResources() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(rowMapper.mapRow(resultSet)).thenReturn("first", "second");
+
+        assertThat(jdbcTemplate.query(connection, "sql", rowMapper, 7L))
+                .containsExactly("first", "second");
+
+        verify(statement).setObject(1, 7L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void queryForObjectUsesProvidedConnection() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet)).thenReturn("only row");
+
+        assertThat(jdbcTemplate.queryForObject(connection, "sql", rowMapper, 1L)).isEqualTo("only row");
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void providedConnectionRemainsOpenWhenExecutionFails() throws SQLException {
+        final var failure = new SQLException("update failed");
+        final var closeFailure = new SQLException("statement close failed");
+        when(statement.executeUpdate()).thenThrow(failure);
+        doThrow(closeFailure).when(statement).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "sql"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+        verify(statement).close();
+        verify(connection, never()).close();
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
