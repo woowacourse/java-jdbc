@@ -150,6 +150,16 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void queryForObjectReturnsNullWhenMapperMapsExistingRowToNull() {
+        jdbcTemplate.update("insert into users (id, account, email) values (?, ?, ?)", 1L, "gugu", null);
+
+        final var email = jdbcTemplate.queryForObject("select email from users where id = ?",
+                (rs, rowNum) -> rs.getString("email"), 1L);
+
+        assertThat(email).isNull();
+    }
+
+    @Test
     void queryForObjectRejectsMultipleRows() {
         jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
 
