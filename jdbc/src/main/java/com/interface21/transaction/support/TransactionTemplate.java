@@ -1,9 +1,9 @@
 package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 
 public class TransactionTemplate {
@@ -14,13 +14,36 @@ public class TransactionTemplate {
         this.dataSource = dataSource;
     }
 
-    public void execute(final Consumer<Connection> callback) {
-        try (Connection connection = dataSource.getConnection()) {
+    public void execute(final Runnable callback) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("이미 진행 중인 트랜잭션이 있습니다.");
+        }
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                executeTransaction(connection, callback);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
+        } catch (RuntimeException | Error e) {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
+        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
+    }
+
+    private void executeTransaction(final Connection connection, final Runnable callback) {
+        try {
             final boolean autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
 
             try {
-                callback.accept(connection);
+                callback.run();
                 connection.commit();
             } catch (SQLException | RuntimeException | Error e) {
                 rollbackAndRestoreAutoCommit(connection, autoCommit, e);

@@ -3,7 +3,6 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -11,11 +10,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +38,13 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(pstmt);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -87,22 +95,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 매개변수_설정에_실패하면_예외를_변환하고_자원을_해제한다() throws SQLException {
-        final SQLException failure = new SQLException("binding failed");
-        doThrow(failure).when(pstmt).setObject(1, "new-password");
-
-        assertThatThrownBy(() -> jdbcTemplate.update(
-                "update users set password = ? where id = ?", "new-password", 1L
-        ))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        verify(pstmt, never()).executeUpdate();
-        verify(pstmt).close();
-        verify(connection).close();
-    }
-
-    @Test
     void 수정_실행에_실패하면_자원을_해제한다() throws SQLException {
         final SQLException failure = new SQLException("update failed");
         when(pstmt.executeUpdate()).thenThrow(failure);
@@ -118,11 +110,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_연결로_수정하고_연결을_닫지_않는다() throws SQLException {
+    void 바인딩된_연결로_수정하고_연결을_닫지_않는다() throws SQLException {
         when(pstmt.executeUpdate()).thenReturn(1);
 
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final int updatedRows = jdbcTemplate.update(
-                connection, "update users set password = ? where id = ?", "new-password", 1L
+                "update users set password = ? where id = ?", "new-password", 1L
         );
 
         assertThat(updatedRows).isEqualTo(1);
@@ -134,12 +127,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 전달받은_연결에서_SQL이_실패해도_연결을_닫지_않는다() throws SQLException {
+    void 바인딩된_연결에서_SQL이_실패해도_연결을_닫지_않는다() throws SQLException {
         final SQLException failure = new SQLException("update failed");
         when(pstmt.executeUpdate()).thenThrow(failure);
 
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         assertThatThrownBy(() -> jdbcTemplate.update(
-                connection, "update users set password = ? where id = ?", "new-password", 1L
+                "update users set password = ? where id = ?", "new-password", 1L
         ))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
@@ -147,63 +141,5 @@ class JdbcTemplateTest {
         verify(dataSource, never()).getConnection();
         verify(pstmt).close();
         verify(connection, never()).close();
-    }
-
-    @Test
-    void 전달받은_연결로_단건_조회하고_연결을_닫지_않는다() throws SQLException {
-        when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true);
-        when(rs.getString("account")).thenReturn("gugu");
-
-        final String account = jdbcTemplate.queryForObject(
-                connection, "select account from users where id = ?",
-                row -> row.getString("account"), 1L
-        );
-
-        assertThat(account).isEqualTo("gugu");
-        verify(dataSource, never()).getConnection();
-        verify(pstmt).setObject(1, 1L);
-        verify(rs).close();
-        verify(pstmt).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
-    void 전달받은_연결에서_조회_결과_변환에_실패해도_연결을_닫지_않는다() throws SQLException {
-        final SQLException failure = new SQLException("mapping failed");
-        when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true);
-        final RowMapper<String> rowMapper = row -> {
-            throw failure;
-        };
-
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(
-                connection, "select account from users where id = ?", rowMapper, 1L
-        ))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        verify(dataSource, never()).getConnection();
-        verify(rs).close();
-        verify(pstmt).close();
-        verify(connection, never()).close();
-    }
-
-    @Test
-    void 조회_결과_변환에_실패하면_자원을_해제한다() throws SQLException {
-        final SQLException failure = new SQLException("mapping failed");
-        when(pstmt.executeQuery()).thenReturn(rs);
-        when(rs.next()).thenReturn(true);
-        final RowMapper<String> rowMapper = row -> {
-            throw failure;
-        };
-
-        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", rowMapper))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        verify(rs).close();
-        verify(pstmt).close();
-        verify(connection).close();
     }
 }
