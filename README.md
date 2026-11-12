@@ -104,6 +104,37 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 </details>
 
 <details>
-<summary>Step 4</summary>
+<summary>Step 4 - Transaction synchronization 적용하기</summary>
+
+#### 기능 요구사항
+
+- [ ] TransactionSynchronizationManager에 스레드별로 DataSource와 Connection을 등록, 조회, 해제한다.
+- [ ] 같은 스레드와 DataSource에서는 같은 Connection을 사용하고, 다른 스레드의 연결은 분리한다.
+- [ ] 마지막 Connection을 해제하면 ThreadLocal을 정리한다.
+- [ ] DataSourceUtils에서 동기화된 Connection을 재사용하고, 동기화된 연결은 DAO 작업 후에도 열어 둔다.
+- [ ] 트랜잭션 밖에서 얻은 연결은 작업 종료 시 닫는다.
+- [ ] JdbcTemplate이 DataSourceUtils를 통해 연결을 얻고 반환하도록 변경한다.
+- [ ] DAO와 서비스 호출에서 Connection 매개변수를 제거한다.
+- [ ] findById, save, changePassword를 선언한 UserService 인터페이스를 정의하고 AppUserService와 TxUserService로 역할을 분리한다.
+- [ ] AppUserService는 사용자 조회, 비밀번호 변경, 이력 저장의 비즈니스 로직을 담당한다.
+- [ ] TxUserService는 연결 등록, 트랜잭션 시작, 커밋과 롤백, 연결 해제와 종료를 담당한다.
+- [ ] 성공 시 비밀번호와 이력을 함께 커밋하고, 실패 시 두 변경을 함께 롤백한다.
+- [ ] 트랜잭션 종료 후 연결 설정과 스레드 저장소가 정리되고, 정리 중 실패해도 최초 예외를 보존한다.
+
+#### 진행 방식
+
+- 실패하는 테스트를 먼저 실행하고, 구현 후 같은 테스트의 통과를 확인한다.
+- 기능별로 테스트와 구현을 묶어 로컬 커밋한다.
+- 트랜잭션 동기화, 연결 획득과 반환, JdbcTemplate 연동, 서비스 역할 분리 순서로 진행한다.
+- 검증은 JDBC와 앱 모듈의 테스트로 수행한다.
+
+#### 생각해보기
+
+- PlatformTransactionManager는 getTransaction, commit, rollback으로 트랜잭션 경계를 추상화한다.
+  JDBC와 JPA 등 자원 종류에 맞는 구현체를 선택할 수 있다.
+- 로컬 트랜잭션은 하나의 자원에서 처리한다. 여러 독립 자원의 변경을 하나의 트랜잭션으로 묶으려면 글로벌 트랜잭션을 지원하는 조정자가 필요하다.
+- JTA는 글로벌 트랜잭션을 위한 API다. 스프링의 JtaTransactionManager는 JTA 트랜잭션 관리자와 연동한다.
+  여러 DataSource의 Connection을 스레드에 보관하는 것만으로 여러 DB의 원자성이 보장되지는 않는다.
+- 참고 문서 [스프링 트랜잭션 추상화](https://docs.spring.io/spring-framework/reference/data-access/transaction/strategies.html).
 
 </details>
