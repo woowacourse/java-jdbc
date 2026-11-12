@@ -34,28 +34,42 @@ public class JdbcTemplate {
         }
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        try {
+            return execute(connection, sql, statement -> bindParameters(statement, args),
+                    PreparedStatement::executeUpdate);
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute update: " + sql, e);
+        }
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, statement -> bindParameters(statement, args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
         try {
-            return execute(sql, setter, statement -> {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    final List<T> results = new ArrayList<>();
-                    while (resultSet.next()) {
-                        results.add(rowMapper.mapRow(resultSet, results.size()));
-                    }
-                    return results;
-                }
-            });
+            return execute(sql, setter, statement -> readRows(statement, rowMapper));
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute query: " + sql, e);
         }
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
+        return singleResult(query(sql, rowMapper, args));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql,
+                               final RowMapper<T> rowMapper, final Object... args) {
+        try {
+            return singleResult(execute(connection, sql, statement -> bindParameters(statement, args),
+                    statement -> readRows(statement, rowMapper)));
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to execute query: " + sql, e);
+        }
+    }
+
+    private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row, but got " + results.size());
         }
@@ -64,11 +78,28 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) throws SQLException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, callback);
+        }
+    }
+
+    // The caller owns the supplied connection; only close the statement here.
+    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
+                          final PreparedStatementCallback<T> callback) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.doInPreparedStatement(statement);
+        }
+    }
+
+    private <T> List<T> readRows(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet, results.size()));
+            }
+            return results;
         }
     }
 
