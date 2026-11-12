@@ -9,11 +9,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +39,13 @@ class JdbcTemplateTest {
         when(connection.prepareStatement("sql")).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void cleanUp() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -237,6 +246,63 @@ class JdbcTemplateTest {
         assertThat(failure.getSuppressed()).containsExactly(closeFailure);
         verify(statement).close();
         verify(connection, never()).close();
+    }
+
+    @Test
+    void updateReusesThreadBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update("sql", "new-password", 1L);
+
+        verify(statement).setObject(1, "new-password");
+        verify(statement).setObject(2, 1L);
+        verify(statement).executeUpdate();
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void queryReusesThreadBoundConnectionAndClosesQueryResources() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet)).thenReturn("row");
+
+        assertThat(jdbcTemplate.queryForObject("sql", rowMapper, 1L)).isEqualTo("row");
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(dataSource, never()).getConnection();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void failedQueryKeepsThreadBoundConnectionOpenForRollback() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final var failure = new SQLException("query failed");
+        when(statement.executeQuery()).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+    }
+
+    @Test
+    void runtimeMappingFailurePreservesConnectionCloseFailure() throws SQLException {
+        final var failure = new IllegalArgumentException("invalid row");
+        final var closeFailure = new SQLException("connection close failed");
+        when(resultSet.next()).thenReturn(true);
+        when(rowMapper.mapRow(resultSet)).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.query("sql", rowMapper))
+                .isSameAs(failure)
+                .hasSuppressedException(closeFailure);
+        verifyQueryResourcesClosed();
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
