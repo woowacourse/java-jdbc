@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,13 +36,24 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("단건 조회 결과가 0건이면 null을 반환한다")
-    void findReturnsNullWhenNoRows() throws SQLException {
+    @DisplayName("단건 조회 결과가 0건이면 데이터 접근 예외가 발생한다")
+    void findThrowsWhenNoRows() throws SQLException {
         when(resultSet.next()).thenReturn(false);
+
+        assertThatThrownBy(() -> jdbcTemplate.find("select name from users", rs -> rs.getString("name")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("단건 조회 결과가 없습니다.");
+    }
+
+    @Test
+    @DisplayName("단건 조회 결과가 1건이면 매핑한 객체를 반환한다")
+    void findReturnsMappedValueWhenOneRow() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("jiyeong");
 
         String result = jdbcTemplate.find("select name from users", rs -> rs.getString("name"));
 
-        assertThat(result).isNull();
+        assertThat(result).isEqualTo("jiyeong");
     }
 
     @Test

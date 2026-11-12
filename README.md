@@ -35,3 +35,32 @@ JdbcTemplate에서 User 객체를 직접 생성하는 대신, RowMapper로 전�
 각 메서드에서 DataSource로 JdbcTemplate을 생성하던 중복 코드를 제거하고, JdbcTemplate을 필드에 저장해 재사용하도록 했다. 
 이로써, UserDao에는 SQL과 인자, 결과 매핑 코드만 남고, DB 연결과 실행, 예외 처리, 자원 정리는 JdbcTemplate에 맡맡기게 되었다.
 DB 연결과 자원 관리를 JdbcTemplate에 맡기면서 UserDao가 DataSource를 직접 사용할 필요도 없어졌다.
+
+
+
+-------
+
+Step 2
+
+1. SQLException은 Checked Exception이다. 커스텀 Exception을 추가해서 사용자는 Unchecked Exception이 되도록 변경하자.
+기존에는 Checked Exception인 SQLException을 catch하고 RuntimeException을 반환했다.
+  
+이를 RuntimeException을 상속받은 DataAccessException으로 교체해주었다.
+
+*Unchecked Exception은 RuntimeException을 상속받은 모든 예외로 컴파일 시점에 에러가 터지지 않는다. 
+*Checked Exception은 컴파일 시점에 에러가 터진다. 
+
+2. RowMapper 인터페이스는 Object를 반환하고 있어서 캐스팅이 사용된다. 제네릭을 사용하도록 개선해보자.
+이미 Step 1에서 제너릭 타입을 사용하도록 코드를 수정했었다. (RowMapper.java 참고)
+따라서, Step 2에서 변경은 없다. 
+
+3. 매번 PreparedStatementSetter 인터페이스를 구현하려니 번거롭다. 가변인자를 사용해서 좀더 편리하게 만들 수 없을까?
+이미 Step 1에서 Object ...으로 인자를 받았기 때문에, Step 2에서 변경은 없다. 
+따라서, Step 2에서 변경은 없다.
+
+4. 람다를 적극적으로 활용해서 코드량을 줄여보자.
+이미 RowMapper에서 mapRow를 rs -> new User와 같이 람다 식으로 구현해 두었다. (UserDao.java 참고)
+따라서, Step 2에서 변경은 없다.
+
+
+5. JDBC 라이브러리	vs 개발자

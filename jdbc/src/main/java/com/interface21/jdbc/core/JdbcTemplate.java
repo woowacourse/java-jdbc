@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.interface21.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -13,8 +12,6 @@ import java.util.List;
 
 public class JdbcTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
-
     private final DataSource dataSource;
 
     public JdbcTemplate(final DataSource dataSource) {
@@ -22,58 +19,49 @@ public class JdbcTemplate {
     }
 
     public void update(String sql, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameter(params, pstmt);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+        execute(sql, PreparedStatement::executeUpdate, params);
     }
 
     public <T> T find(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            setParameter(params, pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery();) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                T result = rowMapper.mapRow(rs);
-
-                if (rs.next()) {
-                    throw new IllegalStateException("단건 조회 결과가 2건 이상입니다.");
-                }
-                return result;
+        return query(sql, rs -> {
+            if (!rs.next()) {
+                throw new IllegalStateException("단건 조회 결과가 없습니다.");
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+
+            T result = rowMapper.mapRow(rs);
+
+            if (rs.next()) {
+                throw new IllegalStateException("단건 조회 결과가 2건 이상입니다.");
+            }
+            return result;
+        }, params);
     }
 
     public <T> List<T> findAll(String sql, RowMapper<T> rowMapper, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);) {
-
-            setParameter(params, pstmt);
-
-            try (ResultSet rs = pstmt.executeQuery();) {
-                List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
+        return query(sql, rs -> {
+            List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
             }
+            return results;
+        }, params);
+    }
+
+    private <T> T query(String sql, SqlOperation<ResultSet, T> operation, Object... params) {
+        return execute(sql, pstmt -> {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return operation.apply(rs);
+            }
+        }, params);
+    }
+
+    private <T> T execute(String sql, SqlOperation<PreparedStatement, T> operation, Object... params) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            setParameter(params, pstmt);
+            return operation.apply(pstmt);
         } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException(e);
         }
     }
 
@@ -81,5 +69,11 @@ public class JdbcTemplate {
         for (int i = 0; i < params.length; i++) {
             pstmt.setObject(i + 1, params[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface SqlOperation<S, T> {
+
+        T apply(S source) throws SQLException;
     }
 }
