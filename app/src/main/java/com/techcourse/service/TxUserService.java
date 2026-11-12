@@ -29,11 +29,14 @@ public class TxUserService implements UserService {
 
     @Override
     public void changePassword(final long id, final String newPassword, final String createdBy) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("이미 진행 중인 트랜잭션이 있습니다.");
+        }
         final var connection = DataSourceUtils.getConnection(dataSource);
         try {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             try {
-                TransactionSynchronizationManager.bindResource(dataSource, connection);
                 userService.changePassword(id, newPassword, createdBy);
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
