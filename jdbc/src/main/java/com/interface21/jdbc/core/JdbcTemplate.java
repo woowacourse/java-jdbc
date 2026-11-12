@@ -56,6 +56,19 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter pstmtSetter, final StatementCallback<T> callback) {
         final Connection conn = DataSourceUtils.getConnection(dataSource);
+        final T result;
+        try {
+            result = executeStatement(conn, sql, pstmtSetter, callback);
+        } catch (RuntimeException e) {
+            releaseConnection(conn, e);
+            throw e;
+        }
+        DataSourceUtils.releaseConnection(conn, dataSource);
+        return result;
+    }
+
+    private <T> T executeStatement(final Connection conn, final String sql, final PreparedStatementSetter pstmtSetter,
+                                   final StatementCallback<T> callback) {
         try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             pstmtSetter.setValues(pstmt);
@@ -63,8 +76,15 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
-        } finally {
+        }
+    }
+
+    // 실행 중 발생한 예외를 유지하고, Connection 정리 실패는 suppressed로 남긴다.
+    private void releaseConnection(final Connection conn, final RuntimeException cause) {
+        try {
             DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (RuntimeException e) {
+            cause.addSuppressed(e);
         }
     }
 
