@@ -91,10 +91,10 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("selectOne: 첫 번째 행만 반환한다")
+    @DisplayName("selectOne: 한 행만 반환한다")
     void selectOne() throws SQLException {
-        when(resultSet.next()).thenReturn(true, true, false);
-        when(resultSet.getString("name")).thenReturn("a", "b");
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("a");
 
         final String name = jdbcTemplate.selectOne(SQL, NAME_MAPPER, 1L);
 
@@ -102,13 +102,24 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("selectOne: 결과가 없으면 null을 반환한다")
+    @DisplayName("selectOne: 결과가 없으면 예외를 던진다")
     void selectOneEmpty() throws SQLException {
         when(resultSet.next()).thenReturn(false);
 
-        final String name = jdbcTemplate.selectOne(SQL, NAME_MAPPER, 1L);
+        assertThatThrownBy(() -> jdbcTemplate.selectOne(SQL, NAME_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("found 0");
+    }
 
-        assertThat(name).isNull();
+    @Test
+    @DisplayName("selectOne: 결과가 여러 행이면 예외를 던진다")
+    void selectOneMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString("name")).thenReturn("a", "b");
+
+        assertThatThrownBy(() -> jdbcTemplate.selectOne(SQL, NAME_MAPPER, 1L))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("found 2");
     }
 
     @Test
