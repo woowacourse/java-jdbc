@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -35,38 +37,61 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        boolean committed = false;
-        try (var connection = dataSource.getConnection()) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("현재 스레드에 이미 트랜잭션 연결이 등록되어 있습니다.");
+        }
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             try {
-                updatePasswordAndLogHistory(connection, id, newPassword, createBy);
+                updatePasswordAndLogHistory(id, newPassword, createBy);
                 connection.commit();
-                committed = true;
-            } catch (SQLException | RuntimeException | Error failure) {
-                rollback(connection, failure);
-                throw failure;
+            } catch (SQLException | RuntimeException | Error exception) {
+                rollback(connection, exception);
+                throw exception;
             }
         } catch (SQLException exception) {
-            if (committed) {
-                throw new PasswordChangeCommittedException(exception);
-            }
-            throw new DataAccessException("비밀번호 변경 트랜잭션에 실패했습니다.", exception);
+            final var transactionFailure = new DataAccessException("비밀번호 변경 트랜잭션에 실패했습니다.", exception);
+            failure = transactionFailure;
+            throw transactionFailure;
+        } catch (RuntimeException | Error exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            releaseConnection(connection, failure);
         }
     }
 
-    private void updatePasswordAndLogHistory(final Connection connection, final long id,
-                                             final String newPassword, final String createBy) {
-        final var user = userDao.findById(connection, id);
+    private void updatePasswordAndLogHistory(final long id, final String newPassword, final String createBy) {
+        final var user = userDao.findById(id);
         user.changePassword(newPassword);
-        userDao.update(connection, user);
-        userHistoryDao.log(connection, new UserHistory(user, createBy));
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 
     private void rollback(final Connection connection, final Throwable failure) {
         try {
             connection.rollback();
-        } catch (SQLException rollbackFailure) {
-            failure.addSuppressed(rollbackFailure);
+        } catch (SQLException | RuntimeException | Error rollbackFailure) {
+            if (failure != rollbackFailure) {
+                failure.addSuppressed(rollbackFailure);
+            }
+        }
+    }
+
+    private void releaseConnection(final Connection connection, final Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (RuntimeException | Error releaseFailure) {
+            if (failure == null) {
+                throw new PasswordChangeCommittedException(releaseFailure);
+            }
+            if (failure != releaseFailure) {
+                failure.addSuppressed(releaseFailure);
+            }
         }
     }
 }
