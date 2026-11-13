@@ -12,7 +12,6 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -191,19 +190,5 @@ class TxUserServiceTest {
 
         verify(delegate).save(user);
         verify(dataSource, never()).getConnection();
-    }
-
-    @Test
-    void defaultConstructorUsesConfiguredDataSource() {
-        final var configuredDataSource = DataSourceConfig.getInstance();
-        doAnswer(invocation -> {
-            assertThat(TransactionSynchronizationManager.getResource(configuredDataSource)).isNotNull();
-            return null;
-        }).when(delegate).changePassword(1L, "newPassword", "gugu");
-
-        new TxUserService(delegate).changePassword(1L, "newPassword", "gugu");
-
-        verify(delegate).changePassword(1L, "newPassword", "gugu");
-        assertThat(TransactionSynchronizationManager.getResource(configuredDataSource)).isNull();
     }
 }

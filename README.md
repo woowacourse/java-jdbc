@@ -128,9 +128,18 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - DataSourceUtils는 일반 연결을 자동 등록하지 않는다. 트랜잭션에 속한 연결의 등록과 해제는 TxUserService가 담당한다.
 - DataSourceUtils는 등록된 연결의 조기 종료를 막는다. 트랜잭션이 끝나면 먼저 unbindResource로 등록을 해제한 뒤 releaseConnection으로 닫는다.
 - AppUserService와 DAO는 Connection을 전달받지 않고 기존 조회, 수정, 이력 저장 API를 사용한다.
-- `new TxUserService(appUserService)`는 DataSourceConfig의 DataSource를 사용한다.
-  별도의 DataSource가 필요하면 `new TxUserService(appUserService, dataSource)`로 주입한다.
+- `new TxUserService(appUserService, dataSource)`로 DAO와 같은 DataSource를 명시적으로 주입한다.
 - 커밋 또는 롤백 후 기존 autoCommit 설정을 복구한다. 롤백 자체가 실패하면 암묵적 커밋을 피하도록 복구를 건너뛰고 연결을 종료한다.
 - 연결 획득과 종료 실패는 원인을 가진 DataAccessException 하위 예외로 전달하고, 작업 중 정리 실패는 최초 예외의 suppressed로 남긴다.
+
+#### 리뷰 반영
+
+- [x] 애플리케이션 기본 DataSource와 DAO의 DataSource가 다를 때 DataSource를 생략하는 생성자를 사용하면 롤백되지 않는 상황을 테스트로 재현한다.
+- [x] TxUserService에서 DataSource를 생략하는 생성자와 DataSourceConfig 의존을 제거하고 DAO와 같은 DataSource를 생성자에 명시적으로 전달한다.
+- [x] 기본 DataSource와 다른 DataSource에서도 비밀번호와 이력이 함께 롤백되고 연결 등록이 해제되는지 검증한다.
+
+리뷰 상황을 재현했을 때는 롤백 후 기대한 `password` 대신 `newPassword`가 DB에 남아 테스트가 실패했다.
+DAO와 같은 DataSource를 명시적으로 주입한 뒤 같은 테스트가 통과했다.
+제거한 생성자의 테스트도 정리했으며, `./gradlew :jdbc:test :app:test --console=plain`으로 총 64개 테스트가 통과했다.
 
 </details>
