@@ -22,42 +22,60 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public void update(Connection connection, String sql, Object... params) {
+        execute(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> T find(String sql, RowMapper<T> rowMapper, Object... params) {
-        return query(sql, rs -> {
-            if (!rs.next()) {
-                throw new IllegalStateException("단건 조회 결과가 없습니다.");
-            }
+        return execute(sql, query(rs -> mapSingleRow(rs, rowMapper)), params);
+    }
 
-            T result = rowMapper.mapRow(rs);
+    public <T> T find(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
+        return execute(connection, sql, query(rs -> mapSingleRow(rs, rowMapper)), params);
+    }
 
-            if (rs.next()) {
-                throw new IllegalStateException("단건 조회 결과가 2건 이상입니다.");
-            }
-            return result;
-        }, params);
+    private <T> T mapSingleRow(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
+        if (!rs.next()) {
+            throw new IllegalStateException("단건 조회 결과가 없습니다.");
+        }
+
+        T result = rowMapper.mapRow(rs);
+
+        if (rs.next()) {
+            throw new IllegalStateException("단건 조회 결과가 2건 이상입니다.");
+        }
+        return result;
     }
 
     public <T> List<T> findAll(String sql, RowMapper<T> rowMapper, Object... params) {
-        return query(sql, rs -> {
+        return execute(sql, query(rs -> {
             List<T> results = new ArrayList<>();
             while (rs.next()) {
                 results.add(rowMapper.mapRow(rs));
             }
             return results;
-        }, params);
+        }), params);
     }
 
-    private <T> T query(String sql, SqlOperation<ResultSet, T> operation, Object... params) {
-        return execute(sql, pstmt -> {
+    private <T> SqlOperation<PreparedStatement, T> query(SqlOperation<ResultSet, T> operation) {
+        return pstmt -> {
             try (ResultSet rs = pstmt.executeQuery()) {
                 return operation.apply(rs);
             }
-        }, params);
+        };
     }
 
     private <T> T execute(String sql, SqlOperation<PreparedStatement, T> operation, Object... params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, operation, params);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(Connection connection, String sql, SqlOperation<PreparedStatement, T> operation,
+                          Object... params) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setParameter(params, pstmt);
             return operation.apply(pstmt);
         } catch (SQLException e) {
