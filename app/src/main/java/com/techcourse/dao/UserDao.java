@@ -4,7 +4,6 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -30,22 +29,12 @@ public class UserDao {
                 user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, "update users set account = ?, password = ?, email = ? where id = ?",
-                user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public List<User> findAll() {
         return jdbcTemplate.query("select id, account, password, email from users order by id", USER_MAPPER);
     }
 
     public User findById(final Long id) {
         return jdbcTemplate.queryForObject("select id, account, password, email from users where id = ?",
-                USER_MAPPER, id);
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        return jdbcTemplate.queryForObject(connection, "select id, account, password, email from users where id = ?",
                 USER_MAPPER, id);
     }
 
