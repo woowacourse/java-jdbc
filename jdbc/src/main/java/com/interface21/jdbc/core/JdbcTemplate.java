@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,25 +26,12 @@ public class JdbcTemplate {
         return execute(sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... params) {
-        return execute(connection, sql, createPreparedStatementSetter(params), PreparedStatement::executeUpdate);
-    }
-
     public <T> T queryForObject(
             final String sql,
             final RowMapper<T> rowMapper,
             final Object... params
     ) {
         return execute(sql, createPreparedStatementSetter(params), createQueryForObjectCallback(rowMapper));
-    }
-
-    public <T> T queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... params
-    ) {
-        return execute(connection, sql, createPreparedStatementSetter(params), createQueryForObjectCallback(rowMapper));
     }
 
     public <T> List<T> query(
@@ -68,12 +56,20 @@ public class JdbcTemplate {
             final PreparedStatementSetter statementSetter,
             final PreparedStatementCallback<T> callback
     ) {
-        try (Connection conn = dataSource.getConnection()) {
-            return execute(conn, sql, statementSetter, callback);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException("SQL 실행에 실패했습니다.", e);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        final T result;
+        try {
+            result = execute(connection, sql, statementSetter, callback);
+        } catch (RuntimeException | Error e) {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
         }
+        DataSourceUtils.releaseConnection(connection, dataSource);
+        return result;
     }
 
     private <T> T execute(

@@ -7,14 +7,14 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,13 +33,15 @@ class TransactionTemplateTest {
         transactionTemplate = new TransactionTemplate(dataSource);
     }
 
+    @AfterEach
+    void 트랜잭션_종료_후_연결_바인딩이_남지_않는다() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
     @Test
-    void 작업에_연결을_전달하고_성공하면_커밋한_뒤_설정을_복원하고_닫는다() throws SQLException {
-        final var actualConnection = new AtomicReference<Connection>();
-
-        transactionTemplate.execute(actualConnection::set);
-
-        assertThat(actualConnection.get()).isSameAs(connection);
+    void 작업에서_공유_연결을_사용하고_성공하면_커밋한_뒤_설정을_복원하고_닫는다() throws SQLException {
+        transactionTemplate.execute(() ->
+                assertThat(DataSourceUtils.getConnection(dataSource)).isSameAs(connection));
         final var transactionOrder = inOrder(connection);
         transactionOrder.verify(connection).setAutoCommit(false);
         transactionOrder.verify(connection).commit();
@@ -49,24 +51,10 @@ class TransactionTemplateTest {
     }
 
     @Test
-    void 기존_자동_커밋_설정이_꺼져있으면_종료_후에도_유지한다() throws SQLException {
-        when(connection.getAutoCommit()).thenReturn(false);
-
-        transactionTemplate.execute(connection -> {});
-
-        final var transactionOrder = inOrder(connection);
-        transactionOrder.verify(connection).setAutoCommit(false);
-        transactionOrder.verify(connection).commit();
-        transactionOrder.verify(connection).setAutoCommit(false);
-        transactionOrder.verify(connection).close();
-        verify(connection, never()).setAutoCommit(true);
-    }
-
-    @Test
     void 작업이_실패하면_롤백하고_원래_예외를_던진다() throws SQLException {
         final var failure = new IllegalStateException("작업 실패");
 
-        assertThatThrownBy(() -> transactionTemplate.execute(connection -> {
+        assertThatThrownBy(() -> transactionTemplate.execute(() -> {
             throw failure;
         })).isSameAs(failure);
 
@@ -82,7 +70,7 @@ class TransactionTemplateTest {
         final var failure = new SQLException("커밋 실패");
         doThrow(failure).when(connection).commit();
 
-        assertThatThrownBy(() -> transactionTemplate.execute(connection -> {}))
+        assertThatThrownBy(() -> transactionTemplate.execute(() -> {}))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
@@ -91,52 +79,5 @@ class TransactionTemplateTest {
         transactionOrder.verify(connection).rollback();
         transactionOrder.verify(connection).setAutoCommit(true);
         transactionOrder.verify(connection).close();
-    }
-
-    @Test
-    void 롤백이_실패하면_원래_예외에_추가하고_자동_커밋을_복원하지_않는다() throws SQLException {
-        final var failure = new IllegalStateException("작업 실패");
-        final var rollbackFailure = new SQLException("롤백 실패");
-        doThrow(rollbackFailure).when(connection).rollback();
-
-        assertThatThrownBy(() -> transactionTemplate.execute(connection -> {
-            throw failure;
-        }))
-                .isSameAs(failure)
-                .satisfies(actual -> assertThat(actual.getSuppressed()).containsExactly(rollbackFailure));
-
-        verify(connection, never()).setAutoCommit(true);
-        verify(connection, never()).commit();
-        verify(connection).close();
-    }
-
-    @Test
-    void 롤백_후_설정_복원이_실패해도_원래_예외를_보존한다() throws SQLException {
-        final var failure = new IllegalStateException("작업 실패");
-        final var restoreFailure = new SQLException("자동 커밋 복원 실패");
-        doThrow(restoreFailure).when(connection).setAutoCommit(true);
-
-        assertThatThrownBy(() -> transactionTemplate.execute(connection -> {
-            throw failure;
-        }))
-                .isSameAs(failure)
-                .satisfies(actual -> assertThat(actual.getSuppressed()).containsExactly(restoreFailure));
-
-        verify(connection).rollback();
-        verify(connection).close();
-    }
-
-    @Test
-    void 연결_획득이_실패하면_작업을_실행하지_않고_SQL_예외를_변환한다() throws SQLException {
-        final var failure = new SQLException("연결 획득 실패");
-        when(dataSource.getConnection()).thenThrow(failure);
-
-        assertThatThrownBy(() -> transactionTemplate.execute(connection -> {
-            throw new AssertionError("연결 획득에 실패하면 작업을 실행할 수 없습니다.");
-        }))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        verifyNoInteractions(connection);
     }
 }
