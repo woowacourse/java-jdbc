@@ -7,31 +7,34 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
     private DataSourceUtils() {}
 
+    // 트랜잭션이 진행 중이면 바인딩된 Connection을, 아니면 새 Connection을 반환한다.
+    // 바인딩은 트랜잭션을 시작하는 쪽에서 하므로 여기서는 하지 않는다.
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection != null) {
             return connection;
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
+    // 트랜잭션에 바인딩된 Connection은 트랜잭션을 시작한 쪽이 닫으므로 여기서 닫지 않는다.
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == TransactionSynchronizationManager.getResource(dataSource)) {
+            return;
+        }
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
         }
     }
 }
