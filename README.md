@@ -64,3 +64,21 @@ Step 2
 
 
 5. JDBC 라이브러리	vs 개발자
+
+
+------
+
+
+Step 4
+
+1. `UserService`에서 JDBC 연결을 `DataSourceUtils`로 반환하려면 왜 `try-with-resources`를 `finally`로 바꿔야 할까?
+   기존 `try-with-resources`는 블록이 끝날 때 `Connection.close()`를 직접 호출한다.
+   `UserService.changePassword()`는 성공하거나 예외가 발생해도 연결 반환을 `DataSourceUtils.releaseConnection()`에 맡기기 위해 `finally`로 바꿨다.
+   트랜잭션 동기화를 적용하면 이 메서드에서 공유 중인 연결을 트랜잭션이 끝날 때까지 열어둘 수 있다.
+
+2. JPA나 JMS를 쓰거나 여러 데이터소스를 한 트랜잭션으로 묶으려면 어떻게 해야 할까?
+   이번 미션처럼 DB 하나에서 비밀번호 변경과 이력 저장을 함께 처리하는 것을 **로컬 트랜잭션**이라고 한다. Spring은 JDBC, JPA, JMS 각각에 맞는 트랜잭션 매니저를 제공한다. 모두 `PlatformTransactionManager`라는 공통 인터페이스를 구현하므로, 시작·커밋·롤백을 같은 방식으로 요청할 수 있다. [Spring 트랜잭션 추상화](https://docs.spring.io/spring-framework/reference/data-access/transaction/strategies.html)
+
+   비밀번호는 DB에서 바꾸고 알림은 메시지 브로커에 보낸다고 해보자. 두 작업을 함께 확정하거나 취소해야 한다면, DB와 메시지 브로커를 하나의 **글로벌 트랜잭션**에 참여시킨다. 서로 독립적인 DB 두 개를 묶을 때도 같은 방식이다.
+
+   **JTA**는 자바에서 이런 트랜잭션을 다루는 표준 API다. Spring의 `JtaTransactionManager`를 사용하고 각 리소스를 XA에 참여하도록 설정하면, JTA 코디네이터가 양쪽의 준비 상태를 확인해 커밋 또는 롤백을 조정한다. [Spring의 JTA 분산 트랜잭션](https://docs.spring.io/spring-boot/reference/io/jta.html)
