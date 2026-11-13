@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,6 +41,53 @@ class JdbcTemplateTest {
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
+    }
+
+    @Test
+    @DisplayName("트랜잭션 내 작업은 하나의 연결을 공유한다")
+    void reuseTransactionConnectionForAllOperationsWithoutClosingIt() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        DataSourceUtils.getConnection(dataSource);
+        try {
+            jdbcTemplate.update("UPDATE users SET name = ?", "피카츄");
+            assertThat(jdbcTemplate.selectOne("SELECT name FROM users", row -> "피카츄")).isEmpty();
+            assertThat(jdbcTemplate.selectMany("SELECT name FROM users", row -> "피카츄")).isEmpty();
+
+            verify(dataSource).getConnection();
+            verify(connection, never()).close();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Test
+    @DisplayName("SQL 예외가 발생해도 연결을 닫지 않는다")
+    void keepTransactionConnectionBoundWhenMappingFails() throws SQLException {
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        DataSourceUtils.getConnection(dataSource);
+        try {
+            assertThatThrownBy(() -> jdbcTemplate.selectOne("SELECT name FROM users", row -> {
+                throw new SQLException("mapping failed");
+            })).isInstanceOf(DataAccessException.class);
+
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Test
+    @DisplayName("트랜잭션 없이 실행한 작업은 사용한 연결을 해제한다")
+    void standaloneCallClosesConnectionAndUnbindsResource() throws SQLException {
+        jdbcTemplate.update("UPDATE users SET name = ?", "피카츄");
+
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Nested
