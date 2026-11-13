@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -55,9 +56,14 @@ class UserServiceTest {
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
+        final var historyCount = jdbcTemplate.queryForObject(
+                "select count(*) from user_history where user_id = ? and password = ?",
+                rs -> rs.getInt(1), 1L, newPassword);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(historyCount).isEqualTo(1);
     }
 
     @Test
@@ -66,14 +72,16 @@ class UserServiceTest {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var userService = new UserService(userDao, userHistoryDao, dataSource);
 
+        final var originalPassword = userService.findById(1L).getPassword();
         final var newPassword = "newPassword";
         final var createBy = "gugu";
         // 트랜잭션이 정상 동작하는지 확인하기 위해 의도적으로 MockUserHistoryDao에서 예외를 발생시킨다.
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo(originalPassword);
     }
 }
