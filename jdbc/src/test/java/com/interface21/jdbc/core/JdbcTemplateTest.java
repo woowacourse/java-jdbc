@@ -9,17 +9,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection conn;
     private PreparedStatement pstmt;
     private ResultSet rs;
@@ -27,7 +30,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
@@ -37,6 +40,11 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @DisplayName("update는 영향받은 행 수를 반환한다")
@@ -57,6 +65,20 @@ class JdbcTemplateTest {
         verify(pstmt).executeUpdate();
         verify(pstmt).close();
         verify(conn, never()).close();
+    }
+
+    @DisplayName("트랜잭션에 바인딩된 Connection이 있으면 그 Connection으로 실행하고 닫지 않는다")
+    @Test
+    void updateWithBoundConnection() throws SQLException {
+        Connection boundConn = mock(Connection.class);
+        when(boundConn.prepareStatement(anyString())).thenReturn(pstmt);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConn);
+
+        jdbcTemplate.update("update users set account = ?", "gugu");
+
+        verify(boundConn).prepareStatement(anyString());
+        verify(boundConn, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     @DisplayName("update 실행 중 예외가 발생해도 자원을 반납하고 원인 예외를 보존한다")
