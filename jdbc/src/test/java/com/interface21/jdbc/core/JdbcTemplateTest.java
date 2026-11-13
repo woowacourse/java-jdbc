@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -237,8 +238,12 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
-        assertThat(failure.getSuppressed())
-                .containsExactly(resultSetCloseFailure, statementCloseFailure, connectionCloseFailure);
+        assertThat(failure.getSuppressed()).hasSize(3);
+        assertThat(failure.getSuppressed()[0]).isSameAs(resultSetCloseFailure);
+        assertThat(failure.getSuppressed()[1]).isSameAs(statementCloseFailure);
+        assertThat(failure.getSuppressed()[2])
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(connectionCloseFailure);
         verifyQueryResourcesClosed();
     }
 
