@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
@@ -43,6 +44,21 @@ public class FirstUserService {
         final var secondTransactionName = secondUserService.saveSecondTransactionWithRequired();
 
         return of(firstTransactionName, secondTransactionName);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void saveWithRequiredAndCatchInnerFailure() {
+        userRepository.save(User.createTest());
+        try {
+            secondUserService.saveWithRequiredAndFail();
+        } catch (IllegalStateException e) {
+            log.info("외부에서 내부 예외 처리: {}", e.getMessage());
+        }
+
+        log.info("내부 예외 처리 후 rollback-only: {}",
+                TransactionAspectSupport.currentTransactionStatus().isRollbackOnly());
+        userRepository.save(User.createTest());
+        log.info("외부 메서드 본문 정상 종료, 현재 조회 건수: {}", userRepository.count());
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
