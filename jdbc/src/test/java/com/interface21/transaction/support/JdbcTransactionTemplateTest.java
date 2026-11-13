@@ -1,10 +1,6 @@
-package com.techcourse.service;
+package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +11,6 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -24,20 +18,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class UserServiceTransactionTest {
+class JdbcTransactionTemplateTest {
 
     private final DataSource dataSource = mock(DataSource.class);
     private final Connection connection = mock(Connection.class);
-    private final UserDao userDao = mock(UserDao.class);
-    private final UserHistoryDao historyDao = mock(UserHistoryDao.class);
-    private final UserService userService = new UserService(dataSource, userDao, historyDao);
+    private final Runnable action = mock(Runnable.class);
+    private final JdbcTransactionTemplate transactionTemplate = new JdbcTransactionTemplate(dataSource);
 
     @BeforeEach
     void setup() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L))
-                .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
     }
 
     @Test
@@ -45,7 +36,7 @@ class UserServiceTransactionTest {
         final var cause = new SQLException("commit failed");
         doThrow(cause).when(connection).commit();
 
-        assertThatThrownBy(() -> userService.changePassword(1L, "changed", "admin"))
+        assertThatThrownBy(() -> transactionTemplate.execute(action))
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         final var order = inOrder(connection);
@@ -58,22 +49,23 @@ class UserServiceTransactionTest {
     void rollbackFailurePreservesOriginalExceptionAndClosesConnection() throws SQLException {
         final var cause = new IllegalStateException("history failed");
         final var rollbackFailure = new SQLException("rollback failed");
-        doThrow(cause).when(historyDao).log(eq(connection), any(UserHistory.class));
+        doThrow(cause).when(action).run();
         doThrow(rollbackFailure).when(connection).rollback();
 
-        assertThatThrownBy(() -> userService.changePassword(1L, "changed", "admin")).isSameAs(cause);
+        assertThatThrownBy(() -> transactionTemplate.execute(action)).isSameAs(cause);
 
         assertThat(cause.getSuppressed()).containsExactly(rollbackFailure);
         verify(connection, never()).commit();
         verify(connection, never()).setAutoCommit(true);
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
-    void autoCommitRestoreFailureAfterCommitKeepsPasswordChangeSuccessful() throws SQLException {
+    void autoCommitRestoreFailureAfterCommitKeepsTransactionSuccessful() throws SQLException {
         doThrow(new SQLException("restore failed")).when(connection).setAutoCommit(true);
 
-        assertThatCode(() -> userService.changePassword(1L, "changed", "admin"))
+        assertThatCode(() -> transactionTemplate.execute(action))
                 .doesNotThrowAnyException();
 
         verify(connection).commit();
@@ -81,12 +73,45 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    void closeFailureAfterCommitKeepsPasswordChangeSuccessful() throws SQLException {
+    void closeFailureAfterCommitKeepsTransactionSuccessful() throws SQLException {
         doThrow(new SQLException("close failed")).when(connection).close();
 
-        assertThatCode(() -> userService.changePassword(1L, "changed", "admin"))
+        assertThatCode(() -> transactionTemplate.execute(action))
                 .doesNotThrowAnyException();
 
         verify(connection).commit();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void nestedCallLeavesCommitAndCloseToTheOuterTransaction() throws SQLException {
+        final var nested = new JdbcTransactionTemplate(dataSource);
+
+        transactionTemplate.execute(() -> {
+            nested.execute(() -> assertThat(TransactionSynchronizationManager.getResource(dataSource))
+                    .isSameAs(connection));
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        });
+
+        verify(dataSource).getConnection();
+        verify(connection).commit();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void caughtNestedFailureStillRollsBackTheOuterTransaction() throws SQLException {
+        final var nested = new JdbcTransactionTemplate(dataSource);
+        final var cause = new IllegalStateException("nested action failed");
+        doThrow(cause).when(action).run();
+
+        assertThatThrownBy(() -> transactionTemplate.execute(() ->
+                assertThatThrownBy(() -> nested.execute(action)).isSameAs(cause)))
+                .isInstanceOf(DataAccessException.class).hasMessageContaining("rollback-only");
+
+        verify(connection, never()).commit();
+        verify(connection).rollback();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 }
