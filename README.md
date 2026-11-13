@@ -104,6 +104,38 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 </details>
 
 <details>
-<summary>Step 4</summary>
+<summary>Step 4 - Transaction synchronization 적용하기</summary>
+
+#### 기능 요구사항
+
+- [x] TransactionSynchronizationManager에 스레드별로 DataSource와 Connection을 등록, 조회, 해제한다.
+- [x] 같은 스레드와 DataSource에서는 같은 Connection을 사용하고, 다른 스레드의 연결은 분리한다.
+- [x] 마지막 Connection을 해제하면 ThreadLocal을 정리한다.
+- [x] DataSourceUtils에서 동기화된 Connection을 재사용하고, 동기화된 연결은 DAO 작업 후에도 열어 둔다.
+- [x] 트랜잭션 밖에서 얻은 연결은 작업 종료 시 닫는다.
+- [x] JdbcTemplate이 DataSourceUtils를 통해 연결을 얻고 반환하도록 변경한다.
+- [x] DAO와 비즈니스 서비스 호출에서 Connection 매개변수를 제거한다.
+- [x] findById, save, changePassword를 선언한 UserService 인터페이스를 정의하고 AppUserService와 TxUserService로 역할을 분리한다.
+- [x] AppUserService는 사용자 조회, 비밀번호 변경, 이력 저장의 비즈니스 로직을 담당한다.
+- [x] TxUserService는 연결 등록, 트랜잭션 시작, 커밋과 롤백, 연결 해제와 종료를 담당한다.
+- [x] 성공 시 비밀번호와 이력을 함께 커밋하고, 실패 시 두 변경을 함께 롤백한다.
+- [x] 트랜잭션 종료 후 연결 설정과 스레드 저장소가 정리되고, 정리 중 실패해도 최초 예외를 보존한다.
+
+#### 구현 내용
+
+- TxUserService가 DataSourceUtils로 연결을 얻고 TransactionSynchronizationManager에 등록한다.
+  같은 스레드의 JdbcTemplate은 같은 DataSource에 등록된 연결을 재사용한다.
+- DataSourceUtils는 일반 연결을 자동 등록하지 않는다. 트랜잭션에 속한 연결의 등록과 해제는 TxUserService가 담당한다.
+- DataSourceUtils는 등록된 연결의 조기 종료를 막는다. 트랜잭션이 끝나면 먼저 unbindResource로 등록을 해제한 뒤 releaseConnection으로 닫는다.
+- AppUserService와 DAO는 Connection을 전달받지 않고 기존 조회, 수정, 이력 저장 API를 사용한다.
+- `new TxUserService(appUserService, dataSource)`로 DAO와 같은 DataSource를 명시적으로 주입한다.
+- 커밋 또는 롤백 후 기존 autoCommit 설정을 복구한다. 롤백 자체가 실패하면 암묵적 커밋을 피하도록 복구를 건너뛰고 연결을 종료한다.
+- 연결 획득과 종료 실패는 원인을 가진 DataAccessException 하위 예외로 전달하고, 작업 중 정리 실패는 최초 예외의 suppressed로 남긴다.
+
+#### 리뷰 반영
+
+- [x] 애플리케이션 기본 DataSource와 DAO의 DataSource가 다를 때 DataSource를 생략하는 생성자를 사용하면 롤백되지 않는 상황을 테스트로 재현한다.
+- [x] TxUserService에서 DataSource를 생략하는 생성자와 DataSourceConfig 의존을 제거하고 DAO와 같은 DataSource를 생성자에 명시적으로 전달한다.
+- [x] 기본 DataSource와 다른 DataSource에서도 비밀번호와 이력이 함께 롤백되고 연결 등록이 해제되는지 검증한다.
 
 </details>

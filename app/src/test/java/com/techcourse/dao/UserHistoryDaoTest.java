@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -36,24 +37,30 @@ class UserHistoryDaoTest {
     }
 
     @Test
-    void logsHistoryWithProvidedConnectionAndRollsBack() throws SQLException {
+    void logsHistoryWithThreadBoundConnectionAndRollsBack() throws SQLException {
         final var jdbcTemplate = new JdbcTemplate(dataSource);
         final var dao = new UserHistoryDao(jdbcTemplate);
         final var history = new UserHistory(new User(7L, "pino", "new-password", "pino@example.com"), "admin");
 
         try (final var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                dao.log(history);
 
-            dao.log(connection, history);
+                final var uncommittedCount = jdbcTemplate.queryForObject("select count(*) from user_history",
+                        resultSet -> resultSet.getLong(1));
+                assertThat(uncommittedCount).isEqualTo(1L);
+                try (final var observer = dataSource.getConnection()) {
+                    final var committedCount = jdbcTemplate.queryForObject(observer,
+                            "select count(*) from user_history", resultSet -> resultSet.getLong(1));
+                    assertThat(committedCount).isZero();
+                }
 
-            final var uncommittedCount = jdbcTemplate.queryForObject(connection, "select count(*) from user_history",
-                    resultSet -> resultSet.getLong(1));
-            final var committedCount = jdbcTemplate.queryForObject("select count(*) from user_history",
-                    resultSet -> resultSet.getLong(1));
-            assertThat(uncommittedCount).isEqualTo(1L);
-            assertThat(committedCount).isZero();
-
-            connection.rollback();
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
         final var countAfterRollback = jdbcTemplate.queryForObject("select count(*) from user_history",
                 resultSet -> resultSet.getLong(1));

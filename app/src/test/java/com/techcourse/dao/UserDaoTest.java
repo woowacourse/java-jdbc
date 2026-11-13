@@ -2,6 +2,7 @@ package com.techcourse.dao;
 
 import com.techcourse.config.DataSourceConfig;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.SQLException;
@@ -119,18 +120,28 @@ class UserDaoTest {
     }
 
     @Test
-    void updatesAndFindsUserWithProvidedConnection() throws SQLException {
-        try (final var connection = DataSourceConfig.getInstance().getConnection()) {
+    void updatesAndFindsUserWithThreadBoundConnection() throws SQLException {
+        final var dataSource = DataSourceConfig.getInstance();
+        try (final var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            final var user = userDao.findById(connection, 1L);
-            user.changePassword("transaction-password");
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                final var user = userDao.findById(1L);
+                user.changePassword("transaction-password");
 
-            userDao.update(connection, user);
+                userDao.update(user);
 
-            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("transaction-password");
-            assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo("transaction-password");
+                try (final var observer = dataSource.getConnection()) {
+                    final var password = new JdbcTemplate(dataSource).queryForObject(observer,
+                            "select password from users where id = ?", resultSet -> resultSet.getString(1), 1L);
+                    assertThat(password).isEqualTo("password");
+                }
 
-            connection.rollback();
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
     }
