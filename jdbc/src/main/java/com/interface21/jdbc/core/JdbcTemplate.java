@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,10 +26,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final Object... args) {
         return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -59,10 +57,15 @@ public class JdbcTemplate {
             final PreparedStatementSetter pss,
             final PreparedStatementCallback<T> action
     ) {
-        try (Connection conn = dataSource.getConnection()) {
+        final boolean inTransaction = TransactionSynchronizationManager.getResource(dataSource) != null;
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, pss, action);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            if (!inTransaction) {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
