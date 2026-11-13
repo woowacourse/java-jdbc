@@ -131,7 +131,7 @@ public class UserService {
 
 ### 기능 요구 사항
 
-- [ ] UserServiceTest 클래스에서 @Disabled를 삭제하고 미션을 진행한다.
+- [x] UserServiceTest 클래스에서 @Disabled를 삭제하고 미션을 진행한다.
 
 #### 트랜잭션 경계 설정하기
 
@@ -166,7 +166,7 @@ try (final var connection = dataSource.getConnection();) {
 
 현재 userDao와 userHistoryDao는 각각 Connection 객체를 만들기 때문에 개별적으로 트랜잭션이 생성된다.
 
-- [ ] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경하자.
+- [x] userDao와 userHistoryDao를 한 트랜잭션으로 묶으려면 동일한 Connection 객체를 사용하도록 변경하자.
 
 ```java
 final var connection = dataSource.getConnection();
