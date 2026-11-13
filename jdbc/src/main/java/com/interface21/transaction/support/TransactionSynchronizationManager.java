@@ -8,11 +8,16 @@ import java.util.Objects;
 
 public abstract class TransactionSynchronizationManager {
 
-    private static final ThreadLocal<Map<DataSource, Connection>> resources = new ThreadLocal<>();
+    private static final ThreadLocal<Map<DataSource, ConnectionHolder>> resources = new ThreadLocal<>();
 
     private TransactionSynchronizationManager() {}
 
     public static Connection getResource(final DataSource dataSource) {
+        final var holder = getConnectionHolder(dataSource);
+        return holder == null ? null : holder.connection;
+    }
+
+    static ConnectionHolder getConnectionHolder(final DataSource dataSource) {
         final var connections = resources.get();
         return connections == null ? null : connections.get(dataSource);
     }
@@ -25,7 +30,7 @@ public abstract class TransactionSynchronizationManager {
             connections = new HashMap<>();
             resources.set(connections);
         }
-        if (connections.putIfAbsent(dataSource, connection) != null) {
+        if (connections.putIfAbsent(dataSource, new ConnectionHolder(connection)) != null) {
             throw new IllegalStateException("A Connection is already bound to this DataSource");
         }
     }
@@ -35,10 +40,20 @@ public abstract class TransactionSynchronizationManager {
         if (connections == null) {
             return null;
         }
-        final var connection = connections.remove(dataSource);
+        final var holder = connections.remove(dataSource);
         if (connections.isEmpty()) {
             resources.remove();
         }
-        return connection;
+        return holder == null ? null : holder.connection;
+    }
+
+    static final class ConnectionHolder {
+
+        private final Connection connection;
+        boolean rollbackOnly;
+
+        private ConnectionHolder(final Connection connection) {
+            this.connection = connection;
+        }
     }
 }

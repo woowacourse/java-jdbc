@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.JdbcTransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -98,7 +99,8 @@ class UserServiceTest {
     }
 
     private UserService createUserService(final UserHistoryDao userHistoryDao) {
-        return new TxUserService(DataSourceConfig.getInstance(), new AppUserService(userDao, userHistoryDao));
+        final var transactionTemplate = new JdbcTransactionTemplate(DataSourceConfig.getInstance());
+        return new TxUserService(transactionTemplate, new AppUserService(userDao, userHistoryDao));
     }
 
     private record SavedHistory(long userId, String password, String createdBy, LocalDateTime createdAt) {
