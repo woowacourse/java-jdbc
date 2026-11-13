@@ -8,6 +8,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +30,23 @@ class UserServiceTest {
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void transactionResourceIsReleased() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void canStartAnotherTransactionAfterRollback() {
+        final var failing = new TxUserService(
+                new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate)), dataSource);
+        assertThrows(DataAccessException.class, () -> failing.changePassword(1L, "failed", "gugu"));
+        final var succeeding = new TxUserService(
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)), dataSource);
+        succeeding.changePassword(1L, "succeeded", "gugu");
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("succeeded");
+        assertThat(historyCount()).isEqualTo(1);
     }
 
     @Test
