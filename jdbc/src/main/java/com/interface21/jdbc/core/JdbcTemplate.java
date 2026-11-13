@@ -21,11 +21,11 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return executeQuery(sql, PreparedStatement::executeUpdate, args);
+        return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
     public int update(final Connection connection, final String sql, final Object... args) {
-        return executeQuery(connection, sql, PreparedStatement::executeUpdate, args);
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -39,7 +39,7 @@ public class JdbcTemplate {
             final RowMapper<T> rowMapper,
             final Object... args
     ) {
-        final var results = executeQuery(connection, sql, createQueryCallback(rowMapper), args);
+        final var results = execute(connection, sql, createQueryCallback(rowMapper), args);
         return getSingleResult(results);
     }
 
@@ -51,7 +51,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, createQueryCallback(rowMapper), args);
+        return execute(sql, createQueryCallback(rowMapper), args);
     }
 
     private <T> PreparedStatementCallback<List<T>> createQueryCallback(final RowMapper<T> rowMapper) {
@@ -66,20 +66,20 @@ public class JdbcTemplate {
         };
     }
 
-    private <T> T executeQuery(
+    private <T> T execute(
             final String sql,
             final PreparedStatementCallback<T> callback,
             final Object... args
     ) {
         try (final var connection = dataSource.getConnection()) {
-            return executeQuery(connection, sql, callback, args);
+            return execute(connection, sql, callback, args);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
     }
 
-    private <T> T executeQuery(
+    private <T> T execute(
             final Connection connection,
             final String sql,
             final PreparedStatementCallback<T> callback,
