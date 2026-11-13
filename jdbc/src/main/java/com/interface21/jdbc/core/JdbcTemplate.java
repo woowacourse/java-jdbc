@@ -29,22 +29,12 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
     }
 
-    public int update(Connection conn, String sql, Object... params) {
-        return execute(conn, sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> readRows(pstmt, rowMapper), pstmt -> setParameters(pstmt, params));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         return singleResult(query(sql, rowMapper, params));
-    }
-
-    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = execute(conn, sql, pstmt -> readRows(pstmt, rowMapper),
-                pstmt -> setParameters(pstmt, params));
-        return singleResult(results);
     }
 
     private static <T> List<T> readRows(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
