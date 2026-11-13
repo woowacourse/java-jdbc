@@ -125,4 +125,20 @@ class JdbcTemplateTest {
         verify(statement).close();
         verify(connection).close();
     }
+
+    @Test
+    void queryForObjectRejectsZeroRows() throws SQLException {
+        when(resultSet.next()).thenReturn(false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select password from users", rs -> "password"))
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void queryForObjectRejectsMultipleRows() throws SQLException {
+        when(resultSet.next()).thenReturn(true, true, false);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject("select password from users", rs -> "password"))
+                .isInstanceOf(DataAccessException.class);
+    }
 }
