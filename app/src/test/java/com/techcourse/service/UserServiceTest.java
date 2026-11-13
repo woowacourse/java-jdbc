@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -42,10 +43,11 @@ class UserServiceTest {
 
     @Test
     void testChangePassword() {
-        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = transactionalService(new UserHistoryDao(jdbcTemplate));
 
         userService.changePassword(1L, "qqqqq", "gugu");
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         assertThat(userService.findById(1L).getPassword()).isEqualTo("qqqqq");
         final Integer historyCount = jdbcTemplate.queryForObject(
                 "select count(*) from user_history where user_id = ? and password = ? and created_by = ?",
@@ -55,7 +57,7 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollback() {
-        final var userService = new UserService(dataSource, userDao, new MockUserHistoryDao(jdbcTemplate));
+        final var userService = transactionalService(new MockUserHistoryDao(jdbcTemplate));
 
         final var failure = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -66,7 +68,7 @@ class UserServiceTest {
 
     @Test
     void rollsBackPasswordWhenHistoryInsertFails() {
-        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = transactionalService(new UserHistoryDao(jdbcTemplate));
 
         final var failure = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "a".repeat(101)));
@@ -75,7 +77,12 @@ class UserServiceTest {
         assertPasswordAndHistoryRolledBack(userService);
     }
 
+    private UserService transactionalService(final UserHistoryDao historyDao) {
+        return new TxUserService(dataSource, new AppUserService(userDao, historyDao));
+    }
+
     private void assertPasswordAndHistoryRolledBack(final UserService userService) {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
         final Integer historyCount = jdbcTemplate.queryForObject("select count(*) from user_history",
                 (resultSet, rowNum) -> resultSet.getInt(1));

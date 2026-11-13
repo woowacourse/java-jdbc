@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,15 +35,6 @@ public class JdbcTemplate {
         }
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        try {
-            return execute(connection, sql, statement -> bindParameters(statement, args),
-                    PreparedStatement::executeUpdate);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute update: " + sql, e);
-        }
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, statement -> bindParameters(statement, args), rowMapper);
     }
@@ -56,20 +48,7 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return singleResult(query(sql, rowMapper, args));
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql,
-                               final RowMapper<T> rowMapper, final Object... args) {
-        try {
-            return singleResult(execute(connection, sql, statement -> bindParameters(statement, args),
-                    statement -> readRows(statement, rowMapper)));
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute query: " + sql, e);
-        }
-    }
-
-    private <T> T singleResult(final List<T> results) {
+        final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row, but got " + results.size());
         }
@@ -78,19 +57,19 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            return execute(connection, sql, setter, callback);
-        }
-    }
-
-    // The caller owns the supplied connection; only close the statement here.
-    private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
-                          final PreparedStatementCallback<T> callback) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (ConnectionRelease release = () -> DataSourceUtils.releaseConnection(connection, dataSource);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.doInPreparedStatement(statement);
         }
+    }
+
+    @FunctionalInterface
+    private interface ConnectionRelease extends AutoCloseable {
+        @Override
+        void close();
     }
 
     private <T> List<T> readRows(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
