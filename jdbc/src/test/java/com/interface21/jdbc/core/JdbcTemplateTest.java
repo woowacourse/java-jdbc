@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -204,6 +205,39 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("전달받은 연결로 수정하고 연결은 닫지 않는다")
+    void updateKeepsProvidedConnectionOpen() throws SQLException {
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        assertThat(jdbcTemplate.update(connection, UPDATE_SQL, "apple", 7L)).isEqualTo(1);
+
+        verify(statement).setObject(1, "apple");
+        verify(statement).setObject(2, 7L);
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    @DisplayName("전달받은 연결의 조회가 실패해도 연결은 닫지 않는다")
+    void queryForObjectKeepsProvidedConnectionOpenWhenMappingFails() throws SQLException {
+        prepareQuery();
+        final var cause = new SQLException("매핑 실패");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("name")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, SELECT_SQL, rs -> rs.getString("name")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     private void prepareQuery() throws SQLException {
