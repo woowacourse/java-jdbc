@@ -1,10 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
-import com.techcourse.domain.User;
-import com.techcourse.domain.UserHistory;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +12,6 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -24,20 +19,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class UserServiceTransactionTest {
+class TxUserServiceTest {
 
     private final DataSource dataSource = mock(DataSource.class);
     private final Connection connection = mock(Connection.class);
-    private final UserDao userDao = mock(UserDao.class);
-    private final UserHistoryDao historyDao = mock(UserHistoryDao.class);
-    private final UserService userService = new UserService(dataSource, userDao, historyDao);
+    private final UserService delegate = mock(UserService.class);
+    private final UserService userService = new TxUserService(dataSource, delegate);
 
     @BeforeEach
     void setup() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L))
-                .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
     }
 
     @Test
@@ -58,7 +50,7 @@ class UserServiceTransactionTest {
     void rollbackFailurePreservesOriginalExceptionAndClosesConnection() throws SQLException {
         final var cause = new IllegalStateException("history failed");
         final var rollbackFailure = new SQLException("rollback failed");
-        doThrow(cause).when(historyDao).log(eq(connection), any(UserHistory.class));
+        doThrow(cause).when(delegate).changePassword(1L, "changed", "admin");
         doThrow(rollbackFailure).when(connection).rollback();
 
         assertThatThrownBy(() -> userService.changePassword(1L, "changed", "admin")).isSameAs(cause);
@@ -67,6 +59,7 @@ class UserServiceTransactionTest {
         verify(connection, never()).commit();
         verify(connection, never()).setAutoCommit(true);
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
@@ -88,5 +81,22 @@ class UserServiceTransactionTest {
                 .doesNotThrowAnyException();
 
         verify(connection).commit();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void leavesAnExistingTransactionUntouched() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            assertThatThrownBy(() -> userService.changePassword(1L, "changed", "admin"))
+                    .isInstanceOf(IllegalStateException.class);
+
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+            verify(connection, never()).commit();
+            verify(connection, never()).rollback();
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +39,11 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
+    }
+
+    @AfterEach
+    void unbindConnection() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -202,10 +209,11 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithSuppliedConnectionKeepsItOpen() throws SQLException {
+    void updateReusesBoundConnectionAndKeepsItOpen() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(statement.executeUpdate()).thenReturn(1);
 
-        assertThat(jdbcTemplate.update(connection, "update users set account = ?", "gugu")).isEqualTo(1);
+        assertThat(jdbcTemplate.update("update users set account = ?", "gugu")).isEqualTo(1);
 
         verify(statement).setObject(1, "gugu");
         verify(statement).close();
@@ -213,11 +221,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateFailureKeepsSuppliedConnectionOpenForRollback() throws SQLException {
+    void updateFailureKeepsBoundConnectionOpenForRollback() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var cause = new SQLException("update failed");
         when(statement.executeUpdate()).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(DataAccessException.class).hasCause(cause);
 
         verify(statement).close();
@@ -225,11 +234,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectClosesResultsAndKeepsSuppliedConnectionOpen() throws SQLException {
+    void queryForObjectClosesResultsAndKeepsBoundConnectionOpen() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        assertThat(jdbcTemplate.queryForObject(connection, SQL, ACCOUNT_MAPPER, 7L)).isEqualTo("gugu");
+        assertThat(jdbcTemplate.queryForObject(SQL, ACCOUNT_MAPPER, 7L)).isEqualTo("gugu");
 
         verify(statement).setObject(1, 7L);
         verify(resultSet).close();
