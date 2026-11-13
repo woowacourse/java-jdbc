@@ -4,10 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -153,6 +156,24 @@ class JdbcTemplateTest {
         inOrder.verify(resultSet).close();
         inOrder.verify(statement).close();
         inOrder.verify(connection).close();
+    }
+
+    @Test
+    void selectReusesTransactionConnectionUntilUnbound() throws SQLException {
+        when(resultSet.next()).thenReturn(false);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        try {
+            jdbcTemplate.select(SQL, NAME_MAPPER, 1L);
+
+            verify(dataSource, never()).getConnection();
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+
+        verify(connection).close();
     }
 
     @Test

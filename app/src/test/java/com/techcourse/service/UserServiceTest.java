@@ -2,14 +2,21 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +42,8 @@ class UserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -51,7 +59,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -59,8 +68,34 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void rollbackFailurePreservesOriginalException() throws SQLException {
+        final DataSource transactionDataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final UserDao transactionUserDao = mock(UserDao.class);
+        final UserHistoryDao userHistoryDao = mock(UserHistoryDao.class);
+        final DataAccessException original = new DataAccessException("history insert failed");
+        final SQLException rollbackFailure = new SQLException("rollback failed");
+
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        when(transactionUserDao.findById(1L)).thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
+        doThrow(original).when(userHistoryDao).log(any(UserHistory.class));
+        doThrow(rollbackFailure).when(connection).rollback();
+
+        final UserService appUserService = new AppUserService(transactionUserDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, transactionDataSource);
+
+        final DataAccessException thrown = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(thrown).isSameAs(original);
+        assertThat(thrown.getSuppressed()).containsExactly(rollbackFailure);
     }
 }
