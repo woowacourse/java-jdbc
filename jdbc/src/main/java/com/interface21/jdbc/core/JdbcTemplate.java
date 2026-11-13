@@ -24,16 +24,8 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public void update(Connection connection, String sql, Object... params) {
-        execute(connection, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public <T> T find(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, query(rs -> mapSingleRow(rs, rowMapper)), params);
-    }
-
-    public <T> T find(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(connection, sql, query(rs -> mapSingleRow(rs, rowMapper)), params);
     }
 
     private <T> T mapSingleRow(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
