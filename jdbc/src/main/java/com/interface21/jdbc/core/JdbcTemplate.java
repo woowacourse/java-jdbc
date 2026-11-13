@@ -29,17 +29,6 @@ public class JdbcTemplate {
         return update(sql, setterOf(args));
     }
 
-    public int update(Connection connection, String sql, PreparedStatementSetter setter) {
-        return execute(connection, sql, preparedStatement -> {
-            setter.setValues(preparedStatement);
-            return preparedStatement.executeUpdate();
-        });
-    }
-
-    public int update(Connection connection, String sql, Object... args) {
-        return update(connection, sql, setterOf(args));
-    }
-
     private PreparedStatementSetter setterOf(Object... args) {
         return statement -> {
             for (int i = 0; i < args.length; i++) {
