@@ -138,30 +138,21 @@ Connection 객체의 setAutoCommit(false) 메서드를 호출하면 트랜잭션
 이처럼 트랜잭션을 시작하고 끝나는 부분을 트랜잭션 경계라고 한다.
 
 ```java
-try(final var connection = dataSource.getConnection();){
+try (final var connection = dataSource.getConnection();) {
 
-        // 트랜잭션 시작
-        connection.
+    // 트랜잭션 시작
+    connection.setAutoCommit(false);
 
-setAutoCommit(false);
-
-// 비즈니스 로직 처리
+    // 비즈니스 로직 처리
     ...
 
-            // 트랜잭션 커밋
-            connection.
-
-commit();
-}catch(
-SQLException e){
-        // 트랜잭션 롤백
-        // 로직 처리 중에 예외가 발생하면 원자성을 보장하기 위해 롤백한다.
-        connection.
-
-rollback(); // try-catch로 한 번 더 감싸야 하지만 예시니까 생략
-    throw new
-
-DataAccessException(e);
+    // 트랜잭션 커밋
+    connection.commit();
+} catch (SQLException e) {
+    // 트랜잭션 롤백
+    // 로직 처리 중에 예외가 발생하면 원자성을 보장하기 위해 롤백한다.
+    connection.rollback(); // try-catch로 한 번 더 감싸야 하지만 예시니까 생략
+    throw new DataAccessException(e);
 }
 ```
 
@@ -173,15 +164,9 @@ DataAccessException(e);
 final var connection = dataSource.getConnection();
 
 // 트랜잭션 시작
-connection.
+connection.setAutoCommit(false);
 
-setAutoCommit(false);
-
-userDao.
-
-update(connection, user);
-userHistoryDao.
-
-log(connection, new UserHistory(user, createBy));
-        ...
+userDao.update(connection, user);
+userHistoryDao.log(connection, new UserHistory(user, createBy));
+...
 ```
