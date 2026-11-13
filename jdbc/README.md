@@ -133,11 +133,8 @@ public class UserService {
 [Java Tutorials - Using Transactions](https://docs.oracle.com/javase/tutorial/jdbc/basics/transactions.html)
 
 JDBC API로 어떻게 트랜잭션을 시작하고 커밋, 롤백을 할 수 있을까?
-
 Connection 객체의 setAutoCommit(false) 메서드를 호출하면 트랜잭션이 시작된다.
-
 비즈니스 로직이 끝나면 반드시 트랜잭션 커밋 또는 롤백을 실행한다.
-
 이처럼 트랜잭션을 시작하고 끝나는 부분을 트랜잭션 경계라고 한다.
 
 ```java
