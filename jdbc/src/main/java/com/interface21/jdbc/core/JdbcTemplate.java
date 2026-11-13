@@ -60,15 +60,19 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        final List<T> results = query(sql, rowMapper, args);
-        if (results.isEmpty()) {
-            return null;
-        }
+        return execute(sql, statement -> {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
 
-        if (results.size() > 1) {
-            throw new IllegalStateException("조회 결과는 최대 1개여야 합니다.");
-        }
+                final T result = rowMapper.mapRow(resultSet);
+                if (resultSet.next()) {
+                    throw new DataAccessException("조회 결과는 최대 1개여야 합니다. 실제 결과 수: 2개 이상");
+                }
 
-        return results.getFirst();
+                return result;
+            }
+        }, args);
     }
 }
