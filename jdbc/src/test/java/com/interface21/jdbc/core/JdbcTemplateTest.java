@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +48,9 @@ class JdbcTemplateTest {
         final String actual = jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("name"));
 
         assertThat(actual).isEqualTo("apple");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
@@ -58,17 +62,27 @@ class JdbcTemplateTest {
         final String actual = jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("name"));
 
         assertThat(actual).isNull();
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
-    @DisplayName("조회 결과가 두 개 이상이면 예외를 던진다")
+    @DisplayName("두 번째 행을 발견하면 추가 매핑 없이 예외를 던지고 자원을 닫는다")
     void queryForObjectRejectsMultipleRows() throws SQLException {
         prepareQuery();
-        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.next()).thenReturn(true, true, true, false);
+        when(resultSet.getString("name")).thenReturn("apple");
 
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> "apple"))
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("name")))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessage("조회 결과는 최대 1개여야 합니다. 실제 결과 수: 2");
+                .hasMessage("조회 결과는 최대 1개여야 합니다. 실제 결과 수: 2개 이상");
+
+        verify(resultSet, times(2)).next();
+        verify(resultSet).getString("name");
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     @Test
@@ -156,6 +170,39 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
+        verify(connection).close();
+    }
+
+    @Test
+    @DisplayName("단건 조회에서도 인자를 설정한다")
+    void queryForObjectBindsParameters() throws SQLException {
+        final String sql = SELECT_SQL + " where id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("name")).thenReturn("apple");
+
+        final String actual = jdbcTemplate.queryForObject(sql, rs -> rs.getString("name"), 7L);
+
+        assertThat(actual).isEqualTo("apple");
+
+        verify(statement).setObject(1, 7L);
+    }
+
+    @Test
+    @DisplayName("단건 조회 매핑 중 SQL 예외가 발생하면 원인을 보존하고 자원을 닫는다")
+    void queryForObjectClosesResourcesWhenMappingFails() throws SQLException {
+        prepareQuery();
+        final var cause = new SQLException("매핑 실패");
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getString("name")).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryForObject(SELECT_SQL, rs -> rs.getString("name")))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(resultSet).close();
+        verify(statement).close();
         verify(connection).close();
     }
 
