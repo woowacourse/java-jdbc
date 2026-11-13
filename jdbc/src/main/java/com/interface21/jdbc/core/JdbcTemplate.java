@@ -55,15 +55,6 @@ public class JdbcTemplate {
         return execute(sql, selectCallback(setter, mapper));
     }
 
-    public <T> List<T> select(
-            Connection connection,
-            String sql,
-            PreparedStatementSetter setter,
-            RowMapper<T> mapper
-    ) {
-        return execute(connection, sql, selectCallback(setter, mapper));
-    }
-
     private <T> StatementCallback<List<T>> selectCallback(PreparedStatementSetter setter, RowMapper<T> mapper) {
         return preparedStatement -> {
             setter.setValues(preparedStatement);
@@ -86,30 +77,12 @@ public class JdbcTemplate {
         return select(sql, setterOf(args), mapper);
     }
 
-    public <T> List<T> select(
-            Connection connection,
-            String sql,
-            RowMapper<T> mapper,
-            Object... args
-    ) {
-        return select(connection, sql, setterOf(args), mapper);
-    }
-
     public <T> T selectOne(
             String sql,
             RowMapper<T> mapper,
             Object... args
     ) {
         return singleResult(select(sql, mapper, args));
-    }
-
-    public <T> T selectOne(
-            Connection connection,
-            String sql,
-            RowMapper<T> mapper,
-            Object... args
-    ) {
-        return singleResult(select(connection, sql, mapper, args));
     }
 
     private <T> T singleResult(List<T> results) {

@@ -43,11 +43,19 @@ public class UserService {
                 );
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
-                connection.rollback();
+                rollback(connection, e);
                 throw e;
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);
+        }
+    }
+
+    private void rollback(final Connection connection, final Exception original) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackException) {
+            original.addSuppressed(rollbackException);
         }
     }
 }

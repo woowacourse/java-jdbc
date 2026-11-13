@@ -2,6 +2,12 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -9,7 +15,10 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,5 +71,28 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void rollbackFailurePreservesOriginalException() throws SQLException {
+        final DataSource transactionDataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        final UserHistoryDao userHistoryDao = mock(UserHistoryDao.class);
+        final DataAccessException original = new DataAccessException("history insert failed");
+        final SQLException rollbackFailure = new SQLException("rollback failed");
+
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        doThrow(original).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(rollbackFailure).when(connection).rollback();
+
+        final UserService userService = new UserService(userDao, userHistoryDao, transactionDataSource);
+
+        final DataAccessException thrown = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(thrown).isSameAs(original);
+        assertThat(thrown.getSuppressed()).containsExactly(rollbackFailure);
     }
 }
