@@ -21,15 +21,17 @@ import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
 
+    private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.dataSource = DataSourceConfig.getInstance();
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         jdbcTemplate.update("truncate table user_history restart identity");
         jdbcTemplate.update("truncate table users restart identity");
         final User user = new User("gugu", "password", "hkkang@woowahan.com");
@@ -40,7 +42,7 @@ class UserServiceTest {
     void testChangePassword() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = new TxUserService(appUserService);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
@@ -66,17 +68,17 @@ class UserServiceTest {
 
     @Test
     void testChangePasswordUsesOneConnectionForLookupAndWrites() throws SQLException {
-        final DataSource dataSource = spy(DataSourceConfig.getInstance());
-        final JdbcTemplate sharedJdbcTemplate = new JdbcTemplate(dataSource);
+        final DataSource observedDataSource = spy(dataSource);
+        final JdbcTemplate sharedJdbcTemplate = new JdbcTemplate(observedDataSource);
         final AppUserService appUserService = new AppUserService(
                 new UserDao(sharedJdbcTemplate),
                 new UserHistoryDao(sharedJdbcTemplate)
         );
-        final UserService userService = new TxUserService(appUserService, dataSource);
+        final UserService userService = new TxUserService(appUserService, observedDataSource);
 
         userService.changePassword(1L, "newPassword", "gugu");
 
-        verify(dataSource).getConnection();
+        verify(observedDataSource).getConnection();
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
         assertThat(historyCount()).isEqualTo(1L);
     }
@@ -85,7 +87,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = new TxUserService(appUserService);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         final String newPassword = "newPassword";
         final String createBy = "gugu";
@@ -108,7 +110,7 @@ class UserServiceTest {
             }
         };
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = new TxUserService(appUserService);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -121,7 +123,7 @@ class UserServiceTest {
     void testTransactionRollbackWhenHistoryInsertFails() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final AppUserService appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = new TxUserService(appUserService);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", null));
