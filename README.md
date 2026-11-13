@@ -138,8 +138,4 @@ JdbcTemplate을 더 편하고 안전하게 사용할 수 있도록 개선한다.
 - [x] TxUserService에서 DataSource를 생략하는 생성자와 DataSourceConfig 의존을 제거하고 DAO와 같은 DataSource를 생성자에 명시적으로 전달한다.
 - [x] 기본 DataSource와 다른 DataSource에서도 비밀번호와 이력이 함께 롤백되고 연결 등록이 해제되는지 검증한다.
 
-리뷰 상황을 재현했을 때는 롤백 후 기대한 `password` 대신 `newPassword`가 DB에 남아 테스트가 실패했다.
-DAO와 같은 DataSource를 명시적으로 주입한 뒤 같은 테스트가 통과했다.
-제거한 생성자의 테스트도 정리했으며, `./gradlew :jdbc:test :app:test --console=plain`으로 총 64개 테스트가 통과했다.
-
 </details>
