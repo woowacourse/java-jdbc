@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
-import java.sql.Connection;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -38,10 +37,10 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void updatePassword(Connection conn, User user) {
+    public void updatePassword(User user) {
         String sql = "update users set password = ? where id = ?";
 
-        jdbcTemplate.update(conn, sql, user.getPassword(), user.getId());
+        jdbcTemplate.update(sql, user.getPassword(), user.getId());
     }
 
     public List<User> findAll() {

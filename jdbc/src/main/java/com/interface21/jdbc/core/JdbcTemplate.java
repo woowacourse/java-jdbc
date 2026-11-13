@@ -28,10 +28,6 @@ public class JdbcTemplate {
         return execute(sql, argumentsSetter(args), PreparedStatement::executeUpdate);
     }
 
-    public int update(Connection conn, String sql, Object... args) {
-        return execute(conn, sql, argumentsSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(sql, argumentsSetter(args), pstmt -> mapRows(pstmt, rowMapper));
     }

@@ -2,7 +2,6 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -42,7 +41,7 @@ class UserServiceTransactionTest {
     @DisplayName("비밀번호 변경 중 이력 저장에 실패하면 롤백하고 커밋하지 않는다")
     @Test
     void rollbackWhenLogFails() throws SQLException {
-        doThrow(new DataAccessException()).when(userHistoryDao).log(eq(conn), any());
+        doThrow(new DataAccessException()).when(userHistoryDao).log(any());
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
                 .isInstanceOf(DataAccessException.class);
@@ -56,7 +55,7 @@ class UserServiceTransactionTest {
     void keepCauseWhenRollbackFails() throws SQLException {
         DataAccessException cause = new DataAccessException("이력 저장 실패");
         SQLException rollbackException = new SQLException("롤백 실패");
-        doThrow(cause).when(userHistoryDao).log(eq(conn), any());
+        doThrow(cause).when(userHistoryDao).log(any());
         doThrow(rollbackException).when(conn).rollback();
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))

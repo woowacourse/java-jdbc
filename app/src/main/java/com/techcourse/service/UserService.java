@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -30,22 +32,26 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        final var user = findById(id);
-        user.changePassword(newPassword);
-
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, conn);
+        try {
             conn.setAutoCommit(false);
-            updateWithHistory(conn, user, createBy);
+            changePasswordWithHistory(conn, id, newPassword, createBy);
             conn.commit();
         } catch (SQLException e) {
             throw new DataAccessException("비밀번호 변경 트랜잭션 처리에 실패했습니다.", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
-    private void updateWithHistory(Connection conn, User user, String createBy) {
+    private void changePasswordWithHistory(Connection conn, long id, String newPassword, String createBy) {
         try {
-            userDao.updatePassword(conn, user);
-            userHistoryDao.log(conn, new UserHistory(user, createBy));
+            User user = findById(id);
+            user.changePassword(newPassword);
+            userDao.updatePassword(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
         } catch (RuntimeException | Error e) {
             rollback(conn, e);
             throw e;

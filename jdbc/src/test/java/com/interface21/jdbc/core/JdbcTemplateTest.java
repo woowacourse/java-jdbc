@@ -57,16 +57,6 @@ class JdbcTemplateTest {
         assertThat(affectedRows).isEqualTo(3);
     }
 
-    @DisplayName("전달받은 Connection으로 update를 실행하고 Connection은 닫지 않는다")
-    @Test
-    void updateWithConnection() throws SQLException {
-        jdbcTemplate.update(conn, "update users set account = ?", "gugu");
-
-        verify(pstmt).executeUpdate();
-        verify(pstmt).close();
-        verify(conn, never()).close();
-    }
-
     @DisplayName("트랜잭션에 바인딩된 Connection이 있으면 그 Connection으로 실행하고 닫지 않는다")
     @Test
     void updateWithBoundConnection() throws SQLException {
