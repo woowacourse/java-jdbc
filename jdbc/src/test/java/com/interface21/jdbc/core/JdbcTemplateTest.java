@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -83,6 +84,19 @@ class JdbcTemplateTest {
 
         verify(pstmt).close();
         verify(conn).close();
+    }
+
+    @DisplayName("SQL 실행과 커넥션 반납이 모두 실패하면 처음 예외를 던지고 반납 예외는 suppressed로 남긴다")
+    @Test
+    void keepCauseWhenReleaseFails() throws SQLException {
+        SQLException cause = new SQLException("update 실패");
+        SQLException closeException = new SQLException("반납 실패");
+        when(pstmt.executeUpdate()).thenThrow(cause);
+        doThrow(closeException).when(conn).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .hasCause(cause)
+                .satisfies(e -> assertThat(e.getSuppressed()[0]).hasCause(closeException));
     }
 
     @DisplayName("조회 결과를 RowMapper로 변환하고 자원을 반납한다")
