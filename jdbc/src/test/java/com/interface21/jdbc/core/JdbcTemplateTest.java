@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -189,6 +191,29 @@ class JdbcTemplateTest {
 
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void connectionCloseFailureKeepsSuccessfulUpdateResult() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+        doThrow(new SQLException("close failed")).when(connection).close();
+
+        assertThat(jdbcTemplate.update("delete from users")).isEqualTo(1);
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionCloseFailureDoesNotReplaceUpdateFailure() throws SQLException {
+        final var updateFailure = new SQLException("update failed");
+        final var closeFailure = new SQLException("close failed");
+        when(statement.executeUpdate()).thenThrow(updateFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(updateFailure);
+        assertThat(updateFailure.getSuppressed()).singleElement().satisfies(suppressed ->
+                assertThat(suppressed).isInstanceOf(CannotGetJdbcConnectionException.class).hasCause(closeFailure));
     }
 
     @Test

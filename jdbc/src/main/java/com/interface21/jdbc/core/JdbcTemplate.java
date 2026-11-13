@@ -2,11 +2,13 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -86,13 +88,31 @@ public class JdbcTemplate {
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) {
         final var connection = DataSourceUtils.getConnection(dataSource);
-        try (ConnectionRelease release = () -> DataSourceUtils.releaseConnection(connection, dataSource);
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        Throwable failure = null;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setter.setValues(statement);
             return callback.execute(statement);
         } catch (SQLException e) {
+            failure = e;
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            releaseConnection(connection, failure);
+        }
+    }
+
+    private void releaseConnection(final Connection connection, final Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            if (failure == null) {
+                log.warn("Failed to release JDBC connection after executing SQL", e);
+                return;
+            }
+            failure.addSuppressed(e);
         }
     }
 
@@ -100,13 +120,6 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
-    }
-
-    @FunctionalInterface
-    private interface ConnectionRelease extends AutoCloseable {
-
-        @Override
-        void close();
     }
 
     @FunctionalInterface
