@@ -33,14 +33,21 @@ public class TxUserService implements UserService {
         Connection conn = DataSourceUtils.getConnection(dataSource);
         TransactionSynchronizationManager.bindResource(dataSource, conn);
         try {
+            changePasswordInTransaction(conn, id, newPassword, createdBy);
+        } catch (RuntimeException | Error e) {
+            release(conn, e);
+            throw e;
+        }
+        release(conn);
+    }
+
+    private void changePasswordInTransaction(Connection conn, long id, String newPassword, String createdBy) {
+        try {
             conn.setAutoCommit(false);
             changePasswordOrRollback(conn, id, newPassword, createdBy);
             conn.commit();
         } catch (SQLException e) {
             throw new DataAccessException("비밀번호 변경 트랜잭션 처리에 실패했습니다.", e);
-        } finally {
-            TransactionSynchronizationManager.unbindResource(dataSource);
-            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 
@@ -50,6 +57,19 @@ public class TxUserService implements UserService {
         } catch (RuntimeException | Error e) {
             rollback(conn, e);
             throw e;
+        }
+    }
+
+    private void release(Connection conn) {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(conn, dataSource);
+    }
+
+    private void release(Connection conn, Throwable cause) {
+        try {
+            release(conn);
+        } catch (RuntimeException releaseException) {
+            cause.addSuppressed(releaseException);
         }
     }
 

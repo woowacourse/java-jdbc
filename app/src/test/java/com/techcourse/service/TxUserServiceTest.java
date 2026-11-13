@@ -61,4 +61,18 @@ class TxUserServiceTest {
                 .isSameAs(cause)
                 .hasSuppressedException(rollbackException);
     }
+
+    @DisplayName("커넥션 반납도 실패하면 처음 예외를 던지고 반납 예외는 suppressed로 남긴다")
+    @Test
+    void keepCauseWhenReleaseFails() throws SQLException {
+        DataAccessException cause = new DataAccessException("이력 저장 실패");
+        SQLException closeException = new SQLException("반납 실패");
+        doThrow(cause).when(appUserService).changePassword(1L, "newPassword", "gugu");
+        doThrow(closeException).when(conn).close();
+
+        assertThatThrownBy(() -> txUserService.changePassword(1L, "newPassword", "gugu"))
+                .isSameAs(cause)
+                .satisfies(e -> assertThat(e.getSuppressed()[0]).hasCause(closeException));
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
 }
