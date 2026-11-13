@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -33,16 +34,21 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("A transaction is already active for this DataSource");
+        }
+
         Connection connection = null;
         try {
             connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
 
             try {
-                final var user = userDao.findById(connection, id);
+                final var user = userDao.findById(id);
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, createBy));
                 connection.commit();
             } catch (SQLException | RuntimeException e) {
                 try {
@@ -51,6 +57,8 @@ public class UserService {
                     e.addSuppressed(rollbackException);
                 }
                 throw e;
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
         } catch (SQLException | CannotGetJdbcConnectionException e) {
             throw new DataAccessException(e);
