@@ -17,7 +17,8 @@ public class AppUserService implements UserService {
 
     @Override
     public User findById(final long id) {
-        return userDao.findById(id);
+        return userDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다. id=" + id));
     }
 
     @Override

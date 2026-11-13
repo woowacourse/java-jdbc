@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.interface21.dao.DataAccessException;
@@ -61,5 +62,16 @@ class UserServiceTest {
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+    }
+
+    @Test
+    void testChangePasswordWhenUserNotExists() {
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService);
+
+        assertThatThrownBy(() -> userService.changePassword(999999L, "pw", "gugu"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("존재하지 않는 사용자입니다. id=999999");
     }
 }
