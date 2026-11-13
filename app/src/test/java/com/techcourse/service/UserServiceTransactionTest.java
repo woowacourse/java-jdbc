@@ -111,7 +111,7 @@ class UserServiceTransactionTest {
         doThrow(failure).when(connection).commit();
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
-                .isInstanceOf(DataAccessException.class)
+                .isExactlyInstanceOf(DataAccessException.class)
                 .hasMessageContaining("userId=1")
                 .hasCause(failure);
 
@@ -134,17 +134,35 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    @DisplayName("커밋 후 상태 복구가 실패하면 롤백하지 않고 원인을 전달한다")
+    @DisplayName("커밋 후 상태 복구가 실패하면 정리 실패 예외로 구분한다")
     void restore_failure_after_commit() throws SQLException {
         final var failure = new SQLException("Restore failed");
         doThrow(failure).when(connection).setAutoCommit(true);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
-                .isInstanceOf(DataAccessException.class)
+                .isExactlyInstanceOf(TransactionCleanupException.class)
+                .hasMessageContaining("committed")
+                .hasMessageContaining("userId=1")
                 .hasCause(failure);
 
         verify(connection).commit();
         verify(connection).close();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    @DisplayName("커밋 후 커넥션 종료가 실패하면 정리 실패 예외로 구분한다")
+    void close_failure_after_commit() throws SQLException {
+        final var failure = new SQLException("Close failed");
+        doThrow(failure).when(connection).close();
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
+                .isExactlyInstanceOf(TransactionCleanupException.class)
+                .hasMessageContaining("committed")
+                .hasMessageContaining("userId=1")
+                .hasCause(failure);
+
+        verify(connection).commit();
         verify(connection, never()).rollback();
     }
 }
