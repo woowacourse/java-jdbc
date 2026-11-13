@@ -64,3 +64,15 @@ Step 2
 
 
 5. JDBC 라이브러리	vs 개발자
+
+
+------
+
+
+Step 4
+
+1. `UserService`에서 JDBC 연결을 `DataSourceUtils`로 반환하려면 왜 `try-with-resources`를 `finally`로 바꿔야 할까?
+
+   기존 `try-with-resources`는 블록이 끝날 때 `Connection.close()`를 직접 호출한다.
+   `UserService.changePassword()`는 성공하거나 예외가 발생해도 연결 반환을 `DataSourceUtils.releaseConnection()`에 맡기기 위해 `finally`로 바꿨다.
+   트랜잭션 동기화를 적용하면 이 메서드에서 공유 중인 연결을 트랜잭션이 끝날 때까지 열어둘 수 있다.

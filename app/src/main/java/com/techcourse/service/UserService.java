@@ -1,12 +1,15 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 
 public class UserService {
@@ -30,7 +33,9 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final var connection = dataSource.getConnection()) {
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
             connection.setAutoCommit(false);
 
             try {
@@ -47,8 +52,10 @@ public class UserService {
                 }
                 throw e;
             }
-        } catch (SQLException e) {
+        } catch (SQLException | CannotGetJdbcConnectionException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 }
