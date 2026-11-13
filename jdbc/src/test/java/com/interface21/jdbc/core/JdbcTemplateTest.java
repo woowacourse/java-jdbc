@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,13 +23,14 @@ import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection conn;
     private PreparedStatement pstmt;
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
 
@@ -66,20 +68,25 @@ class JdbcTemplateTest {
         }
 
         @Test
-        @DisplayName("외부에서 받은 커넥션으로 실행하고, 커넥션은 닫지 않는다.")
-        void updateWithConnection() throws SQLException {
-            final var externalConn = mock(Connection.class);
-            final var externalPstmt = mock(PreparedStatement.class);
-            when(externalConn.prepareStatement(anyString())).thenReturn(externalPstmt);
-            when(externalPstmt.executeUpdate()).thenReturn(1);
+        @DisplayName("트랜잭션에 바인딩된 커넥션으로 실행하고, 커넥션은 닫지 않는다.")
+        void updateWithBoundConnection() throws SQLException {
+            final var boundConn = mock(Connection.class);
+            final var boundPstmt = mock(PreparedStatement.class);
+            when(boundConn.prepareStatement(anyString())).thenReturn(boundPstmt);
+            when(boundPstmt.executeUpdate()).thenReturn(1);
+            TransactionSynchronizationManager.bindResource(dataSource, boundConn);
 
-            final var rowCount = jdbcTemplate.update(externalConn, SQL, "password99", 1L);
+            try {
+                final var rowCount = jdbcTemplate.update(SQL, "password99", 1L);
 
-            verify(externalPstmt).setObject(1, "password99");
-            verify(externalPstmt).setObject(2, 1L);
-            assertThat(rowCount).isEqualTo(1);
-            verify(externalPstmt).close();
-            verify(externalConn, never()).close();
+                verify(boundPstmt).setObject(1, "password99");
+                verify(boundPstmt).setObject(2, 1L);
+                assertThat(rowCount).isEqualTo(1);
+                verify(boundPstmt).close();
+                verify(boundConn, never()).close();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
 
         @Test
