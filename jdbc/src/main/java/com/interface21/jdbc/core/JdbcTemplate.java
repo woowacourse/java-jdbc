@@ -3,6 +3,8 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,22 +29,12 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
     }
 
-    public int update(Connection conn, String sql, Object... params) {
-        return execute(conn, sql, PreparedStatement::executeUpdate, pstmt -> setParameters(pstmt, params));
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, pstmt -> readRows(pstmt, rowMapper), pstmt -> setParameters(pstmt, params));
     }
 
     public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
         return singleResult(query(sql, rowMapper, params));
-    }
-
-    public <T> T queryForObject(Connection conn, String sql, RowMapper<T> rowMapper, Object... params) {
-        List<T> results = execute(conn, sql, pstmt -> readRows(pstmt, rowMapper),
-                pstmt -> setParameters(pstmt, params));
-        return singleResult(results);
     }
 
     private static <T> List<T> readRows(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
@@ -66,9 +58,33 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, PreparedStatementSetter pstmtSetter) {
-        try (Connection conn = dataSource.getConnection()) {
+        Connection conn;
+        try {
+            conn = DataSourceUtils.getConnection(dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+
+        Throwable failure = null;
+        try {
             return execute(conn, sql, callback, pstmtSetter);
-        } catch (SQLException e) {
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            releaseConnection(conn, failure);
+        }
+    }
+
+    private void releaseConnection(Connection conn, Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            if (failure != null) {
+                failure.addSuppressed(e);
+                return;
+            }
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
