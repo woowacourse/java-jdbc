@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.PreparedStatementSetter;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -28,7 +27,7 @@ public class UserDao {
     }
 
     public void insert(final User user) {
-        final var sql = "insert into users (account, password, email) values (?, ?, ?)";
+        final String sql = "insert into users (account, password, email) values (?, ?, ?)";
 
         jdbcTemplate.update(
                 sql,
@@ -42,10 +41,6 @@ public class UserDao {
         jdbcTemplate.update(UPDATE_SQL, createUpdateSetter(user));
     }
 
-    public void update(final User user, final Connection connection) {
-        jdbcTemplate.update(connection, UPDATE_SQL, createUpdateSetter(user));
-    }
-
     public List<User> findAll() {
         final String sql = "select id, account, password, email from users";
         return jdbcTemplate.query(sql, this::mapUser);
@@ -55,12 +50,8 @@ public class UserDao {
         return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, this::mapUser, id);
     }
 
-    public User findById(final Long id, final Connection connection) {
-        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, this::mapUser, id);
-    }
-
     public User findByAccount(final String account) {
-        final var sql = "select id, account, password, email from users where account = ?";
+        final String sql = "select id, account, password, email from users where account = ?";
         return jdbcTemplate.queryForObject(sql, this::mapUser, account);
     }
 

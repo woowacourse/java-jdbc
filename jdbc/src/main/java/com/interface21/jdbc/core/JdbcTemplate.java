@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,12 +9,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -29,30 +26,12 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(Connection connection, String sql, Object... args) {
-        return update(connection, sql, createPreparedStatementSetter(args));
-    }
-
-    public int update(Connection connection, String sql, PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
     public <T> T queryForObject(
             String sql,
             RowMapper<T> rowMapper,
             Object... args
     ) {
         return execute(sql, createPreparedStatementSetter(args), pstmt -> extractSingleResult(pstmt, rowMapper));
-    }
-
-    public <T> T queryForObject(
-            Connection connection,
-            String sql,
-            RowMapper<T> rowMapper,
-            Object... args
-    ) {
-        return execute(connection, sql, createPreparedStatementSetter(args),
-                pstmt -> extractSingleResult(pstmt, rowMapper));
     }
 
     public <T> List<T> query(
@@ -89,10 +68,11 @@ public class JdbcTemplate {
             PreparedStatementSetter setter,
             PreparedStatementCallback<T> callback
     ) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("SQL 실행에 실패했습니다.", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
