@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -224,6 +225,32 @@ class JdbcTemplateTest {
         verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void queryAndUpdate_BoundConnection_ReusesConnectionAndOnlyClosesSqlResources() throws SQLException {
+        final var querySql = "select account from users";
+        final var updateSql = "update users set password = ? where id = ?";
+        final var updateStatement = mock(PreparedStatement.class);
+        when(connection.prepareStatement(querySql)).thenReturn(statement);
+        when(connection.prepareStatement(updateSql)).thenReturn(updateStatement);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        try {
+            jdbcTemplate.query(querySql, accountRowMapper);
+            jdbcTemplate.update(updateSql, "password", 1L);
+
+            verify(statement).executeQuery();
+            verify(updateStatement).executeUpdate();
+            verify(resultSet).close();
+            verify(statement).close();
+            verify(updateStatement).close();
+            verify(connection, never()).close();
+            verifyNoInteractions(dataSource);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test

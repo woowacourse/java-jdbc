@@ -7,6 +7,7 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,8 @@ class UserServiceTest {
 
         DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        new TxUserService(appUserService, dataSource).save(user);
     }
 
     @AfterEach
@@ -52,12 +54,14 @@ class UserServiceTest {
     @Test
     void changePassword_Success_CommitsPasswordAndHistory() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
         userService.changePassword(1L, newPassword, createBy);
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
@@ -84,7 +88,8 @@ class UserServiceTest {
     void changePassword_HistorySaveFails_PreservesOriginalPassword() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -93,6 +98,7 @@ class UserServiceTest {
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, newPassword, createBy));
 
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         final var actual = userService.findById(1L);
 
         assertThat(actual.getPassword()).isEqualTo(originalPassword);
@@ -104,12 +110,13 @@ class UserServiceTest {
         final var failure = new DataAccessException("Failure after history insert");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(UserHistory userHistory, Connection connection) {
-                super.log(userHistory, connection);
+            public void log(UserHistory userHistory) {
+                super.log(userHistory);
                 throw failure;
             }
         };
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final UserService userService = new TxUserService(appUserService, dataSource);
         final var originalPassword = userDao.findById(1L).getPassword();
 
         final var actualException = assertThrows(DataAccessException.class,

@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -27,12 +29,10 @@ public class JdbcTemplate {
     }
 
     public final void update(String sql, PreparedStatementSetter setter) {
-        try (Connection conn = dataSource.getConnection()) {
+        executeWithConnection(conn -> {
             update(sql, conn, setter);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+            return null;
+        });
     }
 
     public final void update(String sql, Connection conn, Object... args) {
@@ -56,21 +56,7 @@ public class JdbcTemplate {
     }
 
     public final <T> List<T> query(String sql, PreparedStatementSetter setter, RowMapper<T> rowMapper) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            log.debug("query : {}", sql);
-
-            List<T> results = new ArrayList<>();
-            try(ResultSet rs = executeQuery(setter, pstmt)) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-            }
-            return results;
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
-        }
+        return executeWithConnection(conn -> query(sql, conn, setter, rowMapper));
     }
 
     public final <T> List<T> query(String sql, Connection conn, RowMapper<T> rowMapper, Object... args) {
@@ -82,7 +68,7 @@ public class JdbcTemplate {
             log.debug("query : {}", sql);
 
             List<T> results = new ArrayList<>();
-            try(ResultSet rs = executeQuery(setter, pstmt)) {
+            try (ResultSet rs = executeQuery(setter, pstmt)) {
                 while (rs.next()) {
                     results.add(rowMapper.mapRow(rs));
                 }
@@ -92,6 +78,20 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T executeWithConnection(Function<Connection, T> action) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (ConnectionRelease release = () -> DataSourceUtils.releaseConnection(connection, dataSource)) {
+            return action.apply(connection);
+        }
+    }
+
+    @FunctionalInterface
+    private interface ConnectionRelease extends AutoCloseable {
+
+        @Override
+        void close();
     }
 
     private ResultSet executeQuery(PreparedStatementSetter setter, PreparedStatement pstmt) throws SQLException {
