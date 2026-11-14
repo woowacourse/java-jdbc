@@ -26,26 +26,45 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
+        return execute(sql, statement -> query(statement, rowMapper), args);
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql,
+                           final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, statement -> query(statement, rowMapper), args);
+    }
+
+    private <T> List<T> query(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (resultSet.next()) {
+                results.add(rowMapper.mapRow(resultSet));
             }
-        }, args);
+            return results;
+        }
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, args);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementCallback<T> callback, final Object... args) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
             setParameters(statement, args);
             return callback.execute(statement);
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+            throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);
         }
     }
 

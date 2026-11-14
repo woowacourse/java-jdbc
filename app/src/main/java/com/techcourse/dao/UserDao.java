@@ -4,11 +4,15 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
+
+    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -27,9 +31,11 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        jdbcTemplate.update(UPDATE_SQL, updateParameters(user));
+    }
 
-        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(connection, UPDATE_SQL, updateParameters(user));
     }
 
     public List<User> findAll() {
@@ -39,19 +45,24 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        return findUser(jdbcTemplate.query(FIND_BY_ID_SQL, this::mapRow, id));
+    }
 
-        return findUser(sql, id);
+    public User findById(final Connection connection, final Long id) {
+        return findUser(jdbcTemplate.query(connection, FIND_BY_ID_SQL, this::mapRow, id));
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return findUser(sql, account);
+        return findUser(jdbcTemplate.query(sql, this::mapRow, account));
     }
 
-    private User findUser(final String sql, final Object arg) {
-        final var users = jdbcTemplate.query(sql, this::mapRow, arg);
+    private Object[] updateParameters(final User user) {
+        return new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
+    }
+
+    private User findUser(final List<User> users) {
         if (users.isEmpty()) {
             return null;
         }
