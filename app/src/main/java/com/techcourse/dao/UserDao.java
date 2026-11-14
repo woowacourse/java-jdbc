@@ -28,22 +28,13 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.update(sql, statement -> {
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
         final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.update(sql, statement -> {
-            statement.setString(1, user.getAccount());
-            statement.setString(2, user.getPassword());
-            statement.setString(3, user.getEmail());
-            statement.setLong(4, user.getId());
-        });
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
@@ -53,16 +44,16 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, statement -> statement.setLong(1, id), USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
-        return jdbcTemplate.queryForObject(sql, statement -> statement.setString(1, account), USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
     }
 
     public User findByEmail(final String email) {
         final var sql = "select id, account, password, email from users where email = ?";
-        return jdbcTemplate.queryForObject(sql, statement -> statement.setString(1, email), USER_ROW_MAPPER);
+        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, email);
     }
 }
