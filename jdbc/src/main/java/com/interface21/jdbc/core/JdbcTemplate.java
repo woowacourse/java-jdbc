@@ -3,6 +3,7 @@ package com.interface21.jdbc.core;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,14 +32,6 @@ public class JdbcTemplate {
         execute(sql, pss, PreparedStatement::executeUpdate);
     }
 
-    public void update(final Connection conn, final String sql, final Object... args) {
-        update(conn, sql, argumentsSetter(args));
-    }
-
-    public void update(final Connection conn, final String sql, final PreparedStatementSetter pss) {
-        execute(conn, sql, pss, PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, rowMapper, argumentsSetter(args));
     }
@@ -47,26 +40,12 @@ public class JdbcTemplate {
         return execute(sql, pss, resultExtractor(rowMapper));
     }
 
-    public <T> List<T> query(final Connection conn, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        return execute(conn, sql, pss, resultExtractor(rowMapper));
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return queryForObject(sql, rowMapper, argumentsSetter(args));
     }
 
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryForObject(conn, sql, rowMapper, argumentsSetter(args));
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
         final List<T> results = query(sql, rowMapper, pss);
-
-        return singleResult(results);
-    }
-
-    public <T> T queryForObject(final Connection conn, final String sql, final RowMapper<T> rowMapper, final PreparedStatementSetter pss) {
-        final List<T> results = query(conn, sql, rowMapper, pss);
 
         return singleResult(results);
     }
@@ -85,10 +64,11 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> action) {
-        try (Connection conn = dataSource.getConnection()) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, pss, action);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource);
         }
     }
 

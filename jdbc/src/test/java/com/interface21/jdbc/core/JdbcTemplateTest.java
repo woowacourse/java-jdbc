@@ -14,11 +14,13 @@ import static org.mockito.Mockito.when;
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -40,6 +42,11 @@ class JdbcTemplateTest {
         when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -152,7 +159,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void update_WhenConnectionNotGiven_ThenCloseConnection() throws SQLException {
+    void update_WhenNoConnectionBound_ThenOpenAndCloseConnection() throws SQLException {
         jdbcTemplate.update("update users set account = ? where id = ?", "gugu", 1L);
 
         verify(preparedStatement).executeUpdate();
@@ -162,8 +169,10 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void update_WhenConnectionGiven_ThenNotCloseConnection() throws SQLException {
-        jdbcTemplate.update(connection, "update users set account = ? where id = ?", "gugu", 1L);
+    void update_WhenConnectionBound_ThenUseItAndNotClose() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        jdbcTemplate.update("update users set account = ? where id = ?", "gugu", 1L);
 
         verify(preparedStatement).executeUpdate();
         verify(preparedStatement).close();
@@ -172,7 +181,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void update_WhenConnectionNotGivenAndExecuteFails_ThenCloseConnection() throws SQLException {
+    void update_WhenNoConnectionBoundAndExecuteFails_ThenCloseConnection() throws SQLException {
         when(preparedStatement.executeUpdate()).thenThrow(new SQLException("fail"));
 
         assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
@@ -183,10 +192,11 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void update_WhenConnectionGivenAndExecuteFails_ThenNotCloseConnection() throws SQLException {
+    void update_WhenConnectionBoundAndExecuteFails_ThenNotCloseConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(preparedStatement.executeUpdate()).thenThrow(new SQLException("fail"));
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set account = ?", "gugu"))
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
                 .isInstanceOf(DataAccessException.class);
 
         verify(preparedStatement).close();
