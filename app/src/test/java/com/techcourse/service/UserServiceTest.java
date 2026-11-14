@@ -41,8 +41,13 @@ class UserServiceTest {
         userService.changePassword(1L, newPassword, createdBy);
 
         final var actual = userService.findById(1L);
+        final var historyCreators = jdbcTemplate.query(
+                "select created_by from user_history where user_id = ?",
+                rs -> rs.getString("created_by"),
+                1L);
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+        assertThat(historyCreators).containsExactly(createdBy);
     }
 
     @Test
