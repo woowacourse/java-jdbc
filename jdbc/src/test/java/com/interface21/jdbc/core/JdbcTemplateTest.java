@@ -99,6 +99,19 @@ class JdbcTemplateTest {
                 .satisfies(e -> assertThat(e.getSuppressed()[0]).hasCause(closeException));
     }
 
+    @DisplayName("커넥션 반납 중 RuntimeException이 발생해도 처음 예외를 던지고 반납 예외는 suppressed로 남긴다")
+    @Test
+    void keepCauseWhenReleaseThrowsRuntimeException() throws SQLException {
+        SQLException cause = new SQLException("update 실패");
+        IllegalStateException closeException = new IllegalStateException("반납 실패");
+        when(pstmt.executeUpdate()).thenThrow(cause);
+        doThrow(closeException).when(conn).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .hasCause(cause)
+                .hasSuppressedException(closeException);
+    }
+
     @DisplayName("조회 결과를 RowMapper로 변환하고 자원을 반납한다")
     @Test
     void query() throws SQLException {
