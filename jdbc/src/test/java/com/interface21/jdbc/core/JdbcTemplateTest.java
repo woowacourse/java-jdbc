@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -25,11 +27,12 @@ class JdbcTemplateTest {
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
     @Test
-    void borrowedConnectionRemainsOpenAfterUpdate() throws SQLException {
+    void transactionConnectionRemainsOpenAfterUpdate() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.executeUpdate()).thenReturn(1);
 
-        assertThat(jdbcTemplate.update(connection, SQL, "changed", 1L)).isEqualTo(1);
+        assertThat(jdbcTemplate.update(SQL, "changed", 1L)).isEqualTo(1);
 
         verify(statement).setObject(1, "changed");
         verify(statement).setObject(2, 1L);
@@ -39,16 +42,34 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void borrowedConnectionRemainsOpenAfterFailure() throws SQLException {
+    void transactionConnectionRemainsOpenAfterFailure() throws SQLException {
         final var cause = new SQLException("update failed");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.executeUpdate()).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, "changed", 1L))
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, "changed", 1L))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
         verify(statement).close();
         verify(connection, never()).close();
+    }
+
+    @AfterEach
+    void unbindConnection() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
+    @Test
+    void connectionOutsideTransactionIsClosedAfterUpdate() throws SQLException {
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.prepareStatement(SQL)).thenReturn(statement);
+
+        jdbcTemplate.update(SQL, "changed", 1L);
+
+        verify(statement).close();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 }
