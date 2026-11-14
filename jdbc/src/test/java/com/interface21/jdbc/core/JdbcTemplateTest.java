@@ -3,23 +3,27 @@ package com.interface21.jdbc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection conn;
     private PreparedStatement pstmt;
     private ResultSet rs;
@@ -27,7 +31,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         conn = mock(Connection.class);
         pstmt = mock(PreparedStatement.class);
         rs = mock(ResultSet.class);
@@ -37,6 +41,11 @@ class JdbcTemplateTest {
         when(pstmt.executeQuery()).thenReturn(rs);
 
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @DisplayName("update는 영향받은 행 수를 반환한다")
@@ -49,14 +58,18 @@ class JdbcTemplateTest {
         assertThat(affectedRows).isEqualTo(3);
     }
 
-    @DisplayName("전달받은 Connection으로 update를 실행하고 Connection은 닫지 않는다")
+    @DisplayName("트랜잭션에 바인딩된 Connection이 있으면 그 Connection으로 실행하고 닫지 않는다")
     @Test
-    void updateWithConnection() throws SQLException {
-        jdbcTemplate.update(conn, "update users set account = ?", "gugu");
+    void updateWithBoundConnection() throws SQLException {
+        Connection boundConn = mock(Connection.class);
+        when(boundConn.prepareStatement(anyString())).thenReturn(pstmt);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConn);
 
-        verify(pstmt).executeUpdate();
-        verify(pstmt).close();
-        verify(conn, never()).close();
+        jdbcTemplate.update("update users set account = ?", "gugu");
+
+        verify(boundConn).prepareStatement(anyString());
+        verify(boundConn, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     @DisplayName("update 실행 중 예외가 발생해도 자원을 반납하고 원인 예외를 보존한다")
@@ -71,6 +84,32 @@ class JdbcTemplateTest {
 
         verify(pstmt).close();
         verify(conn).close();
+    }
+
+    @DisplayName("SQL 실행과 커넥션 반납이 모두 실패하면 처음 예외를 던지고 반납 예외는 suppressed로 남긴다")
+    @Test
+    void keepCauseWhenReleaseFails() throws SQLException {
+        SQLException cause = new SQLException("update 실패");
+        SQLException closeException = new SQLException("반납 실패");
+        when(pstmt.executeUpdate()).thenThrow(cause);
+        doThrow(closeException).when(conn).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .hasCause(cause)
+                .satisfies(e -> assertThat(e.getSuppressed()[0]).hasCause(closeException));
+    }
+
+    @DisplayName("커넥션 반납 중 RuntimeException이 발생해도 처음 예외를 던지고 반납 예외는 suppressed로 남긴다")
+    @Test
+    void keepCauseWhenReleaseThrowsRuntimeException() throws SQLException {
+        SQLException cause = new SQLException("update 실패");
+        IllegalStateException closeException = new IllegalStateException("반납 실패");
+        when(pstmt.executeUpdate()).thenThrow(cause);
+        doThrow(closeException).when(conn).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set account = ?", "gugu"))
+                .hasCause(cause)
+                .hasSuppressedException(closeException);
     }
 
     @DisplayName("조회 결과를 RowMapper로 변환하고 자원을 반납한다")
