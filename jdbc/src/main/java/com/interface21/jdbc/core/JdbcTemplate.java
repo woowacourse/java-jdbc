@@ -28,8 +28,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final StatementCallback<T> callback, final Object... args) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, args);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final StatementCallback<T> callback, final Object... args) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             for (int i = 0; i < args.length; i++) {
@@ -46,6 +54,10 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -60,19 +72,26 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return execute(sql, statement -> {
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
+        return execute(sql, statement -> mapSingleRow(statement, rowMapper), args);
+    }
 
-                final T result = rowMapper.mapRow(resultSet);
-                if (resultSet.next()) {
-                    throw new DataAccessException("조회 결과는 최대 1개여야 합니다. 실제 결과 수: 2개 이상");
-                }
+    public <T> T queryForObject(final Connection connection, final String sql,
+                                final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, statement -> mapSingleRow(statement, rowMapper), args);
+    }
 
-                return result;
+    private <T> T mapSingleRow(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            if (!resultSet.next()) {
+                return null;
             }
-        }, args);
+
+            final T result = rowMapper.mapRow(resultSet);
+            if (resultSet.next()) {
+                throw new DataAccessException("조회 결과는 최대 1개여야 합니다. 실제 결과 수: 2개 이상");
+            }
+
+            return result;
+        }
     }
 }
