@@ -44,10 +44,19 @@ public class TxUserService implements UserService {
     private void changePasswordInTransaction(Connection conn, long id, String newPassword, String createdBy) {
         try {
             conn.setAutoCommit(false);
-            changePasswordOrRollback(conn, id, newPassword, createdBy);
+        } catch (SQLException e) {
+            throw new DataAccessException("트랜잭션을 시작할 수 없습니다.", e);
+        }
+        changePasswordOrRollback(conn, id, newPassword, createdBy);
+        commitOrRollback(conn);
+    }
+
+    private void commitOrRollback(Connection conn) {
+        try {
             conn.commit();
         } catch (SQLException e) {
-            throw new DataAccessException("비밀번호 변경 트랜잭션 처리에 실패했습니다.", e);
+            rollback(conn, e);
+            throw new DataAccessException("트랜잭션을 커밋할 수 없습니다.", e);
         }
     }
 

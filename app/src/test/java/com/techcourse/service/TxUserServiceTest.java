@@ -49,6 +49,21 @@ class TxUserServiceTest {
         assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
+    @DisplayName("커밋에 실패하면 롤백을 시도하고 커넥션을 정리한다")
+    @Test
+    void rollbackWhenCommitFails() throws SQLException {
+        SQLException commitException = new SQLException("커밋 실패");
+        doThrow(commitException).when(conn).commit();
+
+        assertThatThrownBy(() -> txUserService.changePassword(1L, "newPassword", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(commitException);
+
+        verify(conn).rollback();
+        verify(conn).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
     @DisplayName("롤백도 실패하면 처음 예외를 던지고 롤백 예외는 suppressed로 남긴다")
     @Test
     void keepCauseWhenRollbackFails() throws SQLException {
