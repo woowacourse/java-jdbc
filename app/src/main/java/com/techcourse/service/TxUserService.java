@@ -4,8 +4,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
@@ -17,11 +15,7 @@ public class TxUserService implements UserService {
     private final UserService userService;
     private final DataSource dataSource;
 
-    public TxUserService(final DataSource dataSource) {
-        this(new AppUserService(new UserDao(dataSource), new UserHistoryDao(dataSource)), dataSource);
-    }
-
-    TxUserService(final UserService userService, final DataSource dataSource) {
+    public TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = userService;
         this.dataSource = dataSource;
     }
