@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -22,11 +21,6 @@ public class UserHistoryDao {
 
     public void log(final UserHistory userHistory) {
         final var affectedRows = jdbcTemplate.update(INSERT_SQL, toParameters(userHistory));
-        log.debug("User history saved, userId={}, affectedRows={}", userHistory.getUserId(), affectedRows);
-    }
-
-    public void log(final Connection connection, final UserHistory userHistory) {
-        final var affectedRows = jdbcTemplate.update(connection, INSERT_SQL, toParameters(userHistory));
         log.debug("User history saved, userId={}, affectedRows={}", userHistory.getUserId(), affectedRows);
     }
 

@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -42,9 +41,9 @@ public class UserDao {
         log.debug("User updated, userId={}, affectedRows={}", user.getId(), affectedRows);
     }
 
-    public void updatePassword(final Connection connection, final User user) {
+    public void updatePassword(final User user) {
         final var sql = "update users set password = ? where id = ?";
-        final var affectedRows = jdbcTemplate.update(connection, sql, user.getPassword(), user.getId());
+        final var affectedRows = jdbcTemplate.update(sql, user.getPassword(), user.getId());
         validateUpdated(user, affectedRows);
         log.debug("User password updated, userId={}, affectedRows={}", user.getId(), affectedRows);
     }
@@ -58,12 +57,6 @@ public class UserDao {
 
     public User findById(final Long id) {
         final var user = jdbcTemplate.queryForObject(FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
-        log.debug("User lookup by id, userId={}, found={}", id, user != null);
-        return user;
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        final var user = jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
         log.debug("User lookup by id, userId={}, found={}", id, user != null);
         return user;
     }
