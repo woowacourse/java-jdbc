@@ -72,6 +72,19 @@ class UserServiceTest {
         }
     }
 
+    @DisplayName("존재하지 않는 사용자의 비밀번호를 변경하면 예외가 발생하고 이력이 남지 않는다")
+    @Test
+    void rejectsPasswordChangeForMissingUser() {
+        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+
+        assertThatThrownBy(() -> userService.changePassword(999L, "newPassword", "admin"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("존재하지 않는 사용자입니다.");
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
+        assertNoHistory();
+    }
+
     @DisplayName("이력 저장 중 예외가 발생하면 비밀번호 변경을 롤백한다")
     @Test
     void testTransactionRollback() {
