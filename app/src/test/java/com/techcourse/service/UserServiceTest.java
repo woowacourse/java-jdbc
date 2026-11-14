@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
-import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,8 +42,7 @@ class UserServiceTest {
     @Test
     @DisplayName("비밀번호 변경과 변경자, 변경 시각을 담은 이력을 함께 저장한다")
     void change_password() {
-        final var userHistoryDao = new UserHistoryDao(dataSource);
-        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
+        final var userService = UserServiceFactory.create(dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -87,7 +85,7 @@ class UserServiceTest {
     @Test
     @DisplayName("다음 비밀번호 변경이 실패해도 직전 비밀번호와 기존 이력은 유지한다")
     void preserve_previous_password_and_history_after_failure() {
-        final var userService = new TxUserService(new AppUserService(userDao, new UserHistoryDao(dataSource)), dataSource);
+        final var userService = UserServiceFactory.create(dataSource);
         final var committedPassword = "committed-password";
         userService.changePassword(1L, committedPassword, "first-editor");
         assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
@@ -109,7 +107,7 @@ class UserServiceTest {
     @Test
     @DisplayName("이력 INSERT가 DB 제약 조건을 위반하면 비밀번호 변경도 롤백한다")
     void rollback_history_constraint_violation() {
-        final var userService = new TxUserService(new AppUserService(userDao, new UserHistoryDao(dataSource)), dataSource);
+        final var userService = UserServiceFactory.create(dataSource);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", null))
                 .isInstanceOf(DataAccessException.class)
@@ -123,7 +121,7 @@ class UserServiceTest {
     @Test
     @DisplayName("비밀번호를 변경할 사용자가 없으면 아이디를 담은 예외를 던진다")
     void change_password_for_missing_user() {
-        final var userService = new TxUserService(new AppUserService(userDao, new UserHistoryDao(dataSource)), dataSource);
+        final var userService = UserServiceFactory.create(dataSource);
 
         assertThatThrownBy(() -> userService.changePassword(999L, "newPassword", "gugu"))
                 .isInstanceOf(NoSuchElementException.class)
