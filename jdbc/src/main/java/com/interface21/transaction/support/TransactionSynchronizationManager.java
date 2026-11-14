@@ -25,6 +25,9 @@ public abstract class TransactionSynchronizationManager {
             connections = new HashMap<>();
             resources.set(connections);
         }
+        if (connections.containsKey(key)) {
+            throw new IllegalStateException("이미 바인딩된 커넥션이 있습니다: " + key);
+        }
         connections.put(key, value);
     }
 
