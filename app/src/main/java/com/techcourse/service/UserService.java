@@ -8,8 +8,12 @@ import com.interface21.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final DataSource dataSource;
     private final UserDao userDao;
@@ -58,9 +62,10 @@ public class UserService {
                     }
                 } catch (SQLException resetException) {
                     if (failure == null) {
-                        throw resetException;
+                        log.warn("커밋 후 autoCommit 복원에 실패했습니다.", resetException);
+                    } else {
+                        failure.addSuppressed(resetException);
                     }
-                    failure.addSuppressed(resetException);
                 }
             }
         } catch (SQLException e) {
