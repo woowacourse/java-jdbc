@@ -6,6 +6,7 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -27,17 +28,48 @@ class UserHistoryDaoTest {
         try (var connection = dataSource.getConnection();
              var statement = connection.createStatement()) {
             statement.execute("truncate table user_history restart identity");
+            statement.execute("truncate table users restart identity");
         }
     }
 
+    @DisplayName("DataSource로 생성한 DAO에서 변경 이력을 저장한다")
     @Test
     void logWithDataSource() throws SQLException {
         assertHistorySaved(new UserHistoryDao(dataSource));
     }
 
+    @DisplayName("JdbcTemplate으로 생성한 DAO에서 변경 이력을 저장한다")
     @Test
     void logWithJdbcTemplate() throws SQLException {
         assertHistorySaved(new UserHistoryDao(new JdbcTemplate(dataSource)));
+    }
+
+    @DisplayName("같은 연결에서 실행한 사용자 수정과 이력 저장을 함께 롤백한다")
+    @Test
+    void rollbackUserAndHistoryChangesOnSharedConnection() throws SQLException {
+        final var jdbcTemplate = new JdbcTemplate(dataSource);
+        final var userDao = new UserDao(jdbcTemplate);
+        final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
+        userDao.insert(new User("gugu", "password", "gugu@example.com"));
+
+        try (var connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            final var user = userDao.findById(connection, 1L);
+            user.changePassword("new-password");
+
+            userDao.update(connection, user);
+            userHistoryDao.log(connection, new UserHistory(user, "admin"));
+
+            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("new-password");
+            assertThat(jdbcTemplate.query(connection, "select password from user_history",
+                    row -> row.getString("password"))).containsExactly("new-password");
+
+            connection.rollback();
+        }
+
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select password from user_history", row -> row.getString("password")))
+                .isEmpty();
     }
 
     private void assertHistorySaved(final UserHistoryDao userHistoryDao) throws SQLException {

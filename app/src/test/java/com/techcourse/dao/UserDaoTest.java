@@ -5,6 +5,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
@@ -30,6 +31,7 @@ class UserDaoTest {
         userDao.insert(user);
     }
 
+    @DisplayName("저장된 모든 사용자를 조회한다")
     @Test
     void findAll() {
         userDao.insert(new User("other", "other-password", "other@example.com"));
@@ -43,6 +45,7 @@ class UserDaoTest {
                         tuple(2L, "other", "other-password", "other@example.com"));
     }
 
+    @DisplayName("아이디로 사용자를 조회한다")
     @Test
     void findById() {
         final var user = userDao.findById(1L);
@@ -53,6 +56,7 @@ class UserDaoTest {
         assertThat(user.getEmail()).isEqualTo("hkkang@woowahan.com");
     }
 
+    @DisplayName("주입받은 JdbcTemplate으로 사용자를 조회한다")
     @Test
     void findByIdWithInjectedJdbcTemplate() {
         final var jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
@@ -61,11 +65,13 @@ class UserDaoTest {
         assertThat(userDao.findById(1L).getAccount()).isEqualTo("gugu");
     }
 
+    @DisplayName("아이디에 해당하는 사용자가 없으면 null을 반환한다")
     @Test
     void findByIdReturnsNullWhenNotFound() {
         assertThat(userDao.findById(999L)).isNull();
     }
 
+    @DisplayName("계정으로 사용자를 조회한다")
     @Test
     void findByAccount() {
         final var account = "gugu";
@@ -75,11 +81,13 @@ class UserDaoTest {
         assertThat(user.getId()).isEqualTo(1L);
     }
 
+    @DisplayName("계정에 해당하는 사용자가 없으면 null을 반환한다")
     @Test
     void findByAccountReturnsNullWhenNotFound() {
         assertThat(userDao.findByAccount("unknown")).isNull();
     }
 
+    @DisplayName("사용자 정보를 저장한다")
     @Test
     void insert() {
         final var account = "insert-gugu";
@@ -93,6 +101,7 @@ class UserDaoTest {
         assertThat(actual.getEmail()).isEqualTo("insert@example.com");
     }
 
+    @DisplayName("대상 사용자 정보만 수정한다")
     @Test
     void update() {
         userDao.insert(new User("other", "other-password", "other@example.com"));
