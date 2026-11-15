@@ -73,8 +73,11 @@ public class JdbcTemplate {
             throw new DataAccessException(e);
         } finally {
             if (!inTransaction) {
-                TransactionSynchronizationManager.unbindResource(dataSource);
-                DataSourceUtils.releaseConnection(conn, dataSource);
+                try {
+                    DataSourceUtils.releaseConnection(conn, dataSource);
+                } finally {
+                    TransactionSynchronizationManager.unbindResource(dataSource);
+                }
             }
         }
     }

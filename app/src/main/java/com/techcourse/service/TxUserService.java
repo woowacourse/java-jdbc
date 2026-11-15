@@ -48,8 +48,11 @@ public class TxUserService implements UserService {
             rollback(conn, e);
             throw new DataAccessException(e);
         } finally {
-            DataSourceUtils.releaseConnection(conn, dataSource);
-            TransactionSynchronizationManager.unbindResource(dataSource);
+            try {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
