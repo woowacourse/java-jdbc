@@ -11,6 +11,8 @@ import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,10 +43,15 @@ class UserServiceTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void connectionIsUnbound() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -61,7 +68,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -81,7 +88,8 @@ class UserServiceTest {
         final var transactionDataSource = mock(DataSource.class);
         when(transactionDataSource.getConnection()).thenReturn(connection);
         doThrow(new SQLException("reset failed")).when(connection).setAutoCommit(true);
-        final var userService = new UserService(transactionDataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(transactionDataSource, new AppUserService(
+                new UserDao(transactionDataSource), new UserHistoryDao(transactionDataSource)));
 
         assertDoesNotThrow(() -> userService.changePassword(1L, "newPassword", "gugu"));
 
@@ -91,6 +99,7 @@ class UserServiceTest {
         verify(connection).commit();
         verify(connection, never()).rollback();
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
     }
 
     @Test
@@ -102,7 +111,8 @@ class UserServiceTest {
         final var resetFailure = new SQLException("reset failed");
         doThrow(commitFailure).when(connection).commit();
         doThrow(resetFailure).when(connection).setAutoCommit(true);
-        final var userService = new UserService(transactionDataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(transactionDataSource, new AppUserService(
+                new UserDao(transactionDataSource), new UserHistoryDao(transactionDataSource)));
 
         final var failure = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -113,5 +123,6 @@ class UserServiceTest {
         assertThat(jdbcTemplate.query("select user_id from user_history", rs -> rs.getLong("user_id"))).isEmpty();
         verify(connection).rollback();
         verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
     }
 }
