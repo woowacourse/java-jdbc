@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -22,16 +24,8 @@ public class JdbcTemplate {
         execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public void update(Connection connection, String sql, Object... params) {
-        execute(connection, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public <T> T find(String sql, RowMapper<T> rowMapper, Object... params) {
         return execute(sql, query(rs -> mapSingleRow(rs, rowMapper)), params);
-    }
-
-    public <T> T find(Connection connection, String sql, RowMapper<T> rowMapper, Object... params) {
-        return execute(connection, sql, query(rs -> mapSingleRow(rs, rowMapper)), params);
     }
 
     private <T> T mapSingleRow(ResultSet rs, RowMapper<T> rowMapper) throws SQLException {
@@ -66,10 +60,14 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, SqlOperation<PreparedStatement, T> operation, Object... params) {
-        try (Connection connection = dataSource.getConnection()) {
+        Connection connection = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
             return execute(connection, sql, operation, params);
-        } catch (SQLException e) {
+        } catch (CannotGetJdbcConnectionException e) {
             throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

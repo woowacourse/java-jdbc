@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -28,14 +27,6 @@ public class UserHistoryDao {
         log.debug("query : {}", sql);
 
         jdbcTemplate.update(sql, insertParameters(userHistory));
-    }
-
-    public void log(final Connection connection, final UserHistory userHistory) {
-        final var sql = createQueryForInsert();
-
-        log.debug("query : {}", sql);
-
-        jdbcTemplate.update(connection, sql, insertParameters(userHistory));
     }
 
     private String createQueryForInsert() {
