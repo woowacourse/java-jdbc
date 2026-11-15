@@ -26,8 +26,28 @@ public class JdbcTemplate {
         return execute(sql, args, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, args, PreparedStatement::executeUpdate);
+    }
+
     public <R> R queryForObject(final String sql, final RowMapper<R> rowMapper, Object... args) {
         return execute(sql, args, pstmt -> {
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rowMapper.mapRow(rs, 0);
+            }
+            return null;
+        });
+    }
+
+    public <R> R queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<R> rowMapper,
+            final Object... args
+    ) {
+        return execute(connection, sql, args, pstmt -> {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -59,12 +79,23 @@ public class JdbcTemplate {
             final Object[] args,
             final PreparedStatementCallback<T> callback
     ) {
+        try (Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, args, callback);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final Object[] args,
+            final PreparedStatementCallback<T> callback
+    ) {
         log.debug("query : {}", sql);
 
-        try (
-            Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)
-        ) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 pstmt.setObject(i + 1, args[i]);
             }
