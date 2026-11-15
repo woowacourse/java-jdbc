@@ -30,20 +30,20 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, createPreparedStatementSetter(args), PreparedStatement::executeUpdate);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, createPreparedStatementSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        return execute(sql, setter, pstmt -> {
-            try (final ResultSet rs = pstmt.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-                return results;
-            }
-        });
+        return execute(sql, setter, pstmt -> mapRows(pstmt, rowMapper));
+    }
+
+    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return execute(connection, sql, createPreparedStatementSetter(args), pstmt -> mapRows(pstmt, rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -51,7 +51,14 @@ public class JdbcTemplate {
     }
 
     public <T> T queryForObject(final String sql, final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        final List<T> results = query(sql, setter, rowMapper);
+        return singleResult(sql, query(sql, setter, rowMapper));
+    }
+
+    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return singleResult(sql, query(connection, sql, rowMapper, args));
+    }
+
+    private <T> T singleResult(final String sql, final List<T> results) {
         if (results.isEmpty()) {
             throw new DataAccessException("조회 결과가 없습니다. sql : " + sql);
         }
@@ -62,14 +69,32 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter, final PreparedStatementCallback<T> action) {
+        try (final Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, setter, action);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행 중 오류가 발생했습니다. sql : " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final PreparedStatementSetter setter, final PreparedStatementCallback<T> action) {
         log.debug("query : {}", sql);
 
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (final PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setter.setValues(pstmt);
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행 중 오류가 발생했습니다. sql : " + sql, e);
+        }
+    }
+
+    private <T> List<T> mapRows(final PreparedStatement pstmt, final RowMapper<T> rowMapper) throws SQLException {
+        try (final ResultSet rs = pstmt.executeQuery()) {
+            final List<T> results = new ArrayList<>();
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+            return results;
         }
     }
 
