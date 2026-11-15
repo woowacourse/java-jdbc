@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 class TransactionSynchronizationManagerTest {
@@ -31,6 +32,22 @@ class TransactionSynchronizationManagerTest {
             TransactionSynchronizationManager.unbindResource(secondDataSource);
         }
         assertThat(TransactionSynchronizationManager.getResource(secondDataSource)).isNull();
+    }
+
+    @Test
+    void duplicateBindingPreservesTheOriginalConnection() {
+        var dataSource = mock(DataSource.class);
+        var originalConnection = mock(Connection.class);
+        var duplicateConnection = mock(Connection.class);
+
+        TransactionSynchronizationManager.bindResource(dataSource, originalConnection);
+        try {
+            assertThatThrownBy(() -> TransactionSynchronizationManager.bindResource(dataSource, duplicateConnection))
+                    .isInstanceOf(IllegalStateException.class);
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(originalConnection);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test

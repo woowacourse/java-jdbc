@@ -25,6 +25,9 @@ public abstract class TransactionSynchronizationManager {
             map = new HashMap<>();
             resources.set(map);
         }
+        if (map.containsKey(key)) {
+            throw new IllegalStateException("같은 DataSource에 커넥션을 중복 등록할 수 없습니다.");
+        }
         map.put(key, value);
     }
 
