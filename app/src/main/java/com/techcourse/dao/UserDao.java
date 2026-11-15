@@ -3,8 +3,8 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 public class UserDao {
@@ -40,16 +40,12 @@ public class UserDao {
         jdbcTemplate.update(UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
-    public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-    }
-
     public List<User> findAll() {
         return jdbcTemplate.query(FIND_ALL_SQL, rowMapper);
     }
 
-    public User findById(final Long id) {
-        return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, rowMapper, id);
+    public Optional<User> findById(final Long id) {
+        return Optional.ofNullable(jdbcTemplate.queryForObject(FIND_BY_ID_SQL, rowMapper, id));
     }
 
     public User findByAccount(final String account) {
