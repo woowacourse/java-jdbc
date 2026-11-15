@@ -3,6 +3,7 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.interface21.transaction.support.TransactionTemplate;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -24,6 +25,7 @@ class UserServiceTest {
     private DataSource dataSource;
     private Connection keepAliveConnection;
     private JdbcTemplate jdbcTemplate;
+    private TransactionTemplate transactionTemplate;
     private UserDao userDao;
 
     @BeforeEach
@@ -33,6 +35,7 @@ class UserServiceTest {
         this.dataSource = testDataSource;
         this.keepAliveConnection = dataSource.getConnection();
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.transactionTemplate = new TransactionTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(dataSource);
@@ -51,7 +54,7 @@ class UserServiceTest {
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = new TxUserService(appUserService, dataSource);
+        final UserService userService = new TxUserService(appUserService, transactionTemplate);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -72,7 +75,7 @@ class UserServiceTest {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
         final var appUserService = new AppUserService(userDao, userHistoryDao);
-        final UserService userService = new TxUserService(appUserService, dataSource);
+        final UserService userService = new TxUserService(appUserService, transactionTemplate);
 
         final var originalPassword = userService.findById(1L).getPassword();
         final var newPassword = "newPassword";
