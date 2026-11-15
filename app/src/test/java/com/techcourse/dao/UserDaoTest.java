@@ -3,6 +3,7 @@ package com.techcourse.dao;
 import com.interface21.dao.EmptyResultDataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
@@ -42,19 +43,22 @@ class UserDaoTest {
     }
 
     @Test
-    void findByIdReadsUncommittedChangesFromGivenConnection() throws SQLException {
+    void findByIdReadsUncommittedChangesFromBoundConnection() throws SQLException {
         final var user = userDao.findById(1L);
         final var originalPassword = user.getPassword();
         final var newPassword = "newPassword";
 
-        try (var connection = DataSourceConfig.getInstance().getConnection()) {
+        final var dataSource = DataSourceConfig.getInstance();
+        try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             try {
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
+                userDao.update(user);
 
-                assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo(newPassword);
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo(newPassword);
             } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
                 connection.rollback();
             }
         }
