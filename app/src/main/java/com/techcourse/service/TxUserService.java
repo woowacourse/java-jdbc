@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.techcourse.domain.User;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.interface21.dao.DataAccessException;
@@ -17,7 +19,11 @@ public class TxUserService implements UserService {
     private final DataSource dataSource;
     private final UserService userService;
 
-    public TxUserService(final DataSource dataSource, final UserService userService) {
+    public TxUserService(final DataSource dataSource) {
+        this(dataSource, new AppUserService(new UserDao(dataSource), new UserHistoryDao(dataSource)));
+    }
+
+    TxUserService(final DataSource dataSource, final UserService userService) {
         this.dataSource = dataSource;
         this.userService = userService;
     }

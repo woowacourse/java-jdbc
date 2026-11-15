@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -238,6 +240,33 @@ class JdbcTemplateTest {
         verify(statement).close();
         verify(connection, never()).close();
         verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    @DisplayName("연결 획득 실패도 DataAccessException으로 처리하고 원인을 보존한다")
+    void connectionAcquisitionFailureIsDataAccessException() throws SQLException {
+        final var cause = new SQLException("연결 획득 실패");
+        when(dataSource.getConnection()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, "apple", 7L))
+                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(cause);
+    }
+
+    @Test
+    @DisplayName("연결 해제 실패도 DataAccessException으로 처리하고 원인을 보존한다")
+    void connectionReleaseFailureIsDataAccessException() throws SQLException {
+        when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
+        final var cause = new SQLException("연결 해제 실패");
+        doThrow(cause).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL, "apple", 7L))
+                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(cause);
+
+        verify(statement).close();
     }
 
     private void prepareQuery() throws SQLException {
