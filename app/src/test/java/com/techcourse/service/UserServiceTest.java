@@ -45,7 +45,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final UserHistoryDao userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao, dataSource);
+        final UserService userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
 
         final String newPassword = "qqqqq";
         final String createBy = "gugu";
@@ -65,7 +65,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final UserHistoryDao userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final UserService userService = new UserService(userDao, userHistoryDao, dataSource);
+        final UserService userService = new TxUserService(new AppUserService(userDao, userHistoryDao), dataSource);
 
         final String newPassword = "newPassword";
         final String createBy = "gugu";
@@ -82,7 +82,9 @@ class UserServiceTest {
 
     @Test
     void testHistoryInsertFailure() {
-        final UserService userService = new UserService(userDao, new UserHistoryDao(jdbcTemplate), dataSource);
+        final UserService userService = new TxUserService(
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)),
+                dataSource);
 
         final DataAccessException exception = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", null));
@@ -98,7 +100,10 @@ class UserServiceTest {
         final Connection connection = spy(dataSource.getConnection());
         final DataSource transactionDataSource = mock(DataSource.class);
         when(transactionDataSource.getConnection()).thenReturn(connection);
-        final UserService userService = new UserService(userDao, new MockUserHistoryDao(jdbcTemplate), transactionDataSource);
+        final JdbcTemplate transactionJdbcTemplate = new JdbcTemplate(transactionDataSource);
+        final UserService userService = new TxUserService(
+                new AppUserService(new UserDao(transactionJdbcTemplate), new MockUserHistoryDao(transactionJdbcTemplate)),
+                transactionDataSource);
 
         assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
