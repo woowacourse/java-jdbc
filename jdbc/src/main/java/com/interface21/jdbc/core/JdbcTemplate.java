@@ -30,6 +30,10 @@ public class JdbcTemplate {
         return execute(sql, pss, pstmt -> pstmt.executeUpdate());
     }
 
+    public int update(final Connection conn, final String sql, final Object... args) {
+        return execute(conn, sql, createSetter(args), pstmt -> pstmt.executeUpdate());
+    }
+
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
@@ -65,15 +69,23 @@ public class JdbcTemplate {
         };
     }
 
+    // 커넥션을 직접 만들고, 끝나면 닫음
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> action) {
-        try (final Connection conn = dataSource.getConnection();
-             final PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (final Connection conn = dataSource.getConnection()) {
+            return execute(conn, sql, pss, action);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
 
+    // 받은 커넥션으로 실행만 하고, 커넥션은 닫지 않음
+    private <T> T execute(final Connection conn, final String sql, final PreparedStatementSetter pss,
+                          final PreparedStatementCallback<T> action) {
+        try (final PreparedStatement pstmt = conn.prepareStatement(sql)) {
             log.debug("query : {}", sql);
-
             pss.setValues(pstmt);
-
             return action.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
