@@ -2,12 +2,16 @@ package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.User;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class UserDao {
+
+    private static final String UPDATE_SQL = "update users set account = ?, password = ?, email = ? where id = ?";
+    private static final String FIND_BY_ID_SQL = "select id, account, password, email from users where id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -31,10 +35,19 @@ public class UserDao {
     }
 
     public void update(final User user) {
-        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
-
         jdbcTemplate.update(
-                sql,
+                UPDATE_SQL,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
+    }
+
+    public void update(final Connection connection, final User user) {
+        jdbcTemplate.update(
+                connection,
+                UPDATE_SQL,
                 user.getAccount(),
                 user.getPassword(),
                 user.getEmail(),
@@ -49,9 +62,11 @@ public class UserDao {
     }
 
     public User findById(final Long id) {
-        final var sql = "select id, account, password, email from users where id = ?";
+        return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, UserDao::mapUser, id);
+    }
 
-        return jdbcTemplate.queryForObject(sql, UserDao::mapUser, id);
+    public User findById(final Connection connection, final Long id) {
+        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, UserDao::mapUser, id);
     }
 
     public User findByAccount(final String account) {

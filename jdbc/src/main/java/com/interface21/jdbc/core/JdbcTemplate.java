@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -20,11 +21,29 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... args) {
-        return executeQuery(sql, PreparedStatement::executeUpdate, args);
+        return execute(sql, PreparedStatement::executeUpdate, args);
+    }
+
+    public int update(final Connection connection, final String sql, final Object... args) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, args);
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final var results = query(sql, rowMapper, args);
+        return getSingleResult(results);
+    }
+
+    public <T> T queryForObject(
+            final Connection connection,
+            final String sql,
+            final RowMapper<T> rowMapper,
+            final Object... args
+    ) {
+        final var results = execute(connection, sql, createQueryCallback(rowMapper), args);
+        return getSingleResult(results);
+    }
+
+    private <T> T getSingleResult(final List<T> results) {
         if (results.size() != 1) {
             throw new DataAccessException("Expected exactly 1 row but found " + results.size());
         }
@@ -32,7 +51,11 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return executeQuery(sql, pstmt -> {
+        return execute(sql, createQueryCallback(rowMapper), args);
+    }
+
+    private <T> PreparedStatementCallback<List<T>> createQueryCallback(final RowMapper<T> rowMapper) {
+        return pstmt -> {
             try (final var rs = pstmt.executeQuery()) {
                 final List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -40,16 +63,29 @@ public class JdbcTemplate {
                 }
                 return results;
             }
-        }, args);
+        };
     }
 
-    private <T> T executeQuery(
+    private <T> T execute(
             final String sql,
             final PreparedStatementCallback<T> callback,
             final Object... args
     ) {
-        try (final var connection = dataSource.getConnection();
-             final var pstmt = connection.prepareStatement(sql)) {
+        try (final var connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, args);
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
+            throw new DataAccessException(e);
+        }
+    }
+
+    private <T> T execute(
+            final Connection connection,
+            final String sql,
+            final PreparedStatementCallback<T> callback,
+            final Object... args
+    ) {
+        try (final var pstmt = connection.prepareStatement(sql)) {
             log.debug("query : {}", sql);
 
             final PreparedStatementSetter setter = createPreparedStatementSetter(args);
