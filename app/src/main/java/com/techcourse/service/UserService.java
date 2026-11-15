@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -31,24 +33,27 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final var connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
 
-            try {
-                final var user = userDao.findById(connection, id);
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (RuntimeException e) {
-                rollback(connection, e);
-                throw e;
-            } catch (SQLException e) {
-                rollback(connection, e);
-                throw new DataAccessException(e);
-            }
+        try {
+            connection.setAutoCommit(false);
+            final var user = userDao.findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+            connection.commit();
         } catch (SQLException e) {
-            throw new DataAccessException(e.getMessage(), e);
+            rollback(connection, e);
+            throw new DataAccessException(e);
+        } catch (RuntimeException e) {
+            rollback(connection, e);
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
