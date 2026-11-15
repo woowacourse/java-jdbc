@@ -37,7 +37,9 @@ public class UserService {
         try (final Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false); // 자동 확정 끄기
             try {
-                userDao.update(conn, user); // 같은 커넥션 사용
+                if (userDao.update(conn, user) == 0) { // 같은 커넥션 사용
+                    throw new IllegalArgumentException("[ERROR] 존재하지 않는 사용자입니다. id: " + id);
+                }
                 userHistoryDao.log(conn, new UserHistory(user, createBy));
                 conn.commit(); // 둘 다 성공이면 확정
             } catch (SQLException | RuntimeException e) {
