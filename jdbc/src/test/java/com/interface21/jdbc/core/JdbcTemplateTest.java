@@ -1,6 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,13 +27,14 @@ import static org.mockito.Mockito.when;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private ResultSet resultSet;
 
     @BeforeEach
     void setUp() throws SQLException {
-        final DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -38,6 +42,11 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
         jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -145,14 +154,28 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryWithConnection() throws SQLException {
+    void sqlExceptionInClose() throws SQLException {
+        final SQLException exception = new SQLException("쿼리 실행 실패");
+        when(statement.executeUpdate()).thenThrow(exception);
+        doThrow(new SQLException("연결 종료 실패")).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "newPassword"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(exception)
+                .hasSuppressedException(new CannotGetJdbcConnectionException("Failed to close JDBC Connection"));
+    }
+
+    @Test
+    void queryWithBoundConnection() throws SQLException {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         final Optional<String> account = jdbcTemplate.queryForObject(
-                connection, "select account from users where id = ?", row -> row.getString("account"), 1L);
+                "select account from users where id = ?", row -> row.getString("account"), 1L);
 
         assertThat(account).contains("gugu");
+        verify(dataSource, never()).getConnection();
         verify(statement).setObject(1, 1L);
         verify(resultSet).close();
         verify(statement).close();
@@ -162,11 +185,12 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void sqlExceptionWithConnection() throws SQLException {
+    void sqlExceptionWithBoundConnection() throws SQLException {
         final SQLException exception = new SQLException("수정 실패");
         when(statement.executeUpdate()).thenThrow(exception);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "update users set password = ?", "newPassword"))
+        assertThatThrownBy(() -> jdbcTemplate.update("update users set password = ?", "newPassword"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(exception);
         verify(statement).close();
