@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -142,13 +143,20 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void 외부에서_전달받은_Connection으로_update하면_Connection은_닫지_않는다() throws SQLException {
-        jdbcTemplate.update(connection, SQL, "gugu", 1L);
+    void 트랜잭션에_바인딩된_Connection이_있으면_재사용하고_닫지_않는다() throws SQLException {
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection boundConnection = mock(Connection.class);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(pstmt);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
 
-        verify(pstmt).setObject(1, "gugu");
-        verify(pstmt).setObject(2, 1L);
-        verify(pstmt).executeUpdate();
-        verify(pstmt).close();
-        verify(connection, never()).close();
+        try {
+            new JdbcTemplate(dataSource).update(SQL, "gugu", 1L);
+
+            verify(dataSource, never()).getConnection();
+            verify(pstmt).executeUpdate();
+            verify(boundConnection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 }

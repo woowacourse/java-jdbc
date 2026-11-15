@@ -4,7 +4,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
 
@@ -13,21 +12,15 @@ public class UserHistoryDao {
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this(new JdbcTemplate(dataSource));
+    }
+
+    public UserHistoryDao(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void log(final UserHistory userHistory) {
         jdbcTemplate.update(INSERT_SQL,
-                userHistory.getUserId(),
-                userHistory.getAccount(),
-                userHistory.getPassword(),
-                userHistory.getEmail(),
-                userHistory.getCreatedAt(),
-                userHistory.getCreateBy());
-    }
-
-    public void log(final Connection conn, final UserHistory userHistory) {
-        jdbcTemplate.update(conn, INSERT_SQL,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
