@@ -15,11 +15,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcTemplateTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
@@ -27,7 +29,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        final var dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         resultSet = mock(ResultSet.class);
@@ -159,6 +161,50 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
         verifyStatementAndConnectionClosed();
+    }
+
+    @Test
+    void updateWithExternalConnection() throws SQLException {
+        when(preparedStatement.executeUpdate()).thenReturn(1);
+
+        final int affected = jdbcTemplate.update(connection, "update users set password = ? where id = ?",
+                "new-password", 1L);
+
+        assertThat(affected).isEqualTo(1);
+        verify(preparedStatement).setObject(1, "new-password");
+        verify(preparedStatement).setObject(2, 1L);
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void queryForObjectWithExternalConnection() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final String account = jdbcTemplate.queryForObject(connection, "select account from users where id = ?",
+                rs -> rs.getString("account"), 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(resultSet).close();
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void keepExternalConnectionOpenWhenExecutionFails() throws SQLException {
+        final var cause = new SQLException("update failed");
+        when(preparedStatement.executeUpdate()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(preparedStatement).close();
+        verify(connection, never()).close();
+        verify(dataSource, never()).getConnection();
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
