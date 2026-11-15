@@ -1,8 +1,10 @@
 package com.interface21.jdbc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -65,6 +67,16 @@ class JdbcTemplateTest {
 
             verify(pstmt).close();
             verify(conn).close();
+        }
+
+        @Test
+        @DisplayName("커넥션 close에 실패해도 예외 없이 스레드에서 커넥션을 해제한다.")
+        void unbindWhenCloseFails() throws SQLException {
+            doThrow(new SQLException()).when(conn).close();
+
+            assertThatCode(() -> jdbcTemplate.update(SQL, "password99", 1L))
+                    .doesNotThrowAnyException();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
         }
 
         @Test

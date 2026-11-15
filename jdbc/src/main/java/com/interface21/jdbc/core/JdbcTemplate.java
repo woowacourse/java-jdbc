@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import java.sql.Connection;
@@ -63,9 +64,18 @@ public class JdbcTemplate {
             return execute(conn, sql, pss, action);
         } finally {
             if (!inTransaction) {
-                DataSourceUtils.releaseConnection(conn, dataSource);
-                TransactionSynchronizationManager.unbindResource(dataSource);
+                releaseConnection(conn);
             }
+        }
+    }
+
+    private void releaseConnection(final Connection conn) {
+        try {
+            DataSourceUtils.releaseConnection(conn, dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            log.warn("Connection close 실패", e);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
@@ -8,8 +9,12 @@ import com.techcourse.domain.User;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TxUserService implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(TxUserService.class);
 
     private final DataSource dataSource;
     private final UserService userService;
@@ -47,7 +52,16 @@ public class TxUserService implements UserService {
             rollback(connection, e);
             throw e;
         } finally {
+            releaseConnection(connection);
+        }
+    }
+
+    private void releaseConnection(final Connection connection) {
+        try {
             DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (CannotGetJdbcConnectionException e) {
+            log.warn("Connection close 실패", e);
+        } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
     }
