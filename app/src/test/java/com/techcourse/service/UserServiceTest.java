@@ -17,15 +17,15 @@ import org.junit.jupiter.api.Test;
 
 class UserServiceTest {
 
-    private JdbcTemplate jdbcTemplate;
     private DataSource dataSource;
     private UserDao userDao;
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.dataSource = DataSourceConfig.getInstance();
         this.userDao = new UserDao(dataSource);
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
