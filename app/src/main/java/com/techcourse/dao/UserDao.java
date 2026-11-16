@@ -3,7 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,20 +25,9 @@ public class UserDao {
         jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
-    public void update(final User user) {
+    public int update(final User user) {
         final var sql = "update users set password = ?, email = ? where id = ?";
-        final int updatedCount = jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
-        if (updatedCount == 0) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 사용자입니다. id: " + user.getId());
-        }
-    }
-
-    public void update(final Connection conn, final User user) {
-        final var sql = "update users set password = ?, email = ? where id = ?";
-        final int updatedCount = jdbcTemplate.update(conn, sql, user.getPassword(), user.getEmail(), user.getId());
-        if (updatedCount == 0) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 사용자입니다. id: " + user.getId());
-        }
+        return jdbcTemplate.update(sql, user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {

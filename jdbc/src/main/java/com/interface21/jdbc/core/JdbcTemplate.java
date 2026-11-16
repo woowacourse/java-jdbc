@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,10 +29,6 @@ public class JdbcTemplate {
 
     public int update(final String sql, final PreparedStatementSetter pss) {
         return execute(sql, pss, pstmt -> pstmt.executeUpdate());
-    }
-
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, createSetter(args), pstmt -> pstmt.executeUpdate());
     }
 
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
@@ -69,14 +66,14 @@ public class JdbcTemplate {
         };
     }
 
-    // 커넥션을 직접 만들고, 끝나면 닫음
+    // 보관함(TransactionSynchronizationManager)에서 커넥션을 얻어 실행
     private <T> T execute(final String sql, final PreparedStatementSetter pss,
                           final PreparedStatementCallback<T> action) {
-        try (final Connection conn = dataSource.getConnection()) {
+        final Connection conn = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(conn, sql, pss, action);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } finally {
+            DataSourceUtils.releaseConnection(conn, dataSource); // 닫을지 말지는 DataSourceUtils가 판단
         }
     }
 
