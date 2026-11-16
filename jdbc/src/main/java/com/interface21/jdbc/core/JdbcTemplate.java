@@ -32,10 +32,6 @@ public class JdbcTemplate {
         return execute(sql, pss, pstmt -> pstmt.executeUpdate());
     }
 
-    public int update(final Connection conn, final String sql, final Object... args) {
-        return execute(conn, sql, createSetter(args), pstmt -> pstmt.executeUpdate());
-    }
-
     public <T> Optional<T> queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final List<T> results = query(sql, rowMapper, args);
         if (results.size() > 1) {
