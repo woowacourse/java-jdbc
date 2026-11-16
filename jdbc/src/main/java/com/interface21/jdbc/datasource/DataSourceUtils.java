@@ -40,6 +40,24 @@ public abstract class DataSourceUtils {
         }
     }
 
+    /**
+     * Releases the connection after an operation that may have failed.
+     * If the operation failed, a close failure is attached to that failure instead of replacing it.
+     */
+    public static void releaseConnection(Connection connection, DataSource dataSource, Throwable primaryFailure) {
+        if (primaryFailure == null) {
+            releaseConnection(connection, dataSource);
+            return;
+        }
+        if (connection == null || isTransactional(connection, dataSource)) {
+            return;
+        }
+        try {
+            connection.close();
+        } catch (SQLException | RuntimeException closeFailure) {
+            primaryFailure.addSuppressed(closeFailure);
+        }
+    }
     public static boolean isTransactional(Connection connection, DataSource dataSource) {
         return TransactionSynchronizationManager.getResource(dataSource) == connection;
     }

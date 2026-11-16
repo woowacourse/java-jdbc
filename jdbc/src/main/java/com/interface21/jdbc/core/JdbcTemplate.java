@@ -1,7 +1,6 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,20 +65,10 @@ public class JdbcTemplate {
             failure = e;
             throw e;
         } finally {
-            release(connection, failure);
+            DataSourceUtils.releaseConnection(connection, dataSource, failure);
         }
     }
 
-    private void release(final Connection connection, final Throwable failure) {
-        try {
-            DataSourceUtils.releaseConnection(connection, dataSource);
-        } catch (CannotGetJdbcConnectionException closeFailure) {
-            if (failure == null) {
-                throw closeFailure;
-            }
-            failure.addSuppressed(closeFailure.getCause());
-        }
-    }
 
     private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) throws SQLException {

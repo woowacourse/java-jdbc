@@ -93,4 +93,45 @@ class DataSourceUtilsTest {
                 .isInstanceOf(CannotGetJdbcConnectionException.class)
                 .hasCause(failure);
     }
+
+    @Test
+    void attachesCloseFailureToPrimaryFailureInsteadOfThrowing() throws SQLException {
+        final RuntimeException primary = new RuntimeException("operation failed");
+        final SQLException closeFailure = new SQLException("cannot close");
+        doThrow(closeFailure).when(connection).close();
+
+        DataSourceUtils.releaseConnection(connection, dataSource, primary);
+
+        assertThat(primary.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
+    void attachesRuntimeCloseFailureToPrimaryFailure() throws SQLException {
+        final RuntimeException primary = new RuntimeException("operation failed");
+        final IllegalStateException closeFailure = new IllegalStateException("driver bug on close");
+        doThrow(closeFailure).when(connection).close();
+
+        DataSourceUtils.releaseConnection(connection, dataSource, primary);
+
+        assertThat(primary.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
+    void throwsCloseFailureWhenThereIsNoPrimaryFailure() throws SQLException {
+        final SQLException closeFailure = new SQLException("cannot close");
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> DataSourceUtils.releaseConnection(connection, dataSource, null))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(closeFailure);
+    }
+
+    @Test
+    void keepsBoundConnectionOpenEvenWhenOperationFailed() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        DataSourceUtils.releaseConnection(connection, dataSource, new RuntimeException("operation failed"));
+
+        verify(connection, never()).close();
+    }
 }

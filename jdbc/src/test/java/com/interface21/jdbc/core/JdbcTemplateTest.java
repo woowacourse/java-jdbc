@@ -481,6 +481,19 @@ class JdbcTemplateTest {
     }
 
     @Test
+    void runtimeConnectionCloseFailureDoesNotReplaceExecutionFailure() throws SQLException {
+        final SQLException executionFailure = new SQLException("update failed");
+        final IllegalStateException closeFailure = new IllegalStateException("driver bug on close");
+        when(statement.executeUpdate()).thenThrow(executionFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(executionFailure);
+        assertThat(executionFailure.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
     void updateUsesBoundConnectionWithoutOpeningOrClosingIt() throws SQLException {
         TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(statement.executeUpdate()).thenReturn(3);
