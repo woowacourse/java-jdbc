@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,15 +104,22 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithConnectionDoesNotCloseItAndJoinsCallerTransaction() throws SQLException {
+    void usesConnectionBoundToCurrentThreadAndLeavesItOpen() throws SQLException {
         try (final var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                // 최대 커넥션이 1개이므로 바인딩된 커넥션을 쓰지 않으면 여기서 대기하다 실패한다.
+                jdbcTemplate.update("insert into users (id, account) values (?, ?)", 1L, "gugu");
+                final var accounts = jdbcTemplate.query("select account from users",
+                        (rs, rowNum) -> rs.getString("account"));
 
-            jdbcTemplate.update(connection, "insert into users (id, account) values (?, ?)", 1L, "gugu");
-            jdbcTemplate.update(connection, "insert into users (id, account) values (?, ?)", 2L, "brown");
-
-            assertThat(connection.isClosed()).isFalse();
-            connection.rollback();
+                assertThat(accounts).containsExactly("gugu");
+                assertThat(connection.isClosed()).isFalse();
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
 
         assertThat(jdbcTemplate.query("select id from users", (rs, rowNum) -> rs.getLong("id"))).isEmpty();
@@ -119,44 +127,18 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithConnectionTranslatesFailureAndKeepsConnectionOpen() throws SQLException {
+    void translatesFailureAndKeepsBoundConnectionOpen() throws SQLException {
         try (final var connection = dataSource.getConnection()) {
-            assertThatThrownBy(() -> jdbcTemplate.update(connection, "insert into missing_table values (?)", 1L))
-                    .isInstanceOf(DataAccessException.class)
-                    .hasCauseInstanceOf(SQLException.class);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                assertThatThrownBy(() -> jdbcTemplate.update("insert into missing_table values (?)", 1L))
+                        .isInstanceOf(DataAccessException.class)
+                        .hasCauseInstanceOf(SQLException.class);
 
-            assertThat(connection.isClosed()).isFalse();
-        }
-    }
-
-    @Test
-    void queryWithConnectionSeesUncommittedChangesAndKeepsConnectionOpen() throws SQLException {
-        try (final var connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            jdbcTemplate.update(connection, "insert into users (id, account) values (?, ?)", 1L, "gugu");
-
-            final var accounts = jdbcTemplate.query(connection, "select account from users",
-                    (rs, rowNum) -> rs.getString("account"));
-            final var account = jdbcTemplate.queryForObject(connection, "select account from users where id = ?",
-                    (rs, rowNum) -> rs.getString("account"), 1L);
-
-            assertThat(accounts).containsExactly("gugu");
-            assertThat(account).isEqualTo("gugu");
-            assertThat(connection.isClosed()).isFalse();
-            connection.rollback();
-        }
-        assertThat(dataSource.getActiveConnections()).isZero();
-    }
-
-    @Test
-    void queryForObjectWithConnectionRejectsMultipleRows() throws SQLException {
-        jdbcTemplate.update("insert into users (id, account) values (?, ?), (?, ?)", 1L, "gugu", 2L, "brown");
-
-        try (final var connection = dataSource.getConnection()) {
-            assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, "select account from users",
-                    (rs, rowNum) -> rs.getString("account")))
-                    .isInstanceOf(DataAccessException.class);
-            assertThat(connection.isClosed()).isFalse();
+                assertThat(connection.isClosed()).isFalse();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
     }
 
