@@ -1,8 +1,6 @@
-package com.techcourse.service;
+package com.interface21.transaction.support;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.transaction.support.TransactionSynchronizationManager;
-import com.techcourse.domain.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,16 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-class TxUserServiceTest {
-
-    private static final long ID = 1L;
-    private static final String NEW_PASSWORD = "newPassword";
-    private static final String CREATED_BY = "gugu";
+class TransactionTemplateTest {
 
     private final DataSource dataSource = mock(DataSource.class);
     private final Connection connection = mock(Connection.class);
-    private final UserService delegate = mock(UserService.class);
-    private final TxUserService service = new TxUserService(dataSource, delegate);
+    private final Runnable action = mock(Runnable.class);
+    private final TransactionTemplate transactionTemplate = new TransactionTemplate(dataSource);
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -40,12 +34,12 @@ class TxUserServiceTest {
     }
 
     @Test
-    void delegatesInsideTransactionAndCommitsBeforeRestoringAndClosing() throws SQLException {
-        changePassword();
+    void runsActionInsideTransactionAndCommitsBeforeRestoringAndClosing() throws SQLException {
+        execute();
 
-        final var order = inOrder(connection, delegate);
+        final var order = inOrder(connection, action);
         order.verify(connection).setAutoCommit(false);
-        order.verify(delegate).changePassword(ID, NEW_PASSWORD, CREATED_BY);
+        order.verify(action).run();
         order.verify(connection).commit();
         order.verify(connection).setAutoCommit(true);
         order.verify(connection).close();
@@ -54,14 +48,22 @@ class TxUserServiceTest {
     }
 
     @Test
-    void bindsConnectionOnlyWhileDelegateRuns() {
-        final List<Connection> boundDuringDelegate = new ArrayList<>();
-        doAnswer(invocation -> boundDuringDelegate.add(TransactionSynchronizationManager.getResource(dataSource)))
-                .when(delegate).changePassword(ID, NEW_PASSWORD, CREATED_BY);
+    void returnsResultAfterCommit() throws SQLException {
+        assertThat(transactionTemplate.execute(() -> "result")).isEqualTo("result");
 
-        changePassword();
+        verify(connection).commit();
+        verify(connection).close();
+    }
 
-        assertThat(boundDuringDelegate).containsExactly(connection);
+    @Test
+    void bindsConnectionOnlyWhileActionRuns() {
+        final List<Connection> boundDuringAction = new ArrayList<>();
+        doAnswer(invocation -> boundDuringAction.add(TransactionSynchronizationManager.getResource(dataSource)))
+                .when(action).run();
+
+        execute();
+
+        assertThat(boundDuringAction).containsExactly(connection);
     }
 
     @Test
@@ -69,33 +71,21 @@ class TxUserServiceTest {
         final Connection outer = mock(Connection.class);
         TransactionSynchronizationManager.bindResource(dataSource, outer);
         try {
-            changePassword();
+            execute();
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
 
-        verify(delegate).changePassword(ID, NEW_PASSWORD, CREATED_BY);
+        verify(action).run();
         verifyNoInteractions(outer);
         verify(dataSource, never()).getConnection();
     }
 
     @Test
-    void readAndSaveAreDelegatedWithoutStartingTransaction() throws SQLException {
-        final var user = new User(ID, "gugu", "password", "gugu@example.com");
-        when(delegate.findById(ID)).thenReturn(user);
-
-        assertThat(service.findById(ID)).isSameAs(user);
-        service.save(user);
-
-        verify(delegate).save(user);
-        verify(dataSource, never()).getConnection();
-    }
-
-    @Test
     void rollsBackRuntimeFailureBeforeRestoringAndClosing() throws SQLException {
-        final var failure = failDelegate();
+        final var failure = failAction();
 
-        assertThatThrownBy(this::changePassword).isSameAs(failure);
+        assertThatThrownBy(this::execute).isSameAs(failure);
 
         final var order = inOrder(connection);
         order.verify(connection).rollback();
@@ -107,9 +97,9 @@ class TxUserServiceTest {
     @Test
     void rollsBackErrorAndRethrowsIt() throws SQLException {
         final var failure = new AssertionError("unexpected");
-        doThrow(failure).when(delegate).changePassword(ID, NEW_PASSWORD, CREATED_BY);
+        doThrow(failure).when(action).run();
 
-        assertThatThrownBy(this::changePassword).isSameAs(failure);
+        assertThatThrownBy(this::execute).isSameAs(failure);
 
         verify(connection).rollback();
         verify(connection).close();
@@ -120,7 +110,7 @@ class TxUserServiceTest {
         final var failure = new SQLException("commit failed");
         doThrow(failure).when(connection).commit();
 
-        assertThatThrownBy(this::changePassword)
+        assertThatThrownBy(this::execute)
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         final var order = inOrder(connection);
@@ -132,13 +122,13 @@ class TxUserServiceTest {
 
     @Test
     void rollbackFailureSkipsAutoCommitRestorationAndPreservesFailures() throws SQLException {
-        final var failure = failDelegate();
+        final var failure = failAction();
         final var rollbackFailure = new SQLException("rollback failed");
         final var closeFailure = new SQLException("close failed");
         doThrow(rollbackFailure).when(connection).rollback();
         doThrow(closeFailure).when(connection).close();
 
-        assertThatThrownBy(this::changePassword).isSameAs(failure);
+        assertThatThrownBy(this::execute).isSameAs(failure);
 
         assertThat(failure.getSuppressed()).containsExactly(rollbackFailure, closeFailure);
         verify(connection, never()).setAutoCommit(true);
@@ -146,12 +136,23 @@ class TxUserServiceTest {
     }
 
     @Test
+    void runtimeCloseFailureDoesNotReplaceBusinessFailure() throws SQLException {
+        final var failure = failAction();
+        final var closeFailure = new IllegalStateException("driver bug on close");
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(this::execute).isSameAs(failure);
+
+        assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
     void restorationFailureAfterRollbackDoesNotReplaceBusinessFailure() throws SQLException {
-        final var failure = failDelegate();
+        final var failure = failAction();
         final var restoreFailure = new SQLException("restore failed");
         doThrow(restoreFailure).when(connection).setAutoCommit(true);
 
-        assertThatThrownBy(this::changePassword).isSameAs(failure);
+        assertThatThrownBy(this::execute).isSameAs(failure);
 
         assertThat(failure.getSuppressed()).containsExactly(restoreFailure);
         verify(connection).rollback();
@@ -163,7 +164,7 @@ class TxUserServiceTest {
         final var failure = new SQLException("restore failed");
         doThrow(failure).when(connection).setAutoCommit(true);
 
-        assertThatThrownBy(this::changePassword)
+        assertThatThrownBy(this::execute)
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(connection).commit();
@@ -176,7 +177,7 @@ class TxUserServiceTest {
         final var failure = new SQLException("close failed");
         doThrow(failure).when(connection).close();
 
-        assertThatThrownBy(this::changePassword)
+        assertThatThrownBy(this::execute)
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
         verify(connection).commit();
@@ -187,7 +188,7 @@ class TxUserServiceTest {
     void restoresOriginallyDisabledAutoCommit() throws SQLException {
         when(connection.getAutoCommit()).thenReturn(false);
 
-        changePassword();
+        execute();
 
         verify(connection, times(2)).setAutoCommit(false);
         verify(connection, never()).setAutoCommit(true);
@@ -196,37 +197,37 @@ class TxUserServiceTest {
     }
 
     @Test
-    void startingTransactionFailureClosesWithoutDelegating() throws SQLException {
+    void startingTransactionFailureClosesWithoutRunningAction() throws SQLException {
         final var failure = new SQLException("cannot start transaction");
         doThrow(failure).when(connection).setAutoCommit(false);
 
-        assertThatThrownBy(this::changePassword)
+        assertThatThrownBy(this::execute)
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
-        verifyNoInteractions(delegate);
+        verifyNoInteractions(action);
         verify(connection, never()).commit();
         verify(connection, never()).rollback();
         verify(connection).close();
     }
 
     @Test
-    void connectionAcquisitionFailureDoesNotDelegate() throws SQLException {
+    void connectionAcquisitionFailureDoesNotRunAction() throws SQLException {
         final var failure = new SQLException("connection unavailable");
         when(dataSource.getConnection()).thenThrow(failure);
 
-        assertThatThrownBy(this::changePassword)
+        assertThatThrownBy(this::execute)
                 .isInstanceOf(DataAccessException.class).hasCause(failure);
 
-        verifyNoInteractions(delegate, connection);
+        verifyNoInteractions(action, connection);
     }
 
-    private DataAccessException failDelegate() {
-        final var failure = new DataAccessException("history failed");
-        doThrow(failure).when(delegate).changePassword(ID, NEW_PASSWORD, CREATED_BY);
+    private DataAccessException failAction() {
+        final var failure = new DataAccessException("action failed");
+        doThrow(failure).when(action).run();
         return failure;
     }
 
-    private void changePassword() {
-        service.changePassword(ID, NEW_PASSWORD, CREATED_BY);
+    private void execute() {
+        transactionTemplate.executeWithoutResult(action);
     }
 }
