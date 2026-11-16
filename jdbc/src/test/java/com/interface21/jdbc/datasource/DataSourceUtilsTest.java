@@ -1,6 +1,6 @@
 package com.interface21.jdbc.datasource;
 
-import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.JdbcConnectionCloseException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -63,8 +63,8 @@ class DataSourceUtilsTest {
     }
 
     @Test
-    @DisplayName("연결 반납이 실패하면 원래 SQL 예외를 전달한다")
-    void preservesReleaseFailureCause() throws SQLException {
+    @DisplayName("연결 종료가 실패하면 종료 전용 예외에 원래 SQL 예외를 담는다")
+    void reportsConnectionCloseFailure() throws SQLException {
         // given
         final var dataSource = mock(DataSource.class);
         final var connection = mock(Connection.class);
@@ -72,7 +72,7 @@ class DataSourceUtilsTest {
         doThrow(closeFailure).when(connection).close();
 
         // when
-        final var thrown = assertThrows(CannotGetJdbcConnectionException.class,
+        final var thrown = assertThrows(JdbcConnectionCloseException.class,
                 () -> DataSourceUtils.releaseConnection(connection, dataSource));
 
         // then

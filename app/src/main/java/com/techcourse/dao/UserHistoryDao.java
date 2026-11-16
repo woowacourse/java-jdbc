@@ -7,11 +7,6 @@ import javax.sql.DataSource;
 
 public class UserHistoryDao {
 
-    private static final String INSERT_HISTORY_SQL = """
-            insert into user_history (user_id, account, password, email, created_at, created_by)
-            values (?, ?, ?, ?, ?, ?)
-            """;
-
     private final JdbcTemplate jdbcTemplate;
 
     public UserHistoryDao(final DataSource dataSource) {
@@ -23,7 +18,12 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        jdbcTemplate.update(INSERT_HISTORY_SQL,
+        final var sql = """
+                insert into user_history (user_id, account, password, email, created_at, created_by)
+                values (?, ?, ?, ?, ?, ?)
+                """;
+
+        jdbcTemplate.update(sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),

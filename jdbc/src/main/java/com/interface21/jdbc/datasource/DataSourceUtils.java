@@ -1,6 +1,7 @@
 package com.interface21.jdbc.datasource;
 
 import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.JdbcConnectionCloseException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
@@ -31,7 +32,7 @@ public abstract class DataSourceUtils {
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
+            throw new JdbcConnectionCloseException(ex);
         }
     }
 }
