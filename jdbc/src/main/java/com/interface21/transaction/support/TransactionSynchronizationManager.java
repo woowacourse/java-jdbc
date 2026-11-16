@@ -13,7 +13,10 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(DataSource key) {
         Map<DataSource, Connection> connections = resources.get();
-        return connections == null ? null : connections.get(key);
+        if (connections == null) {
+            return null;
+        }
+        return connections.get(key);
     }
 
     public static void bindResource(DataSource key, Connection value) {
