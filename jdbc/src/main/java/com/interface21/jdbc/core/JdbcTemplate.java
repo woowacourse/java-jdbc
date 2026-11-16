@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,17 +28,8 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return execute(sql, statement -> query(statement, rowMapper), args);
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql,
-                           final RowMapper<T> rowMapper, final Object... args) {
-        return execute(connection, sql, statement -> query(statement, rowMapper), args);
     }
 
     private <T> List<T> query(final PreparedStatement statement, final RowMapper<T> rowMapper) throws SQLException {
@@ -50,7 +43,11 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final PreparedStatementCallback<T> callback, final Object... args) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        if (TransactionSynchronizationManager.getResource(dataSource) == connection) {
+            return execute(connection, sql, callback, args);
+        }
+        try (connection) {
             return execute(connection, sql, callback, args);
         } catch (SQLException e) {
             throw new DataAccessException("SQL 실행에 실패했습니다: " + sql, e);

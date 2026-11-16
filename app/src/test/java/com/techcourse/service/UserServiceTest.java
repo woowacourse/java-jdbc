@@ -117,8 +117,8 @@ class UserServiceTest {
         final var cause = new IllegalStateException("이력 저장 후 오류가 발생했습니다.");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory history) {
-                super.log(connection, history);
+            public void log(final UserHistory history) {
+                super.log(history);
                 throw cause;
             }
         };
@@ -140,7 +140,7 @@ class UserServiceTest {
         final var userHistoryDao = mock(UserHistoryDao.class);
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(false);
-        when(transactionUserDao.findById(connection, 1L))
+        when(transactionUserDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
         final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
 
@@ -161,7 +161,7 @@ class UserServiceTest {
         final var cause = new SQLException("트랜잭션 커밋에 실패했습니다.");
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(transactionUserDao.findById(connection, 1L))
+        when(transactionUserDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
         doThrow(cause).when(connection).commit();
         final var userService = new UserService(transactionDataSource, transactionUserDao, mock(UserHistoryDao.class));
@@ -185,7 +185,7 @@ class UserServiceTest {
         final var rollbackFailure = new SQLException("트랜잭션 롤백에 실패했습니다.");
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(transactionUserDao.findById(connection, 1L)).thenThrow(cause);
+        when(transactionUserDao.findById(1L)).thenThrow(cause);
         doThrow(rollbackFailure).when(connection).rollback();
         final var userService = new UserService(transactionDataSource, transactionUserDao, mock(UserHistoryDao.class));
 

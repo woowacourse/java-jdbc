@@ -1,6 +1,7 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
@@ -54,17 +55,22 @@ class UserHistoryDaoTest {
 
         try (var connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            final var user = userDao.findById(connection, 1L);
-            user.changePassword("new-password");
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
+            try {
+                final var user = userDao.findById(1L);
+                user.changePassword("new-password");
 
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, "admin"));
+                userDao.update(user);
+                userHistoryDao.log(new UserHistory(user, "admin"));
 
-            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("new-password");
-            assertThat(jdbcTemplate.query(connection, "select password from user_history",
-                    row -> row.getString("password"))).containsExactly("new-password");
+                assertThat(userDao.findById(1L).getPassword()).isEqualTo("new-password");
+                assertThat(jdbcTemplate.query("select password from user_history",
+                        row -> row.getString("password"))).containsExactly("new-password");
 
-            connection.rollback();
+                connection.rollback();
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
+            }
         }
 
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");

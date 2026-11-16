@@ -1,6 +1,8 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -31,26 +33,38 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (Connection connection = dataSource.getConnection()) {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            throw new IllegalStateException("이미 진행 중인 트랜잭션이 있습니다.");
+        }
+        try (Connection connection = DataSourceUtils.getConnection(dataSource)) {
             final boolean autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
+            TransactionSynchronizationManager.bindResource(dataSource, connection);
             try {
-                final var user = userDao.findById(connection, id);
-                if (user == null) {
-                    throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
+                try {
+                    changePasswordAndSaveHistory(id, newPassword, createBy);
+                    connection.commit();
+                } catch (SQLException | RuntimeException | Error e) {
+                    rollback(connection, autoCommit, e);
+                    throw e;
                 }
-                user.changePassword(newPassword);
-                userDao.update(connection, user);
-                userHistoryDao.log(connection, new UserHistory(user, createBy));
-                connection.commit();
-            } catch (SQLException | RuntimeException | Error e) {
-                rollback(connection, autoCommit, e);
-                throw e;
+                connection.setAutoCommit(autoCommit);
+            } finally {
+                TransactionSynchronizationManager.unbindResource(dataSource);
             }
-            connection.setAutoCommit(autoCommit);
         } catch (SQLException e) {
             throw new DataAccessException("비밀번호 변경에 실패했습니다.", e);
         }
+    }
+
+    private void changePasswordAndSaveHistory(final long id, final String newPassword, final String createBy) {
+        final var user = findById(id);
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
+        }
+        user.changePassword(newPassword);
+        userDao.update(user);
+        userHistoryDao.log(new UserHistory(user, createBy));
     }
 
     private void rollback(final Connection connection, final boolean autoCommit, final Throwable cause) {
