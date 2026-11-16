@@ -44,8 +44,9 @@ public class TxUserService implements UserService {
             rollback(connection);
             throw e;
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            // 먼저 보관함에서 빼야 트랜잭션이 끝난 커넥션으로 인식되어 실제로 닫힌다
             TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
