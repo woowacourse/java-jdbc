@@ -1,12 +1,13 @@
 package com.techcourse.service;
 
+import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.JdbcTransactionTemplate;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
-import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,13 +33,13 @@ class UserServiceTest {
         jdbcTemplate.update("truncate table user_history restart identity");
         jdbcTemplate.update("truncate table users restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+        createUserService(new UserHistoryDao(jdbcTemplate)).save(user);
     }
 
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var userService = createUserService(userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -62,7 +63,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, userHistoryDao);
+        final var userService = createUserService(userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -78,7 +79,7 @@ class UserServiceTest {
 
     @Test
     void historySqlFailureRollsBackPassword() {
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = createUserService(new UserHistoryDao(jdbcTemplate));
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", null))
                 .isInstanceOf(DataAccessException.class).hasCauseInstanceOf(SQLException.class);
@@ -89,12 +90,17 @@ class UserServiceTest {
 
     @Test
     void changePasswordFailsWithUserIdWhenUserIsMissing() {
-        final var userService = new UserService(DataSourceConfig.getInstance(), userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = createUserService(new UserHistoryDao(jdbcTemplate));
 
         assertThatThrownBy(() -> userService.changePassword(999L, "newPassword", "gugu"))
                 .isInstanceOf(NoSuchElementException.class).hasMessage("User not found: 999");
 
         assertThat(jdbcTemplate.query("select id from user_history", rs -> rs.getLong("id"))).isEmpty();
+    }
+
+    private UserService createUserService(final UserHistoryDao userHistoryDao) {
+        final var transactionTemplate = new JdbcTransactionTemplate(DataSourceConfig.getInstance());
+        return new TxUserService(transactionTemplate, new AppUserService(userDao, userHistoryDao));
     }
 
     private record SavedHistory(long userId, String password, String createdBy, LocalDateTime createdAt) {
