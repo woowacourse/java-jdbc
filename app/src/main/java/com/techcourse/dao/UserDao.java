@@ -4,7 +4,6 @@ import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -33,10 +32,6 @@ public class UserDao {
         jdbcTemplate.update(UPDATE_SQL, updateArguments(user));
     }
 
-    public void update(final Connection connection, final User user) {
-        jdbcTemplate.update(connection, UPDATE_SQL, updateArguments(user));
-    }
-
     private Object[] updateArguments(final User user) {
         return new Object[]{user.getAccount(), user.getPassword(), user.getEmail(), user.getId()};
     }
@@ -48,10 +43,6 @@ public class UserDao {
 
     public User findById(final Long id) {
         return jdbcTemplate.queryForObject(FIND_BY_ID_SQL, this::mapUser, id);
-    }
-
-    public User findById(final Connection connection, final Long id) {
-        return jdbcTemplate.queryForObject(connection, FIND_BY_ID_SQL, this::mapUser, id);
     }
 
     public User findByAccount(final String account) {

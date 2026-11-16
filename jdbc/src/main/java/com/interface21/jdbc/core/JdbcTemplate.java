@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class JdbcTemplate {
 
@@ -24,10 +26,6 @@ public class JdbcTemplate {
 
     public <T> T queryForObject(final String sql, final RowMapper<T> mapper, final Object... args) {
         return singleResult(query(sql, mapper, args));
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> mapper, final Object... args) {
-        return singleResult(query(connection, sql, mapper, argumentsSetter(args)));
     }
 
     private <T> T singleResult(final List<T> results) {
@@ -45,11 +43,7 @@ public class JdbcTemplate {
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> mapper, final PreparedStatementSetter setter) {
-        try (Connection connection = dataSource.getConnection()) {
-            return query(connection, sql, mapper, setter);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return withConnection(connection -> query(connection, sql, mapper, setter));
     }
 
     private <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> mapper, final PreparedStatementSetter setter) {
@@ -75,15 +69,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final PreparedStatementSetter setter) {
-        try (Connection connection = dataSource.getConnection()) {
-            return update(connection, sql, setter);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return update(connection, sql, argumentsSetter(args));
+        return withConnection(connection -> update(connection, sql, setter));
     }
 
     private int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
@@ -95,6 +81,23 @@ public class JdbcTemplate {
             log.error(e.getMessage(), e);
             throw new DataAccessException(e);
         }
+    }
+
+    private <T> T withConnection(final Function<Connection, T> operation) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        final T result;
+        try {
+            result = operation.apply(connection);
+        } catch (RuntimeException | Error failure) {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException releaseFailure) {
+                failure.addSuppressed(releaseFailure);
+            }
+            throw failure;
+        }
+        DataSourceUtils.releaseConnection(connection, dataSource);
+        return result;
     }
 
     private PreparedStatementSetter argumentsSetter(final Object... args) {

@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockMakers;
@@ -10,6 +12,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,6 +22,7 @@ import static org.mockito.Mockito.*;
 class JdbcTemplateTest {
 
     private JdbcTemplate jdbcTemplate;
+    private DataSource dataSource;
     private Connection connection;
     private PreparedStatement statement;
     private ResultSet resultSet;
@@ -25,7 +30,7 @@ class JdbcTemplateTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class, withSettings().mockMaker(MockMakers.PROXY));
+        dataSource = mock(DataSource.class, withSettings().mockMaker(MockMakers.PROXY));
         connection = mock(Connection.class, withSettings().mockMaker(MockMakers.PROXY));
         statement = mock(PreparedStatement.class, withSettings().mockMaker(MockMakers.PROXY));
         resultSet = mock(ResultSet.class, withSettings().mockMaker(MockMakers.PROXY));
@@ -188,6 +193,49 @@ class JdbcTemplateTest {
         verify(statement, never()).executeQuery();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @Test
+    void updateReusesBoundConnectionWithoutClosingIt() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            jdbcTemplate.update(sql, 1L, "gugu");
+
+            verify(dataSource, never()).getConnection();
+            verify(statement).executeUpdate();
+            verify(statement).close();
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void boundConnectionIsInvisibleToAnotherThread() throws Exception {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            final var otherThread = executor.submit(() -> TransactionSynchronizationManager.getResource(dataSource));
+
+            assertThat(otherThread.get(5, TimeUnit.SECONDS)).isNull();
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    @Test
+    void closeFailureDoesNotReplaceSqlFailure() throws SQLException {
+        final var sqlFailure = new SQLException("update failed");
+        final var closeFailure = new SQLException("close failed");
+        when(statement.executeUpdate()).thenThrow(sqlFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, 1L, "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(sqlFailure)
+                .satisfies(failure -> assertThat(failure.getSuppressed()).singleElement()
+                        .isInstanceOf(CannotGetJdbcConnectionException.class)
+                        .satisfies(suppressed -> assertThat(suppressed).hasCause(closeFailure)));
     }
 
     private void verifyResourcesClosed() throws SQLException {
