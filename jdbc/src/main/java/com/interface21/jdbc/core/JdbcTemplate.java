@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,15 +32,6 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        try {
-            return execute(connection, sql, statement -> setParameters(statement, args),
-                    PreparedStatement::executeUpdate);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, statement -> setParameters(statement, args), rowMapper);
     }
@@ -47,14 +40,9 @@ public class JdbcTemplate {
         return execute(sql, setter, statement -> executeQuery(statement, rowMapper));
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                             final Object... args) {
-        try {
-            return execute(connection, sql, statement -> setParameters(statement, args),
-                    statement -> executeQuery(statement, rowMapper));
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+    /** Returns null for no rows and throws DataAccessException for multiple rows. */
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
+        return singleResult(query(sql, rowMapper, args));
     }
 
     private <T> List<T> executeQuery(final PreparedStatement statement, final RowMapper<T> rowMapper)
@@ -64,12 +52,32 @@ public class JdbcTemplate {
         }
     }
 
+    /** Uses the connection bound to the current transaction if any, and closes only connections it opened. */
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) {
-        try (Connection connection = dataSource.getConnection()) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, setter, callback);
         } catch (SQLException e) {
+            failure = e;
             throw new DataAccessException(e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            release(connection, failure);
+        }
+    }
+
+    private void release(final Connection connection, final Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (CannotGetJdbcConnectionException closeFailure) {
+            if (failure == null) {
+                throw closeFailure;
+            }
+            failure.addSuppressed(closeFailure.getCause());
         }
     }
 
@@ -91,22 +99,6 @@ public class JdbcTemplate {
         return results;
     }
 
-    @FunctionalInterface
-    private interface PreparedStatementCallback<T> {
-        T doInPreparedStatement(PreparedStatement statement) throws SQLException;
-    }
-
-    /** Returns null for no rows and throws DataAccessException for multiple rows. */
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return singleResult(query(sql, rowMapper, args));
-    }
-
-    /** Uses the given connection without closing it. Returns null for no rows. */
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                                final Object... args) {
-        return singleResult(query(connection, sql, rowMapper, args));
-    }
-
     private <T> T singleResult(final List<T> results) {
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row but found " + results.size());
@@ -121,5 +113,10 @@ public class JdbcTemplate {
         for (int i = 0; i < args.length; i++) {
             statement.setObject(i + 1, args[i]);
         }
+    }
+
+    @FunctionalInterface
+    private interface PreparedStatementCallback<T> {
+        T doInPreparedStatement(PreparedStatement statement) throws SQLException;
     }
 }

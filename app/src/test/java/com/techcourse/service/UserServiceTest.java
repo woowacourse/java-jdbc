@@ -11,8 +11,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -64,8 +62,8 @@ class UserServiceTest {
         final var failure = new DataAccessException("failure after history insert");
         final var historyDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory history) {
-                super.log(connection, history);
+            public void log(final UserHistory history) {
+                super.log(history);
                 throw failure;
             }
         };

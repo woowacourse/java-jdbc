@@ -1,21 +1,24 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class UserServiceTransactionTest {
@@ -31,7 +34,14 @@ class UserServiceTransactionTest {
     void setUp() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L)).thenReturn(user);
+        when(userDao.findById(1L)).thenReturn(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -40,9 +50,9 @@ class UserServiceTransactionTest {
 
         final var order = inOrder(connection, userDao, historyDao);
         order.verify(connection).setAutoCommit(false);
-        order.verify(userDao).findById(connection, 1L);
-        order.verify(userDao).update(connection, user);
-        order.verify(historyDao).log(eq(connection), any(UserHistory.class));
+        order.verify(userDao).findById(1L);
+        order.verify(userDao).update(user);
+        order.verify(historyDao).log(any(UserHistory.class));
         order.verify(connection).commit();
         order.verify(connection).setAutoCommit(true);
         order.verify(connection).close();
@@ -52,23 +62,36 @@ class UserServiceTransactionTest {
     }
 
     @Test
-    void doesNotUseDaoMethodsThatOpenSeparateConnections() {
+    void bindsConnectionWhileDaosRunAndUnbindsAfterCommit() {
+        final List<Connection> boundDuringDaoCalls = new ArrayList<>();
+        doAnswer(invocation -> boundDuringDaoCalls.add(TransactionSynchronizationManager.getResource(dataSource)))
+                .when(userDao).update(user);
+        doAnswer(invocation -> boundDuringDaoCalls.add(TransactionSynchronizationManager.getResource(dataSource)))
+                .when(historyDao).log(any(UserHistory.class));
+
         changePassword();
 
-        verify(userDao).findById(connection, 1L);
-        verify(userDao).update(connection, user);
-        verify(historyDao).log(eq(connection), any(UserHistory.class));
-        verifyNoMoreInteractions(userDao, historyDao);
+        assertThat(boundDuringDaoCalls).containsExactly(connection, connection);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void unbindsConnectionAfterRollback() {
+        failHistory();
+
+        assertThatThrownBy(this::changePassword).isInstanceOf(DataAccessException.class);
+
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
     }
 
     @Test
     void lookupFailureRollsBackWithoutWriting() throws SQLException {
         final var failure = new DataAccessException("lookup failed");
-        when(userDao.findById(connection, 1L)).thenThrow(failure);
+        when(userDao.findById(1L)).thenThrow(failure);
 
         assertThatThrownBy(this::changePassword).isSameAs(failure);
 
-        verify(userDao, never()).update(any(Connection.class), any(User.class));
+        verify(userDao, never()).update(any(User.class));
         verifyNoInteractions(historyDao);
         final var order = inOrder(connection);
         order.verify(connection).rollback();
@@ -186,7 +209,7 @@ class UserServiceTransactionTest {
 
     private DataAccessException failHistory() {
         final var failure = new DataAccessException("history failed");
-        doThrow(failure).when(historyDao).log(eq(connection), any(UserHistory.class));
+        doThrow(failure).when(historyDao).log(any(UserHistory.class));
         return failure;
     }
 

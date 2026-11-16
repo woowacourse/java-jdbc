@@ -1,6 +1,9 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
@@ -31,22 +34,46 @@ public class UserService {
     }
 
     public void changePassword(final long id, final String newPassword, final String createBy) {
-        try (final Connection connection = dataSource.getConnection()) {
-            final boolean autoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            changePasswordInTransaction(connection, id, newPassword, createBy, autoCommit);
+        executeInTransaction(() -> {
+            final var user = userDao.findById(id);
+            user.changePassword(newPassword);
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, createBy));
+        });
+    }
+
+    private void executeInTransaction(final Runnable action) {
+        final Connection connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
+            beginAndRun(connection, action);
         } catch (SQLException e) {
+            failure = e;
             throw new DataAccessException(e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            release(connection, failure);
         }
     }
 
-    private void changePasswordInTransaction(final Connection connection, final long id, final String newPassword,
-                                             final String createBy, final boolean autoCommit) throws SQLException {
+    private void beginAndRun(final Connection connection, final Runnable action) throws SQLException {
+        final boolean autoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         try {
-            final var user = userDao.findById(connection, id);
-            user.changePassword(newPassword);
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, createBy));
+            runInTransaction(connection, action, autoCommit);
+        } finally {
+            // Unbind before release so that DataSourceUtils closes the connection instead of keeping it open.
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+    }
+
+    private void runInTransaction(final Connection connection, final Runnable action, final boolean autoCommit)
+            throws SQLException {
+        try {
+            action.run();
             connection.commit();
         } catch (SQLException | RuntimeException | Error failure) {
             rollback(connection, autoCommit, failure);
@@ -68,6 +95,17 @@ public class UserService {
             connection.setAutoCommit(autoCommit);
         } catch (SQLException restoreFailure) {
             failure.addSuppressed(restoreFailure);
+        }
+    }
+
+    private void release(final Connection connection, final Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (CannotGetJdbcConnectionException closeFailure) {
+            if (failure == null) {
+                throw closeFailure;
+            }
+            failure.addSuppressed(closeFailure.getCause());
         }
     }
 }

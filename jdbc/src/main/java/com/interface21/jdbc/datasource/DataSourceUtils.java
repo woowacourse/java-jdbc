@@ -7,31 +7,40 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-// 4단계 미션에서 사용할 것
 public abstract class DataSourceUtils {
 
     private DataSourceUtils() {}
 
+    /**
+     * Returns the connection bound to the current transaction, or a new connection that the caller must release.
+     * A new connection is not bound here; only the transaction owner binds and unbinds it.
+     */
     public static Connection getConnection(DataSource dataSource) throws CannotGetJdbcConnectionException {
-        Connection connection = TransactionSynchronizationManager.getResource(dataSource);
+        final Connection connection = TransactionSynchronizationManager.getResource(dataSource);
         if (connection != null) {
             return connection;
         }
 
         try {
-            connection = dataSource.getConnection();
-            TransactionSynchronizationManager.bindResource(dataSource, connection);
-            return connection;
+            return dataSource.getConnection();
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }
     }
 
+    /** Closes the connection unless it belongs to the current transaction, whose owner closes it. */
     public static void releaseConnection(Connection connection, DataSource dataSource) {
+        if (connection == null || isTransactional(connection, dataSource)) {
+            return;
+        }
         try {
             connection.close();
         } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection");
+            throw new CannotGetJdbcConnectionException("Failed to close JDBC Connection", ex);
         }
+    }
+
+    public static boolean isTransactional(Connection connection, DataSource dataSource) {
+        return TransactionSynchronizationManager.getResource(dataSource) == connection;
     }
 }
