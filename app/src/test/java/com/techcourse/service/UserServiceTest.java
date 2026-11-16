@@ -4,6 +4,7 @@ import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
+import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
@@ -17,6 +18,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiPredicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -71,7 +75,7 @@ class UserServiceTest {
 
     @Test
     void testTransactionRollbackWhenCommitFails() {
-        final var failingDataSource = dataSourceFailingOnCommit();
+        final var failingDataSource = dataSourceFailingOn((name, args) -> "commit".equals(name), new ArrayList<>());
         final var failingTemplate = new JdbcTemplate(failingDataSource);
         final var userService = new TxUserService(failingDataSource,
                 new AppUserService(new UserDao(failingTemplate), new UserHistoryDao(failingTemplate)));
@@ -106,6 +110,57 @@ class UserServiceTest {
         }
     }
 
+    @Test
+    void testChangePasswordKeepsResultWhenAutoCommitRestoreFailsAfterCommit() {
+        final var failingDataSource = dataSourceFailingOn(
+                (name, args) -> "setAutoCommit".equals(name) && Boolean.TRUE.equals(args[0]), new ArrayList<>());
+        final var userService = txUserService(failingDataSource);
+        final var id = lastUserId();
+
+        assertThatCode(() -> userService.changePassword(id, "newPassword", "gugu")).doesNotThrowAnyException();
+
+        assertThat(userDao.findById(id).getPassword()).isEqualTo("newPassword");
+        assertThat(TransactionSynchronizationManager.getResource(failingDataSource)).isNull();
+    }
+
+    @Test
+    void testChangePasswordKeepsResultWhenConnectionCloseFails() {
+        final var failingDataSource = dataSourceFailingOn((name, args) -> "close".equals(name), new ArrayList<>());
+        final var userService = txUserService(failingDataSource);
+        final var id = lastUserId();
+
+        assertThatCode(() -> userService.changePassword(id, "newPassword", "gugu")).doesNotThrowAnyException();
+
+        assertThat(userDao.findById(id).getPassword()).isEqualTo("newPassword");
+    }
+
+    @Test
+    void testRollbackWhenErrorIsThrown() {
+        final var calls = new ArrayList<String>();
+        final var dataSource = dataSourceFailingOn((name, args) -> false, calls);
+        final var template = new JdbcTemplate(dataSource);
+        final var userHistoryDao = new UserHistoryDao(template) {
+            @Override
+            public void log(final UserHistory userHistory) {
+                throw new AssertionError("history failed");
+            }
+        };
+        final var userService = new TxUserService(dataSource, new AppUserService(new UserDao(template), userHistoryDao));
+        final var id = lastUserId();
+        final var passwordBefore = userDao.findById(id).getPassword();
+
+        assertThrows(AssertionError.class, () -> userService.changePassword(id, "newPassword", "gugu"));
+
+        assertThat(calls).contains("rollback");
+        assertThat(userDao.findById(id).getPassword()).isEqualTo(passwordBefore);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    private TxUserService txUserService(final DataSource dataSource) {
+        final var template = new JdbcTemplate(dataSource);
+        return new TxUserService(dataSource, new AppUserService(new UserDao(template), new UserHistoryDao(template)));
+    }
+
     private long lastUserId() {
         final var users = userDao.findAll();
         return users.get(users.size() - 1).getId();
@@ -115,22 +170,30 @@ class UserServiceTest {
         return jdbcTemplate.queryForObject("select count(*) from user_history", (rs, rowNum) -> rs.getLong(1));
     }
 
-    private DataSource dataSourceFailingOnCommit() {
+    private DataSource dataSourceFailingOn(final BiPredicate<String, Object[]> shouldFail, final List<String> calls) {
         final var delegate = DataSourceConfig.getInstance();
         return (DataSource) Proxy.newProxyInstance(DataSource.class.getClassLoader(), new Class<?>[]{DataSource.class},
                 (proxy, method, args) -> {
                     final var result = invoke(delegate, method, args);
-                    return "getConnection".equals(method.getName()) ? failingCommit((Connection) result) : result;
+                    if ("getConnection".equals(method.getName())) {
+                        return wrap((Connection) result, shouldFail, calls);
+                    }
+                    return result;
                 });
     }
 
-    private Connection failingCommit(final Connection connection) {
+    private Connection wrap(final Connection connection, final BiPredicate<String, Object[]> shouldFail,
+                            final List<String> calls) {
         return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), new Class<?>[]{Connection.class},
                 (proxy, method, args) -> {
-                    if ("commit".equals(method.getName())) {
-                        throw new SQLException("commit failed");
+                    calls.add(method.getName());
+                    if ("close".equals(method.getName())) {
+                        invoke(connection, method, args);
                     }
-                    return invoke(connection, method, args);
+                    if (shouldFail.test(method.getName(), args)) {
+                        throw new SQLException(method.getName() + " failed");
+                    }
+                    return "close".equals(method.getName()) ? null : invoke(connection, method, args);
                 });
     }
 

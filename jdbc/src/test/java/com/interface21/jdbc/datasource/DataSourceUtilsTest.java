@@ -6,10 +6,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class DataSourceUtilsTest {
 
@@ -49,5 +52,15 @@ class DataSourceUtilsTest {
             assertThat(connection).isSameAs(bound);
             assertThat(bound.isClosed()).isFalse();
         }
+    }
+
+    @Test
+    void doesNotThrowWhenClosingConnectionFails() {
+        final var failingClose = (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(),
+                new Class<?>[]{Connection.class}, (proxy, method, args) -> {
+                    throw new SQLException("close failed");
+                });
+
+        assertThatCode(() -> DataSourceUtils.releaseConnection(failingClose, dataSource)).doesNotThrowAnyException();
     }
 }
