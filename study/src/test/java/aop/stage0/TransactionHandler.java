@@ -44,8 +44,13 @@ public class TransactionHandler implements InvocationHandler {
         try {
             result = method.invoke(userService, args);
         } catch (InvocationTargetException e) {
-            transactionManager.rollback(transactionStatus);
-            throw e.getCause();
+            final var failure = e.getCause();
+            try {
+                transactionManager.rollback(transactionStatus);
+            } catch (RuntimeException rollbackFailure) {
+                failure.addSuppressed(rollbackFailure);
+            }
+            throw failure;
         }
         transactionManager.commit(transactionStatus);
         return result;
