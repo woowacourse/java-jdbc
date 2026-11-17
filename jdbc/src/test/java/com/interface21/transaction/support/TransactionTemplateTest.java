@@ -67,18 +67,32 @@ class TransactionTemplateTest {
     }
 
     @Test
-    void joinsExistingTransactionWithoutCommittingOrClosingIt() throws SQLException {
+    void rejectsNestedTransactionWithoutRunningActionOrTouchingOuterConnection() throws SQLException {
         final Connection outer = mock(Connection.class);
         TransactionSynchronizationManager.bindResource(dataSource, outer);
         try {
-            execute();
+            assertThatThrownBy(this::execute).isInstanceOf(IllegalStateException.class);
+
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(outer);
         } finally {
             TransactionSynchronizationManager.unbindResource(dataSource);
         }
 
-        verify(action).run();
-        verifyNoInteractions(outer);
+        verifyNoInteractions(action, outer);
         verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void outerTransactionCannotCommitSwallowedNestedFailure() throws SQLException {
+        final Runnable inner = mock(Runnable.class);
+
+        transactionTemplate.executeWithoutResult(() ->
+                assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(inner))
+                        .isInstanceOf(IllegalStateException.class));
+
+        verifyNoInteractions(inner);
+        verify(dataSource).getConnection();
+        verify(connection).commit();
     }
 
     @Test

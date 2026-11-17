@@ -30,8 +30,8 @@ public class TransactionTemplate {
 
     public <T> T execute(final Supplier<T> action) {
         if (TransactionSynchronizationManager.getResource(dataSource) != null) {
-            // Join the outer transaction; its owner decides commit, rollback and close.
-            return action.get();
+            // Joining without rollback-only tracking would let the outer transaction commit a failed inner action.
+            throw new IllegalStateException("Nested transactions are not supported: a transaction is already active");
         }
         final Connection connection = DataSourceUtils.getConnection(dataSource);
         Throwable failure = null;
