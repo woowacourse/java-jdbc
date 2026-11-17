@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.annotation.Nonnull;
-import javax.swing.tree.RowMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,7 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(String sql, List<Object> params) {
+    public int update(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -39,7 +38,7 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Map<String, Object>> query(String sql, List<Object> params) {
+    public List<Map<String, Object>> query(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             bindParams(params, pstmt);
@@ -72,9 +71,9 @@ public class JdbcTemplate {
         }
     }
 
-    private static void bindParams(List<Object> params, PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < params.size(); i++) {
-            pstmt.setObject(i + 1, params.get(i));
+    private static void bindParams(Object[] params, PreparedStatement pstmt) throws SQLException {
+        for (int i = 0; i < params.length; i++) {
+            pstmt.setObject(i + 1, params[i]);
         }
     }
 }

@@ -28,28 +28,19 @@ public class UserDao {
     public void insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
 
-        jdbcTemplate.executeUpdate(sql, List.of(
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail()
-        ));
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
-        final var sql = "UPDATE users SET account = ?, password = ?, email = ? WHERE id = ?";
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
 
-        jdbcTemplate.executeUpdate(sql, List.of(
-                user.getAccount(),
-                user.getPassword(),
-                user.getEmail(),
-                user.getId()
-        ));
+        jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
     }
 
     public List<User> findAll() {
         final var sql = "select * from users";
 
-        List<Map<String, Object>> result = jdbcTemplate.query(sql, List.of());
+        List<Map<String, Object>> result = jdbcTemplate.query(sql);
 
         return result.stream()
                 .map(row -> new User(
@@ -64,7 +55,7 @@ public class UserDao {
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Map<String, Object> result = jdbcTemplate.query(sql, List.of(id))
+        Map<String, Object> result = jdbcTemplate.query(sql, id)
                 .stream().findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("id를 찾을 수 없습니다"));
 
@@ -79,7 +70,7 @@ public class UserDao {
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        Map<String, Object> result = jdbcTemplate.query(sql, List.of(account))
+        Map<String, Object> result = jdbcTemplate.query(sql, account)
                 .stream().findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("계좌를 찾을 수 없습니다"));
 
