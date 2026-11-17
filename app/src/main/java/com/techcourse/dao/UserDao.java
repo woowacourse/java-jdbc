@@ -5,6 +5,7 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public class UserDao {
 
@@ -39,19 +40,15 @@ public class UserDao {
         return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
-    public User findById(final Long id) {
+    public Optional<User> findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, id).stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("id를 찾을 수 없습니다"));
+        return jdbcTemplate.queryFirst(sql, USER_ROW_MAPPER, id);
     }
 
-    public User findByAccount(final String account) {
+    public Optional<User> findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account).stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("계좌를 찾을 수 없습니다"));
+        return jdbcTemplate.queryFirst(sql, USER_ROW_MAPPER, account);
     }
 }

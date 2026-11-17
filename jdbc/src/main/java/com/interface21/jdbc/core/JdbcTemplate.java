@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class JdbcTemplate {
 
@@ -30,6 +31,17 @@ public class JdbcTemplate {
                     rows.add(rowMapper.mapRow(resultSet));
                 }
                 return rows;
+            }
+        }, params);
+    }
+
+    public <T> Optional<T> queryFirst(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, statement -> {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(rowMapper.mapRow(resultSet));
+                }
+                return Optional.empty();
             }
         }, params);
     }
