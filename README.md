@@ -77,3 +77,14 @@ List<User> users = jdbcTemplate.query(
   SQLState 23505는 `DuplicateKeyException`으로 변환하고 회원가입 화면은 HTTP 409와 안내를 반환합니다.
 - 초기화 시 기존 테이블에도 인덱스를 추가합니다. 이미 중복 아이디가 있으면 초기화를 실패시키고
   원인을 보존합니다. 기존 회원을 자동 삭제하지 않으므로 중복 데이터는 별도 확인 후 정리해야 합니다.
+
+### 4단계 리뷰 반영: 트랜잭션 구성과 커밋 후 오류
+
+- `new TxUserService(dataSource)`로 생성하면 서비스와 두 DAO가 동일한 `DataSource`를
+  사용합니다. 전역 DataSource를 암묵적으로 사용하는 생성자는 제거했습니다.
+  delegate를 주입하는 생성자는 같은 패키지의 테스트에서 사용할 수 있습니다.
+- 커밋 후 auto-commit 복구나 연결 반환이 실패하면 `TransactionCommittedException`을
+  전달합니다. 이미 비밀번호 변경과 이력 저장이 완료된 상태이므로 호출자는 작업을
+  재시도하지 않아야 합니다. 원인은 cause에, 추가 정리 오류는 suppressed에 보존합니다.
+- 커밋 전 작업 실패는 롤백을 시도하고 기존 예외를 보존합니다. 커밋 자체의 실패는
+  커밋 성공으로 분류하지 않습니다.
