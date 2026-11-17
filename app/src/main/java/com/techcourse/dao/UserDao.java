@@ -1,23 +1,19 @@
 package com.techcourse.dao;
 
-import com.techcourse.domain.User;
 import com.interface21.jdbc.core.JdbcTemplate;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.interface21.jdbc.core.RowMapper;
+import com.techcourse.domain.User;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
 
-    private static final Logger log = LoggerFactory.getLogger(UserDao.class);
+    private static final RowMapper<User> USER_ROW_MAPPER = row -> new User(
+            row.getLong("id"),
+            row.getString("account"),
+            row.getString("password"),
+            row.getString("email")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -38,47 +34,24 @@ public class UserDao {
     }
 
     public List<User> findAll() {
-        final var sql = "select * from users";
+        final var sql = "select id, account, password, email from users";
 
-        List<Map<String, Object>> result = jdbcTemplate.query(sql);
-
-        return result.stream()
-                .map(row -> new User(
-                        ((Number) row.get("id")).longValue(),
-                        (String) row.get("account"),
-                        (String) row.get("password"),
-                        (String) row.get("email")
-                ))
-                .toList();
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER);
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
 
-        Map<String, Object> result = jdbcTemplate.query(sql, id)
-                .stream().findFirst()
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, id).stream()
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("id를 찾을 수 없습니다"));
-
-        return new User(
-                ((Number) result.get("id")).longValue(),
-                (String) result.get("account"),
-                (String) result.get("password"),
-                (String) result.get("email")
-        );
     }
 
     public User findByAccount(final String account) {
         final var sql = "select id, account, password, email from users where account = ?";
 
-        Map<String, Object> result = jdbcTemplate.query(sql, account)
-                .stream().findFirst()
+        return jdbcTemplate.query(sql, USER_ROW_MAPPER, account).stream()
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("계좌를 찾을 수 없습니다"));
-
-        return new User(
-                ((Number) result.get("id")).longValue(),
-                (String) result.get("account"),
-                (String) result.get("password"),
-                (String) result.get("email")
-        );
     }
 }

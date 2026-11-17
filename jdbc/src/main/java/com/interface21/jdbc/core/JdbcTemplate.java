@@ -3,14 +3,9 @@ package com.interface21.jdbc.core;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,35 +33,24 @@ public class JdbcTemplate {
         }
     }
 
-    public List<Map<String, Object>> query(String sql, Object... params) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             bindParams(params, pstmt);
 
-            return getResult(pstmt);
+            return getResult(pstmt, rowMapper);
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    @Nonnull
-    private static List<Map<String, Object>> getResult(PreparedStatement pstmt) throws SQLException {
+    private static <T> List<T> getResult(PreparedStatement pstmt, RowMapper<T> rowMapper) throws SQLException {
         try (ResultSet rs = pstmt.executeQuery()) {
-            List<Map<String, Object>> rows = new ArrayList<>();
-            ResultSetMetaData columns = rs.getMetaData();
-
+            List<T> rows = new ArrayList<>();
             while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-
-                for (int col = 1; col <= columns.getColumnCount(); col++) {
-                    String name = columns.getColumnLabel(col).toLowerCase(Locale.ROOT);
-                    row.put(name, rs.getObject(col));
-                }
-
-                rows.add(row);
+                rows.add(rowMapper.mapRow(rs));
             }
-
             return rows;
         }
     }
