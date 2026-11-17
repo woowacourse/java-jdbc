@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -24,22 +25,8 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final var results = query(sql, rowMapper, args);
-        return getSingleResult(results);
-    }
-
-    public <T> T queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... args
-    ) {
-        final var results = execute(connection, sql, createQueryCallback(rowMapper), args);
         return getSingleResult(results);
     }
 
@@ -71,11 +58,22 @@ public class JdbcTemplate {
             final PreparedStatementCallback<T> callback,
             final Object... args
     ) {
-        try (final var connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return execute(connection, sql, callback, args);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new DataAccessException(e);
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException | Error closeException) {
+                if (failure == null) {
+                    throw closeException;
+                }
+                failure.addSuppressed(closeException);
+            }
         }
     }
 

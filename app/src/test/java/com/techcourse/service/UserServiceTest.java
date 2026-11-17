@@ -2,9 +2,17 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -12,8 +20,10 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,10 +46,18 @@ class UserServiceTest {
         userDao.insert(user);
     }
 
+    @AfterEach
+    void tearDown() {
+        final var remainingConnection = TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(remainingConnection, dataSource);
+        assertThat(remainingConnection).isNull();
+    }
+
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -63,7 +81,8 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -83,12 +102,13 @@ class UserServiceTest {
         final var failure = new DataAccessException("history failed");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory userHistory) {
-                super.log(connection, userHistory);
+            public void log(final UserHistory userHistory) {
+                super.log(userHistory);
                 throw failure;
             }
         };
-        final var userService = new UserService(userDao, userHistoryDao, dataSource);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(appUserService, dataSource);
 
         final var actual = assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"));
@@ -97,5 +117,104 @@ class UserServiceTest {
         assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
         final var historyCount = jdbcTemplate.queryForObject("select count(*) from user_history", rs -> rs.getLong(1));
         assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void failedTransactionStartReleasesConnection() throws SQLException {
+        dataSource = mock(DataSource.class);
+        userDao = mock(UserDao.class);
+        final var connection = mock(Connection.class);
+        final var failure = new SQLException("begin failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        doThrow(failure).when(connection).setAutoCommit(false);
+        final var appUserService = new AppUserService(userDao, mock(UserHistoryDao.class));
+        final var userService = new TxUserService(appUserService, dataSource);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).hasCause(failure);
+        verify(userDao, never()).findById(1L);
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionCloseFailurePreservesBusinessFailure() throws SQLException {
+        dataSource = mock(DataSource.class);
+        userDao = mock(UserDao.class);
+        final var connection = mock(Connection.class);
+        final var failure = new DataAccessException("query failed");
+        final var closeFailure = new SQLException("close failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(userDao.findById(1L)).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+        final var appUserService = new AppUserService(userDao, mock(UserHistoryDao.class));
+        final var userService = new TxUserService(appUserService, dataSource);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(failure);
+        assertThat(actual.getSuppressed()).hasSize(1);
+        assertThat(actual.getSuppressed()[0]).hasCause(closeFailure);
+        final var order = inOrder(connection);
+        order.verify(connection).setAutoCommit(false);
+        order.verify(connection).rollback();
+        order.verify(connection).setAutoCommit(true);
+        order.verify(connection).close();
+        verify(connection, never()).commit();
+    }
+
+    @Test
+    void rollbackFailureSkipsAutoCommitRestoreAndReleasesConnection() throws SQLException {
+        dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var appUserService = mock(UserService.class);
+        final var failure = new DataAccessException("password change failed");
+        final var rollbackFailure = new SQLException("rollback failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        doThrow(failure).when(appUserService).changePassword(1L, "newPassword", "gugu");
+        doThrow(rollbackFailure).when(connection).rollback();
+        final var userService = new TxUserService(appUserService, dataSource);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(failure);
+        assertThat(actual.getSuppressed()).containsExactly(rollbackFailure);
+        final var order = inOrder(connection);
+        order.verify(connection).setAutoCommit(false);
+        order.verify(connection).rollback();
+        order.verify(connection).close();
+        verify(connection, never()).setAutoCommit(true);
+        verify(connection, never()).commit();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void testSave() {
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService, dataSource);
+        final var user = new User("other", "password", "other@example.com");
+
+        userService.save(user);
+
+        assertThat(userService.findById(2L).getAccount()).isEqualTo("other");
+    }
+
+    @Test
+    void repeatedTransactionsReleaseConnections() {
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(appUserService, dataSource);
+
+        userService.changePassword(1L, "firstPassword", "gugu");
+        userService.changePassword(1L, "secondPassword", "gugu");
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("secondPassword");
+        final var historyCount = jdbcTemplate.queryForObject("select count(*) from user_history", rs -> rs.getLong(1));
+        assertThat(historyCount).isEqualTo(2L);
     }
 }
