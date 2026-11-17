@@ -168,6 +168,33 @@ class UserServiceTest {
     }
 
     @Test
+    void rollbackFailureSkipsAutoCommitRestoreAndReleasesConnection() throws SQLException {
+        dataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var appUserService = mock(UserService.class);
+        final var failure = new DataAccessException("password change failed");
+        final var rollbackFailure = new SQLException("rollback failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        doThrow(failure).when(appUserService).changePassword(1L, "newPassword", "gugu");
+        doThrow(rollbackFailure).when(connection).rollback();
+        final var userService = new TxUserService(appUserService, dataSource);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(failure);
+        assertThat(actual.getSuppressed()).containsExactly(rollbackFailure);
+        final var order = inOrder(connection);
+        order.verify(connection).setAutoCommit(false);
+        order.verify(connection).rollback();
+        order.verify(connection).close();
+        verify(connection, never()).setAutoCommit(true);
+        verify(connection, never()).commit();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
     void testSave() {
         final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
         final var userService = new TxUserService(appUserService, dataSource);
