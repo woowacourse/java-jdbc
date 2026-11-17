@@ -188,7 +188,7 @@ DataSourceUtils와 TransactionSynchronizationManager를 활용하여 DAO가 Conn
 #### 1. Transaction synchronization 적용하기
 
 - [ ] 서비스와 DAO에서 Connection 객체를 가져오는 부분은 DataSourceUtils를 사용하도록 수정하자.
-- [ ] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현해보자.
+- [x] TransactionSynchronizationManager 클래스가 올바르게 작동하도록 구현해보자.
 
 ```java
 public void changePassword(final long id, final String newPassword, final String createdBy) {
