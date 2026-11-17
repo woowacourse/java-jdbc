@@ -2,9 +2,17 @@ package com.techcourse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -12,8 +20,10 @@ import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +44,13 @@ class UserServiceTest {
         jdbcTemplate.update("truncate table user_history restart identity");
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
+    }
+
+    @AfterEach
+    void tearDown() {
+        final var remainingConnection = TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(remainingConnection, dataSource);
+        assertThat(remainingConnection).isNull();
     }
 
     @Test
@@ -83,8 +100,8 @@ class UserServiceTest {
         final var failure = new DataAccessException("history failed");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory userHistory) {
-                super.log(connection, userHistory);
+            public void log(final UserHistory userHistory) {
+                super.log(userHistory);
                 throw failure;
             }
         };
@@ -97,5 +114,51 @@ class UserServiceTest {
         assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
         final var historyCount = jdbcTemplate.queryForObject("select count(*) from user_history", rs -> rs.getLong(1));
         assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void failedTransactionStartReleasesConnection() throws SQLException {
+        dataSource = mock(DataSource.class);
+        userDao = mock(UserDao.class);
+        final var connection = mock(Connection.class);
+        final var failure = new SQLException("begin failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        doThrow(failure).when(connection).setAutoCommit(false);
+        final var userService = new UserService(userDao, mock(UserHistoryDao.class), dataSource);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).hasCause(failure);
+        verify(userDao, never()).findById(1L);
+        verify(connection).close();
+    }
+
+    @Test
+    void connectionCloseFailurePreservesBusinessFailure() throws SQLException {
+        dataSource = mock(DataSource.class);
+        userDao = mock(UserDao.class);
+        final var connection = mock(Connection.class);
+        final var failure = new DataAccessException("query failed");
+        final var closeFailure = new SQLException("close failed");
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(userDao.findById(1L)).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+        final var userService = new UserService(userDao, mock(UserHistoryDao.class), dataSource);
+
+        final var actual = assertThrows(DataAccessException.class,
+                () -> userService.changePassword(1L, "newPassword", "gugu"));
+
+        assertThat(actual).isSameAs(failure);
+        assertThat(actual.getSuppressed()).hasSize(1);
+        assertThat(actual.getSuppressed()[0]).hasCause(closeFailure);
+        final var order = inOrder(connection);
+        order.verify(connection).setAutoCommit(false);
+        order.verify(connection).rollback();
+        order.verify(connection).setAutoCommit(true);
+        order.verify(connection).close();
+        verify(connection, never()).commit();
     }
 }

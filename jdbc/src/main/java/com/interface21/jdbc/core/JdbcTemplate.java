@@ -25,22 +25,8 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, args);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, args);
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         final var results = query(sql, rowMapper, args);
-        return getSingleResult(results);
-    }
-
-    public <T> T queryForObject(
-            final Connection connection,
-            final String sql,
-            final RowMapper<T> rowMapper,
-            final Object... args
-    ) {
-        final var results = execute(connection, sql, createQueryCallback(rowMapper), args);
         return getSingleResult(results);
     }
 

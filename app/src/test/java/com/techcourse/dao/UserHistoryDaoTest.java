@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
@@ -50,19 +52,24 @@ class UserHistoryDaoTest {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
         userDao.insert(new User("gugu", "password", "hkkang@woowahan.com"));
 
-        try (final var connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
             connection.setAutoCommit(false);
-            final var user = userDao.findById(connection, 1L);
+            final var user = userDao.findById(1L);
             user.changePassword("newPassword");
 
-            userDao.update(connection, user);
-            userHistoryDao.log(connection, new UserHistory(user, "gugu"));
+            userDao.update(user);
+            userHistoryDao.log(new UserHistory(user, "gugu"));
 
-            assertThat(userDao.findById(connection, 1L).getPassword()).isEqualTo("newPassword");
-            final var historyPassword = jdbcTemplate.queryForObject(connection,
+            assertThat(userDao.findById(1L).getPassword()).isEqualTo("newPassword");
+            final var historyPassword = jdbcTemplate.queryForObject(
                     "select password from user_history where user_id = ?", rs -> rs.getString("password"), 1L);
             assertThat(historyPassword).isEqualTo("newPassword");
             connection.rollback();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
 
         assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
