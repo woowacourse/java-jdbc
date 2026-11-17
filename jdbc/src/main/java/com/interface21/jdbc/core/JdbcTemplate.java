@@ -1,25 +1,17 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.dao.DataAccessException;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.swing.tree.RowMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
+import java.util.Optional;
 
 public class JdbcTemplate {
-
-    private static final Logger log = LoggerFactory.getLogger(JdbcTemplate.class);
 
     private final DataSource dataSource;
 
@@ -27,54 +19,48 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public int executeUpdate(String sql, List<Object> params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            bindParams(params, pstmt);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
+    public int update(final String sql, final Object... params) {
+        return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public List<Map<String, Object>> query(String sql, List<Object> params) {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            bindParams(params, pstmt);
-
-            return getResult(pstmt);
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Nonnull
-    private static List<Map<String, Object>> getResult(PreparedStatement pstmt) throws SQLException {
-        try (ResultSet rs = pstmt.executeQuery()) {
-            List<Map<String, Object>> rows = new ArrayList<>();
-            ResultSetMetaData columns = rs.getMetaData();
-
-            while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-
-                for (int col = 1; col <= columns.getColumnCount(); col++) {
-                    String name = columns.getColumnLabel(col).toLowerCase(Locale.ROOT);
-                    row.put(name, rs.getObject(col));
+    public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, statement -> {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<T> rows = new ArrayList<>();
+                while (resultSet.next()) {
+                    rows.add(rowMapper.mapRow(resultSet));
                 }
-
-                rows.add(row);
+                return rows;
             }
+        }, params);
+    }
 
-            return rows;
+    public <T> Optional<T> queryFirst(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, statement -> {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(rowMapper.mapRow(resultSet));
+                }
+                return Optional.empty();
+            }
+        }, params);
+    }
+
+    private <T> T execute(final String sql, final StatementCallback<T> callback, final Object[] params) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                statement.setObject(i + 1, params[i]);
+            }
+            return callback.execute(statement);
+        } catch (SQLException e) {
+            throw new DataAccessException(e);
         }
     }
 
-    private static void bindParams(List<Object> params, PreparedStatement pstmt) throws SQLException {
-        for (int i = 0; i < params.size(); i++) {
-            pstmt.setObject(i + 1, params.get(i));
-        }
+    @FunctionalInterface
+    private interface StatementCallback<T> {
+
+        T execute(PreparedStatement statement) throws SQLException;
     }
 }
