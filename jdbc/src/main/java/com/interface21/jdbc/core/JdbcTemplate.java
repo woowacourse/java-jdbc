@@ -114,8 +114,8 @@ public class JdbcTemplate {
     private void releaseIfNotTransactional(final Connection connection) {
         try {
             if (connection.getAutoCommit()) {
-                DataSourceUtils.releaseConnection(connection, dataSource);
                 TransactionSynchronizationManager.unbindResource(dataSource);
+                DataSourceUtils.releaseConnection(connection, dataSource);
             }
         } catch (SQLException e) {
             throw new DataAccessException(e);

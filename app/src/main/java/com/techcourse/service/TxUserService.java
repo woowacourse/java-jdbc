@@ -42,9 +42,12 @@ public class TxUserService implements UserService {
             rollback(conn);
             throw new DataAccessException(e);
         } finally {
-            restoreAutoCommit(conn);
             TransactionSynchronizationManager.unbindResource(dataSource); // 스레드로컬과 커넥션을 떼어주는 작업
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            try {
+                restoreAutoCommit(conn);
+            } finally {
+                DataSourceUtils.releaseConnection(conn, dataSource);
+            }
         }
     }
 
