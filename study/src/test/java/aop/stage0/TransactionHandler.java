@@ -1,5 +1,6 @@
 package aop.stage0;
 
+import aop.Transactional;
 import aop.service.AppUserService;
 import aop.service.UserService;
 import java.lang.reflect.InvocationHandler;
@@ -30,6 +31,14 @@ public class TransactionHandler implements InvocationHandler {
             final Method method,
             final Object[] args
     ) throws Throwable {
+        final var targetMethod = userService.getClass().getMethod(method.getName(), method.getParameterTypes());
+        if (!targetMethod.isAnnotationPresent(Transactional.class)) {
+            try {
+                return method.invoke(userService, args);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }
         final var transactionStatus = transactionManager.getTransaction(new DefaultTransactionDefinition());
         final Object result;
         try {
