@@ -2,6 +2,7 @@ package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.dao.IncorrectResultSizeDataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,10 +24,6 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
-    public int update(Connection connection, String sql, Object... params) {
-        return execute(connection, sql, PreparedStatement::executeUpdate, params);
-    }
-
     public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... params) {
         PreparedStatementCallback<List<T>> queryAction = statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -46,20 +43,9 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(String sql, PreparedStatementCallback<T> callback, Object... params) {
-        try (Connection connection = dataSource.getConnection()) {
-            return execute(connection, sql, callback, params);
-        } catch (SQLException exception) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, exception);
-        }
-    }
-
-    private <T> T execute(
-        Connection connection,
-        String sql,
-        PreparedStatementCallback<T> callback,
-        Object... params
-    ) {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try (ConnectionRelease release = () -> DataSourceUtils.releaseConnection(connection, dataSource);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
             bindParameters(statement, params);
             return callback.execute(statement);
         } catch (SQLException exception) {
@@ -79,6 +65,12 @@ public class JdbcTemplate {
             results.add(rowMapper.mapRow(resultSet));
         }
         return results;
+    }
+
+    private interface ConnectionRelease extends AutoCloseable {
+
+        @Override
+        void close();
     }
 
     @FunctionalInterface
