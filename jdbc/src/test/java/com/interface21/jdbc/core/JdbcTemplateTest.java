@@ -1,7 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,11 @@ class JdbcTemplateTest {
         when(statement.executeQuery()).thenReturn(resultSet);
     }
 
+    @AfterEach
+    void unbindTransactionConnection() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
     @Test
     @DisplayName("전달한 인자를 SQL에 바인딩하고 변경한 행 수를 반환한다")
     void updateWithParameters() throws SQLException {
@@ -71,14 +78,15 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("전달받은 연결에서 변경 작업을 실행하고 Statement만 닫는다")
-    void updateWithBorrowedConnection() throws SQLException {
+    @DisplayName("등록된 트랜잭션 연결에서 변경 작업을 실행하고 Statement만 닫는다")
+    void updateWithTransactionConnection() throws SQLException {
         // given
         final var sql = "update people set name = ?";
         when(statement.executeUpdate()).thenReturn(1);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         // when
-        final var affectedRows = jdbcTemplate.update(connection, sql, "gugu");
+        final var affectedRows = jdbcTemplate.update(sql, "gugu");
 
         // then
         assertThat(affectedRows).isEqualTo(1);
@@ -135,15 +143,16 @@ class JdbcTemplateTest {
     }
 
     @Test
-    @DisplayName("전달받은 연결에서 단건을 조회하고 ResultSet과 Statement만 닫는다")
-    void queryForObjectWithBorrowedConnection() throws SQLException {
+    @DisplayName("등록된 트랜잭션 연결에서 단건을 조회하고 ResultSet과 Statement만 닫는다")
+    void queryForObjectWithTransactionConnection() throws SQLException {
         // given
         final var sql = "select name from people where id = ?";
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("name")).thenReturn("gugu");
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
 
         // when
-        final var name = jdbcTemplate.queryForObject(connection, sql, NAME_MAPPER, 2L);
+        final var name = jdbcTemplate.queryForObject(sql, NAME_MAPPER, 2L);
 
         // then
         assertThat(name).isEqualTo("gugu");

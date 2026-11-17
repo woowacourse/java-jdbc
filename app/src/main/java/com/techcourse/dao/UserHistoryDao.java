@@ -4,14 +4,8 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 
 public class UserHistoryDao {
-
-    private static final String INSERT_HISTORY_SQL = """
-            insert into user_history (user_id, account, password, email, created_at, created_by)
-            values (?, ?, ?, ?, ?, ?)
-            """;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -24,21 +18,17 @@ public class UserHistoryDao {
     }
 
     public void log(final UserHistory userHistory) {
-        jdbcTemplate.update(INSERT_HISTORY_SQL, historyParameters(userHistory));
-    }
+        final var sql = """
+                insert into user_history (user_id, account, password, email, created_at, created_by)
+                values (?, ?, ?, ?, ?, ?)
+                """;
 
-    public void log(final Connection connection, final UserHistory userHistory) {
-        jdbcTemplate.update(connection, INSERT_HISTORY_SQL, historyParameters(userHistory));
-    }
-
-    private Object[] historyParameters(final UserHistory userHistory) {
-        return new Object[]{
+        jdbcTemplate.update(sql,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),
                 userHistory.getEmail(),
                 userHistory.getCreatedAt(),
-                userHistory.getCreateBy()
-        };
+                userHistory.getCreateBy());
     }
 }

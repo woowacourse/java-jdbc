@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,12 +25,7 @@ public class JdbcTemplate {
     }
 
     public int update(final String sql, final Object... parameters) {
-        return withConnection(connection -> update(connection, sql, parameters));
-    }
-
-    /** 전달받은 연결은 호출자가 닫는다. */
-    public int update(final Connection connection, final String sql, final Object... parameters) {
-        return execute(connection, sql, parameters, PreparedStatement::executeUpdate);
+        return withConnection(connection -> execute(connection, sql, parameters, PreparedStatement::executeUpdate));
     }
 
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
@@ -57,12 +53,6 @@ public class JdbcTemplate {
         return singleResult(query(sql, rowMapper, parameters));
     }
 
-    /** 전달받은 연결은 호출자가 닫는다. */
-    public <T> T queryForObject(final Connection connection, final String sql,
-                                final RowMapper<T> rowMapper, final Object... parameters) {
-        return singleResult(query(connection, sql, rowMapper, parameters));
-    }
-
     private <T> T singleResult(final List<T> rows) {
         if (rows.isEmpty()) {
             return null;
@@ -74,10 +64,28 @@ public class JdbcTemplate {
     }
 
     private <T> T withConnection(final Function<Connection, T> operation) {
-        try (Connection connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        Throwable failure = null;
+        try {
             return operation.apply(connection);
-        } catch (SQLException exception) {
-            throw new DataAccessException("SQL 실행에 실패했습니다.", exception);
+        } catch (RuntimeException | Error exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            releaseConnection(connection, failure);
+        }
+    }
+
+    private void releaseConnection(final Connection connection, final Throwable failure) {
+        try {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        } catch (RuntimeException | Error releaseFailure) {
+            if (failure == null) {
+                throw releaseFailure;
+            }
+            if (failure != releaseFailure) {
+                failure.addSuppressed(releaseFailure);
+            }
         }
     }
 
