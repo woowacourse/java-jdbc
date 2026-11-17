@@ -8,20 +8,24 @@ import com.techcourse.domain.UserHistory;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
+    private TransactionTemplate transactionTemplate;
 
     @BeforeEach
     void setUp() {
         this.jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        this.transactionTemplate = new TransactionTemplate(DataSourceConfig.getInstance());
         this.userDao = new UserDao(jdbcTemplate);
 
         DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
@@ -34,7 +38,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
+        final var userService = new TxUserService(transactionTemplate, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createdBy = "gugu";
@@ -61,7 +65,7 @@ class UserServiceTest {
         // 애플리케이션 서비스
         final var appUserService = new AppUserService(userDao, userHistoryDao);
         // 트랜잭션 서비스 추상화
-        final var userService = new TxUserService(appUserService);
+        final var userService = new TxUserService(transactionTemplate, appUserService);
 
         final var newPassword = "newPassword";
         final var createdBy = "gugu";
@@ -84,7 +88,7 @@ class UserServiceTest {
                 throw failure;
             }
         };
-        final var userService = new TxUserService(new AppUserService(userDao, userHistoryDao));
+        final var userService = new TxUserService(transactionTemplate, new AppUserService(userDao, userHistoryDao));
 
         assertThat(assertThrows(DataAccessException.class,
                 () -> userService.changePassword(1L, "newPassword", "gugu"))).isSameAs(failure);
@@ -94,6 +98,20 @@ class UserServiceTest {
                 (rs, rowNum) -> rs.getLong("id"), 1L)).isEmpty();
     }
 
+    @Test
+    void rejectsNestedChangePasswordBeforeChangingAnything() {
+        final var userService = new TxUserService(transactionTemplate,
+                new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
+
+        // The outer transaction swallows the inner failure and commits.
+        transactionTemplate.executeWithoutResult(() ->
+                assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", null))
+                        .isInstanceOf(IllegalStateException.class));
+
+        assertThat(userService.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select id from user_history where user_id = ?",
+                (rs, rowNum) -> rs.getLong("id"), 1L)).isEmpty();
+    }
     @Test
     void appUserServiceAloneDoesNotRollBackEarlierChanges() {
         final var userService = new AppUserService(userDao, new MockUserHistoryDao(jdbcTemplate));
@@ -105,7 +123,7 @@ class UserServiceTest {
 
     @Test
     void daoCallsAfterTransactionUseFreshConnections() {
-        final var userService = new TxUserService(
+        final var userService = new TxUserService(transactionTemplate,
                 new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
         userService.changePassword(1L, "first", "gugu");
 

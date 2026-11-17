@@ -1,7 +1,6 @@
 package com.techcourse.service;
 
 import com.interface21.transaction.support.TransactionTemplate;
-import com.techcourse.config.DataSourceConfig;
 import com.techcourse.domain.User;
 
 public class TxUserService implements UserService {
@@ -9,11 +8,10 @@ public class TxUserService implements UserService {
     private final TransactionTemplate transactionTemplate;
     private final UserService userService;
 
-    public TxUserService(final UserService userService) {
-        // DAOs must use this same DataSource; the transaction connection is looked up by DataSource identity.
-        this(new TransactionTemplate(DataSourceConfig.getInstance()), userService);
-    }
-
+    /**
+     * The template must use the same DataSource instance as the DAOs of the given service,
+     * because the transaction connection is looked up by DataSource identity.
+     */
     public TxUserService(final TransactionTemplate transactionTemplate, final UserService userService) {
         this.transactionTemplate = transactionTemplate;
         this.userService = userService;
