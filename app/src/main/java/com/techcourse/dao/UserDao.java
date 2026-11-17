@@ -5,7 +5,6 @@ import com.interface21.jdbc.core.RowMapper;
 import com.techcourse.domain.User;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.List;
 
 public class UserDao {
@@ -36,16 +35,6 @@ public class UserDao {
     public void update(final User user) {
         final int updatedRows = jdbcTemplate.update(
                 UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-        validateUpdatedRows(updatedRows);
-    }
-
-    public void update(final Connection connection, final User user) {
-        final int updatedRows = jdbcTemplate.update(
-                connection, UPDATE_SQL, user.getAccount(), user.getPassword(), user.getEmail(), user.getId());
-        validateUpdatedRows(updatedRows);
-    }
-
-    private void validateUpdatedRows(final int updatedRows) {
         if (updatedRows != 1) {
             throw new IllegalStateException("사용자 수정 결과가 1건이 아닙니다: " + updatedRows);
         }
