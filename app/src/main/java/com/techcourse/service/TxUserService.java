@@ -1,0 +1,34 @@
+package com.techcourse.service;
+
+import com.interface21.transaction.support.TransactionTemplate;
+import com.techcourse.domain.User;
+
+public class TxUserService implements UserService {
+
+    private final TransactionTemplate transactionTemplate;
+    private final UserService userService;
+
+    /**
+     * The template must use the same DataSource instance as the DAOs of the given service,
+     * because the transaction connection is looked up by DataSource identity.
+     */
+    public TxUserService(final TransactionTemplate transactionTemplate, final UserService userService) {
+        this.transactionTemplate = transactionTemplate;
+        this.userService = userService;
+    }
+
+    @Override
+    public User findById(final long id) {
+        return userService.findById(id);
+    }
+
+    @Override
+    public void save(final User user) {
+        userService.save(user);
+    }
+
+    @Override
+    public void changePassword(final long id, final String newPassword, final String createdBy) {
+        transactionTemplate.executeWithoutResult(() -> userService.changePassword(id, newPassword, createdBy));
+    }
+}
