@@ -202,8 +202,8 @@ public void changePassword(final long id, final String newPassword, final String
         connection.rollback();
         ...
     } finally {
-        DataSourceUtils.releaseConnection(connection, dataSource);
         TransactionSynchronizationManager.unbindResource(dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
 ```
@@ -224,7 +224,7 @@ PlatformTransactionManager가 어떻게 추상화되어 있는지는 [스프링 
 
 하지만 여전히 UserService에 데이터 액세스와 관련된 로직이 남아있다.
 
-- [ ] 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리해보자.
+- [x] 인터페이스를 활용하여 트랜잭션 서비스를 추상화하여 비즈니스 로직과 데이터 액세스 로직을 분리해보자.
 
 먼저 아래와 같은 인터페이스를 추가한다.
 
@@ -237,7 +237,7 @@ public interface UserService {
 }
 ```
 
-- [ ] UserService 인터페이스를 구현한 클래스 2개를 만든다.
+- [x] UserService 인터페이스를 구현한 클래스 2개를 만든다.
 
 ```java
 public class AppUserService implements UserService {
@@ -260,12 +260,12 @@ public class TxUserService implements UserService {
 }
 ```
 
-- [ ] UserServiceTest 클래스의 testTransactionRollback() 테스트 메서드를 아래와 같이 바꿔보자.
+- [x] UserServiceTest 클래스의 testTransactionRollback() 테스트 메서드를 아래와 같이 바꿔보자.
 
 그리고 테스트가 통과하도록 만들자.
 
-- [ ] 테스트 코드를 통과시키고 미션을 마무리한다.
-- [ ] @Transactional 미션에서 이번에 작성한 코드를 프로덕션 코드으로 적용한다.
+- [x] 테스트 코드를 통과시키고 미션을 마무리한다.
+- [x] @Transactional 미션에서 이번에 작성한 코드를 프로덕션 코드으로 적용한다.
 
 ```java
 @Test
@@ -275,7 +275,7 @@ void testTransactionRollback() {
     // 애플리케이션 서비스
     final var appUserService = new AppUserService(userDao, userHistoryDao);
     // 트랜잭션 서비스 추상화
-    final var userService = new TxUserService(appUserService);
+    final var userService = new TxUserService(appUserService, dataSource);
 
     final var newPassword = "newPassword";
     final var createdBy = "gugu";
