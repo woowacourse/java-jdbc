@@ -3,7 +3,8 @@ package com.techcourse.service;
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.datasource.DataSourceUtils;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
-import com.techcourse.config.DataSourceConfig;
+import com.techcourse.dao.UserDao;
+import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,11 +15,11 @@ public class TxUserService implements UserService {
     private final UserService userService;
     private final DataSource dataSource;
 
-    public TxUserService(final UserService userService) {
-        this(userService, DataSourceConfig.getInstance());
+    public TxUserService(final DataSource dataSource) {
+        this(new AppUserService(new UserDao(dataSource), new UserHistoryDao(dataSource)), dataSource);
     }
 
-    public TxUserService(final UserService userService, final DataSource dataSource) {
+    TxUserService(final UserService userService, final DataSource dataSource) {
         this.userService = Objects.requireNonNull(userService);
         this.dataSource = Objects.requireNonNull(dataSource);
     }
@@ -40,6 +41,7 @@ public class TxUserService implements UserService {
         }
         final var connection = DataSourceUtils.getConnection(dataSource);
         Throwable failure = null;
+        boolean committed = false;
         try {
             final boolean autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
@@ -47,16 +49,23 @@ public class TxUserService implements UserService {
             try {
                 userService.changePassword(id, newPassword, createdBy);
                 connection.commit();
+                committed = true;
             } catch (SQLException | RuntimeException | Error ex) {
                 rollback(connection, autoCommit, ex);
                 throw ex;
             }
             connection.setAutoCommit(autoCommit);
         } catch (SQLException ex) {
-            final var translated = new DataAccessException("Failed to change password transactionally", ex);
+            final RuntimeException translated = committed
+                    ? new TransactionCommittedException(ex)
+                    : new DataAccessException("Failed to change password transactionally", ex);
             failure = translated;
             throw translated;
-        } catch (RuntimeException | Error ex) {
+        } catch (RuntimeException ex) {
+            final RuntimeException translated = committed ? new TransactionCommittedException(ex) : ex;
+            failure = translated;
+            throw translated;
+        } catch (Error ex) {
             failure = ex;
             throw ex;
         } finally {
@@ -65,7 +74,7 @@ public class TxUserService implements UserService {
                 DataSourceUtils.releaseConnection(connection, dataSource);
             } catch (RuntimeException closeFailure) {
                 if (failure == null) {
-                    throw closeFailure;
+                    throw committed ? new TransactionCommittedException(closeFailure) : closeFailure;
                 }
                 failure.addSuppressed(closeFailure);
             }

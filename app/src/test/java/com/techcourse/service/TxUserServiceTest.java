@@ -87,6 +87,49 @@ class TxUserServiceTest {
     }
 
     @Test
+    void reportsCommittedOutcomeWhenRestoringAutoCommitFails() throws SQLException {
+        final var failure = new SQLException("restore failure");
+        doThrow(failure).when(connection).setAutoCommit(true);
+
+        assertThatThrownBy(() -> service.changePassword(1L, "new", "gugu"))
+                .isInstanceOf(TransactionCommittedException.class).hasCause(failure);
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+        verify(connection).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void reportsCommittedOutcomeWhenClosingFails() throws SQLException {
+        final var failure = new SQLException("close failure");
+        doThrow(failure).when(connection).close();
+
+        assertThatThrownBy(() -> service.changePassword(1L, "new", "gugu"))
+                .isInstanceOf(TransactionCommittedException.class).hasRootCause(failure);
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void preservesBothCleanupFailuresAfterCommit() throws SQLException {
+        final var restoreFailure = new SQLException("restore failure");
+        final var closeFailure = new SQLException("close failure");
+        doThrow(restoreFailure).when(connection).setAutoCommit(true);
+        doThrow(closeFailure).when(connection).close();
+
+        final var failure = catchThrowable(() -> service.changePassword(1L, "new", "gugu"));
+
+        assertThat(failure).isInstanceOf(TransactionCommittedException.class).hasCause(restoreFailure);
+        assertThat(failure.getSuppressed()).hasSize(1);
+        assertThat(failure.getSuppressed()[0]).hasCause(closeFailure);
+        verify(connection, never()).rollback();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
     void delegatesFindAndSave() {
         final var user = new User("gugu", "password", "gugu@example.com");
         when(delegate.findById(1L)).thenReturn(user);

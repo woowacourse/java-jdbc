@@ -120,6 +120,19 @@ class UserServiceTest {
         assertThat(historyCount()).isZero();
     }
 
+    @Test
+    void constructsDaosWithTheTransactionDataSource() {
+        final var service = new TxUserService(dataSource);
+
+        assertThrows(DataAccessException.class, () -> service.changePassword(1L, "failed", null));
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(historyCount()).isZero();
+
+        service.changePassword(1L, "succeeded", "gugu");
+        assertThat(userDao.findById(1L).getPassword()).isEqualTo("succeeded");
+        assertThat(historyCount()).isEqualTo(1);
+    }
+
     private int historyCount() {
         return jdbcTemplate.queryForObject("select count(*) from user_history", (rs, row) -> rs.getInt(1));
     }
