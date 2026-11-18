@@ -5,6 +5,9 @@ import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -22,14 +25,33 @@ class UserServiceTransactionTest {
     private final Connection connection = mock(Connection.class);
     private final UserDao userDao = mock(UserDao.class);
     private final UserHistoryDao historyDao = mock(UserHistoryDao.class);
-    private final UserService service = new UserService(dataSource, userDao, historyDao);
+    private final UserService service = new TxUserService(dataSource, new AppUserService(userDao, historyDao));
     private final User user = new User(1L, "gugu", "password", "gugu@example.com");
+
+    @AfterEach
+    void noResourceRemainsAfterSuccessOrFailure() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
 
     @BeforeEach
     void setup() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L)).thenReturn(user);
+        when(userDao.findById(1L)).thenReturn(user);
+    }
+
+    @Test
+    void findAndSaveDelegateWithoutOpeningTransaction() {
+        final var delegate = mock(UserService.class);
+        final var wrapper = new TxUserService(dataSource, delegate);
+        when(delegate.findById(1L)).thenReturn(user);
+
+        assertThat(wrapper.findById(1L)).isSameAs(user);
+        wrapper.save(user);
+
+        verify(delegate).findById(1L);
+        verify(delegate).save(user);
+        verifyNoInteractions(dataSource, connection);
     }
 
     @Test
@@ -38,9 +60,9 @@ class UserServiceTransactionTest {
 
         final var order = inOrder(connection, userDao, historyDao);
         order.verify(connection).setAutoCommit(false);
-        order.verify(userDao).findById(connection, 1L);
-        order.verify(userDao).update(connection, user);
-        order.verify(historyDao).log(eq(connection), any());
+        order.verify(userDao).findById(1L);
+        order.verify(userDao).update(user);
+        order.verify(historyDao).log(any());
         order.verify(connection).commit();
         order.verify(connection).setAutoCommit(true);
         order.verify(connection).close();
@@ -51,7 +73,7 @@ class UserServiceTransactionTest {
     @Test
     void runtimeFailureRollsBackBeforeRestoringAndClosing() throws SQLException {
         final var cause = new DataAccessException("history failed");
-        doThrow(cause).when(historyDao).log(eq(connection), any());
+        doThrow(cause).when(historyDao).log(any());
 
         assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin")).isSameAs(cause);
 
@@ -81,7 +103,7 @@ class UserServiceTransactionTest {
     void rollbackFailurePreservesOriginalFailureAndDoesNotEnableAutoCommit() throws SQLException {
         final var cause = new DataAccessException("history failed");
         final var rollbackFailure = new SQLException("rollback failed");
-        doThrow(cause).when(historyDao).log(eq(connection), any());
+        doThrow(cause).when(historyDao).log(any());
         doThrow(rollbackFailure).when(connection).rollback();
 
         assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
@@ -97,7 +119,7 @@ class UserServiceTransactionTest {
         final var cause = new DataAccessException("history failed");
         final var restorationFailure = new SQLException("restore failed");
         final var closeFailure = new SQLException("close failed");
-        doThrow(cause).when(historyDao).log(eq(connection), any());
+        doThrow(cause).when(historyDao).log(any());
         doThrow(restorationFailure).when(connection).setAutoCommit(true);
         doThrow(closeFailure).when(connection).close();
 
@@ -129,6 +151,42 @@ class UserServiceTransactionTest {
         verify(connection).commit();
         verify(connection, never()).rollback();
         verify(connection).close();
+    }
+
+    @Test
+    void unbindsBeforeReleasingConnection() throws SQLException {
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+            return null;
+        }).when(connection).close();
+
+        service.changePassword(1L, "new-password", "admin");
+
+        verify(connection).close();
+    }
+
+    @Test
+    void releaseFailureAfterCommitIsReportedWithoutRollback() throws SQLException {
+        final var cause = new SQLException("close failed");
+        doThrow(cause).when(connection).close();
+
+        assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
+                .isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void setupAndReleaseFailuresPreserveSetupCause() throws SQLException {
+        final var setupFailure = new SQLException("setup failed");
+        final var closeFailure = new SQLException("close failed");
+        doThrow(setupFailure).when(connection).setAutoCommit(false);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> service.changePassword(1L, "new-password", "admin"))
+                .hasCause(setupFailure).hasSuppressedException(closeFailure);
+        verifyNoInteractions(userDao, historyDao);
     }
 
     @Test

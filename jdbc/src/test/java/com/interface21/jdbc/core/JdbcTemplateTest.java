@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -348,6 +350,61 @@ class JdbcTemplateTest {
         verify(connection, never()).close();
         verify(connection, never()).commit();
         verify(connection, never()).rollback();
+    }
+
+    @Test
+    void boundConnectionIsReusedUntilOwnerUnbindsAndReleasesIt() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            jdbcTemplate.update(SQL);
+            jdbcTemplate.update(SQL);
+            verify(dataSource, never()).getConnection();
+            verify(connection, times(2)).prepareStatement(SQL);
+            verify(statement, times(2)).close();
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+        verify(connection).close();
+    }
+
+    @Test
+    void boundConnectionStaysOpenAfterSqlFailure() throws SQLException {
+        final var cause = new SQLException("SQL failed");
+        when(statement.executeUpdate()).thenThrow(cause);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        try {
+            assertThatThrownBy(() -> jdbcTemplate.update(SQL)).hasCause(cause);
+            verify(statement).close();
+            verify(connection, never()).close();
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    @Test
+    void ordinaryCallsDoNotLeaveBoundResources() throws SQLException {
+        jdbcTemplate.update(SQL);
+        jdbcTemplate.update(SQL);
+        verify(dataSource, times(2)).getConnection();
+        verify(connection, times(2)).close();
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void closeFailureDoesNotHideSqlFailure() throws SQLException {
+        final var sqlFailure = new SQLException("SQL failed");
+        final var closeFailure = new SQLException("close failed");
+        when(statement.executeUpdate()).thenThrow(sqlFailure);
+        doThrow(closeFailure).when(connection).close();
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL))
+                .hasCause(sqlFailure)
+                .satisfies(error -> {
+                    assertThat(error.getSuppressed()).hasSize(1);
+                    assertThat(error.getSuppressed()[0]).hasCause(closeFailure);
+                });
     }
 
     private void verifyQueryResourcesClosed() throws SQLException {
