@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
 import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,18 @@ class JdbcTemplateTest {
         verify(statement).setObject(3, 1L);
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @DisplayName("연결 획득에 실패하면 DataAccessException으로 처리할 수 있고 원인 예외를 보존한다")
+    @Test
+    void connectionFailurePreservesDataAccessExceptionContract() throws SQLException {
+        final var cause = new SQLException("데이터베이스에 연결하지 못했습니다.");
+        when(dataSource.getConnection()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(cause);
     }
 
     @DisplayName("변경 쿼리가 실패하면 자원을 닫고 원인 예외를 보존한다")

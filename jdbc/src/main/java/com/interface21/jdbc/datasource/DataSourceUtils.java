@@ -24,14 +24,4 @@ public abstract class DataSourceUtils {
         }
     }
 
-    public static void releaseConnection(Connection connection, DataSource dataSource) {
-        if (TransactionSynchronizationManager.getResource(dataSource) == connection) {
-            return;
-        }
-        try {
-            connection.close();
-        } catch (SQLException ex) {
-            throw new CannotGetJdbcConnectionException("JDBC 연결을 닫지 못했습니다.", ex);
-        }
-    }
 }
