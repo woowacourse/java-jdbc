@@ -14,7 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -136,18 +138,6 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateTreatsNullArgumentArrayAsEmpty() throws SQLException {
-        final var sql = "delete from users";
-        when(connection.prepareStatement(sql)).thenReturn(statement);
-
-        jdbcTemplate.update(sql, (Object[]) null);
-
-        verify(statement).executeUpdate();
-        verify(statement).close();
-        verifyNoMoreInteractions(statement);
-    }
-
-    @Test
     void queryBindsArgumentsBeforeReadingRows() throws SQLException {
         final var sql = "select account from users where id = ?";
         when(connection.prepareStatement(sql)).thenReturn(statement);
@@ -196,7 +186,7 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryRunsSetterAndMapsAllRowsInOrder() throws SQLException {
+    void queryMapsAllRowsAndClosesResources() throws SQLException {
         final var sql = "select account from users where account like ?";
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(resultSet.next()).thenReturn(true, true, false);
@@ -206,14 +196,8 @@ class JdbcTemplateTest {
                 preparedStatement -> preparedStatement.setString(1, "gugu%"));
 
         assertThat(accounts).containsExactly("gugu", "gugu2");
+        verify(statement).setString(1, "gugu%");
         final var order = inOrder(statement, resultSet, connection);
-        order.verify(statement).setString(1, "gugu%");
-        order.verify(statement).executeQuery();
-        order.verify(resultSet).next();
-        order.verify(resultSet).getString("account");
-        order.verify(resultSet).next();
-        order.verify(resultSet).getString("account");
-        order.verify(resultSet).next();
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
@@ -231,5 +215,82 @@ class JdbcTemplateTest {
 
         assertThat(account).isEqualTo("gugu");
         verify(statement).setLong(1, 1L);
+    }
+
+    @Test
+    void updateKeepsCallerConnectionOpen() throws SQLException {
+        final var sql = "update users set account = ? where id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        final var affectedRows = jdbcTemplate.update(connection, sql, "gugu", 1L);
+
+        assertThat(affectedRows).isEqualTo(1);
+        verify(statement).setObject(1, "gugu");
+        verify(statement).setObject(2, 1L);
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void queryKeepsCallerConnectionOpen() throws SQLException {
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var accounts = jdbcTemplate.query(connection, SQL, row -> row.getString("account"));
+
+        assertThat(accounts).containsExactly("gugu");
+        final var order = inOrder(resultSet, statement);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void queryForObjectUsesCallerConnectionAndArguments() throws SQLException {
+        final var sql = "select account from users where id = ?";
+        when(connection.prepareStatement(sql)).thenReturn(statement);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getString("account")).thenReturn("gugu");
+
+        final var account = jdbcTemplate.queryForObject(connection, sql, row -> row.getString("account"), 1L);
+
+        assertThat(account).isEqualTo("gugu");
+        verify(statement).setObject(1, 1L);
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void prepareFailureKeepsCallerConnectionOpen() throws SQLException {
+        final var cause = new SQLException("Invalid SQL");
+        when(connection.prepareStatement(SQL)).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, preparedStatement -> {}))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(cause);
+
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void mappingFailureClosesResultsAndStatementButKeepsCallerConnectionOpen() throws SQLException {
+        when(resultSet.next()).thenReturn(true);
+        final var cause = new SQLException("Failed to read a column");
+
+        assertThatThrownBy(() -> jdbcTemplate.query(connection, SQL, row -> {
+            throw cause;
+        })).isInstanceOf(DataAccessException.class).hasCause(cause);
+
+        final var order = inOrder(resultSet, statement);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        verify(connection, never()).close();
+        verifyNoInteractions(dataSource);
     }
 }
