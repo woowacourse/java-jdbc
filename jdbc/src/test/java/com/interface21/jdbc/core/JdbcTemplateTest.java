@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,6 +53,20 @@ class JdbcTemplateTest {
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
+        verify(statement).close();
+        verify(connection).close();
+    }
+    @Test
+    void rejectsMultipleRowsForSingleResult() throws SQLException {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true, true);
+
+        assertThatThrownBy(() -> jdbcTemplate.queryFirst(SQL, row -> "user"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("2개 이상");
+
+        verify(resultSet).close();
         verify(statement).close();
         verify(connection).close();
     }

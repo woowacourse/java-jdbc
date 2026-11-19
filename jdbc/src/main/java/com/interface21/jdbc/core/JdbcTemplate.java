@@ -39,7 +39,11 @@ public class JdbcTemplate {
         return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return Optional.of(rowMapper.mapRow(resultSet));
+                    T row = rowMapper.mapRow(resultSet);
+                    if (resultSet.next()) {
+                        throw new DataAccessException("단건 조회 결과가 2개 이상입니다. SQL: " + sql);
+                    }
+                    return Optional.of(row);
                 }
                 return Optional.empty();
             }
