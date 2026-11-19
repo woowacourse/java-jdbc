@@ -8,7 +8,6 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -18,12 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UserServiceTest {
 
+    private JdbcDataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private UserDao userDao;
 
     @BeforeEach
     void setUp() {
-        final var dataSource = new JdbcDataSource();
+        dataSource = new JdbcDataSource();
         dataSource.setURL("jdbc:h2:mem:user-service-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
@@ -36,7 +36,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -52,12 +52,11 @@ class UserServiceTest {
         )).containsExactly(createBy);
     }
 
-    @Disabled
     @Test
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(userDao, userHistoryDao);
+        final var userService = new UserService(dataSource, userDao, userHistoryDao);
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -67,6 +66,7 @@ class UserServiceTest {
 
         final var actual = userService.findById(1L);
 
-        assertThat(actual.getPassword()).isNotEqualTo(newPassword);
+        assertThat(actual.getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select id from user_history", row -> row.getLong("id"))).isEmpty();
     }
 }
