@@ -1,13 +1,16 @@
 package com.techcourse.dao;
 
 import com.interface21.jdbc.core.JdbcTemplate;
-import com.techcourse.config.DataSourceConfig;
+import com.interface21.dao.DataAccessException;
+import org.h2.jdbcx.JdbcDataSource;
+import java.util.UUID;
 import com.techcourse.domain.User;
 import com.techcourse.support.jdbc.init.DatabasePopulatorUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserDaoTest {
 
@@ -15,10 +18,12 @@ class UserDaoTest {
 
     @BeforeEach
     void setup() {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(DataSourceConfig.getInstance());
+        final var dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:user-dao-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         this.userDao = new UserDao(jdbcTemplate);
 
-        DatabasePopulatorUtils.execute(DataSourceConfig.getInstance());
+        DatabasePopulatorUtils.execute(dataSource);
         final var user = new User("gugu", "password", "hkkang@woowahan.com");
         userDao.insert(user);
     }
@@ -73,5 +78,12 @@ class UserDaoTest {
         final var actual = userDao.findById(1L).orElseThrow();
 
         assertThat(actual.getPassword()).isEqualTo(newPassword);
+    }
+    @Test
+    void rejectsDuplicateAccountResults() {
+        userDao.insert(new User("gugu", "another-password", "another@example.com"));
+
+        assertThatThrownBy(() -> userDao.findByAccount("gugu"))
+                .isInstanceOf(DataAccessException.class);
     }
 }
