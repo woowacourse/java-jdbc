@@ -18,6 +18,7 @@ import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -117,5 +118,26 @@ class JdbcTemplateTest {
                                     verify(statement).close();
                                     verify(connection).close();
                                 })));
+    }
+    @Test
+    void leavesSuppliedConnectionOpenAfterUpdate() throws SQLException {
+        jdbcTemplate.update(connection, SQL, "note", 1L);
+
+        verify(statement).close();
+        verify(connection, never()).close();
+    }
+
+    @Test
+    void leavesSuppliedConnectionOpenAfterQueryFailure() throws SQLException {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(resultSet);
+        when(resultSet.next()).thenThrow(new SQLException("read failed"));
+
+        assertThatThrownBy(() -> jdbcTemplate.queryFirst(connection, SQL, row -> "user"))
+                .isInstanceOf(DataAccessException.class);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
     }
 }

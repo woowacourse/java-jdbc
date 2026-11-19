@@ -23,6 +23,10 @@ public class JdbcTemplate {
         return execute(sql, PreparedStatement::executeUpdate, params);
     }
 
+    public int update(final Connection connection, final String sql, final Object... params) {
+        return execute(connection, sql, PreparedStatement::executeUpdate, params);
+    }
+
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... params) {
         return execute(sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -36,7 +40,16 @@ public class JdbcTemplate {
     }
 
     public <T> Optional<T> queryFirst(final String sql, final RowMapper<T> rowMapper, final Object... params) {
-        return execute(sql, statement -> {
+        try (Connection connection = dataSource.getConnection()) {
+            return queryFirst(connection, sql, rowMapper, params);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다. SQL: " + sql, e);
+        }
+    }
+
+    public <T> Optional<T> queryFirst(final Connection connection, final String sql,
+                                     final RowMapper<T> rowMapper, final Object... params) {
+        return execute(connection, sql, statement -> {
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     T row = rowMapper.mapRow(resultSet);
@@ -51,8 +64,16 @@ public class JdbcTemplate {
     }
 
     private <T> T execute(final String sql, final StatementCallback<T> callback, final Object[] params) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection()) {
+            return execute(connection, sql, callback, params);
+        } catch (SQLException e) {
+            throw new DataAccessException("SQL 실행에 실패했습니다. SQL: " + sql, e);
+        }
+    }
+
+    private <T> T execute(final Connection connection, final String sql,
+                          final StatementCallback<T> callback, final Object[] params) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 statement.setObject(i + 1, params[i]);
             }
