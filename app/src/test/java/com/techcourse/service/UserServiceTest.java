@@ -2,6 +2,7 @@ package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
@@ -51,7 +52,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() throws SQLException {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
         final var startedAt = LocalDateTime.now();
 
         userService.changePassword(1L, "qqqqq", "admin");
@@ -75,7 +76,8 @@ class UserServiceTest {
     @DisplayName("존재하지 않는 사용자의 비밀번호를 변경하면 예외가 발생하고 이력이 남지 않는다")
     @Test
     void rejectsPasswordChangeForMissingUser() {
-        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(dataSource, appUserService);
 
         assertThatThrownBy(() -> userService.changePassword(999L, "newPassword", "admin"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -89,7 +91,8 @@ class UserServiceTest {
     @Test
     void testTransactionRollback() {
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var appUserService = new AppUserService(userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, appUserService);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "gugu"))
                 .isInstanceOf(DataAccessException.class);
@@ -101,7 +104,8 @@ class UserServiceTest {
     @DisplayName("이력 저장 쿼리가 실패하면 비밀번호 변경을 롤백한다")
     @Test
     void rollsBackWhenHistoryInsertFails() {
-        final var userService = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var appUserService = new AppUserService(userDao, new UserHistoryDao(jdbcTemplate));
+        final var userService = new TxUserService(dataSource, appUserService);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", null))
                 .isInstanceOf(DataAccessException.class)
@@ -117,12 +121,12 @@ class UserServiceTest {
         final var cause = new IllegalStateException("이력 저장 후 오류가 발생했습니다.");
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate) {
             @Override
-            public void log(final Connection connection, final UserHistory history) {
-                super.log(connection, history);
+            public void log(final UserHistory history) {
+                super.log(history);
                 throw cause;
             }
         };
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "admin"))
                 .isSameAs(cause);
@@ -140,9 +144,9 @@ class UserServiceTest {
         final var userHistoryDao = mock(UserHistoryDao.class);
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(false);
-        when(transactionUserDao.findById(connection, 1L))
+        when(transactionUserDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
-        final var userService = new UserService(transactionDataSource, transactionUserDao, userHistoryDao);
+        final var userService = new TxUserService(transactionDataSource, new AppUserService(transactionUserDao, userHistoryDao));
 
         userService.changePassword(1L, "newPassword", "admin");
 
@@ -161,10 +165,11 @@ class UserServiceTest {
         final var cause = new SQLException("트랜잭션 커밋에 실패했습니다.");
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(transactionUserDao.findById(connection, 1L))
+        when(transactionUserDao.findById(1L))
                 .thenReturn(new User(1L, "gugu", "password", "gugu@example.com"));
         doThrow(cause).when(connection).commit();
-        final var userService = new UserService(transactionDataSource, transactionUserDao, mock(UserHistoryDao.class));
+        final var appUserService = new AppUserService(transactionUserDao, mock(UserHistoryDao.class));
+        final var userService = new TxUserService(transactionDataSource, appUserService);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "admin"))
                 .isInstanceOf(DataAccessException.class)
@@ -185,9 +190,10 @@ class UserServiceTest {
         final var rollbackFailure = new SQLException("트랜잭션 롤백에 실패했습니다.");
         when(transactionDataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(transactionUserDao.findById(connection, 1L)).thenThrow(cause);
+        when(transactionUserDao.findById(1L)).thenThrow(cause);
         doThrow(rollbackFailure).when(connection).rollback();
-        final var userService = new UserService(transactionDataSource, transactionUserDao, mock(UserHistoryDao.class));
+        final var appUserService = new AppUserService(transactionUserDao, mock(UserHistoryDao.class));
+        final var userService = new TxUserService(transactionDataSource, appUserService);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "newPassword", "admin"))
                 .isSameAs(cause);
@@ -195,6 +201,25 @@ class UserServiceTest {
         assertThat(cause.getSuppressed()).containsExactly(rollbackFailure);
         verify(connection, never()).setAutoCommit(true);
         verify(connection).close();
+    }
+
+    @DisplayName("연결을 닫지 못해도 바인딩을 해제하고 원래 예외를 보존한다")
+    @Test
+    void unbindsConnectionAndPreservesOriginalExceptionWhenCloseFails() throws SQLException {
+        final var transactionDataSource = mock(DataSource.class);
+        final var connection = mock(Connection.class);
+        final var appUserService = mock(UserService.class);
+        final var cause = new IllegalArgumentException("존재하지 않는 사용자입니다.");
+        final var closeFailure = new SQLException("연결을 닫지 못했습니다.");
+        when(transactionDataSource.getConnection()).thenReturn(connection);
+        doThrow(cause).when(appUserService).changePassword(999L, "newPassword", "admin");
+        doThrow(closeFailure).when(connection).close();
+        final var userService = new TxUserService(transactionDataSource, appUserService);
+
+        assertThatThrownBy(() -> userService.changePassword(999L, "newPassword", "admin")).isSameAs(cause);
+
+        assertThat(TransactionSynchronizationManager.getResource(transactionDataSource)).isNull();
+        assertThat(cause.getSuppressed()).containsExactly(closeFailure);
     }
 
     private void assertNoHistory() {

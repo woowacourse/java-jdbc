@@ -1,6 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,11 @@ class JdbcTemplateTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
+    @AfterEach
+    void unbindConnection() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
+    }
+
     @DisplayName("인자를 순서대로 설정하고 변경된 행 수를 반환한다")
     @Test
     void updateBindsParametersAndReturnsAffectedRows() throws SQLException {
@@ -52,6 +60,18 @@ class JdbcTemplateTest {
         verify(statement).setObject(3, 1L);
         verify(statement).close();
         verify(connection).close();
+    }
+
+    @DisplayName("연결 획득에 실패하면 DataAccessException으로 처리할 수 있고 원인 예외를 보존한다")
+    @Test
+    void connectionFailurePreservesDataAccessExceptionContract() throws SQLException {
+        final var cause = new SQLException("데이터베이스에 연결하지 못했습니다.");
+        when(dataSource.getConnection()).thenThrow(cause);
+
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
+                .isInstanceOf(DataAccessException.class)
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
+                .hasCause(cause);
     }
 
     @DisplayName("변경 쿼리가 실패하면 자원을 닫고 원인 예외를 보존한다")
@@ -182,12 +202,13 @@ class JdbcTemplateTest {
         verify(connection).close();
     }
 
-    @DisplayName("외부 연결로 변경 쿼리를 실행해도 연결을 닫거나 트랜잭션을 종료하지 않는다")
+    @DisplayName("등록된 연결로 변경 쿼리를 실행해도 연결을 닫거나 트랜잭션을 종료하지 않는다")
     @Test
-    void updateWithExternalConnectionLeavesConnectionOpen() throws SQLException {
+    void updateWithBoundConnectionLeavesConnectionOpen() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(statement.executeUpdate()).thenReturn(1);
 
-        final var affectedRows = jdbcTemplate.update(connection, "update users set password = ? where id = ?",
+        final var affectedRows = jdbcTemplate.update("update users set password = ? where id = ?",
                 "new-password", 1L);
 
         assertThat(affectedRows).isEqualTo(1);
@@ -200,15 +221,16 @@ class JdbcTemplateTest {
         verify(connection, never()).rollback();
     }
 
-    @DisplayName("외부 연결로 조회하면 Statement와 ResultSet만 닫는다")
+    @DisplayName("등록된 연결로 조회하면 Statement와 ResultSet만 닫는다")
     @Test
-    void queryWithExternalConnectionClosesOnlyQueryResources() throws SQLException {
+    void queryWithBoundConnectionClosesOnlyQueryResources() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var resultSet = mock(ResultSet.class);
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        final var accounts = jdbcTemplate.query(connection, "select account from users where id = ?",
+        final var accounts = jdbcTemplate.query("select account from users where id = ?",
                 row -> row.getString("account"), 1L);
 
         assertThat(accounts).containsExactly("gugu");
@@ -219,13 +241,14 @@ class JdbcTemplateTest {
         verify(connection, never()).close();
     }
 
-    @DisplayName("외부 연결로 실행한 변경 쿼리가 실패해도 연결은 닫지 않는다")
+    @DisplayName("등록된 연결로 실행한 변경 쿼리가 실패해도 연결은 닫지 않는다")
     @Test
-    void updateWithExternalConnectionLeavesConnectionOpenOnFailure() throws SQLException {
+    void updateWithBoundConnectionLeavesConnectionOpenOnFailure() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var cause = new SQLException("쿼리 실행에 실패했습니다.");
         when(statement.executeUpdate()).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, "delete from users"))
+        assertThatThrownBy(() -> jdbcTemplate.update("delete from users"))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
@@ -233,15 +256,16 @@ class JdbcTemplateTest {
         verify(connection, never()).close();
     }
 
-    @DisplayName("외부 연결에서 조회 결과 변환이 실패해도 연결은 닫지 않는다")
+    @DisplayName("등록된 연결에서 조회 결과 변환이 실패해도 연결은 닫지 않는다")
     @Test
-    void queryWithExternalConnectionLeavesConnectionOpenWhenMappingFails() throws SQLException {
+    void queryWithBoundConnectionLeavesConnectionOpenWhenMappingFails() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         final var resultSet = mock(ResultSet.class);
         final var cause = new SQLException("조회 결과 변환에 실패했습니다.");
         when(statement.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
 
-        assertThatThrownBy(() -> jdbcTemplate.query(connection, "select account from users", row -> {
+        assertThatThrownBy(() -> jdbcTemplate.query("select account from users", row -> {
             throw cause;
         }))
                 .isInstanceOf(DataAccessException.class)
