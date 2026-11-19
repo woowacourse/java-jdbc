@@ -58,7 +58,7 @@ public class JdbcTemplate {
             }
             return callback.execute(statement);
         } catch (SQLException e) {
-            throw new DataAccessException(e);
+            throw new DataAccessException("SQL 실행에 실패했습니다. SQL: " + sql, e);
         }
     }
 

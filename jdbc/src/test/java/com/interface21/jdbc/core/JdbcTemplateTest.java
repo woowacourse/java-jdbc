@@ -51,7 +51,8 @@ class JdbcTemplateTest {
 
         assertThatThrownBy(() -> jdbcTemplate.update(SQL, "note", 1L))
                 .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
+                .hasCause(failure)
+                .hasMessageContaining(SQL);
 
         verify(statement).close();
         verify(connection).close();
