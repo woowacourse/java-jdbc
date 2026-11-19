@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,7 +41,9 @@ class UserServiceTest {
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
+        final var before = LocalDateTime.now().withNano(0);
         userService.changePassword(1L, newPassword, createBy);
+        final var after = LocalDateTime.now().plusSeconds(1);
 
         final var actual = userService.findById(1L);
 
@@ -50,6 +53,15 @@ class UserServiceTest {
                 row -> row.getString("created_by"),
                 1L
         )).containsExactly(createBy);
+        assertThat(jdbcTemplate.query(
+                "select password from user_history where user_id = ?",
+                row -> row.getString("password"), 1L
+        )).containsExactly(newPassword);
+        final var createdAt = jdbcTemplate.queryFirst(
+                "select created_at from user_history where user_id = ?",
+                row -> row.getTimestamp("created_at").toLocalDateTime(), 1L
+        ).orElseThrow();
+        assertThat(createdAt).isBetween(before, after);
     }
 
     @Test
@@ -68,5 +80,20 @@ class UserServiceTest {
 
         assertThat(actual.getPassword()).isEqualTo("password");
         assertThat(jdbcTemplate.query("select id from user_history", row -> row.getLong("id"))).isEmpty();
+    }
+    @Test
+    void rollsBackPasswordWhenHistorySqlFails() {
+        final var service = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+
+        assertThrows(DataAccessException.class,
+                () -> service.changePassword(1L, "newPassword", null));
+
+        assertThat(service.findById(1L).getPassword()).isEqualTo("password");
+        assertThat(jdbcTemplate.query("select id from user_history", row -> row.getLong("id"))).isEmpty();
+
+        service.changePassword(1L, "retryPassword", "gugu");
+        assertThat(service.findById(1L).getPassword()).isEqualTo("retryPassword");
+        assertThat(jdbcTemplate.query("select password from user_history", row -> row.getString("password")))
+                .containsExactly("retryPassword");
     }
 }
