@@ -6,6 +6,8 @@ import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -14,8 +16,9 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -25,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 class UserServiceTransactionTest {
 
+    private DataSource dataSource;
     private Connection connection;
     private UserDao userDao;
     private UserHistoryDao userHistoryDao;
@@ -32,15 +36,15 @@ class UserServiceTransactionTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        DataSource dataSource = mock(DataSource.class);
+        dataSource = mock(DataSource.class);
         connection = mock(Connection.class);
         userDao = mock(UserDao.class);
         userHistoryDao = mock(UserHistoryDao.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L))
+        when(userDao.findById(1L))
                 .thenReturn(Optional.of(new User(1L, "gugu", "password", "gugu@example.com")));
-        service = new UserService(dataSource, userDao, userHistoryDao);
+        service = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
     }
 
     @Test
@@ -49,9 +53,9 @@ class UserServiceTransactionTest {
 
         final var order = inOrder(connection, userDao, userHistoryDao);
         order.verify(connection).setAutoCommit(false);
-        order.verify(userDao).findById(connection, 1L);
-        order.verify(userDao).update(eq(connection), any(User.class));
-        order.verify(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        order.verify(userDao).findById(1L);
+        order.verify(userDao).updatePassword(1L, "newPassword");
+        order.verify(userHistoryDao).log(any(UserHistory.class));
         order.verify(connection).commit();
         order.verify(connection).setAutoCommit(true);
         order.verify(connection).close();
@@ -78,7 +82,7 @@ class UserServiceTransactionTest {
     void preservesOriginalFailureWhenRollbackFails() throws SQLException {
         IllegalStateException failure = new IllegalStateException("history failed");
         SQLException rollbackFailure = new SQLException("rollback failed");
-        doThrow(failure).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(failure).when(userHistoryDao).log(any(UserHistory.class));
         doThrow(rollbackFailure).when(connection).rollback();
 
         assertThatThrownBy(() -> service.changePassword(1L, "newPassword", "gugu"))
@@ -88,5 +92,46 @@ class UserServiceTransactionTest {
         verify(connection, never()).commit();
         verify(connection, never()).setAutoCommit(true);
         verify(connection).close();
+    }
+    @AfterEach
+    void releasesThreadResource() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void keepsSuccessfulResultWhenAutoCommitResetFails() throws SQLException {
+        doThrow(new SQLException("reset failed")).when(connection).setAutoCommit(true);
+
+        assertThatCode(() -> service.changePassword(1L, "newPassword", "gugu"))
+                .doesNotThrowAnyException();
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+        verify(connection).close();
+    }
+
+    @Test
+    void keepsSuccessfulResultWhenCloseFails() throws SQLException {
+        doThrow(new SQLException("close failed")).when(connection).close();
+
+        assertThatCode(() -> service.changePassword(1L, "newPassword", "gugu"))
+                .doesNotThrowAnyException();
+
+        verify(connection).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void closesConnectionWhenTransactionCannotStart() throws SQLException {
+        SQLException failure = new SQLException("begin failed");
+        doThrow(failure).when(connection).setAutoCommit(false);
+
+        assertThatThrownBy(() -> service.changePassword(1L, "newPassword", "gugu"))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(connection).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
     }
 }

@@ -8,6 +8,8 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -37,7 +39,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -68,7 +70,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -83,7 +85,7 @@ class UserServiceTest {
     }
     @Test
     void rollsBackPasswordWhenHistorySqlFails() {
-        final var service = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var service = new TxUserService(dataSource, new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
 
         assertThrows(DataAccessException.class,
                 () -> service.changePassword(1L, "newPassword", null));
@@ -95,5 +97,18 @@ class UserServiceTest {
         assertThat(service.findById(1L).getPassword()).isEqualTo("retryPassword");
         assertThat(jdbcTemplate.query("select password from user_history", row -> row.getString("password")))
                 .containsExactly("retryPassword");
+    }
+    @AfterEach
+    void releasesThreadResource() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void delegatesSaveAndFindById() {
+        final UserService service = new TxUserService(
+                dataSource, new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
+        service.save(new User("other", "password", "other@example.com"));
+
+        assertThat(service.findById(2L).getAccount()).isEqualTo("other");
     }
 }
