@@ -15,7 +15,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -38,9 +37,9 @@ class UserServiceTransactionTest {
         userHistoryDao = mock(UserHistoryDao.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(userDao.findById(connection, 1L))
+        when(userDao.findById(1L))
                 .thenReturn(Optional.of(new User(1L, "gugu", "password", "gugu@example.com")));
-        service = new UserService(dataSource, userDao, userHistoryDao);
+        service = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
     }
 
     @Test
@@ -49,9 +48,9 @@ class UserServiceTransactionTest {
 
         final var order = inOrder(connection, userDao, userHistoryDao);
         order.verify(connection).setAutoCommit(false);
-        order.verify(userDao).findById(connection, 1L);
-        order.verify(userDao).updatePassword(connection, 1L, "newPassword");
-        order.verify(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        order.verify(userDao).findById(1L);
+        order.verify(userDao).updatePassword(1L, "newPassword");
+        order.verify(userHistoryDao).log(any(UserHistory.class));
         order.verify(connection).commit();
         order.verify(connection).setAutoCommit(true);
         order.verify(connection).close();
@@ -78,7 +77,7 @@ class UserServiceTransactionTest {
     void preservesOriginalFailureWhenRollbackFails() throws SQLException {
         IllegalStateException failure = new IllegalStateException("history failed");
         SQLException rollbackFailure = new SQLException("rollback failed");
-        doThrow(failure).when(userHistoryDao).log(eq(connection), any(UserHistory.class));
+        doThrow(failure).when(userHistoryDao).log(any(UserHistory.class));
         doThrow(rollbackFailure).when(connection).rollback();
 
         assertThatThrownBy(() -> service.changePassword(1L, "newPassword", "gugu"))

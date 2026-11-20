@@ -37,7 +37,7 @@ class UserServiceTest {
     @Test
     void testChangePassword() {
         final var userHistoryDao = new UserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "qqqqq";
         final var createBy = "gugu";
@@ -68,7 +68,7 @@ class UserServiceTest {
     void testTransactionRollback() {
         // 트랜잭션 롤백 테스트를 위해 mock으로 교체
         final var userHistoryDao = new MockUserHistoryDao(jdbcTemplate);
-        final var userService = new UserService(dataSource, userDao, userHistoryDao);
+        final var userService = new TxUserService(dataSource, new AppUserService(userDao, userHistoryDao));
 
         final var newPassword = "newPassword";
         final var createBy = "gugu";
@@ -83,7 +83,7 @@ class UserServiceTest {
     }
     @Test
     void rollsBackPasswordWhenHistorySqlFails() {
-        final var service = new UserService(dataSource, userDao, new UserHistoryDao(jdbcTemplate));
+        final var service = new TxUserService(dataSource, new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
 
         assertThrows(DataAccessException.class,
                 () -> service.changePassword(1L, "newPassword", null));
