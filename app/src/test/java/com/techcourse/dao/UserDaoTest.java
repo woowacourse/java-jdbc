@@ -86,4 +86,15 @@ class UserDaoTest {
         assertThatThrownBy(() -> userDao.findByAccount("gugu"))
                 .isInstanceOf(DataAccessException.class);
     }
+    @Test
+    void passwordUpdatePreservesChangedEmail() {
+        final var oldUser = userDao.findById(1L).orElseThrow();
+        userDao.update(new User(1L, oldUser.getAccount(), oldUser.getPassword(), "changed@example.com"));
+
+        userDao.updatePassword(oldUser.getId(), "newPassword");
+
+        final var actual = userDao.findById(1L).orElseThrow();
+        assertThat(actual.getEmail()).isEqualTo("changed@example.com");
+        assertThat(actual.getPassword()).isEqualTo("newPassword");
+    }
 }

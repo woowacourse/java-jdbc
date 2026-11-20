@@ -40,7 +40,7 @@ public class UserService {
                 final var user = userDao.findById(connection, id)
                         .orElseThrow(() -> new IllegalArgumentException("id를 찾을 수 없습니다"));
                 user.changePassword(newPassword);
-                userDao.update(connection, user);
+                userDao.updatePassword(connection, user.getId(), user.getPassword());
                 userHistoryDao.log(connection, new UserHistory(user, createBy));
                 connection.commit();
             } catch (SQLException | RuntimeException | Error e) {

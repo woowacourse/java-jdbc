@@ -45,6 +45,14 @@ public class UserDao {
         return jdbcTemplate.queryFirst(connection, FIND_BY_ID_SQL, USER_ROW_MAPPER, id);
     }
 
+    public void updatePassword(final Long id, final String password) {
+        jdbcTemplate.update("update users set password = ? where id = ?", password, id);
+    }
+
+    public void updatePassword(final Connection connection, final Long id, final String password) {
+        jdbcTemplate.update(connection, "update users set password = ? where id = ?", password, id);
+    }
+
     public List<User> findAll() {
         final var sql = "select id, account, password, email from users";
 

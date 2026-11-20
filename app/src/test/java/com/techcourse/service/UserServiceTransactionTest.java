@@ -50,7 +50,7 @@ class UserServiceTransactionTest {
         final var order = inOrder(connection, userDao, userHistoryDao);
         order.verify(connection).setAutoCommit(false);
         order.verify(userDao).findById(connection, 1L);
-        order.verify(userDao).update(eq(connection), any(User.class));
+        order.verify(userDao).updatePassword(connection, 1L, "newPassword");
         order.verify(userHistoryDao).log(eq(connection), any(UserHistory.class));
         order.verify(connection).commit();
         order.verify(connection).setAutoCommit(true);
