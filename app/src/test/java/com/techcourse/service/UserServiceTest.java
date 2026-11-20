@@ -8,6 +8,8 @@ import com.interface21.dao.DataAccessException;
 import com.interface21.jdbc.core.JdbcTemplate;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -95,5 +97,18 @@ class UserServiceTest {
         assertThat(service.findById(1L).getPassword()).isEqualTo("retryPassword");
         assertThat(jdbcTemplate.query("select password from user_history", row -> row.getString("password")))
                 .containsExactly("retryPassword");
+    }
+    @AfterEach
+    void releasesThreadResource() {
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void delegatesSaveAndFindById() {
+        final UserService service = new TxUserService(
+                dataSource, new AppUserService(userDao, new UserHistoryDao(jdbcTemplate)));
+        service.save(new User("other", "password", "other@example.com"));
+
+        assertThat(service.findById(2L).getAccount()).isEqualTo("other");
     }
 }
