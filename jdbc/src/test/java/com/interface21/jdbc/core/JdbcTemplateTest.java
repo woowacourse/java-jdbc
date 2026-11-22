@@ -1,6 +1,9 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +15,8 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,6 +40,11 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
+    }
+
+    @AfterEach
+    void cleanUpTransactionConnection() {
+        TransactionSynchronizationManager.unbindResource(dataSource);
     }
 
     @Test
@@ -218,12 +228,14 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateKeepsCallerConnectionOpen() throws SQLException {
+    void updateKeepsTransactionConnectionOpen() throws SQLException {
         final var sql = "update users set account = ? where id = ?";
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(statement.executeUpdate()).thenReturn(1);
 
-        final var affectedRows = jdbcTemplate.update(connection, sql, "gugu", 1L);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        final var affectedRows = jdbcTemplate.update(sql, "gugu", 1L);
 
         assertThat(affectedRows).isEqualTo(1);
         verify(statement).setObject(1, "gugu");
@@ -234,11 +246,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryKeepsCallerConnectionOpen() throws SQLException {
+    void queryKeepsTransactionConnectionOpen() throws SQLException {
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        final var accounts = jdbcTemplate.query(connection, SQL, row -> row.getString("account"));
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        final var accounts = jdbcTemplate.query(SQL, row -> row.getString("account"));
 
         assertThat(accounts).containsExactly("gugu");
         final var order = inOrder(resultSet, statement);
@@ -249,13 +263,15 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void queryForObjectUsesCallerConnectionAndArguments() throws SQLException {
+    void queryForObjectUsesTransactionConnectionAndArguments() throws SQLException {
         final var sql = "select account from users where id = ?";
         when(connection.prepareStatement(sql)).thenReturn(statement);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getString("account")).thenReturn("gugu");
 
-        final var account = jdbcTemplate.queryForObject(connection, sql, row -> row.getString("account"), 1L);
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        final var account = jdbcTemplate.queryForObject(sql, row -> row.getString("account"), 1L);
 
         assertThat(account).isEqualTo("gugu");
         verify(statement).setObject(1, 1L);
@@ -266,11 +282,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void prepareFailureKeepsCallerConnectionOpen() throws SQLException {
+    void prepareFailureKeepsTransactionConnectionOpen() throws SQLException {
         final var cause = new SQLException("Invalid SQL");
         when(connection.prepareStatement(SQL)).thenThrow(cause);
 
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, SQL, preparedStatement -> {}))
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(SQL, preparedStatement -> {}))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(cause);
 
@@ -279,11 +297,13 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void mappingFailureClosesResultsAndStatementButKeepsCallerConnectionOpen() throws SQLException {
+    void mappingFailureClosesResultsAndStatementButKeepsTransactionConnectionOpen() throws SQLException {
         when(resultSet.next()).thenReturn(true);
         final var cause = new SQLException("Failed to read a column");
 
-        assertThatThrownBy(() -> jdbcTemplate.query(connection, SQL, row -> {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(SQL, row -> {
             throw cause;
         })).isInstanceOf(DataAccessException.class).hasCause(cause);
 
@@ -292,5 +312,19 @@ class JdbcTemplateTest {
         order.verify(statement).close();
         verify(connection, never()).close();
         verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void preservesSqlFailureWhenClosingConnectionAlsoFails() throws SQLException {
+        final var failure = new SQLException("Invalid SQL");
+        final var closeFailure = new SQLException("Close failed");
+        when(connection.prepareStatement(SQL)).thenThrow(failure);
+        doThrow(closeFailure).when(connection).close();
+
+        final var actual = assertThrows(DataAccessException.class, () -> jdbcTemplate.update(SQL));
+
+        assertThat(actual).hasCause(failure);
+        assertThat(actual.getSuppressed()).singleElement().satisfies(suppressed ->
+                assertThat(suppressed).isInstanceOf(CannotGetJdbcConnectionException.class).hasCause(closeFailure));
     }
 }
