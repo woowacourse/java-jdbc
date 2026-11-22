@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,14 +30,6 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... arguments) {
-        return update(connection, sql, createSetter(arguments));
-    }
-
-    public int update(final Connection connection, final String sql, final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper) {
         return query(sql, rowMapper, statement -> {});
     }
@@ -51,16 +44,6 @@ public class JdbcTemplate {
         return execute(sql, setter, statement -> mapRows(statement, rowMapper));
     }
 
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                           final Object... arguments) {
-        return query(connection, sql, rowMapper, createSetter(arguments));
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                           final PreparedStatementSetter setter) {
-        return execute(connection, sql, setter, statement -> mapRows(statement, rowMapper));
-    }
-
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper,
                                final Object... arguments) {
         return queryForObject(sql, rowMapper, createSetter(arguments));
@@ -71,23 +54,22 @@ public class JdbcTemplate {
         return singleResult(sql, query(sql, rowMapper, setter));
     }
 
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                               final Object... arguments) {
-        return queryForObject(connection, sql, rowMapper, createSetter(arguments));
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql, final RowMapper<T> rowMapper,
-                               final PreparedStatementSetter setter) {
-        return singleResult(sql, query(connection, sql, rowMapper, setter));
-    }
-
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final StatementCallback<T> callback) {
-        try (final var connection = dataSource.getConnection()) {
-            return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        final T result;
+        try {
+            result = execute(connection, sql, setter, callback);
+        } catch (RuntimeException | Error failure) {
+            try {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
         }
+        DataSourceUtils.releaseConnection(connection, dataSource);
+        return result;
     }
 
     private <T> T execute(final Connection connection, final String sql, final PreparedStatementSetter setter,
