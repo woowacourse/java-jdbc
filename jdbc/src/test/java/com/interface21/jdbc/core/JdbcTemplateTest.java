@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -18,6 +20,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -49,6 +52,13 @@ class JdbcTemplateTest {
         when(connection.prepareStatement(UPDATE_SQL)).thenReturn(statement);
         when(connection.prepareStatement(QUERY_SQL)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(resultSet);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (TransactionSynchronizationManager.getResource(dataSource) != null) {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
     }
 
     @Test
@@ -423,13 +433,75 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void updateWithExternalConnectionBindsArgumentsAndClosesOnlyStatement() throws SQLException {
+    void doesNotBindConnectionOutsideTransaction() {
+        jdbcTemplate.update(UPDATE_SQL);
+
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isNull();
+    }
+
+    @Test
+    void opensAndClosesFreshConnectionForEachCallOutsideTransaction() throws SQLException {
+        final Connection secondConnection = mock(Connection.class);
+        final PreparedStatement secondStatement = mock(PreparedStatement.class);
+        when(dataSource.getConnection()).thenReturn(connection, secondConnection);
+        when(secondConnection.prepareStatement(UPDATE_SQL)).thenReturn(secondStatement);
+
+        jdbcTemplate.update(UPDATE_SQL);
+        jdbcTemplate.update(UPDATE_SQL);
+
+        verify(dataSource, times(2)).getConnection();
+        verify(connection).close();
+        verify(secondStatement).executeUpdate();
+        verify(secondConnection).close();
+    }
+
+    @Test
+    void convertsConnectionCloseFailureAfterSuccessfulExecution() throws SQLException {
+        final SQLException failure = new SQLException("cannot close connection");
+        doThrow(failure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(failure);
+
+        verify(statement).executeUpdate();
+    }
+
+    @Test
+    void preservesExecutionFailureAndSuppressesConnectionCloseFailure() throws SQLException {
+        final SQLException executionFailure = new SQLException("update failed");
+        final SQLException closeFailure = new SQLException("cannot close connection");
+        when(statement.executeUpdate()).thenThrow(executionFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(executionFailure);
+        assertThat(executionFailure.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
+    void runtimeConnectionCloseFailureDoesNotReplaceExecutionFailure() throws SQLException {
+        final SQLException executionFailure = new SQLException("update failed");
+        final IllegalStateException closeFailure = new IllegalStateException("driver bug on close");
+        when(statement.executeUpdate()).thenThrow(executionFailure);
+        doThrow(closeFailure).when(connection).close();
+
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL))
+                .isInstanceOf(DataAccessException.class)
+                .hasCause(executionFailure);
+        assertThat(executionFailure.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
+    void updateUsesBoundConnectionWithoutOpeningOrClosingIt() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(statement.executeUpdate()).thenReturn(3);
 
-        int affectedRows = jdbcTemplate.update(connection, UPDATE_SQL, "alice", null, 7L);
+        final int affectedRows = jdbcTemplate.update(UPDATE_SQL, "alice", null, 7L);
 
         assertThat(affectedRows).isEqualTo(3);
-        InOrder order = inOrder(connection, statement);
+        final InOrder order = inOrder(connection, statement);
         order.verify(connection).prepareStatement(UPDATE_SQL);
         order.verify(statement).setObject(1, "alice");
         order.verify(statement).setObject(2, null);
@@ -438,163 +510,66 @@ class JdbcTemplateTest {
         order.verify(statement).close();
         verifyNoInteractions(dataSource, resultSet);
         verifyNoMoreInteractions(connection, statement);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
     }
 
     @Test
-    void updateWithExternalConnectionPreservesConnectionWhenPreparationFails() throws SQLException {
-        SQLException failure = new SQLException("cannot prepare update");
-        when(connection.prepareStatement(UPDATE_SQL)).thenThrow(failure);
-
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, UPDATE_SQL))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        verify(connection).prepareStatement(UPDATE_SQL);
-        verifyNoMoreInteractions(connection);
-        verifyNoInteractions(dataSource, statement, resultSet);
-    }
-
-    @Test
-    void updateWithExternalConnectionClosesOnlyStatementWhenBindingFails() throws SQLException {
-        SQLException failure = new SQLException("cannot bind");
-        doThrow(failure).when(statement).setObject(1, "alice");
-
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, UPDATE_SQL, "alice"))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        InOrder order = inOrder(connection, statement);
-        order.verify(connection).prepareStatement(UPDATE_SQL);
-        order.verify(statement).setObject(1, "alice");
-        order.verify(statement).close();
-        verifyNoInteractions(dataSource, resultSet);
-        verifyNoMoreInteractions(connection, statement);
-    }
-
-    @Test
-    void updateWithExternalConnectionClosesOnlyStatementWhenExecutionFails() throws SQLException {
-        SQLException failure = new SQLException("update failed");
-        when(statement.executeUpdate()).thenThrow(failure);
-
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, UPDATE_SQL))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        InOrder order = inOrder(connection, statement);
-        order.verify(connection).prepareStatement(UPDATE_SQL);
-        order.verify(statement).executeUpdate();
-        order.verify(statement).close();
-        verifyNoInteractions(dataSource, resultSet);
-        verifyNoMoreInteractions(connection, statement);
-    }
-
-    @Test
-    void updateWithExternalConnectionPreservesConnectionWhenStatementCloseFails() throws SQLException {
-        SQLException failure = new SQLException("cannot close statement");
-        doThrow(failure).when(statement).close();
-
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, UPDATE_SQL))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(failure);
-
-        verify(connection).prepareStatement(UPDATE_SQL);
-        verify(statement).executeUpdate();
-        verify(statement).close();
-        verifyNoInteractions(dataSource, resultSet);
-        verifyNoMoreInteractions(connection, statement);
-    }
-
-    @Test
-    void updateWithExternalConnectionPreservesExecutionFailureAndSuppressedCloseFailure() throws SQLException {
-        SQLException executionFailure = new SQLException("update failed");
-        SQLException closeFailure = new SQLException("cannot close statement");
-        when(statement.executeUpdate()).thenThrow(executionFailure);
-        doThrow(closeFailure).when(statement).close();
-
-        assertThatThrownBy(() -> jdbcTemplate.update(connection, UPDATE_SQL))
-                .isInstanceOf(DataAccessException.class)
-                .hasCause(executionFailure);
-        assertThat(executionFailure.getSuppressed()).containsExactly(closeFailure);
-
-        verify(connection).prepareStatement(UPDATE_SQL);
-        verify(statement).executeUpdate();
-        verify(statement).close();
-        verifyNoInteractions(dataSource, resultSet);
-        verifyNoMoreInteractions(connection, statement);
-    }
-
-    @Test
-    void queryWithExternalConnectionMapsRowsAndClosesOnlyStatementResources() throws SQLException {
-        when(resultSet.next()).thenReturn(true, true, false);
-        when(rowMapper.mapRow(resultSet, 0)).thenReturn("alice");
-        when(rowMapper.mapRow(resultSet, 1)).thenReturn("bob");
-
-        List<String> rows = jdbcTemplate.query(connection, QUERY_SQL, rowMapper, 20, true);
-
-        assertThat(rows).containsExactly("alice", "bob");
-        InOrder order = inOrder(connection, statement, resultSet);
-        order.verify(connection).prepareStatement(QUERY_SQL);
-        order.verify(statement).setObject(1, 20);
-        order.verify(statement).setObject(2, true);
-        order.verify(statement).executeQuery();
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        verifyNoInteractions(dataSource);
-        verifyNoMoreInteractions(connection);
-    }
-
-    @Test
-    void queryForObjectWithExternalConnectionReturnsOnlyRowWithoutClosingConnection() throws SQLException {
+    void queryForObjectUsesBoundConnectionWithoutClosingIt() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(true, false);
         when(rowMapper.mapRow(resultSet, 0)).thenReturn("alice");
 
-        assertThat(jdbcTemplate.queryForObject(connection, QUERY_SQL, rowMapper, 20)).isEqualTo("alice");
+        assertThat(jdbcTemplate.queryForObject(QUERY_SQL, rowMapper, 20)).isEqualTo("alice");
 
-        verify(statement).setObject(1, 20);
         verify(resultSet).close();
         verify(statement).close();
-        verifyNoInteractions(dataSource);
         verify(connection).prepareStatement(QUERY_SQL);
         verifyNoMoreInteractions(connection);
+        verifyNoInteractions(dataSource);
     }
 
     @Test
-    void queryForObjectWithExternalConnectionReturnsNullForNoRows() throws SQLException {
+    void consecutiveCallsInTransactionShareBoundConnection() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
         when(resultSet.next()).thenReturn(false);
 
-        assertThat(jdbcTemplate.queryForObject(connection, QUERY_SQL, rowMapper)).isNull();
+        jdbcTemplate.update(UPDATE_SQL);
+        jdbcTemplate.query(QUERY_SQL, rowMapper);
 
-        verifyNoInteractions(dataSource, rowMapper);
-        verify(connection, never()).close();
-    }
-
-    @Test
-    void queryForObjectWithExternalConnectionRejectsMultipleRowsWithoutClosingConnection() throws SQLException {
-        when(resultSet.next()).thenReturn(true, true, false);
-
-        assertThatThrownBy(() -> jdbcTemplate.queryForObject(connection, QUERY_SQL, rowMapper))
-                .isInstanceOf(DataAccessException.class);
-
-        verify(resultSet).close();
-        verify(statement).close();
+        verify(connection).prepareStatement(UPDATE_SQL);
+        verify(connection).prepareStatement(QUERY_SQL);
         verify(connection, never()).close();
         verifyNoInteractions(dataSource);
     }
 
     @Test
-    void queryWithExternalConnectionConvertsFailureAndPreservesConnection() throws SQLException {
-        SQLException failure = new SQLException("query failed");
-        when(statement.executeQuery()).thenThrow(failure);
+    void keepsBoundConnectionOpenWhenStatementFails() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final SQLException failure = new SQLException("update failed");
+        when(statement.executeUpdate()).thenThrow(failure);
 
-        assertThatThrownBy(() -> jdbcTemplate.query(connection, QUERY_SQL, rowMapper))
+        assertThatThrownBy(() -> jdbcTemplate.update(UPDATE_SQL))
                 .isInstanceOf(DataAccessException.class)
                 .hasCause(failure);
 
         verify(statement).close();
         verify(connection, never()).close();
-        verifyNoInteractions(dataSource, resultSet, rowMapper);
+        assertThat(TransactionSynchronizationManager.getResource(dataSource)).isSameAs(connection);
     }
 
+    @Test
+    void keepsBoundConnectionOpenWhenMapperThrowsRuntimeException() throws SQLException {
+        TransactionSynchronizationManager.bindResource(dataSource, connection);
+        final IllegalArgumentException failure = new IllegalArgumentException("invalid row");
+        when(resultSet.next()).thenReturn(true, false);
+        when(rowMapper.mapRow(resultSet, 0)).thenThrow(failure);
+
+        assertThatThrownBy(() -> jdbcTemplate.query(QUERY_SQL, rowMapper)).isSameAs(failure);
+
+        verify(resultSet).close();
+        verify(statement).close();
+        verify(connection, never()).close();
+    }
     private void verifyStatementAndConnectionClosed() throws SQLException {
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
