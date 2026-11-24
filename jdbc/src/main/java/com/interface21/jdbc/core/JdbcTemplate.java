@@ -1,6 +1,7 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.datasource.DataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,58 +29,22 @@ public class JdbcTemplate {
         return execute(sql, setter, PreparedStatement::executeUpdate);
     }
 
-    public int update(final Connection connection, final String sql, final Object... args) {
-        return execute(connection, sql, argumentSetter(args), PreparedStatement::executeUpdate);
-    }
-
     public <T> List<T> query(final String sql, final RowMapper<T> rowMapper, final Object... args) {
         return query(sql, argumentSetter(args), rowMapper);
     }
 
     public <T> List<T> query(final String sql, final PreparedStatementSetter setter,
-                           final RowMapper<T> rowMapper) {
-        return query(null, sql, setter, rowMapper);
-    }
-
-    public <T> List<T> query(final Connection connection, final String sql,
-                             final RowMapper<T> rowMapper, final Object... args) {
-        return query(connection, sql, argumentSetter(args), rowMapper);
-    }
-
-    private <T> List<T> query(final Connection connection, final String sql,
-                              final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        final PreparedStatementCallback<List<T>> callback = statement -> {
-            try (final var resultSet = statement.executeQuery()) {
-                final List<T> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    results.add(rowMapper.mapRow(resultSet));
-                }
-                return results;
-            }
-        };
-        if (connection == null) {
-            return execute(sql, setter, callback);
-        }
-        return execute(connection, sql, setter, callback);
+                             final RowMapper<T> rowMapper) {
+        return execute(sql, setter, rowsCallback(rowMapper));
     }
 
     public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... args) {
-        return queryForObject(null, sql, argumentSetter(args), rowMapper);
-    }
-
-    public <T> T queryForObject(final Connection connection, final String sql,
-                                final RowMapper<T> rowMapper, final Object... args) {
-        return queryForObject(connection, sql, argumentSetter(args), rowMapper);
+        return queryForObject(sql, argumentSetter(args), rowMapper);
     }
 
     <T> T queryForObject(final String sql, final PreparedStatementSetter setter,
                          final RowMapper<T> rowMapper) {
-        return queryForObject(null, sql, setter, rowMapper);
-    }
-
-    private <T> T queryForObject(final Connection connection, final String sql,
-                                 final PreparedStatementSetter setter, final RowMapper<T> rowMapper) {
-        final var results = query(connection, sql, setter, rowMapper);
+        final var results = query(sql, setter, rowMapper);
         if (results.size() > 1) {
             throw new DataAccessException("Expected at most one row, but found " + results.size());
         }
@@ -88,10 +53,11 @@ public class JdbcTemplate {
 
     private <T> T execute(final String sql, final PreparedStatementSetter setter,
                           final PreparedStatementCallback<T> callback) {
-        try (final var connection = dataSource.getConnection()) {
+        final var connection = DataSourceUtils.getConnection(dataSource);
+        try {
             return execute(connection, sql, setter, callback);
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to execute SQL: " + sql, e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -105,6 +71,18 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             throw new DataAccessException("Failed to execute SQL: " + sql, e);
         }
+    }
+
+    private <T> PreparedStatementCallback<List<T>> rowsCallback(final RowMapper<T> rowMapper) {
+        return statement -> {
+            try (final var resultSet = statement.executeQuery()) {
+                final List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    results.add(rowMapper.mapRow(resultSet));
+                }
+                return results;
+            }
+        };
     }
 
     private PreparedStatementSetter argumentSetter(final Object[] args) {

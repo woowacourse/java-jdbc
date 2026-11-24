@@ -3,8 +3,6 @@ package com.techcourse.dao;
 import com.interface21.jdbc.core.JdbcTemplate;
 import com.techcourse.domain.UserHistory;
 
-import java.sql.Connection;
-
 public class UserHistoryDao {
 
     private static final String INSERT_SQL = "insert into user_history (user_id, account, password, email, created_at, created_by) values (?, ?, ?, ?, ?, ?)";
@@ -15,8 +13,8 @@ public class UserHistoryDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void log(final Connection connection, final UserHistory userHistory) {
-        jdbcTemplate.update(connection, INSERT_SQL,
+    public void log(final UserHistory userHistory) {
+        jdbcTemplate.update(INSERT_SQL,
                 userHistory.getUserId(),
                 userHistory.getAccount(),
                 userHistory.getPassword(),

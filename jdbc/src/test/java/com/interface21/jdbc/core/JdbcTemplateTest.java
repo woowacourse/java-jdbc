@@ -1,6 +1,8 @@
 package com.interface21.jdbc.core;
 
 import com.interface21.dao.DataAccessException;
+import com.interface21.jdbc.CannotGetJdbcConnectionException;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -180,10 +182,36 @@ class JdbcTemplateTest {
         when(dataSource.getConnection()).thenThrow(failure);
 
         assertThatThrownBy(() -> jdbcTemplate.update("update users set email = ?", "email"))
+                .isInstanceOf(CannotGetJdbcConnectionException.class)
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("update users set email = ?")
                 .hasCause(failure);
         verifyNoInteractions(connection);
+    }
+
+    @Test
+    void boundConnectionIsReusedAndNotClosed() throws SQLException {
+        final var boundConnection = mock(Connection.class);
+        when(boundConnection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+        TransactionSynchronizationManager.bindResource(dataSource, boundConnection);
+        try {
+            jdbcTemplate.update("update users set email = ?", "email");
+            jdbcTemplate.update("update users set email = ?", "email");
+        } finally {
+            TransactionSynchronizationManager.unbindResource(dataSource);
+        }
+
+        verify(boundConnection, times(2)).prepareStatement(anyString());
+        verify(boundConnection, never()).close();
+        verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void connectionCloseFailureDoesNotHideResult() throws SQLException {
+        when(statement.executeUpdate()).thenReturn(1);
+        doThrow(new SQLException("close failed")).when(connection).close();
+
+        assertThat(jdbcTemplate.update("update users set email = ?", "email")).isEqualTo(1);
     }
 
     @Test
